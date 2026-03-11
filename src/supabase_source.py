@@ -22,8 +22,9 @@ _PG_STATEMENT_TIMEOUT_CODE = "57014"
 def _is_statement_timeout(resp: requests.Response) -> bool:
     """判断响应是否为 PostgreSQL 语句超时（error code 57014）。"""
     try:
-        body = resp.text or ""
-        return _PG_STATEMENT_TIMEOUT_CODE in body
+        import json as _json
+        body = _json.loads(resp.text or "")
+        return isinstance(body, dict) and body.get("code") == _PG_STATEMENT_TIMEOUT_CODE
     except Exception:
         return False
 

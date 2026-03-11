@@ -49,6 +49,16 @@ class IsStatementTimeoutTest(unittest.TestCase):
         resp.text = None
         self.assertFalse(_is_statement_timeout(resp))
 
+    def test_false_for_57014_in_non_code_field(self):
+        """Should not match 57014 appearing outside the 'code' field."""
+        body = '{"code":"XX000","message":"error 57014 occurred"}'
+        resp = self._make_response(body)
+        self.assertFalse(_is_statement_timeout(resp))
+
+    def test_false_for_non_json_body(self):
+        resp = self._make_response("Internal Server Error")
+        self.assertFalse(_is_statement_timeout(resp))
+
 
 class RequestWithRetriesTimeoutTest(unittest.TestCase):
     """_request_with_retries should not retry on statement timeout."""
