@@ -1,0 +1,631 @@
+Title: Agentic Peer-to-Peer Networks: From Content Distribution to Capability and Action Sharing
+
+URL Source: https://arxiv.org/pdf/2603.03753v1
+
+Published Time: Thu, 05 Mar 2026 01:38:46 GMT
+
+Number of Pages: 10
+
+Markdown Content:
+> AGENTIC PEER-TO-PEER NETWORKS: FROM CONTENT DISTRIBUTION TO CAPABILITY AND ACTION SHARING 1
+
+# Agentic Peer-to-Peer Networks: From Content Distribution to Capability and Action Sharing 
+
+Taotao Wang, Member, IEEE, Lizhao You, Member, IEEE, Jingwen Tong, Member, IEEE, 
+
+Chonghe Zhao, and Shengli Zhang, Senior Member, IEEE 
+
+Abstract —The ongoing shift of AI models from centralized cloud APIs to local AI agents on edge devices is enabling Client-Side Autonomous Agents (CSAAs) —persistent personal agents that can plan, access local context, and invoke tools on behalf of users. As these agents begin to collaborate by delegating subtasks directly between clients, they naturally form Agentic Peer-to-Peer (P2P) Networks . Unlike classic file-sharing overlays where the exchanged object is static, hash-indexed content (e.g., files in BitTorrent), agentic overlays exchange capabilities and actions 
+
+that are heterogeneous, state-dependent, and potentially unsafe if delegated to untrusted peers. This article outlines the networking foundations needed to make such collaboration practical. We propose a plane-based reference architecture that decouples connectivity/identity, semantic discovery, and execution. Besides, we introduce signed, soft-state capability descriptors to support intent- and constraint-aware discovery. To cope with adversarial settings, we further present a tiered verification spectrum: Tier 1 relies on reputation signals, Tier 2 applies lightweight canary challenge-response with fallback selection, and Tier 3 requires evidence packages such as signed tool receipts/traces (and, when applicable, attestation). Using a discrete-event simulator that models registry-based discovery, Sybil-style index poisoning, and capability drift, we show that tiered verification substantially improves end-to-end workflow success while keeping discovery latency near-constant and control-plane overhead modest. 
+
+Index Terms —Client-side autonomous agents, agentic peer-to-peer (P2P) networks, semantic discovery, verifiable execution, personal AI agents. 
+
+I. I NTRODUCTION 
+
+# THE deployment of Artificial Intelligence is undergoing a structural shift: from centralized cloud APIs to local execution on the network edge [1], [2]. This transition is giving rise to Client-Side Autonomous Agents (CSAAs) —persistent, personalized systems running on smartphones, laptops, and IoT devices. Beyond passive chatting, CSAAs can plan and invoke tools to execute multi-step tasks under user-defined constraints [3], [4]. This trend is accelerated by the rapid adoption of open-source, tool-using agent frameworks that make “always-on” personal agents widely accessible [5]. At the same time, recent reporting highlights a growing concern: once agents are granted access to files, browsers, and credentials, they 
+
+T. Wang, J. Tong, and S. Zhang are with the College of Electronics and Information Engineering, Shenzhen University, Shenzhen, Guangdong Province, China (e-mails: {ttwang, eejwentong, zsl}@szu.edu.cn). L. You is with the School of Informatics, Xiamen University, Xiamen, Fujian Province, China (e-mail: lizhaoyou@xmu.edu.cn). C. Zhao is with the School of Computer Science and Cyber Engineering, Guangzhou University, Guangzhou, Guangdong Province, China (e-mail: chonghe.zhao@gzhu.edu.cn) 
+
+become a new security boundary rather than a conventional application, prompting some organizations to restrict such tooling amid concerns about misuse and unintended actions [6]. Yet, a single CSAA remains bounded by its host’s compute budget, tool surface, and local context. To break these silos, agents must collaborate—delegating subtasks, exchanging intermediate artifacts, and composing workflows without centralized orchestration [7]. When such collaboration occurs directly between CSAAs to preserve privacy and reduce reliance on centralized platforms, they naturally form Agentic Peer-to-Peer (P2P) Networks . At first glance, the idea resembles classic file-sharing overlays such as BitTorrent [8]: a decentralized overlay pools distributed resources. However, this analogy breaks at the unit of exchange. Classic P2P distributes static content —immutable, hash-addressable, and easy to verify. Agentic P2P exchanges capabilities and actions : claims such as “I can generate an image under a strict policy” or “I can publish content using a credentialed tool” are dynamic, heterogeneous, and risky to execute. Fig. 1 summarizes this paradigm shift. This fundamental shift necessitates a rethinking of the P2P protocol stack [9]. Realizing robust agentic collaboration requires addressing three distinct networking challenges:  
+
+> •
+
+Challenge 1: Semantic Discovery vs. Exact Addressing. 
+
+While Distributed Hash Tables (DHTs) excel at exact key lookups [10], they fail to directly solve the semantic discovery problem of matching vague natural-language intents to suitable executors under constraints [11]. The network must route tasks based on semantic relevance rather than immutable file hashes.  
+
+> •
+
+Challenge 2: Verifiable Execution vs. Data Integrity. In classic P2P, adversaries primarily degrade availability or authenticity (e.g., via Sybil identities) [12]. In an execution network, however, malicious peers can leverage tool access to cause real-world impact, such as exfiltrating private data or steering downstream agents via prompt injection [13]. Trust must therefore be established through evidence of correct execution, not just data integrity.  
+
+> •
+
+Challenge 3: Capability Drift vs. Node Churn. Beyond simple churn (joining/leaving), edge agents suffer from 
+
+capability drift . A device may remain online but become unable to accept tasks due to battery depletion, context changes, or user policy updates. The discovery plane must track these soft states to avoid routing tasks to “zombie” peers that are technically reachable but functionally unavail-able.  
+
+> arXiv:2603.03753v1 [cs.NI] 4 Mar 2026 AGENTIC PEER-TO-PEER NETWORKS: FROM CONTENT DISTRIBUTION TO CAPABILITY AND ACTION SHARING 2
+
+Classic P2P  
+
+> (BitTorrent, IPFS)
+> User
+> Get: 8f4a...
+> Peer A
+> File
+> Verify:
+> Hash(File)
+
+Deterministic Lookup 
+
+Agentic P2P  
+
+> (Client-Side Agents)
+> User
+> Intent: "Plan Trip"
+> Agent
+> API
+> LLM
+> Pay
+> Evidence:
+> Signed Receipt
+
+Semantic Discovery      
+
+> Fig. 1. The paradigm shift in P2P networks. Classic P2P (Left) focuses on the deterministic retrieval of static content (files) using hash-based lookups. Verification is simple integrity checking. Agentic P2P (Right) focuses on the semantic discovery of autonomous agents (i.e., CSAAs) capable of executing dynamic workflows. Verification requires evidence (e.g., receipts) and risk assessment, as actions have side effects and vary by context.
+
+In this article, we argue that connecting these autonomous agents requires a distinct research agenda within the communi-cations and networking community. We outline the networking foundations needed to make such collaboration practical and secure through three main contributions: 1) A Plane-Based Reference Architecture : We propose a plane-based design that decouples connectivity/identity, semantic discovery, and execution. This separation allows heterogeneous agent frameworks to interoperate within a unified overlay while isolating the complexity of network transport from application-level logic. 2) Signed, Soft-State Capability Discovery : To address the heterogeneity and volatility of edge agents, we introduce Capability Descriptors (CDs)—signed data structures that support intent- and constraint-aware routing. We employ a soft-state maintenance model, i.e., Time-to-Live (TTL)-based refresh, to naturally handle capability drift. 3) A Tiered Verification Framework : We shift the trust model from binary integrity checks to a risk-aligned spectrum. We define three verification tiers: Tier 1 relies on reputations of agents for low-risk tasks; Tier 2 applies active “canary” probes to filter lazy peers; and Tier 3 mandates cryptographic evidence (e.g., signed tool receipts or attestations) for high-stakes execution. We validate this design using a discrete-event simulator that models registry-based discovery, Sybil-style index poisoning, and capability drift. Our results demonstrate that this archi-tecture substantially improves end-to-end workflow success while keeping discovery latency near-constant and control-plane overhead modest. The remainder of this article is organized as follows. Section II reviews related work. Section III articulates the fundamental shift from content distribution to capability execution. Section IV introduces our plane-based reference architecture. We then detail the mechanisms for semantic discovery and capability representation in Section V, followed by the tiered verification framework in Section VI. Section VII validates the proposed architecture through a simulation-based case study. Finally, Section VIII concludes the article and discusses open research challenges. II. R ELATED WORK 
+
+This work sits at the intersection of (i) emerging “Internet of Agents” architectures, (ii) agent interoperability and communication protocols, and (iii) decentralized discovery and verifiable execution. 
+
+A. Internet of Agents and Agentic Web Architectures 
+
+Recent surveys and position papers advocate an “Internet of Agents” that connects heterogeneous, tool-using agents into collaborative systems [2], [14]–[16]. In parallel, layered reference stacks have been proposed to structure agent networking functions (identity, transport, semantics, and governance) [9], [17]. Our paper complements these efforts by focusing specifically on agentic P2P overlays , where the exchanged unit is not static content but capabilities and actions . This shift makes semantic discovery and execution-time verification first-class networking problems. 
+
+B. Tool-Using and Multi-Agent Frameworks 
+
+Foundational work on tool-augmented LLM agents demon-strates how models can interleave reasoning with external actions and APIs [3], [4], [18]. Multi-agent orchestration frameworks further show the feasibility of decomposing workflows into role-specialized agents and coordinating them through structured dialogue [7]. These systems, however, typi-cally assume a centralized coordinator or trusted infrastructure. In contrast, agentic P2P networks must operate without a single control point, requiring decentralized discovery, adversarial robustness, and evidence-based trust. 
+
+C. Agent Interoperability and Communication Protocols 
+
+A fast-evolving line of work targets interoperability among agents and tools. A recent survey systematizes four emerging protocols—Model Context Protocol (MCP), Agent Com-munication Protocol (ACP), Agent-to-Agent Protocol (A2A), and Agent Network Protocol (ANP)—and compares their interaction and security models [19]. MCP standardizes tool invocation and typed context exchange between clients and tool servers [20]. ACP specifies a general-purpose HTTP-based messaging and invocation protocol [21]. A2A focuses on peer-to-peer task delegation with capability-based “Agent AGENTIC PEER-TO-PEER NETWORKS: FROM CONTENT DISTRIBUTION TO CAPABILITY AND ACTION SHARING 3
+
+Cards” for discovery and collaboration [22]. Complementing these, Agora proposes a scalable meta communication protocol for large, decentralized networks of LLM agents [23]. Our architecture is protocol-substrate-agnostic : it can incorporate MCP/ACP/A2A-style messaging in the Execution Plane, while our contribution emphasizes (i) semantic discovery under drift and poisoning and (ii) risk-aligned, tiered verification across open peers. 
+
+D. Decentralized Discovery and Semantic Routing 
+
+Classic P2P discovery mechanisms such as DHTs (e.g., Kademlia) enable scalable exact-match lookups [8], [10], and semantic overlays explore keyword-/topic-based routing beyond hash keys [11]. Agentic discovery generalizes these ideas: capabilities are multi-dimensional, context-dependent, and ephemeral. Our signed, soft-state CDs translate semantic discovery into a networking primitive with explicit TTL-based freshness and policy constraints, enabling robust candidate selection even when capabilities drift. 
+
+E. Trust, Security, and Verifiable Execution 
+
+Security analyses for Internet of Agent (IoA) ecosystems highlight that agent networks inherit P2P threats (e.g., Sybil attacks) while introducing execution-time risks (prompt injec-tion, data exfiltration, action hijacking) [12], [13], [24], [25]. In addition, confidential computing and remote attestation have been proposed to harden execution kernels for sensitive tasks [26]. Our tiered verification framework operationalizes these insights by providing a graduated path from lightweight canary probing to evidence packages (signed receipts/traces and optional attestation), thereby aligning verification cost with task risk. Finally, recent standards discussions in the broader Internet community begin to articulate requirements for multimodal/agent interactions and the protocol landscape [27], further motivating a clean separation between discovery, execution, and verification planes. III. F ROM CONTENT DISTRIBUTION TO ACTION 
+
+EXECUTION 
+
+Classic P2P networks exchange static, verifiable files. Agen-tic P2P networks exchange dynamic, probabilistic capabilities. This fundamental shift summarized in Table I necessitates a rethinking of discovery, verification, and security. 
+
+A. Resource Semantics: From Static Objects to Dynamic Capabilities 
+
+In content-centric systems (e.g., BitTorrent, IPFS), the resource is a file. It is static, copyable, and location-independent. In contrast, the resource in an agentic overlay is a capability —the potential to execute work. Capabilities are characterized by the following key aspects:  
+
+> •
+
+Non-Fungible & Heterogeneous: Two agents offering “image generation” may differ vastly in model quality (e.g., Flux vs. SDXL), latency, and cost. For the network, this means matching cannot rely on a single scalar (e.g., a sharing ratio); it requires multi-dimensional service profiles                   
+
+> TABLE I COMPARISON : C LASSIC CONTENT P2P VS . A GENTIC P2P
+> Dimension Classic Content P2P Agentic P2P Core Resource Static Files / Chunks Dynamic Capabilities & Actions
+> Addressing Content Hash Intent & Constraints (Semantic Matching)
+> Verifiability Deterministic (Hash Check) Probabilistic & Evidence-based
+> Cost Model Bandwidth Reciprocity Compute cycles, energy, and service costs
+> Failure Mode Corrupt Data / Latency Privacy Leak / Unsafe Action
+> Dynamics Node Churn (On/Off) Capability Drift (State/Policy Change)
+
+(QoS) and trust/reputation signals that jointly capture quality, reliability, and policy compliance.  
+
+> •
+
+Stateful & Context-Dependent: An agent’s ability to execute a task depends on its current device state (battery, connectivity), local data access, and user-defined policies.  
+
+> •
+
+Ephemeral: Unlike a file that exists until deleted, acapability may vanish if the agent’s local model is swapped, a tool is uninstalled, or the user revokes permission. Therefore, the discovery plane must shift from exact-match lookup to intent-and-constraint matching . In Section V, we operationalize this heterogeneity by mapping signed capability descriptors into multi-dimensional QoS and trust vectors for ranking and verification. 
+
+B. Verifiability: From Integrity to Risk-Aware Trust 
+
+File integrity is binary (hash matches or fails). Agentic execution is probabilistic and creates side effects. Verification therefore becomes a spectrum:  
+
+> •
+
+Tier 1 (Reputation) : Passive history checks for low-risk tasks.  
+
+> •
+
+Tier 2 (Probing) : Active challenge-response (e.g., canary tasks) to filter lazy peers.  
+
+> •
+
+Tier 3 (Evidence) : Cryptographic receipts or hardware attestations for high-stakes actions. Thus, the architecture must support tiered verification , allow-ing requesters to trade-off validation cost against task risk. 
+
+C. Threat Surface: Safety over Bandwidth 
+
+While malicious peers in file sharing primarily waste band-width, malicious agents pose safety risks: prompt injection (spreading harmful instructions), data exfiltration (leaking private context), or action hijacking (misusing delegated tools). Consequently, trust cannot be assumed; the network requires 
+
+least-privilege delegation and sandboxed execution to limit the blast radius of misbehaving peers [24]. 
+
+D. Architectural Necessity 
+
+These constraints render simple “BitTorrent-for-AI” ap-proaches insufficient. Simply indexing agent IDs does not solve the problem of matching ambiguous intents to trustwor-thy executors. The following section proposes a reference ar-chitecture explicitly designed to decouple capability discovery from verifiable execution. AGENTIC PEER-TO-PEER NETWORKS: FROM CONTENT DISTRIBUTION TO CAPABILITY AND ACTION SHARING 4
+
+IV. A R EFERENCE ARCHITECTURE FOR AGENTIC P2P NETWORKS 
+
+While Agentic P2P networks operate at the application layer of the OSI model, their internal complexity necessitates a structured decomposition. We propose a plane-based reference architecture (Fig. 2) that decouples capability discovery from task execution and verification. This separation of concerns improves interoperability, allowing heterogeneous agents (e.g., varying in model size, toolset, and owner policy) to collaborate within a unified overlay. This architecture comprises four interacting planes. 
+
+A. The Connectivity & Identity Plane 
+
+This plane forms the foundation of the overlay, abstracting volatility in physical networks (e.g., devices switching between Wi-Fi and 5G) while providing stable naming and secure channels.  
+
+> •
+
+Persistent Identity : Unlike IP-based addressing, agents are identified by cryptographic PeerIDs (e.g., public-key hashes). This keeps identities stable as network addresses change. PeerIDs can be rotated via key-evolution schemes, while multiple device-local PeerIDs may optionally be linked under a user-level alias using signed cross-device bindings.  
+
+> •
+
+Secure Transport : Given the privacy-sensitive nature of personal-agent tasks, peer-to-peer channels enforce end-to-end encryption (e.g., QUIC or TLS 1.3) by default.  
+
+> •
+
+Mobility & NAT Traversal : Since most CSAAs re-side behind residential firewalls, this plane integrates hole-punching and relaying mechanisms (similar to STUN/TURN) to maintain reachable signaling paths under mobility. Operational success is measured by connection establishment latency and the connection success rate across heterogeneous NAT types and access networks. 
+
+B. The Semantic Discovery Plane 
+
+This plane functions as the routing engine of the agentic network. Its primary responsibility is to map a natural-language intent to a set of candidate peers.  
+
+> •
+
+From Keys to Vectors : Traditional DHTs support exact key matching, which is poorly suited to semantic capability discovery. This plane can be instantiated as a vector-aware overlay, where agents advertise capabilities using compact descriptors and (optionally) high-dimensional embeddings for fuzzy matching.  
+
+> •
+
+Similarity-Based Routing : Queries such as “analyze a medical PDF” are routed toward peers whose advertised capability representations best match the request, subject to constraints such as latency, policy, and risk posture.  
+
+> •
+
+Liveness Management : To handle capability drift (e.g., devices entering low-power mode or policies changing), this plane uses soft-state advertisements with short TTL values and explicit revocation signals, ensuring the index reflects currently available peers. 
+
+C. The Trust & Verification Plane 
+
+Operating orthogonal to discovery, this plane manages risk before, during, and after execution.  
+
+> •
+
+Pre-Execution Attestation : For high-stakes tasks, this plane supports remote attestation. A requester may demand cryptographic evidence (e.g., via TEEs such as Intel SGX or ARM TrustZone) that the remote agent is running an expected, policy-constrained execution kernel.  
+
+> •
+
+Verifiable Logs : To counter malicious behavior, this plane standardizes evidence packages such as signed tool traces and receipts, creating auditable records that can be verified without re-executing potentially non-deterministic tasks.  
+
+> •
+
+Reputation Ledger : A reputation subsystem tracks histor-ical reliability. Beyond simple file-sharing ratios, it records multi-dimensional signals such as latency, task success rate, dispute rate, and safety compliance. 
+
+D. The Execution Plane 
+
+The topmost plane handles delegation, messaging, and tool invocation across peers.  
+
+> •
+
+Task Contracts : Interactions begin with a negotiated task contract specifying scope, budget (e.g., token or compute limits), deadlines, privacy constraints, and the required verification tier.  
+
+> •
+
+Standardized Tool Invocation : This plane defines acommon schema for tool calls (inputs/outputs) to enable in-teroperability across heterogeneous agent implementations. For example, agents built on different orchestration stacks can delegate subtasks to one another when they adopt the same execution schema; any named frameworks are representative examples rather than endorsements.  
+
+> •
+
+Sandboxing : To protect host devices, incoming tasks are executed in constrained environments (e.g., capability-based permissions and restricted file/network access), limited to what is explicitly authorized by the contract. 
+
+E. Cross-Plane Coordination: Trust-to-Risk Alignment 
+
+A fundamental design principle is the dynamic interaction between planes to achieve trust-to-risk alignment . The archi-tecture adapts verification rigor based on the criticality of the request:  
+
+> •
+
+Low-risk Tasks : For benign queries (e.g., content recom-mendation), the Execution Plane prioritizes responsiveness. It relies on lightweight checks to minimize verification overhead, optimizing for latency rather than strict security guarantees.  
+
+> •
+
+High-risk Tasks : For critical operations (e.g., financial transactions or actions with side effects), the system prioritizes safety. The Discovery Plane selects only high-reputation peers, while the Trust Plane enforces rigor-ous evidence—such as attestation and signed receipts— consciously trading performance for enhanced security. AGENTIC PEER-TO-PEER NETWORKS: FROM CONTENT DISTRIBUTION TO CAPABILITY AND ACTION SHARING 5Connectivity & Identity Plane 
+
+• Persistent PeerIDs (DIDs) & E2E Encryption (QUIC/TLS) 
+
+• NAT Traversal & Hole Punching (Libp2p) 
+
+• Network Overlay Maintenance 
+
+## Semantic Discovery Plane 
+
+• Vector-Based Routing: Intent → Embedding → PeerID 
+
+• Capability Advertisement (Soft-state, TTL) 
+
+• Multi-objective Ranking (Latency, Cost, Trust) 
+
+## Execution Plane 
+
+• Task Negotiation & Contracting 
+
+• Standardized Tool Invocation (Schema) 
+
+• Sandboxing & Resource Quotas 
+
+Cross-Cutting Services: 
+
+• Pre-Execution: 
+
+Remote Attestation (TEE) 
+
+• During Execution: 
+
+Policy Checks 
+
+• Post-Execution: 
+
+Receipt Validation 
+
+• Reputation Ledger 
+
+• Governance & Disputes 
+
+## Trust & Verification Plane 
+
+> Task Contract
+> Evidence Package
+> Capability Descriptor
+> Overlay Link
+> Peer Candidates
+
+## Physical Infrastructure 
+
+Mobile Edge PC IoT Hub Hardware Root of Trust 
+
+> Attestation
+
+## Collaboration Scenarios 
+
+User Intent 
+
+Trip Plan Finance Apps Code Audit 
+
+Fig. 2. Reference architecture for Agentic P2P networks. The system is organized into three horizontal planes—Connectivity (underlay), Semantic Discovery (routing), and Execution (application)—which manage the task lifecycle. A vertical, cross-cutting Trust & Verification Plane enforces identity, policy, and auditability across all layers, enabling secure collaboration across heterogeneous agent implementations. 
+
+V. C APABILITY REPRESENTATION AND SEMANTIC 
+
+DISCOVERY 
+
+With the reference architecture established (Section IV), we now instantiate the Semantic Discovery Plane. Given a natural-language intent, the network must identify a set of candidate peers that satisfy hard constraints (e.g., policy, compatibility) while optimizing for soft signals (e.g., relevance, latency, trust). To ensure this process is both scalable and interoperable, we define a standardized capability representation followed by a baseline discovery workflow. 
+
+A. Signed Capability Descriptors (CD) 
+
+The CD serves as the fundamental unit of discovery. It is a signed, freshness-aware data structure designed to be compact enough for frequent propagation. The schema is divided into a mandatory core for interoperability and an optional extension layer for ranking. 
+
+1) Minimal Core Schema (Mandatory): To guarantee basic connectivity and protocol compatibility across heterogeneous agents, a valid CD must include the following strictly typed fields:  
+
+> •
+
+Cryptographic Identity Binding : The peer_id and a digital signature over the descriptor content to prevent tampering.  
+
+> •
+
+Transport Reachability : One or more dialable endpoints (e.g., IP/port or multiaddrs), plus an optional relay-assisted route (“relay circuit”) for NATed peers when direct dialing fails. AGENTIC PEER-TO-PEER NETWORKS: FROM CONTENT DISTRIBUTION TO CAPABILITY AND ACTION SHARING 6Capability Descriptor (CD)      
+
+> Identity & Meta:
+> •PeerID (DID)
+> •Tool Surface (schema/hash)
+> •TTL + Freshness
+> Policy Tags:
+> •Data handling policy
+> •Evidence Commitments
+
+QoS Vector q    
+
+> Performance Metrics:
+> •Latency : p50 / p95 (ms)
+> •Reliability : Success Rate %
+> •Cost : Tokens / Compute
+> •Availability : Uptime
+
+Trust Vector r    
+
+> Security Posture:
+> •Safety : Compliance Score
+> •Audit : Log/Receipt Avail-ability
+> •Privacy : TEE/Zero-Log
+> •Identity : Sybil Resistance
+
+Decision & Verification Logic 
+
+> Trust ( r)
+> QoS ( q)
+> Pareto Front
+> 1. Multi-objective Ranking
+> 2. Risk-Aware Verification
+> Tier 1: Low
+> Reputation Check
+> Tier 2: Med
+> Challenge Response
+> Tier 3: High
+> Attestation + Receipts
+> Increasing Task Risk
+> Parse
+
+Phase I: Advertisement 
+
+Phase II: Metric Extraction Phase III: Decision Making   
+
+> Fig. 3. Multi-dimensional QoS and trust vectors for capability discovery. A signed CD is mapped to (i) a QoS profile and (ii) a trust/reputation profile, enabling Pareto-style candidate selection and risk-aware verification.
+> •
+
+Service Definition : A versioned identifier of the capability (e.g., protocol/v1 ) alongside a hash commitment to the tool’s input/output schema.  
+
+> •
+
+Policy Posture : Machine-readable tags defining operational boundaries (e.g., no-logs , sandbox-only ) to enable pre-connection filtering.  
+
+> •
+
+Liveness Metadata : A creation timestamp and a short TTL value to enforce soft-state consistency and mitigate capability drift. 
+
+2) Semantic and Performance Extensions (Optional): To facilitate high-fidelity ranking, the core schema may be enriched with optional metadata. These fields act as heuristic signals for the discovery engine and are subject to verification during the execution phase:  
+
+> •
+
+Semantic Signals : High-dimensional vector embeddings or keyword tags that describe the agent’s domain expertise.  
+
+> •
+
+Performance Hints : Self-declared metrics such as expected latency class or resource availability.  
+
+> •
+
+Evidence Commitments : Hashes or pointers to external artifacts (e.g., TEE attestations, audit logs) that allow the requester to pre-validate trust. Since CDs are public, they risk leaking sensitive information such as installed tools or compliance postures. Practical mitigations include using coarse-grained capability tags during discovery and revealing detailed schemas only after a secure handshake [2]. 
+
+B. Protocol Sketch: Registry-Based Discovery 
+
+To make the discovery process concrete, we describe a baseline instantiation using a verifiable community registry. This approach leverages soft-state consistency to handle network dynamics. The workflow proceeds as follows: 1) Publication : A provider constructs a signed CD and transmits PUBLISH(CD, TTL) to the registry. The registry validates the signature and indexes the descriptor until its TTL expires. 2) State Maintenance : Providers must periodically issue 
+
+REFRESH updates. This soft-state mechanism ensures that capability drift (e.g., battery depletion or policy changes) is reflected in the index by allowing stale entries to naturally expire. 3) Revocation : If a capability is withdrawn or a key is compromised, the provider broadcasts a REVOKE message. The registry immediately purges the entry and may propagate a revocation proof. 4) Intent-Based Querying : A requester encodes their intent into a query vector and submits it alongside a set of hard constraints (e.g., required policy tags). 5) Filtering and Ranking : The discovery engine first eliminates peers violating the constraints. The remaining candidates are ranked using a multi-objective function that combines semantic similarity with the advertised performance and trust signals. The output of this process is not a single binding assignment but a Pareto set of candidates (visualized in Fig. 3). This list is then passed to the Execution Plane for risk-aware verification (Section VI). 
+
+C. Implementation Considerations 
+
+While the registry model serves as a baseline, the architecture is substrate-agnostic. Large-scale permissionless networks may prefer DHT-based indexing for decentralization, whereas enterprise clusters may utilize federated registries for stronger governance. Regardless of the substrate, robustness relies on two principles: (i) strict adherence to soft-state TTLs AGENTIC PEER-TO-PEER NETWORKS: FROM CONTENT DISTRIBUTION TO CAPABILITY AND ACTION SHARING 7
+
+to prevent the selection of “zombie” peers, and (ii) resistance to index poisoning via admission controls (e.g., Proof-of-Work) and feedback loops from the verification layer. Ultimately, the Semantic Discovery Plane produces a set of candidates that are claimed to be capable but remain untrusted by default. This necessitates the tiered verification process detailed in Section VI, which converts these self-declared signals into proven facts before any sensitive data is exchanged. VI. T RUST ESTABLISHMENT AND VERIFIABLE 
+
+EXECUTION 
+
+Semantic discovery (Section V) identifies potential candi-dates, but it does not guarantee their benevolence. In open agentic overlays, peers may overclaim capabilities (index poisoning), free-ride by returning low-effort outputs, or misuse delegated tool access. Consequently, trust cannot be static; it must be established dynamically as a task-time decision. The requester must determine the necessary level of evidence before sharing sensitive context and the degree of auditability required after execution. 
+
+A. Tiered Verification Framework 
+
+To balance verification overhead against security assurance, we adopt a three-tier design. These tiers are policy-driven and negotiated as part of the task contract.  
+
+> •
+
+Reputation-Based for Low Risk Task (Tier 1) : For public data retrieval or stateless tasks, selection relies on historical heuristics. The requester consults local interaction history or a federated community ledger. Evidence is optional and typically limited to basic signed receipts to update reputation scores.  
+
+> •
+
+Interactive Challenge-Response for Medium Risk Tasks (Tier 2) : For tasks involving moderate complexity or cost, candidates must pass lightweight active checks before receiving the full workload. This may include solving cryptographic puzzles (to prevent spam) or correctly answering “canary” microtasks (to filter out lazy workers). This layer mitigates index poisoning with minimal latency.  
+
+> •
+
+Evidence-Based Execution for High Risk Task (Tier 3) : For high-stakes tasks involving private inputs, financial transactions, or irreversible side effects, execution is gated by strong cryptographic proofs. This aligns with emerging layered stacks for decentralized agent services [17], requiring remote attestation and auditable tool traces (detailed below). In practice, the verification tier is dynamically selected based on the task’s risk profile and potential blast radius. Table II provides a reference mapping for policy enforcement. 
+
+B. Protocol Workflow: The Verification Lifecycle 
+
+To operationalize this framework, we define a minimal end-to-end workflow between a Requester and an Executor. A key design principle is that evidence requirements are negotiated upfront, while validation occurs post-hoc.                    
+
+> TABLE II RISK -TO -T IER MAPPING FOR VERIFICATION POLICY
+> Task Type Risk Tier Required Evidence Artifact
+> Public information retrieval Low Tier 1 Reputation signals; basic signed receipt. Private summarization Med Tier 2 Canary check(s); signed execu-tion receipt; policy compliance tags. High-stakes action (e.g., booking) High Tier 3 Attestation quote; signed tool traces; optional notary proof.
+
+1) Contract Negotiation : The process begins with a Task Contract specifying the task_id , the required verification tier (Tier 1–Tier 3), resource budgets (tokens/compute), and strict policy constraints (e.g., no-external-network ). The executor accepts only if its local policy permits the scope. 2) Pre-Execution Validation : Depending on the tier, the requester performs preflight checks. For Tier 2, this involves issuing canary microtasks. For Tier 3, the re-quester validates a Remote Attestation Quote, ensuring the remote peer is running a trusted kernel before transmitting sensitive payloads. 3) Sandboxed Execution : The executor runs the delegated task within a constrained environment (e.g., WebAssembly or microVM). Crucially, for tool-using tasks, every external API call is intercepted and logged to an immutable trace. 4) Evidence Submission : Upon completion, the executor returns the result alongside a signed Evidence Package. This package minimally includes:  
+
+> •
+
+Receipts : Timestamps and signatures over result meta-data.  
+
+> •
+
+Tool Traces : An ordered, hashed log of tool invocations (with inputs redacted per privacy policy).  
+
+> •
+
+Attestation (Tier 3) : A cryptographic binding of the execution result to the secure enclave. 5) Settlement and Feedback : The requester verifies the signatures and tier compliance. Valid execution updates the local trust score and community ledger; missing or inconsistent evidence triggers a dispute marker and peer blacklisting. Fig. 4 visualizes this lifecycle as a progressive funnel: the broad set of candidates from discovery is narrowed through constraint checks and tiered verification, establishing a trusted channel for execution. This structure ensures overhead remains proportional to risk, keeping low-stakes tasks lightweight while strictly gating high-stakes actions. VII. C ASE STUDY : F EASIBILITY AND PERFORMANCE 
+
+ANALYSIS 
+
+To provide a preliminary feasibility check of the pro-posed architecture, we implemented the protocol sketches in Sections V–VI in a discrete-event simulator (source code available at https://github.com/plan-lab-szu/agentic_p2p_sim). The simulator models (i) soft-state CDs with TTL-based expiry and periodic refresh, (ii) registry-based semantic AGENTIC PEER-TO-PEER NETWORKS: FROM CONTENT DISTRIBUTION TO CAPABILITY AND ACTION SHARING 8PHASE 1: DISCOVERY (Broad Search)     
+
+> ABX
+> C
+> Y
+> D
+> PHASE 2: NEGOTIATION
+> Constraint Check (Cost, Latency)
+> Policy Mismatch
+> PHASE 3: VERIFICATION
+> Tiered Checks (Challenge →TEE)
+> Fraud Detected (Bad Proof)
+> Peer
+> PHASE 4: EXECUTION (Trusted Channel)
+> PHASE 5: AUDIT & REPUTATION UPDATE Post-execution evidence
+> Trust Filter
+> Progressive reduction of risk
+
+Fig. 4. The Trust Establishment Funnel. The process filters candidates through negotiation and tiered verification before execution. Post-execution evidence feeds back into the reputation system for future selection. 
+
+discovery, (iii) Sybil-style index poisoning via misleading CDs, and (iv) risk-aware peer selection via Tier 2 canary probes with fallback. 
+
+A. Workflow and Baselines 
+
+We evaluate a representative multi-step workflow, Decen-tralized Creative Publishing : a user agent issues the intent “Generate a marketing poster and publish it”, which requires discovering and chaining an Image Generator (compute-intensive and heterogeneous quality/latency/cost) and a Pub-lisher (tool-using, credentialed action with irreversible side effects). We report the end-to-end task/workflow success rate 
+
+as the fraction of workflows that complete both steps. To align with the legend in Fig. 5, we compare two peer-selection strategies: (i) No Verify (optimistic selection) : the requester directly selects the top-ranked candidate returned by discovery for each step, without Tier 2 canary probing or fallback; (ii) Risk-Aware : for the Image Generator, the requester probes a small number of top candidates using Tier 2 canary challenge-response and falls back upon failures; for the Publisher step, execution follows the high-stakes policy in Section VI (e.g., returning signed receipts/traces as required by the task contract). 
+
+B. Simulation Setup 
+
+Table III summarizes the default simulation settings. Key settings are as follows.  
+
+> •
+
+Node Population and Roles : We instantiate 𝑁 CSAAs. Roles are assigned stochastically at initialization (default: 70% Image Generators, 30% Publishers). A fraction 𝛼 
+
+of nodes act as Sybils; these peers broadcast signed-but-misleading CDs (e.g., over-claiming semantic relevance) to manipulate discovery rankings. 
+
+TABLE III DEFAULT SIMULATION SETTINGS .
+
+Setting Configuration 
+
+Simulation window 60 s per run; results averaged over multiple seeds Network size 𝑁 ∈ [ 20 , 200 ]
+
+Role assignment 70% Image Generators, 30% Publishers (stochas-tic) Sybil fraction 𝛼 ∈ [0, 0.5]; Sybils broadcast signed-but-misleading CDs Peer-to-peer RTT 20–80 ms or 80–200 ms (equal prob.); 2% tail up to 400 ms Registry network delay 70–130 ms; 5% tail of 150–250 ms Registry processing ∝ log 2 𝑁 ; queuing delay added near capacity Discovery substrate Community registry; signed CDs with TTL expiry + revocation CD size 0.6–1.2 KB CD refresh interval 𝜌 · TTL , 𝜌 =0.8, jitter ±10% 
+
+TTL sweep TTL ∈ { 5, 15 , 30 , 45 , 60 } sCapability drift rate 𝜆 drift = 0.05 (High Drift), 0 (Stable) Stale-CD failure prob. 𝑝 stale = 60% 
+
+Candidate shortlist Top-𝐾 after coarse filtering; default 𝐾 =10 
+
+Policies compared No Verify vs. Risk-Aware (Tier 2 canary +fallback) Metrics Task/workflow success; discovery latency; control-plane message rate (msgs/s) and signaling band-width (KB/s)  
+
+> •
+
+Dynamic RTT Model : Peer-to-peer RTT is sampled from a mixture: uniform 20–80 ms (Wi-Fi-like) or 80–200 ms (cellular-like) with equal probability, plus a high-latency tail (200–400 ms) with probability 2%.  
+
+> •
+
+Registry Discovery Latency : Discovery latency combines registry network delay and processing. Network delay is uniform 70–130 ms, with a 5% tail of 150–250 ms. Processing scales as ∝ log 2 𝑁 with queuing added only near capacity, yielding near-constant latency with controlled stochastic variance at the simulated scale.  
+
+> •
+
+Soft-State Maintenance and Drift : Providers refresh CDs using a soft-state lease rule: refresh interval is 𝜌 · TTL 
+
+with 𝜌 =0.8 plus jitter ±10% to avoid synchronized bursts; expired CDs are purged. Drift is modeled by internal state-version updates at rate 𝜆 drift ; selecting a stale CD fails with probability 𝑝 stale . 
+
+> •
+
+Semantic matching abstraction : We abstract fuzzy intent– capability matching as a scalar semantic score advertised in CDs and used in ranking; Sybil poisoning inflates this score to manipulate the Top-𝐾 shortlist. Each simulation run spans a 60-second window captur-ing both background soft-state maintenance and concurrent workflow arrivals. Unless otherwise noted, reported results are averaged over multiple independent runs (random seeds). 
+
+C. Results and Discussion 1) Resilience Against Semantic Poisoning: Fig. 5(a) sweeps the attacker (Sybil) ratio 𝛼 from 0 to 0.5 under fixed 𝑁 =100 
+
+and TTL =15 s (drift disabled). The No Verify baseline col-lapses quickly as poisoned CDs dominate the Top-𝐾 shortlist, because the requester directly trusts the discovery ranking. In contrast, Risk-Aware selection remains substantially more robust: Tier 2 canary probes filter deceptive or low-effort AGENTIC PEER-TO-PEER NETWORKS: FROM CONTENT DISTRIBUTION TO CAPABILITY AND ACTION SHARING 90 0.1 0.2 0.3 0.4 0.5
+
+0
+
+0.2
+
+0.4
+
+0.6
+
+0.8
+
+1
+
+> Collapse w/o Verify
+
+Attacker Ratio ( α)
+
+> Task Success Rate
+
+(a) Robustness vs. Attacks 
+
+No Verify 
+
+Risk-Aware 
+
+20 50 100 150 200 
+
+0
+
+50 
+
+100 
+
+150 
+
+Network Size ( N )
+
+> Latency (ms)
+
+(b) Scalability & Overhead 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+> Overhead (msgs/s)
+
+Overhead 
+
+Latency 
+
+5 15 30 45 60 
+
+0.4
+
+0.6
+
+0.8
+
+1
+
+> Knee Point for TTL
+
+CD TTL (sec) 
+
+> Success Rate
+
+(c) Impact of Drift 
+
+Stable 
+
+High Drift                
+
+> Fig. 5. Performance evaluation results for the decentralized creative publishing workflow. (a) Robustness: Risk-Aware selection (Tier 2 canary + fallback) sustains higher task/workflow success under Sybil-style index poisoning, compared to No Verify . (b) Scalability & overhead: Latency denotes registry discovery latency (ms), which remains approximately constant (with controlled variance) as 𝑁 grows, while Overhead denotes control-plane message rate (msgs/s) dominated by soft-state CD maintenance. (c) Impact of drift: Stable disables drift, whereas High Drift enables drift ( 𝜆 drift =0.05 ,𝑝 stale =0.6); varying CD TTL reveals a reliability–overhead trade-off and a practical knee point (dashed line) around TTL ≈15 s.
+
+candidates early, and fallback reduces the chance that a single poisoned entry breaks the workflow. 
+
+2) Scalability of the Discovery Plane: Fig. 5(b) sweeps network size 𝑁 (20 to 200) under a fixed poisoning level (𝛼 =0.2), TTL =15 s, and drift disabled. The plotted Latency 
+
+corresponds to registry discovery latency (ms), which stays near-constant because the lookup cost is dominated by registry RTT and bounded processing ( ∝ log 2 𝑁 ) rather than network-wide flooding. Meanwhile, Overhead (msgs/s) grows moderately with 𝑁 , driven primarily by the background soft-state refresh traffic required to keep CDs fresh. (We also record bytes/s; the same monotonic trend holds in KB/s.) 
+
+3) TTL Sensitivity Under Capability Drift: Fig. 5(c) sweeps 
+
+TTL ∈ { 5, 15 , 30 , 45 , 60 } s under two conditions: Stable (drift disabled) and High Drift (enabled with 𝜆 drift =0.05 , 𝑝 stale =0.6). Under high drift, longer TTL increases the probability of selecting stale descriptors (“zombie” peers), reducing success; shorter TTL improves freshness but increases refresh overhead. The dashed line highlights a practical knee point around TTL ≈15 s, which provides most of the reliability gain while avoiding excessive control-plane refresh traffic. Overall, the results show that treating discovery as an adversarial surface and coupling it with lightweight, risk-aligned verification can preserve high task/workflow reliability without overwhelming the control plane. VIII. C ONCLUSION AND FUTURE CHALLENGES 
+
+Agentic P2P networks turn decentralized overlays from content distribution into capability and action sharing. This shift breaks two long-standing assumptions of classic P2P: (i) the exchanged object is static and easily verifiable, and (ii) failure mostly wastes bandwidth rather than causing privacy or safety harm. As personal agents become tool-using and stateful, discovery must become semantic and constraint-aware, and trust must be established through evidence rather than identity alone. This article proposed a plane-based reference architecture that separates connectivity/identity, semantic discovery, and execution, with a cross-cutting trust and verification plane. We instantiated semantic discovery with signed, soft-state capability descriptors and showed how multi-dimensional QoS/trust signals enable practical candidate ranking. We further introduced a tiered verification spectrum (Tier 1reputation, Tier 2 canary probing with fallback, Tier 3 evidence packages such as signed tool traces/receipts and optional attestation). Using a discrete-event simulator that captures registry-based discovery, Sybil-style index poisoning, and capability drift, our results indicate that adaptive verification can substantially improve end-to-end workflow reliability while keeping discovery latency near-constant and control overhead modest. Looking forward, several challenges remain open:  
+
+> •
+
+Interoperable interfaces : a minimal, stable schema for capability descriptors, task contracts, and evidence artifacts is needed to avoid fragmentation across agent stacks.  
+
+> •
+
+Privacy of discovery : capability advertisements can leak sensitive tool surfaces and policy posture; practical designs should rely on coarse-grained tags, commitments, and on-demand disclosure.  
+
+> •
+
+Incentives and accountability : compute and energy are costly at the edge; pricing, anti-free-riding mechanisms, and auditable dispute handling must co-evolve with protocol design. Together, these directions outline a practical path toward privacy-preserving, robust “Internet of Agents” services built on P2P substrates. REFERENCES [1] Y. Zheng, Y. Chen, B. Qian, X. Shi, Y. Shu, and J. Chen, “A review on edge large language models: Design, execution, and applications,” ACM Comput. Surv. , 2024, to appear. [2] Y. Wang, S. Guo, Y. Pan, Z. Su, F. Chen, T. H. Luan, P. Li, J. Kang, and D. Niyato, “Internet of agents: Fundamentals, applications, and challenges,” IEEE Trans. Cogn. Commun. Netw. , 2025, to appear. AGENTIC PEER-TO-PEER NETWORKS: FROM CONTENT DISTRIBUTION TO CAPABILITY AND ACTION SHARING 10 
+
+[3] S. Yao, J. Zhao, D. Yu, N. Du, I. Shafran, K. Narasimhan, and Y. Cao, “ReAct: Synergizing reasoning and acting in language models,” in Proc. Int. Conf. Learn. Represent. (ICLR) , 2023. [4] T. Schick, J. Dwivedi-Yu, R. Dessì, R. Raileanu, M. Lomeli, L. Zettle-moyer, N. Cancedda, and T. Scialom, “Toolformer: Language models can teach themselves to use tools,” arXiv preprint arXiv:2302.04761 ,2023. [5] OpenClaw Contributors, “OpenClaw: Personal AI assistant,” https:// github.com/openclaw/openclaw, 2026, accessed: 2026-03-03. [6] WIRED Staff, “Meta and other tech firms put restrictions on use of OpenClaw over security fears,” 
+
+WIRED , Feb. 2026, published 2026-02-17. Accessed: 2026-03-03. [Online]. Available: https://www.wired.com/story/ openclaw-banned-by-tech-companies-as-security-concerns-mount/ [7] Q. Wu, G. Bansal, J. Zhang, Y. Wu, B. Li, E. Zhu, L. Jiang, X. Zhang, S. Zhang, J. Liu et al. , “Autogen: Enabling next-gen llm applications via multi-agent conversations,” in Proc. First Conference on Language Modeling , 2024. [8] E. K. Lua, J. Crowcroft, M. Pias, R. Sharma, and S. Lim, “A survey and comparison of peer-to-peer overlay network schemes,” IEEE Commun. Surveys Tuts. , vol. 7, no. 2, pp. 72–93, 2005. [9] C. Fleming, L. Muscariello, V. Pandey, and R. Kompella, “A layered protocol architecture for the internet of agents,” arXiv preprint arXiv:2511.19699 , 2025. [10] P. Maymounkov and D. Mazieres, “Kademlia: A peer-to-peer informa-tion system based on the XOR metric,” in Proc. Int. Workshop Peer-to-Peer Syst. (IPTPS) , 2002, pp. 53–65. [11] C. Tang, Z. Xu, and S. Dwarkadas, “Peer-to-peer information retrieval using self-organizing semantic overlay networks,” in Proc. ACM SIGCOMM , 2003, pp. 175–186. [12] J. R. Douceur, “The Sybil attack,” in Proc. Int. Workshop Peer-to-Peer Syst. (IPTPS) , 2002, pp. 251–260. [13] Y. Liu, G. Deng, Y. Li, K. Wang, Z. Wang, X. Wang, T. Zhang, Y. Liu, H. Wang, Y. Zheng et al. , “Prompt injection attack against llm-integrated applications,” arXiv preprint arXiv:2306.05499 , 2023. [14] W. Chen, Z. You, R. Li, Y. Guan, C. Qian, C. Zhao, C. Yang, R. Xie, Z. Liu, and M. Sun, “Internet of agents: Weaving a web of heterogeneous agents for collaborative intelligence,” in Proc. 2025 Int. Conf. Learn. Represent. (ICLR) , 2025. [15] Q. Duan and Z. Lu, “AI agent communications in the future internet – paving a path toward agentic web,” Preprints.org , 2026, preprint. [16] Y.-T. Yang and Q. Zhu, “Internet of agentic AI: Incentive-compatible distributed teaming and workflow,” arXiv preprint arXiv:2602.03145 ,2026. [17] W. Xu, T. Wang, Y. Xia, S. Zhang, and S. C. Liew, “Agent-OSI: A layered protocol stack toward a decentralized internet of agents,” arXiv preprint arXiv:2602.13795 , 2026. [18] S. G. Patil, T. Zhang, X. Wang, and J. E. Gonzalez, “Gorilla: Large language model connected with massive APIs,” in Proc. Adv. Neural Inf. Process. Syst. (NeurIPS) , 2024. [19] A. Ehtesham, A. Singh, G. K. Gupta, and S. Kumar, “A Survey of Agent Interoperability Protocols: Model Context Protocol (MCP), Agent Communication Protocol (ACP), Agent-to-Agent Protocol (A2A), and Agent Network Protocol (ANP),” arXiv preprint arXiv:2505.02279 ,2025. [20] Model Context Protocol Contributors, “Model Context Protocol (MCP) Specification,” https://modelcontextprotocol.io, accessed: 2026-03-01. [21] AGNTCY Contributors, “Agent communication protocol (acp) specifi-cation,” https://github.com/agntcy/acp-spec, accessed: 2026-03-01. [22] A2A Protocol Contributors, “Agent2Agent (A2A) Protocol Specifica-tion,” https://a2a-protocol.org/latest/, accessed: 2026-03-01. [23] S. Marro, E. L. Malfa, J. Wright, G. Li, N. Shadbolt, M. Wooldridge, and P. Torr, “A scalable communication protocol for networks of large language models,” arXiv preprint arXiv:2410.11905 , 2024. [24] Y. Wang, Y. Pan, S. Guo, and Z. Su, “Security of internet of agents: Attacks and countermeasures,” arXiv preprint arXiv:2505.08807 , 2025. [25] X. Liu, Z. Yu, Y. Zhang, N. Zhang, and C. Xiao, “Automatic and universal prompt injection attacks against large language models,” arXiv preprint arXiv:2403.04957 , 2024. [26] Confidential Computing Consortium, “A technical analysis of confiden-tial computing,” White paper, 2023. [27] M. S. Krishnan, C. Huitema, D. Raggett, A. Mankin, A. Russell, and D. Romero, “Multimodal today: Ietf requirements for natural multimodal interactions,” Internet-Draft, Feb. 2025, draft-krishnan-multimodal-today-00 (Work in progress). Accessed: 2026-03-01. [Online]. Available: https://datatracker.ietf.org/doc/draft-krishnan-multimodal-today/

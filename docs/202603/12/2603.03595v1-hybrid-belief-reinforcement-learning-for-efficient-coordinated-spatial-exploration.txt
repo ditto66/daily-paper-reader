@@ -1,0 +1,1334 @@
+Title: Hybrid Belief Reinforcement Learning for Efficient Coordinated Spatial Exploration
+
+URL Source: https://arxiv.org/pdf/2603.03595v1
+
+Published Time: Thu, 05 Mar 2026 01:20:28 GMT
+
+Number of Pages: 16
+
+Markdown Content:
+> 1
+
+# Hybrid Belief–Reinforcement Learning for Efficient Coordinated Spatial Exploration 
+
+Danish Rizvi and David Boyle 
+
+Imperial College London, UK 
+
+Abstract —Coordinating multiple autonomous agents to ex-plore and serve spatially heterogeneous demand requires jointly learning unknown spatial patterns and planning trajectories that maximize task performance. Pure model-based approaches provide structured uncertainty estimates but lack adaptive policy learning, while deep reinforcement learning often suffers from poor sample efficiency when spatial priors are absent. This paper presents a hybrid belief-reinforcement learning (HBRL) framework to address this gap. In the first phase, agents construct spatial beliefs using a Log-Gaussian Cox Process (LGCP) and execute information-driven trajectories guided by a Pathwise Mutual Information (PathMI) planner with multi-step looka-head. In the second phase, trajectory control is transferred to a Soft Actor-Critic (SAC) agent, warm-started through dual-channel knowledge transfer: belief state initialization supplies spatial uncertainty, and replay buffer seeding provides demon-stration trajectories generated during LGCP exploration. Avariance-normalized overlap penalty enables coordinated cover-age through shared belief state, permitting cooperative sensing in high-uncertainty regions while discouraging redundant coverage in well-explored areas. The framework is evaluated on a multi-UAV wireless service provisioning task. Results show 10.8% higher cumulative reward and 38% faster convergence over baselines, with ablation studies confirming that dual-channel transfer outperforms either channel alone. 
+
+I. I NTRODUCTION 
+
+Spatial exploration under uncertainty arises in numerous domains where autonomous agents must learn an unknown spatial field while simultaneously optimizing a task objec-tive. Applications include environmental monitoring, dynamic wireless connectivity scaling, precision agriculture, disaster response, and infrastructure inspection [1, 2]. A fundamental challenge is that the spatial field of interest is heterogeneous and a priori unknown to the agents. Unlike settings where the spatial distribution is known or can be specified in advance, agents must simultaneously learn the underlying field while optimizing task performance. This gives rise to the coupled exploration-exploitation problem. Using multiple agents offers advantages including expanded coverage, increased redundancy, and load balancing. However, co-ordination between mobile agents introduces significant challenges, including: (i) joint trajectory optimization over high-dimensional continuous action spaces; (ii) coordinat-ing multiple agents through shared spatial awareness; (iii) balancing information acquisition against task performance; and (iv) sample-efficient learning without prior knowledge of spatial structure. These challenges are compounded by partial observability, where agents can only identify demand within their immediate sensing region [2]. Two dominant paradigms have emerged. Model-based ap-proaches employ spatial statistical models to maintain prob-abilistic beliefs, enabling principled uncertainty quantifica-tion [3]. However, these methods typically rely on myopic planning and do not adapt based on accumulated experience. Model-free deep reinforcement learning (DRL) can learn complex coordination policies, but suffers from poor sample efficiency [4]. This dichotomy motivates our work: combining the sample efficiency of Bayesian spatial modeling with the adaptive policy learning of deep RL .
+
+A. Contributions 
+
+We make the following contributions:  
+
+> •
+
+We propose a hybrid framework combining Log-Gaussian Cox Process (LGCP) spatial modeling with Soft Actor-Critic (SAC) reinforcement learning for coordinated spa-tial exploration under unknown demand.  
+
+> •
+
+We introduce a dual-channel warm-start mechanism for sample-efficient learning: (i) belief initialization , which provides the RL agent with an informed prior for early policy updates, and (ii) behavioral transfer , which seeds the replay buffer with LGCP-generate exploration tra-jectories. Ablation studies show that behavioral transfer provides the dominant benefit, while belief initialization yields additional gains when combined with replay buffer seeding.  
+
+> •
+
+We employ uncertainty-driven Pathwise Mutual Informa-tion (PathMI) planning for non-myopic trajectory opti-mization during the exploration phase, extending standard informative path planning (IPP) with staleness-weighted revisitation incentives.  
+
+> •
+
+We propose a variance-normalized overlap penalty that adapts coordination strength to local belief uncertainty, permitting cooperative sensing in high-uncertainty re-gions, while penalizing redundant coverage.  
+
+> •
+
+Experimental evaluation shows up to 10.8% higher re-ward and 38% faster convergence versus baselines. 1
+
+Section II describes related work. Section III presents the system model. Section IV instantiates the proposed HBRL framework in a multi-UAV service connectivity context. Sec-tion V provides the experimental evaluation. Section VI con-cludes the paper and suggests directions for future work. 
+
+> 1
+
+All code and research artefacts will be made openly available upon acceptance of the manuscript for publication. Additional details and updates can be found via the project page: https://smrizvi1.github.io/HBRL/ 
+
+> arXiv:2603.03595v1 [cs.LG] 4 Mar 2026 2
+
+II. R ELATED WORK AND MOTIVATION 
+
+A. Informative Path Planning 
+
+Informative path planning (IPP) addresses trajectory opti-mization for information acquisition under uncertainty. [5] pro-pose an exploration–exploitation framework for single-agent sequential observation selection under unknown GP kernel parameters. Relatedly, [3] prove that mutual information for GP regression is submodular, yielding a greedy approximate algorithm for static multi-sensor placement. Both, however, are restricted to discrete candidate sets and do not extend to continuous action spaces for mobile robot path planning. [6] propose CAtNIPP, a learning-based framework for adap-tive informative path planning that uses attention mechanisms to encode a global belief and guide non-myopic decisions, but in a single-agent setting only. [7] address non-stationary GPs for robotic information gathering, again considering single-agent scenarios only. [8] incorporate safety constraints into GP-based exploration, but do not address coordination among multiple agents. While these methods provide principled uncertainty-driven exploration, they predominantly focus on single-agent scenarios with pre-specified GP hyperparameters. 
+
+B. Spatial Statistical Modeling 
+
+For count data exhibiting spatial correlation, Log-Gaussian Cox Processes (LGCPs) model spatially varying intensity fields with Bayesian uncertainty quantification [9]. Compu-tational tractability is achieved through Gaussian Markov Random Field (GMRF) approximations [10, 11] and Integrated Nested Laplace Approximation (INLA) [12]. [13] provides comprehensive treatment of LGCPs for spatial point patterns. Recent advances include proposing fast maximum like-lihood estimation using automatic differentiation [14], and demonstrating LGCP fitting via GAM software [15]. LGCPs are widely used for spatial point process modeling, particularly in environmental and epidemiological applications [16, 17]. Although, LGCPs provide principled uncertainty quantifica-tion for count data, their integration with robotic path planning or reinforcement learning remains relatively underexplored. 
+
+C. Reinforcement Learning-Based Coordination 
+
+Reinforcement learning (RL) has emerged as a promising paradigm for coordinated spatial exploration, with UAV co-ordination being a prominent application. The survey by [18] identifies sample efficiency as a critical challenge. [4] apply DRL for trajectory design in MEC systems, demonstrating improved performance but reporting slow convergence. Heterogeneous multi-agent reinforcement learning has re-cently been proposed for joint trajectory and communication design but does not incorporate spatial priors [19]. [20] develop shared DQN with action masking for NOMA-UAV networks noting that fixing cluster sizes limits adaptability to varying user distributions. [21] employ graph-based MARL for search and tracking but focus on target localization rather than demand learning. Without structured spatial priors, these RL-based coordination methods suffer from poor sample efficiency in unknown environments.                                                                          
+
+> TABLE I: Summary of Related Work Highlighting Limitations. UD: Un-known Demand, MA: Multiple mobile Agents, NM: Non-Myopic Planning, SU: Spatial Uncertainty, SE: Sample Efficiency.
+> Ref. Approach UD MA NM SU SE
+> Krause et al. (2008) [3] Greedy Submodular placement
+> ✓✗✗✓n/a Wu et al. (2018)
+> [27] Joint traj. & resource ✗✓✓✗n/a Zeng et al. (2019) [26] Convex Opt. Min. flight energy
+> ✗✗✓✗n/a Wang et al. (2022) [4] DRL traj. for MEC ✓✓✓✗✗
+> Cao et al. (2023)
+> [6] Learning-based IPP ✓✗✓✓✓
+> Zhou et al. (2024) [19] Heterogeneous MARL
+> ✓✓✓✗✗
+> Hao et al. (2024)
+> [28] Task offloading &traj.
+> ✗✓✓✗✗
+> Rizvi et al. (2025) [20] SDQN +action masking
+> ✗✓✓✗✗
+> This Work HBRL (LGCP–SAC) ✓✓✓✓✓
+
+D. Transfer Learning and Warm-Starting 
+
+Transfer learning accelerates RL by leveraging knowledge from related tasks or demonstrations. [22] propose Deep Q-learning from Demonstrations, seeding replay buffers with expert trajectories. However, this requires access to expert demonstrations unavailable in novel environments. The survey by [23] identifies domain adaptation as a key challenge. [24] address forgetful experience replay for hierarchical RL but focus on single-agent navigation. [25] demonstrate warm-starting for hybrid vehicle energy management, showing sig-nificant sample efficiency gains. While these methods improve sample efficiency, the use of structured Bayesian spatial priors as the knowledge source for coordinated spatial exploration remains unexplored. 
+
+E. Trajectory Optimization 
+
+Trajectory design for mobile agents, particularly in UAV-enabled communications, has received substantial attention. [26] minimize propulsion energy for rotary-wing UAVs using successive convex approximation but assume perfect knowl-edge of user positions throughout the mission. [27] jointly optimizes trajectory and power allocation; however, the ap-proach requires full channel state information which may not always be available. [28] address task offloading with trajec-tory control but do not incorporate online demand learning. [29] apply evolutionary multi-objective RL for UAV-assisted mobile edge computing (MEC) but focus on computational offloading rather than demand learning. These methods assume known demand distributions, or employ full state knowledge, rendering them unsuitable when demand must be learned online from partial observations. 
+
+F. Research Gaps and Motivation 
+
+The reviewed literature reveals five key limitations that motivate our work:  
+
+> •
+
+Classical trajectory optimization assumes known user distributions [26, 27, 28]. In many practical deployments, 3UAV 1  
+
+> UAV 2
+> Service Area
+> Unknown User density
+> Observed
+> Requests
+> Trajectory
+> Coverage
+> Footprint
+> Belief
+> Fig. 1: Multiple mobile agents spatial exploration over a discretized opera-tional area with unknown demand, modeled via a spatial belief process. The illustrated scenario depicts UAVs as the instantiated agents, with further details provided in Section 4.
+
+demand patterns are initially unknown and must be learned online.  
+
+> •
+
+Many IPP methods employ greedy one-step planning [5]. While computationally efficient, myopic strategies fail to anticipate future information gain, leading to suboptimal long-horizon performance.  
+
+> •
+
+DRL approaches lack principled uncertainty estimates [4, 19, 20]. Without calibrated uncertainty, agents cannot distinguish “unexplored” from “low-demand” regions.  
+
+> •
+
+Pure DRL suffers from poor sample efficiency without spatial priors [18]. Agents must discover demand struc-ture through extensive trial and error.  
+
+> •
+
+Much of the IPP and spatial modeling literature focuses on single-agent scenarios [2, 7]. Coordination among multiple agents requires redundant coverage avoidance and cooperative sensing strategies, which are not ad-dressed by these methods. As shown in Table I, prior works fail to address all re-quirements simultaneously. Our HBRL framework bridges this gap through: (i) LGCP-based Bayesian beliefs over unknown demand, (ii) PathMI non-myopic planning, (iii) dual-channel knowledge transfer for sample efficiency, and (iv) variance-normalized penalties for coordinated coverage. III. S YSTEM MODEL 
+
+A. System Description 
+
+As shown in Figure 1, we consider a spatial exploration task where N autonomous agents are deployed to serve demand distributed across a two-dimensional service area A ⊂ R2
+
+of dimensions Lx × Ly meters. To enable tractable spatial modeling, the area is discretized into a uniform grid with spatial resolution ∆ meters, yielding Gx × Gy cells, where 
+
+Gx = ⌊Lx/∆⌋ and Gy = ⌊Ly /∆⌋.Each agent i ∈ { 1, . . . , N } operates within a predefined operational subregion Ai ⊂ A . Subregions may overlap. Each agent senses demand within a circular footprint of radius rc
+
+meters, centered at position pi(t) = ( xi(t), y i(t)) ⊤ at discrete time step t. All quantities indexed by c ∈ G are computed over the operational grid G = SNi=1 Gi, the union of discretized subregions, rather than over the full service area.                                                                            
+
+> TABLE II: Summary of Key Notations
+> Symbol Description Symbol Description
+> NNumber of agents TMission horizon
+> AService area GDiscretized grid
+> ∆Grid resolution Gx, G yGrid size
+> pi(t)Position of agent idmax Max. displacement
+> rcsensing radius C(t)Covered cells at tyc(t)Observed event count Nreq (t)Total requests
+> ρ(s)Ground-truth density ¯ρ(c)Cell-averaged density
+> μjHotspot jcenter σjHotspot jspread
+> σhHotspot drift rate rbDisplacement bound
+> uLog-intensity field λIntensity field
+> σ2
+> c(t)Posterior variance ˜σ2
+> c(t)Predicted variance
+> ec(t)Exposure indicator ncVisit count
+> scStaleness counter smax Max. staleness
+> τPrior precision βSpatial smoothness
+> γvVariance growth rate σ2max Max. variance
+> rgCoverage radius (cells) σ2min Min. variance
+> LPlanning horizon Ddir Candidate directions
+> ξcDiminishing return ϵStability constant
+> mc(t)Overlap count KwWarm-start episodes
+> ω1, ω 2, ω 3Reward weights ωsStaleness weight
+> γDiscount factor τsoft Soft update coeff.
+
+User demand is assumed to be spatially heterogeneous and concentrated around J hotspot regions whose locations and intensities are initially unknown to the agents. This assump-tion reflects realistic scenarios where event clusters around spatial hotspots whose structure must be discovered online. The mission objective is to jointly optimize agent trajectories over a horizon of T time steps to maximize cumulative task reward while efficiently learning the underlying spatial demand distribution. This setting requires balancing exploration of unknown regions against exploitation of discovered high-demand areas, a fundamental challenge in sequential decision-making under uncertainty [5]. A summary of the key notations used through-out the paper is provided in Table II. 
+
+B. Agent Dynamics Model 
+
+Each agent is modeled as a point mass entity with discrete-time dynamics. At each time step t, agent i selects a displace-ment vector vi(t) ∈ R2. The position update is given by 
+
+pi(t + 1) = clip (pi(t) + vi(t), A) , (1) where clip (·, A) enforces boundary constraints such that 0 ≤
+
+xi(t) ≤ Lx and 0 ≤ yi(t) ≤ Ly .The control input for agent i at time t is specified as a continuous action ai(t) ∈ [−1, 1] 2, mapped to displacement via 
+
+vi(t) = ai(t) · dmax , (2) where dmax denotes the maximum displacement per time step. Since ai(t) ∈ [−1, 1] 2, this mapping enforces an ℓ∞ bound on displacement, i.e. ∥vi(t)∥∞ ≤ dmax . For a fleet of N agents, the joint action is a(t) = [ a1(t)⊤, . . . , aN (t)⊤]⊤ ∈ [−1, 1] 2N .The sensing footprint of agent i at time t is defined as the set of grid cells within sensing range: 
+
+Ci(t) = {c ∈ G : ∥pc − pi(t)∥2 ≤ rc} , (3) where pc ∈ R2 denotes the center position of grid cell c. The joint coverage at time t is C(t) = SNi=1 Ci(t).4
+
+C. Spatial Demand Model 
+
+Demand is modeled as a spatially heterogeneous density field over the operational area. The ground-truth normalized density ρ : A → [0 , 1] is generated as a mixture of J Gaussian hotspots: 
+
+ρ(s) = 1
+
+ρmax 
+
+> J
+
+X
+
+> j=1
+
+exp − ∥s − μj ∥22
+
+2σ2
+
+> j
+
+!
+
+, (4) where μj ∈ A and σj > 0 denote the center and spatial spread of hotspot j, and ρmax is a normalization constant ensuring 
+
+ρ(s) ∈ [0 , 1] . To model realistic local demand fluctuations, hotspot centers undergo a bounded random walk during each episode: 
+
+μj (t + 1) = clip 
+
+
+
+μj (t) + σhϵt, μ(0)  
+
+> j
+
+± rb
+
+
+
+, (5) where σh > 0 is the diffusion rate, ϵt ∼ N (0, I) denotes isotropic Gaussian noise, μ(0)  
+
+> j
+
+is the base hotspot position, and rb bounds the maximum displacement. At episode reset, hotspot centers return to their base positions with small perturbation, preserving spatial structure across episodes while introducing within-episode non-stationarity. The mobile agents have no prior knowledge of the hotspot parameters {μj , σ j }Jj=1 or its position, necessitating online learning of the spatial demand pattern from partial observa-tions. 
+
+Remark 1 (Density vs. Belief): The density ρ(s) represents the ground-truth spatial distribution used to generate observa-tions. The LGCP intensity λ(s) = exp( u(s)) is the agents’ learned belief over event rates. While these quantities differ in scale and interpretation, regions with higher ρ(s) induce higher learned intensity in the belief model. 
+
+D. Observation Model 
+
+Agents can observe events only within their current sensing regions. At each time step t, for each grid cell c ∈ C (t), the observed event count is sampled as 
+
+yc(t) ∼ Binomial (ns, π req ¯ρ(c)) , (6) where ns denotes the number of sampling trials, πreq ∈ (0 , 1] 
+
+is the event, or request, probability, and ¯ρ(c) is the average normalized density over cell c, computed as 
+
+¯ρ(c) = 1
+
+|A c|
+
+Z
+
+> Ac
+
+ρ(s) ds, (7) where Ac ⊂ A denotes the spatial region corresponding to cell c and |A c| = ∆ 2 is the cell area. Cells not covered at time t yield no observations. The total observed count at time t is 
+
+Nreq (t) = X
+
+> c∈C (t)
+
+yc(t). (8) 
+
+Remark 2 (Likelihood Approximation): While observations are generated from a binomial model, a Poisson likelihood is employed during belief inference. With small success proba-bility ( πreq ≤ 0.05 ), this approximation is well justified under classical Poisson limit results [30]. 
+
+E. Log-Gaussian Cox Process Belief Model 
+
+We adopt a Log-Gaussian Cox Process (LGCP) for spatial demand estimation, following the formulation of Møller et al. [9] with grid-based Laplace-approximated inference [12]. Our contribution lies in its online application under partial observability with temporal belief decay, and its integration with information-driven planning and reinforcement learning for coordinating multiple mobile agents. 
+
+1) LGCP Formulation: Following standard LGCP nota-tion [13], the log-intensity is modeled as a Gaussian process: 
+
+λ(s) = exp( u(s)) , u(s) ∼ GP (0 , K), (9) where u : A → R is the latent log-intensity field and 
+
+K denotes a covariance kernel encoding spatial correlation. The exponential link ensures positive intensity values, while the Gaussian prior induces a spatially correlated uncertainty structure [9]. 
+
+2) GMRF Prior: For computational tractability on the discretized grid G, a Gaussian Markov Random Field (GMRF) prior is imposed [10], providing sparse precision matrices for efficient inference. Let u ∈ RGx·Gy denote the vectorized log-intensity field over all grid cells. Following standard GMRF constructions [10], the prior is specified through its precision matrix: 
+
+Q = τ I + βLG, (10) where τ > 0 controls prior precision (regularization strength), 
+
+β > 0 governs spatial smoothness, I is the identity matrix, and LG denotes the graph Laplacian encoding four-connected neighbor relationships on the grid. For a grid cell with four neighbors, the graph Laplacian has diagonal entries [LG]cc =4 (the node degree) and off-diagonal entries [LG]cj = −1
+
+for neighboring cells j. This formulation induces the prior distribution p(u) ∝ exp  − 12 u⊤Qu , which is proper and positive definite for τ > 0.
+
+3) Posterior Inference via Laplace Approximation: Given observations y(t) = {yc(t)}c∈C (t) from currently covered cells, the posterior distribution over u combines the GMRF prior with the Poisson likelihood. The resulting posterior is analytically intractable due to the non-conjugate Poisson likelihood. We employ a Laplace approximation via Newton iterations [14], yielding a Gaussian approximation centered at the posterior mode: 
+
+p(u|y(t)) ≈ N (μu, Σu), (11) where μu denotes the posterior mode and Σu = H−1 is the posterior covariance, with H being the Hessian of the negative log-posterior. To handle partial observability, we introduce a binary ex-posure variable ec(t) ∈ { 0, 1} indicating whether cell c is observed at time t:
+
+ec(t) = I(c ∈ C (t)) , (12) where I(·) is the indicator function. For cells not currently covered, yc(t) = 0 by convention, with the exposure mask 5
+
+nullifying their likelihood contribution. The log-posterior at time t then becomes: 
+
+log p(u|y(t)) ∝ X
+
+> c∈G
+
+ec(t) [ yc(t)uc − exp( uc)] − 12 u⊤Qu ,
+
+(13) where ec(t) = 1 for currently covered cells and ec(t) = 0 
+
+otherwise. The gradient and Hessian follow as: 
+
+g(t) = e(t) ⊙ (y(t) − λ) − Qu , (14) 
+
+H(t) = diag( e(t) ⊙ λ) + Q, (15) where λ = exp( u) is the intensity vector, e(t) denotes the exposure vector at time t, and ⊙ represents element-wise multiplication. The Newton update is: 
+
+u(k+1) = u(k) + H(t)−1g(t). (16) The Newton iterations are warm-started from the previous MAP estimate, u(0) = μu(t − 1) , yielding an online MAP tracking procedure that encourages temporal persistence of the intensity field. A preconditioned conjugate gradient (PCG) solver [10] computes the Newton step H(t)−1g(t) without explicit matrix inversion. The Hessian admits diagonal entries: 
+
+[H(t)] cc = ec(t)λc + Qcc , (17) where Qcc = τ + 4 β for interior cells under the first-order GMRF structure. We use these diagonal entries as a preconditioner M = diag( H), which exploits the sparsity induced by the GMRF prior and accelerates PCG convergence. Computing exact marginal posterior variances diag( H−1)
+
+requires sparse matrix inversion, which is prohibitive for large grids [12]. Instead, we employ a diagonal Laplace approxima-tion [31, 32]: 
+
+σ2 
+
+> c
+
+(t) ∆
+
+= 1[H(t)] cc 
+
+. (18) This surrogate does not yield calibrated marginal variances but preserves relative uncertainty ordering across cells, which makes it sufficient for exploration incentives where ranking drives decision-making. For brevity, we refer to this quantity as the posterior variance in the remainder of the paper, noting that it corresponds to a diagonal Laplace approximation rather than the exact marginal variance. For observed cells ( ec(t) = 1 ), higher intensity estimates yield smaller variance proxies, reflecting increased confidence. For unobserved cells ( ec(t) = 0 ), the likelihood contributes no curvature, and uncertainty evolution is governed solely by the temporal belief dynamics described next. 
+
+F. Temporal Belief Dynamics 
+
+In partially observable environments, the relevance of past observations degrades over time due to limited and intermittent sensing. We introduce a two-step belief update that separates uncertainty growth from observation-based refinement. 
+
+1) Step 1: Prediction (Uncertainty Growth): At each time step, before incorporating new observations, we apply variance growth to all cells to reflect potential changes in the underlying demand pattern: 
+
+˜σ2 
+
+> c
+
+(t) = min  σ2 
+
+> c
+
+(t−) · (1 + γv ), σ 2max 
+
+ , ∀c ∈ G , (19) where σ2 
+
+> c
+
+(t−) denotes the posterior variance at the end of the previous time step t − 1, γv > 0 is the variance growth rate per time step, and σ2max represents the maximum variance corresponding to complete uncertainty. 
+
+2) Step 2: Update (Observation Incorporation): After the prediction step, we incorporate observations from currently covered cells. For observed cells, the variance is overwritten by the posterior variance from LGCP inference; for unobserved cells, the predicted variance is retained: 
+
+σ2 
+
+> c
+
+(t+) = 
+
+
+
+max 
+
+ 1
+
+λ∗ 
+
+> c
+
++ τ + 4 β , σ 2min 
+
+
+
+if c ∈ C (t)˜σ2 
+
+> c
+
+(t) otherwise 
+
+, (20) where λ∗ 
+
+> c
+
+= exp( u∗ 
+
+> c
+
+) is the converged posterior mode intensity and σ2min > 0 is a small floor preventing numerical instability in high-intensity regions. This predict-then-update structure serves two purposes: (i) it acknowledges that demand patterns may evolve, making older observations less reliable, and (ii) it incentivizes revisi-tation of stale regions where belief confidence has degraded. The belief state at time t is thus characterized by B(t) = 
+
+{μu(t), σ2(t+)}.
+
+Remark 3 (Revisitation Incentive): Under this formulation, revisiting a cell c at time t yields fresh observations yc(t)
+
+and resets the posterior variance to the observation-based value. This creates a natural incentive for revisitation: cells not recently observed accumulate uncertainty via Equation 19, making them attractive targets for exploration reward. Cells recently observed maintain low variance until staleness accu-mulates. 
+
+G. Reward Structure 
+
+The reward at time step t balances three objectives: ser-vice quality (primary task), exploration, and coordination efficiency: 
+
+rt = ω1Rservice (t) + ω2Rexplore (t) − ω3Ccoord (t), (21) where ω1, ω 2, ω 3 > 0 are objective weights. 
+
+1) Service Reward: The service reward captures the pri-mary mission objective: 
+
+Rservice (t) = Nreq (t), (22) where Nreq (t) denotes the total observed event count at time 
+
+t as defined in Equation 8. This term incentivizes agents to position themselves over high-demand regions. 6              
+
+> TABLE III: Comparison of overlap penalty strategies for a cell covered by two agents.
+> Cell History ˜σ2
+> c(t)Var.-Norm. Fixed
+> Never visited 1.0 0.0 1.0 Recently visited 0.1 0.9 1.0 Stale (grown variance) 0.5 0.5 1.0
+
+2) Exploration Reward: The exploration reward encourages belief improvement through uncertainty reduction: 
+
+Rexplore (t) = X
+
+> c∈C (t)
+
+ ˜σ2 
+
+> c
+
+(t) − σ2 
+
+> c
+
+(t+) , (23) where ˜σ2 
+
+> c
+
+(t) denotes the predicted variance (before observa-tion) and σ2 
+
+> c
+
+(t+) denotes the updated posterior variance (after observation) at cell c.This formulation creates an implicit incentive mechanism: cells with high predicted variance (either unvisited or stale) yield large uncertainty reduction upon observation; recently visited cells with low variance provide minimal gain. Conse-quently, agents are naturally drawn toward unexplored or stale regions without requiring added revisitation penalties. 
+
+3) Coordination Cost: The coordination cost penalizes in-efficient trajectories through redundant coverage and excessive travel: 
+
+Ccoord (t) = Poverlap (t) + dtravel (t), (24) where 
+
+dtravel (t) = δtNX
+
+> i=1
+
+∥pi(t) − pi(t − 1) ∥2, (25) with δt > 0 serving as a scaling constant for dimensional consistency. To avoid overlapping coverage, we use a variance-normalized overlap penalty. For each grid cell c ∈ G , let 
+
+mc(t) = |{ i : c ∈ C i(t)}| denote the number of agent coverage footprints that include cell c at time t. The overlap penalty is then defined as 
+
+Poverlap (t) = X
+
+> c:mc(t)≥2
+
+
+
+1 − ˜σ2 
+
+> c
+
+(t)
+
+σ2max 
+
+
+
+, (26) where ˜σ2 
+
+> c
+
+(t) is the predicted variance (before incorporating current observations), and σ2max represents complete uncer-tainty. 
+
+Remark 4 (Penalty Interpretation): The use of predicted variance ˜σ2 
+
+> c
+
+(t) allows the penalty to adapt to belief state. In unexplored or stale regions ( ˜σ2 
+
+> c
+
+(t) ≈ σ2max ), the penalty is near zero, permitting collaborative sensing. In recently observed regions ( ˜σ2 
+
+> c
+
+(t) ≈ σ2min ), the penalty is high, discouraging redundant coverage. This adaptive behavior allows joint ex-ploration when uncertainty is high, but persistent overlap is discouraged once variance is reduced. A fixed overlap penalty applies uniform cost regardless of belief state and discourages all overlap equally, including ben-eficial joint exploration in high-uncertainty regions. Table III summarizes this difference. The overlap penalty is triggered only when mc(t) ≥ 2.Single-agent revisitation penalty is governed by the explo-ration reward and service objective, allowing UAVs to revisit high-demand regions when beneficial. 
+
+4) Weight Selection: The default objective weights are set as ω1 = 5 .0, ω2 = 0 .5, and ω3 = 1 .0. The service weight reflects the primary mission objective, while exploration and coordination terms provide sufficient incentive for information gathering and efficient spatial distribution. Weight sensitivity analysis is included in Section V. 
+
+H. Problem Formulation 
+
+We aim to maximize cumulative reward over a mission horizon of T time steps by jointly optimizing agent trajectories 
+
+T = {pi(t)}i,t :
+
+max 
+
+> T
+> T
+
+X
+
+> t=1
+
+rt, (27a) s.t. ∥vi(t)∥∞ ≤ dmax , ∀i, ∀t, (27b) 
+
+pi(t) ∈ A , ∀i, ∀t, (27c) 
+
+pi(0) = pinit  
+
+> i
+
+, ∀i, (27d) where Equation 27b bounds the maximum displacement per step, Equation 27c ensures agents remain within the service area, and Equation 27d specifies initial positions. The optimization problem stated in Equation 27 is an in-stance of informative path planning (IPP) under partial observ-ability. The underlying objective of maximizing information gain through sequential sensing is NP-hard in general [3], and greedy approximations rely on submodularity that does not extend to the full reward structure. The addition of dynamic demand, continuous agent dynamics, and coordination be-tween multiple mobile agents further precludes exact methods, motivating the use of reinforcement learning. However, as pure deep RL suffers from poor sample efficiency, we address this gap through HBRL framework that combines Bayesian spatial modeling with deep reinforcement learning via dual-channel knowledge transfer, detailed in Section 4. IV. P ROPOSED SOLUTION 
+
+A. Two-Phase HBRL Framework 
+
+We instantiate the general framework of Section III for multi-UAV wireless service provisioning, where agents cor-respond to UAVs deployed as aerial base stations at fixed altitude, serving spatially distributed users. The spatial demand field corresponds to wireless service requests, the sensing foot-print maps to each UAV’s circular communication coverage of radius rc, and the event probability πreq corresponds to the per-user service request probability. Figure 2 summarizes the two-phases of HBRL framework. In Phase 1 (Exploration), UAVs execute information-driven trajectories guided by Pathwise Mutual Information (PathMI) planning while building spatial belief maps through LGCP inference. In Phase 2 (Exploitation), a Soft Actor-Critic (SAC) agent takes over trajectory control, initialized with knowl-edge transferred from Phase 1 through two complementary 7LGCP Belief Update 
+
+> - Laplace-Newton
+> - GMRF Prior
+> PathMI Planning
+> - H Steps
+> - D Directions
+> - Information score
+> Environment
+> Observations
+
+Phase 1: LGCP-PathMI 
+
+> Action
+
+Phase 2: SAC Training  
+
+> (Episodes 1 )
+
+Phase 2: SAC Training   
+
+> (Episodes )
+> Warm-Start SAC
+> Actor Network
+> Dual- Channel Knowledge Transfer
+> LGCP Experience
+> Belief  Critic (Double-Q)
+> Target Network
+> Replay Buffer seeded with
+> Soft Update
+> State
+> Batch
+> Reward
+> Fig. 2: Overview of the proposed HBRL framework. Phase 1 employs LGCP-based belief inference and PathMI planning to guide information-driven exploration. Phase 2 performs policy optimization using Soft Actor-Critic (SAC), warm-started via dual-channel knowledge transfer: (i) belief state initialization and (ii) replay buffer seeding with LGCP-generated trajectories.
+
+channels: (i) belief state transfer via the trained LGCP belief maps informing the RL state representation, and (ii) behavioral knowledge transfer via expert demonstrations from the LGCP phase seeding the RL replay buffer. This hybrid design addresses a fundamental limitation of pure reinforcement learning approaches: the need to learn both 
+
+where high-value regions exist and how to navigate efficiently. We separate these two questions by using LGCP for spatial learning and RL for policy optimization. The framework achieves superior sample efficiency compared to learning both from scratch. 
+
+B. PathMI Information Score Planning 
+
+During Phase 1, UAV trajectories are guided by an uncertainty-driven planner that evaluates candidate paths based on expected uncertainty reduction. In contrast to myopic (one-step) planners that focus on maximizing immediate infor-mation gain [5], our approach considers multi-step looka-head to identify globally beneficial trajectories, following the receding-horizon paradigm common in model predictive control [33]. We use an uncertainty-weighted coverage score (incorporating variance and staleness) as a computationally efficient surrogate for mutual information, which we term PathMI. 2
+
+1) Candidate Path Generation: From each UAV’s current grid position (gx, g y ), we generate Ddir = 8 candidate paths corresponding to the eight cardinal and diagonal directions. Each path extends for L steps (the planning horizon), with positions computed as 
+
+p(ℓ) = clip (pi + ℓ · dmax · d, A), (28) 
+
+> 2A preliminary comparison of exploration strategies operating on the LGCP belief model is provided in Appendix A.
+
+where d ∈ { (±1, 0) , (0 , ±1) , (±1, ±1) } is the unit direction vector and ℓ ∈ { 1, . . . , L } indexes positions along the path. The resulting waypoints guide action selection, with actual displacement bounded by dmax . The choice of straight-line paths balances computational efficiency against trajectory di-versity; more complex path primitives could be substituted at increased computational cost. 
+
+2) PathMI Score Computation: For each candidate path P,we compute the set of grid cells that would be observed along the trajectory: 
+
+O(P) = 
+
+> L
+
+[
+
+> ℓ=1
+
+{c ∈ G : ∥pc − p(ℓ)∥2 ≤ rc}, (29) where p(ℓ) denotes the world-coordinate position of waypoint 
+
+ℓ along path P. The PathMI Information Score aggregates uncertainty over cells along the path: PathMI (P) = X
+
+> c∈O (P)
+
+
+
+ξc · σ2 
+
+> c
+
++ ωs · min 
+
+ sc
+
+smax 
+
+, 1
+
+
+
+· σ2
+
+> c
+
+
+
+,
+
+(30) where σ2 
+
+> c
+
+is the current posterior variance, sc is the staleness (time steps since last observation) at cell c, smax is a normal-ization constant equal to T , and ωs is the staleness weight-ing coefficient. The staleness term encourages revisitation of regions where belief confidence has degraded. The factor ξc
+
+down-weights cells with repeated observations, reflecting the diminishing returns characteristic of information gain [3]: 
+
+ξc = 11 + nc
+
+, (31) where nc ≥ 0 denotes the cumulative observation count at cell c. Unvisited cells ( nc = 0) yield ξc = 1, providing maximum incentive for first-time exploration, while previously 8
+
+visited cells yield progressively smaller factors as observations accumulate. This formulation ensures that PathMI prioritizes novel regions while still permitting revisitation when staleness is high. 
+
+Remark 5: The PathMI score (Equation 30) approximates mutual information through variance aggregation. Under Gaus-sian assumptions, high-variance regions yield greater entropy reduction upon observation, making cumulative variance a computationally efficient surrogate for ranking candidate paths by expected information gain. True mutual information com-putation requires marginalization over future observations, which is computationally prohibitive for online planning. Our empirical results in Section V demonstrate that this surrogate effectively guides exploration. 
+
+3) PathMI Action selection: The UAV agent selects the path with maximum PathMI score: 
+
+P∗ = arg max   
+
+> P∈{P 1,..., PD}
+
+PathMI (P). (32) The action is then computed as the normalized direction toward the first waypoint of P∗:
+
+ai = ∆p
+
+max ( ∥∆p∥2, ϵ ) , (33) where ∆p = pP∗(1) − pi denotes the displacement to the first waypoint, pP∗(1) is the world position of that waypoint, and ϵ > 0 is a small constant (e.g., ϵ = 10 −6) preventing division by zero when the waypoint coincides with the current position after clipping. The action is then clipped to [−1, 1] 2
+
+before execution. This receding-horizon approach re-plans at each step, adapting to updated beliefs while maintaining non-myopic trajectory structure. 
+
+C. Dual-Channel Knowledge Transfer 
+
+In contrast to prior approaches that transfer either state representations [23] or behavioral demonstrations [22], but not both simultaneously, our framework transfers both channels, enabling complementary benefits. 
+
+1) Channel 1: Belief State Transfer: At the conclusion of Phase 1, the LGCP belief state B∗ = {μ∗
+
+> u
+
+, σ2∗} encodes the spatial demand information learned during information-driven exploration. This belief is transferred to Phase 2 by initializing the reinforcement learning environment at the start of training with BRL (0) ← B ∗. Belief state transfer serves as an initial-ization mechanism that provides an informed prior for early policy gradient updates, mitigating instability associated with uninformed exploration during the initial stages of training. To preserve episodic independence and avoid cross-episode accumulation of spatial information, subsequent episodes reset the belief state to the uninformative prior B0 = {0, 1}.Learning progress is retained in the policy parameters and replay buffer rather than in the belief state itself. 
+
+2) Channel 2: Behavioral Knowledge Transfer: During Phase 1, the LGCP planner generates high-quality trajectories optimized for information acquisition. We store these trajec-tories as demonstration data: 
+
+DLGCP = {(st, at, r t, st+1 , d t)}Tw
+
+> t=1
+
+, (34) where Tw = Kw ×T is the total number of transitions collected over Kw warm-start episodes, and dt ∈ { 0, 1} is the terminal flag indicating whether st+1 is a terminal state. Following the learning from demonstrations paradigm [22], these transitions seed the SAC replay buffer before training begins: 
+
+DSAC ← D LGCP . (35) This seeding provides two benefits: (i) the agent can im-mediately sample informative transitions for gradient updates without random exploration, and (ii) the demonstrations en-code implicit coordination patterns that accelerate multi-UAV coordination learning. The two channels address different aspects of the learning problem. The belief channel provides uncertainty estimates for reward shaping (overlap penalty) and global belief summaries indicating overall exploration progress. The behavioral chan-nel provides state-action pairs demonstrating effective spatial exploration patterns. Ablation studies in Section V quantify the individual and combined contributions of each channel, demonstrating that full dual-channel transfer outperforms ei-ther channel alone. The complementary effect can be interpreted through early state-distribution alignment and reward calibration. The replay buffer DLGCP contains transitions collected under the trained belief B∗, where the state summary ϕ = [ ¯λ, ¯σ2, ¯nobs ]⊤ (cf. Equation 37) reflects structured spatial information. If SAC instead begins from the uninformed prior B0, the initial on-policy state distribution over ϕ differs from that of the buffered demonstrations, creating a distribution mismatch during early critic updates. Initializing the first SAC episode with B∗ can reduce this mismatch, improving alignment between replayed and current transitions at the start of training. Moreover, both the exploration reward and the variance-normalized overlap penalty depend on calibrated posterior uncertainty. Under B0,posterior variance is initially uniform, reducing reward contrast across actions. Initializing with B∗ restores spatial structure at the start of Phase 2, strengthening reward contrast across action. 
+
+Remark 6 (Distribution mismatch impacts off-policy esti-mates): Let dπ (s) be the discounted state visitation distribution under policy π and dD (s) the empirical state distribution induced by samples from replay buffer D. For any bounded function f : S → R,
+
+|Es∼dπ [f (s)] − Es∼dD [f (s)] | ≤ ∥ f ∥∞ V( dπ , d D ), (36) where V( ·, ·) denotes total variation distance. This fol-lows directly from the definition of total variation distance, 
+
+V( P, Q ) = sup A |P (A) − Q(A)|. Hence, when replay and on-policy state distributions differ, quantities learned under 
+
+dD (e.g., value estimates) may generalize poorly to states encountered under dπ .In our setting, DLGCP contains transitions collected under belief B∗, inducing a structured distribution over the state summary ϕ. Initializing the first SAC episode with B∗ reduces the initial mismatch relative to starting from B0, thereby improving the relevance of early critic updates. 9
+
+3) Episode Reset Policy: At the start of each SAC episode in Phase 2, the LGCP belief state is reset to the uninformed prior B0 = {0, 1}. This prevents accumulation of spatial information across episodes, ensuring that each episode begins from an unknown demand state. Learning progress is retained in the policy parameters and replay buffer, not in the belief state. The transferred belief B∗ is used only to initialize the 
+
+first SAC episode, providing a non-trivial starting point for initial policy gradient updates. 
+
+D. MDP Formulation 
+
+The multi-UAV coordination problem is a partially observ-able Markov decision process (POMDP), as agents observe demand only within their sensing footprint. Following the belief-space MDP formulation [34], we implement this as an MDP over compressed observations. The unknown demand field is tracked internally through LGCP-based belief updates, and the policy receives low-dimensional belief summaries as state input. The environment maintains the full belief for state evolution and reward computation. Rationale and implications are discussed below in Remark 7. 
+
+1) State Space: The state vector st ∈ R3N +4 comprises: 
+
+st =
+
+
+
+˜p1, . . . , ˜pN , ϕ, ¯c1, . . . , ¯cN , tT
+
+⊤
+
+, (37) where ˜pi = 2( pi/[Lx, L y ]⊤) − 1 ∈ [−1, 1] 2 denotes the nor-malized UAV positions ( 2N dimensions), ϕ = [ ¯λ, ¯σ2, ¯nobs ]⊤ ∈
+
+R3 represents the global belief summary and is computed as arithmetic mean intensity, mean variance, mean observation count over the operational regions assigned to the UAVs, rather than over the entire grid, ¯ci ∈ [0 , 1] indicates coverage progress for UAV i (N dimensions), and t/T ∈ [0 , 1] is the normalized time step. The coverage progress ¯ci for UAV i is computed as the fraction of grid cells visited by UAV i up to time t:
+
+¯ci(t) = 1
+
+|G i|
+
+X
+
+> c∈G i
+
+I (∃ τ ≤ t : c ∈ C i(t′)) , (38) 
+
+Remark 7: We intentionally use compact global belief summaries rather than the full belief grid to keep the state low-dimensional and scalable. While this compression sacrifices local spatial detail (the agent knows “overall uncertainty is high” but not “where”), it ensures stable training and O(1) 
+
+state growth with grid size. This design reflects a deliberate trade-off between representational fidelity and scalability. The UAV positions provide explicit spatial grounding, and the smoothness induced by the GMRF prior mitigates sharply distinct spatial configurations during practical exploration. Empirical results in Section V-B confirm that the compressed state retains sufficient decision-relevant structure for stable and improved performance. 
+
+2) Action Space: The joint action at ∈ [−1, 1] 2N specifies bounded motion commands for all UAVs: 
+
+at = [ a⊤ 
+
+> 1
+
+, . . . , a⊤ 
+
+> N
+
+]⊤, ai ∈ [−1, 1] 2. (39) Each component represents a normalized displacement direc-tion, mapped to per-step motion via vi = ai · dmax as defined in Equation 2. 
+
+3) Reward Function: The reward rt follows the three-objective structure defined in Equation 21, balancing service quality ( Rservice ), exploration incentive ( Rexplore ), and coordi-nation efficiency ( Ccoord ). 
+
+4) Transition Dynamics: State transitions follow the deter-ministic dynamics in Equation 1, with stochasticity arising from the binomial observation model (Equation 6) and the LGCP belief update. 
+
+E. Soft Actor-Critic Training 
+
+The continuous 2N -dimensional action space precludes discrete-action methods such as DQN [35]. Among continuous-action algorithms, we select Soft Actor-Critic (SAC) [36] for three reasons: (i) its off-policy nature enables replay buffer seeding with LGCP demonstrations, whereas on-policy methods like PPO [37] would discard these transitions; (ii) entropy regularization maintains exploration during the transition from demonstration-driven to self-generated experience, preventing premature convergence; and (iii) clipped double Q-learning provides greater stability than DDPG [38] in joint action settings for multiple agents. 
+
+1) Maximum Entropy Objective: SAC optimizes a maxi-mum entropy objective [36]: 
+
+J(π) = Eτ ∼π
+
+" TX
+
+> t=0
+
+γt (r(st, at) + αH(π(·| st))) 
+
+#
+
+, (40) where γ ∈ (0 , 1) denotes the discount factor, α > 0 is the temperature parameter controlling exploration-exploitation balance, and H(·) represents entropy. The entropy regular-ization encourages exploration during early training while allowing convergence to near-deterministic policies as learning progresses. 
+
+2) SAC Architecture: Following standard practice [36], the policy and value networks use multi-layer perceptrons (MLPs) with two hidden layers of 256 units each and ReLU activations. The policy network πθ outputs mean μθ (s) and log-standard-deviation log σθ (s) for a squashed Gaussian dis-tribution: 
+
+a = tanh ( μθ (s) + σθ (s) ⊙ ϵ) , ϵ ∼ N (0, I), (41) where tanh( ·) bounds actions to [−1, 1] 2N . Two Q-networks 
+
+Qϕ1 , Q ϕ2 with separate target networks Q ¯ϕ1 , Q ¯ϕ2 mitigate overestimation bias through clipped double Q-learning [39]. 
+
+3) Loss Functions: The Q-networks are trained by mini-mizing the soft Bellman residual: 
+
+LQ(ϕj ) = E(s,a,r, s′,d )∼D 
+
+h Qϕj (s, a) − y2i
+
+, (42) where the target y is computed as: 
+
+y = r +γ(1 −d)
+
+
+
+min  
+
+> j=1 ,2
+
+Q ¯ϕj (s′, ˜a′) − α log πθ (˜ a′|s′)
+
+
+
+, (43) with ˜a′ ∼ πθ (·| s′) and d ∈ { 0, 1} indicating terminal states. The policy is updated by maximizing the expected return with entropy bonus: 
+
+Lπ (θ) = Es∼D ,˜a∼πθ
+
+
+
+α log πθ (˜ a|s) − min  
+
+> j=1 ,2
+
+Qϕj (s, ˜a)
+
+
+
+.
+
+(44) 10 
+
+Algorithm 1: Phase 1 – LGCP–PathMI Exploration 
+
+1: Initialize log-intensity u ← 0, variance σ2 ← 1
+
+2: Initialize observation counts n ← 0, staleness s ← 0
+
+3: Initialize precision matrix Q = τ I + βLG
+
+4: Initialize demonstration buffer DLGCP ← ∅ 
+
+5: for episode k = 1 to Kw do 
+
+6: Reset environment; reset belief to prior B0
+
+7: Reset staleness s ← 0, observation counts n ← 0
+
+8: for t = 0 to T − 1 do 
+
+9: Observe state st
+
+10: Update staleness: sc ← sc + 1 for all c ∈ G 
+
+11: for each UAV i = 1 to N do 
+
+12: Generate Ddir candidate paths Equation 28 13: Compute PathMI scores Equation 30 14: Select P∗ = arg max d PathMI (Pd)
+
+15: Set ai toward first waypoint Equation 33 16: end for 
+
+17: Execute joint action at, observe y(t)
+
+18: Set exposure: ec(t) ← I(c ∈ C (t)) for all c
+
+19: Update observation counts: nc ← nc + ec(t) for all c
+
+20: Apply variance growth Equation 19; store ˜σ2 
+
+> c
+
+(t)
+
+21: Update LGCP belief Equation 16 22: Apply variance update Equation 20 → σ2 
+
+> c
+
+(t+)
+
+23: Compute reward rt Equation 21 using ˜σ2 
+
+> c
+
+(t) and σ2 
+
+> c
+
+(t+)
+
+24: Compute next state st+1 
+
+25: Set terminal flag dt ← I(t = T − 1) 
+
+26: Reset staleness: sc ← 0 for all c ∈ C (t)
+
+27: Store (st, at, r t, st+1 , d t) in DLGCP 
+
+28: end for 
+
+29: end for 
+
+30: Set final belief B∗ = {μu, σ2}
+
+31: return B∗, DLGCP 
+
+Algorithm 2: Phase 2 – Warm-Started SAC Training 
+
+1: Initialize replay buffer D ← D LGCP ▷ Buffer seeding 2: Initialize actor πθ , critics Qϕ1 , Q ϕ2
+
+3: Initialize targets ¯Qϕ1 ← Qϕ1 , ¯Qϕ2 ← Qϕ2
+
+4: Initialize temperature α
+
+5: for episode k = Kw + 1 to K do 
+
+6: if k = Kw + 1 then 
+
+7: Initialize belief with B∗ from Phase 1 8: else 
+
+9: Reset belief to prior B0 = {0, 1}
+
+10: end if 
+
+11: Reset staleness s ← 0, observation counts n ← 0
+
+12: for t = 0 to T − 1 do 
+
+13: Observe st, sample at ∼ πθ (·| st)
+
+14: Execute at, observe y(t)
+
+15: Apply variance growth Equation 19 → ˜σ2 
+
+> c
+
+(t)
+
+16: Update LGCP belief via Equation 16 17: Apply variance update Equation 20 → σ2 
+
+> c
+
+(t+)
+
+18: Compute reward rt via Equation 21 19: Compute next state st+1 
+
+20: Set terminal flag dt ← I(t = T − 1) 
+
+21: Store (st, at, r t, st+1 , d t) in D
+
+22: Sample mini-batch from D
+
+23: Update critics via Equation 42, actor via Equation 44 24: Update α via Equation 45 25: Soft-update targets via Equation 46 26: end for 
+
+27: end for 
+
+28: return trained policy πθ
+
+Fig. 3: Two-phase training pipeline: LGCP–PathMI exploration (left) and warm-started SAC training (right). 
+
+The temperature α is automatically tuned to maintain a target entropy ¯H [40]: 
+
+Lα = E˜a∼πθ
+
+−α  log πθ (˜ a|s) + ¯H . (45) 
+
+4) Target Network Updates: Target networks are updated via exponential moving average (Polyak averaging) [38]: 
+
+¯ϕj ← τsoft ϕj + (1 − τsoft ) ¯ϕj , (46) where τsoft ≪ 1 ensures stable target values. The complete framework is presented in Figure 3. Algo-rithm 1 details the LGCP-PathMI exploration phase, while Algorithm 2 describes the warm-started SAC training phase. 
+
+Remark 8: Integration of LGCP with reinforcement learn-ing for spatial exploration and service provisioning is less explored. Our methodological contribution lies in the dual-channel transfer mechanism and the variance-normalized co-ordination penalties, building upon the LGCP or SAC compo-nents. 
+
+F. Complexity Analysis 1) Time Complexity: The LGCP belief update via Laplace-Newton requires O(nNewton · nPCG · |G| ) operations per step, where nNewton and nPCG denote the number of Newton and PCG iterations, respectively, and |G| = Gx × Gy is the union of operational grid size. PathMI planning evaluates 
+
+Ddir candidate paths, each covering O(L · r2 
+
+> g
+
+) cells where 
+
+rg = ⌈rc/∆⌉ is the coverage radius in grid cells, yielding 
+
+O(Ddir ·L·r2 
+
+> g
+
+) per UAV per step. SAC updates are O(B ·dnet )
+
+where B is the batch size and dnet denotes the network parameter count. 
+
+2) Space Complexity: The LGCP belief requires O(|G| )
+
+storage for mean, variance, and exposure fields. The replay buffer stores O(|D| · ds) transitions where ds = 3 N + 4 is the state dimension. SAC networks require O(dnet ) parameters. 
+
+3) Scalability: The framework scales linearly with the number of UAVs N in state dimension ( 3N + 4 ) and action dimension ( 2N ). For moderate fleet sizes, the joint policy formulation provides sample-efficient implicit coordination through shared belief state. Learning by parameter-sharing or other techniques for very large fleet sizes remains an open challenge for future work. For very large grids, the GMRF structure ensures sparse precision matrices, maintaining com-putational tractability. V. E XPERIMENTAL EVALUATION 
+
+A. Experimental Setup 
+
+We perform simulations on an Apple M1 Pro with 3.2 GHz CPU, 16 GB RAM, and 16-core GPU, programmed in Python using Stable-Baselines3 for SAC implementation. The service area is 2000 × 2000 m2 discretized into grids with resolution ∆ = 20 m, with N = 2 UAVs operating at fixed altitude with a coverage radius rc = 100 m. rc = 5∆ ensures that each UAV footprint spans multiple grid cells and avoids discretization artefacts observed when rc < ∆. User demand is generated as a mixture of J = 3 − 5 Gaussian hotspots with randomly sampled centers and spreads. All results are averaged over 5 independent seeds. We compare the proposed HBRL against the following baselines: Pure LGCP-PathMI (no RL), Pure SAC (cold start), SAC + Belief Transfer Only, and 11                                                                                               
+
+> TABLE IV: Simulation and Algorithm Parameters
+> Parameter Symbol Value
+> Service area A2000 ×2000 m2
+> Grid resolution ∆20 mGrid dimensions Gx×Gy100 ×100
+> Number of UAVs N2–4
+> Coverage radius rc100 mMax. displacement per step dmax 15 mNumber of hotspots J3−5
+> Hotspot diffusion rate σh1m/step Hotspot displacement bound rb75 mPrior precision τ1.0
+> Sampling trials ns100
+> Request probability πreq 0.05
+> Spatial smoothness β0.2
+> Newton iterations nNewton 3
+> PCG iterations nPCG 8
+> Variance growth rate γv0.002
+> Maximum variance σ2max 1.0
+> Minimum variance σ2min 0.01
+> Planning horizon L5
+> Candidate directions Ddir 8
+> Staleness weight ωs0.1
+> Service weight ω15.0
+> Exploration weight ω20.5
+> Coordination weight ω31.0
+> Total episodes K200
+> Warm-start episodes Kw10 –50
+> Episode length T200 steps Maximum staleness smax T
+> Hidden layers –256 –256
+> Learning rate η3×10 −4
+> Replay buffer size |D| 10 4
+> Batch size B256
+> Discount factor γ0.99
+> Soft update coefficient τsoft 0.005
+> Target entropy ¯H−dim( A)
+> Learning starts –100 steps
+
+SAC + Buffer Seeding Only. All methods use identical SAC parameters summarized in Table IV. Values for SAC hyper-parameters follow the standard recommendations from the original SAC implementation [36]. Unless stated otherwise, default parameters are used throughout. As an imitation-based warm-start baseline, we include Be-havior Cloning (BC) followed by reinforcement learning. After Phase 1 the SAC actor is first pre-trained offline via supervised learning to minimize negative log-likelihood over Phase 1 PathMI state-action pairs, using the same compressed state representation as the proposed method. After pre-training, the imitation objective is removed and the policy is fine-tuned using standard SAC updates with an empty replay buffer. This baseline uses identical Phase 1 data as our approach but incorporates it through actor pre-training rather than replay buffer seeding, allowing direct comparison of demonstration utilization strategies. We evaluate our proposed framework through a series of experiments designed to assess learning efficiency, robustness, and scalability. Section V-B compares learning performance against baselines. Sections V-C and V-D examine the sen-sitivity to warm-start duration, planning horizon, and fleet size. Section V-E analyzes belief dynamics and uncertainty calibration, and Section V-F examines robustness to experience loss. 
+
+B. Learning Performance and Efficiency 
+
+Figure 4 compares learning behaviour across all methods. Pure LGCP maintains stable reward without policy adaptation, while Pure RL begins with the lowest reward due to ran-dom exploration before gradually improving. BC follows the LGCP reward levels during Phase 1 and transitions smoothly without the dip exhibited by HBRL, yet converges to similar asymptotic reward as Pure RL, indicating that action imitation accelerates early learning but does not improve final policy quality. HBRL eventually outperforms both Pure RL and BC+SAC, improving over Pure RL by 10.8%, and reaching its final reward level 38% earlier. Despite the compressed belief, learning through HBRL remains stable and outperforms both baselines, suggesting the summary retains sufficient structure. The gap between BC+SAC and HBRL demonstrates that replay buffer seeding provides benefits beyond behavioral imitation. While reward curves capture overall task performance, it is equally important to examine how each method influences the quality of the learned belief state, since accurate estimation of user demand is fundamental to the requirements of service providers. Figure 5 shows the evolution of average posterior variance (diagonal Laplace proxy), where lower values in-dicate higher confidence in the inferred demand field. Pure LGCP maintains a nearly constant variance of approximately 0.66 because each episode begins with a fresh belief map, preventing long-term accumulation of information. Pure RL, in contrast, steadily reduces variance over time, converging to 0.37 by episode 155 as the agent revisits informative regions during policy improvement. HBRL, whereby starting learning later than Pure-RL, achieves the fastest and best variance reduction, matching best Pure-RL performance 32% faster. It also reduces the variance against the benchmark by 11%. Figure 6 shows the ablation study for dual-channel knowl-edge transfer. Belief transfer alone provides negligible im-provement (+0.6% reward, 3% fewer episodes to reach Pure RL reward), indicating that spatial knowledge informs where 
+
+uncertainty exists but not how to act. Buffer seeding alone yields substantial gains (+7.7% reward, 33% fewer episodes to reach Pure RL reward) by providing LGCP-demonstrated 0 25 50 75 100 125 150 175 200          
+
+> Episode
+> 0
+> 100
+> 200
+> 300
+> 400
+> 500
+> 600
+> 700
+> 800
+> Reward
+> Final Pure RL Reward
+> Pure LGCP
+> Pure RL
+> BC
+> HBRL
+> Fig. 4: Reward comparison between Pure LGCP, Pure RL, Behavior Cloning and HBRL frameworks. 12 025 50 75 100 125 150 175 200
+> Episode
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> 1.0
+> Average Posterior Variance
+> Final RL Variance
+> Pure LGCP
+> Pure RL
+> BC+SAC
+> HBRL
+
+Fig. 5: Posterior Variance comparison between Pure LGCP, Pure RL and HBRL. Lower values indicate higher confidence in the inferred demand field. 
+
+trajectories that accelerate policy learning. Notably, combining both channels achieves highest reward improvement and 38% fewer episodes to reach Pure RL reward. This demonstrates that while belief transfer has minimal effect in isolation, it provides meaningful benefit when used in conjunction with replay buffer seeding. The spatial context helps the agent gen-eralize beyond the specific trajectories in the buffer, enabling more effective exploration of high-value regions identified by the LGCP posterior. 
+
+C. Warm start and Planning Horizon Ablations 
+
+The warm-start ablation in Figure 7 evaluates how the du-ration of the LGCP exploration phase influences downstream SAC performance. All configurations maintain similar per-formance during their respective LGCP phases, with rewards stabilising around 380. The critical differences emerge during and after the policy transition. The 10-episode configuration exhibits a pronounced performance dip as it shifts to SAC, dropping approximately by 12% before recovering. This degra-dation occurs because the shorter warm-start phase collects only 2000 replay buffer transitions, leaving the SAC agent with limited expert demonstrations to learn from. In contrast, longer warm-start durations accumulate more diverse state-action-reward transitions covering broader regions of the service area, enabling more effective policy initialisation. A short warm-start of 10 episodes also yields the lowest final reward, as the replay buffer contains limited behavioural structure. Increasing the warm-start duration increases the final reward, with 20 and 30 episode warm-up yielding a Final Reward Convergence Episode  
+
+> 400
+> 500
+> 600
+> 700
+> 800
+> 900
+> Reward (last 20 episodes)
+> +0.6%
+> +7.7% +10.8%
+> Pure RL
+> Belief only
+> Buffer only
+> Belief + Buffer
+> 0
+> 25
+> 50
+> 75
+> 100
+> 125
+> 150
+> 175
+> 200
+> Convergence Episode
+> 3%
+> 33%
+> 38%
+
+Fig. 6: Comparison of reward and episodes to reach Pure RL reward for all three transfer channel scenarios. 0 25 50 75 100 125 150 175 200 
+
+> Episode
+> 300
+> 400
+> 500
+> 600
+> 700
+> 800
+> Reward
+> 10 Episodes
+> 20 Episodes
+> 30 Episodes
+> 50 Episodes
+
+Fig. 7: Effect of LGCP warm-start duration on SAC training. Different warm-start lengths determine the transition point from LGCP exploration (Phase-1) to SAC optimization(Phase-2). 
+
+clear improvement in rewards of approximately 6% and 5.2%, respectively. This occurs because longer LGCP exploration populates the replay buffer with a more diverse set of infor-mative trajectories, enabling SAC to begin learning from sub-stantially better initial conditions. However, the final reward of 30 episode vs 50 episode warm-start is identical. This is most likely attributable to excessive warm-starting which biases the replay buffer heavily towards LGCP-style behaviour, making SAC slower to adapt its own policy and resulting in a lagging training graph. The LGCP PathMI horizon ablation in Figure 8 demon-strates that planning depth strongly influences final reward. The myopic setting (L=1) achieves a substantially low median reward as compared to non-myopic configurations, as single-step planning greedily selects actions based on immediate information gain without considering future observational op-portunities. Nevertheless, even this purely local strategy out-performs the pure RL baseline (740) by approximately 4.5%. Increasing the horizon to L=3 and L=5 yields an improvement of 4.8% and 6.1%, respectively. These results indicate that moderate non-myopic planning enables UAVs to anticipate fu-ture information gain and commit to globally beneficial trajec-tories. However, extending beyond L=5 produces diminishing returns. L=7 maintains comparable performance while adding to the computational cost. L=9 degrades slightly, as uncertainty in long-horizon predictions reduces their reliability. L=1 L=3 L=5 L=7 L=9 
+
+> PathMI Horizon
+> 740
+> 760
+> 780
+> 800
+> 820
+> 840
+> 860
+> 880
+> Reward
+> Pure RL reward
+
+Fig. 8: Effect of PathMI planning horizon on final reward. 13 0 25 50 75 100 125 150 175 200       
+
+> Episode
+> 400
+> 600
+> 800
+> 1000
+> Reward  20 30 40 50 60
+> 300
+> 350
+> 400
+> 450
+> 500
+> 550
+> Transition dip
+> 234
+> # UAVs
+> 800
+> 900
+> 1000
+> 1100
+> 1200
+> 1300
+> 1400
+> 1500
+> 1600
+> Total Reward
+> -22%
+> -35%
+> Scaling Efficiency
+> Observed Reward
+> Linear scaling
+> 2 UAVs
+> 3 UAVs
+> 4 UAVs
+
+Fig. 9: Learning performance comparison under varying numbers of UAVs. Increasing the number of agents improves overall reward but exhibits sub-linear scaling due to coordination overhead and redundant coverage 
+
+D. Scalability and Coordination Analysis 
+
+Figure 9 evaluates the scalability of HBRL across multi-UAV configurations. The main plot demonstrates that all configurations successfully learn coordinated coverage poli-cies, with final rewards of 820, 960, and 1080 for 2, 3, and 4 UAVs, respectively. The upper-left inset highlights the transition dip phenomenon occurring during episodes 30-50, where performance temporarily degrades as the SAC policy takes over from PathMI-guided exploration. It can be seen that this degradation is more pronounced for larger fleets, reflecting the increased complexity of learning coordinated behaviors when more agents must avoid spatial overlap. The lower-right inset quantifies scaling efficiency by comparing observed total reward against ideal linear scaling. The sub-linear returns can be attributable to increasing coordination overhead, which is captured by the variance-normalized overlap penalty that discourages redundant coverage of already well-characterized regions. Figure 10 compares final performance under three lev-els of operational-region overlap and different coordination strategies. When the operational regions do not overlap, all methods achieve similar rewards, and both fixed and variance-normalized penalties have negligible impact as UAV sens-ing footprints rarely overlap. In partial overlap, coordination becomes beneficial: the fixed penalty yields improvements by discouraging some redundant sensing, while the proposed variance-normalized penalty performs best, improving the final reward by approximately 6%. This gain arises from selectively allowing overlap in high-uncertainty regions while penalizing No Overlap Partial Overlap High Overlap   
+
+> Overlap Scenario
+> 400
+> 500
+> 600
+> 700
+> 800
+> 900
+> Reward (last 20 episodes)
+> -1% +6% +34%
+> No Penalty
+> Fixed Penalty
+> Variance-Normalized
+
+Fig. 10: Comparison of reward under various overlap penalty scenarios. 0 25 50 75 100 125 150 175 200         
+
+> Episode
+> 300
+> 400
+> 500
+> 600
+> 700
+> 800
+> Reward
+> 025 50 75 100 125 150 175 200
+> Episode
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> Avg. Posterior Variance
+> Temporal Decay ON
+> Temporal Decay OFF
+
+Fig. 11: Impact of temporal decay on HBRL performance: (a) reward convergence and (b) belief uncertainty evolution. The dashed line denotes the warm-start transition point. 
+
+redundancy elsewhere. The benefit of adaptive coordination is most pronounced in the high-overlap regime, where substantial overlap between operational regions leads to frequent sensing conflicts and significant performance degradation in the ab-sence of coordination. In this case, the variance-normalized penalty improves final reward by about 34% relative to no penalty, and by more than 14% compared to the fixed penalty. 
+
+E. Belief Dynamics and Uncertainty Calibration 
+
+Figure 11 examines the role of temporal belief decay in maintaining accurate spatial awareness. Temporal decay increases posterior variance for cells not recently visited, prompting revisiting previously visited areas. Enabling tem-poral decay achieves 8.2% higher final reward, demonstrating the value of maintaining fresh beliefs. However, it reveals a key insight: with temporal decay turned on, the system reports higher posterior variance because it correctly acknowledges uncertainty growth in unvisited regions. This elevated variance drives the planner to revisit areas with stale information, keeping beliefs calibrated with updated demand patterns. Conversely, with no temporal decay of information, variance remains artificially low as the system falsely assumes past observations remain valid indefinitely. This leads to no re-visitation despite information staleness, resulting in decisions based on outdated beliefs and, consequently, lower cumulative reward. Figure 12 presents the sensitivity analysis for reward weights (ω1, ω 2, ω 3). The exploration weight ω2 exhibits a broad optimal plateau between 0.4 and 0.6, with ω2 = 0 caus-ing 11% degradation due to insufficient exploration incentive. Similarly, while extreme ω3 values degrade performance, the optimal region spans a broad range, which indicates robustness to moderate tuning variations. The service weight ω1 shows best and comparable reward for ω1 = 4 , 5, with ω1 = 6 
+
+performing worse, indicating that over-emphasis on immediate service rewards causes the agent to exploit known hotspots at the expense of discovering new demand regions. 
+
+F. Robustness to Experience Loss 
+
+Figure 13 evaluates robustness under stochastic re-play corruption. We replace deterministic replay insertion 14 0.0 0.2 0.4 0.6 0.8 1.0              
+
+> 2
+> 650
+> 675
+> 700
+> 725
+> 750
+> 775
+> 800
+> 825
+> 850
+> Reward
+> 3= 1
+> =1
+> =2
+> =3
+> =4
+> =5
+> 0.0 0.5 1.0 1.5 2.0 2.5 3.0
+> 3
+> 650
+> 675
+> 700
+> 725
+> 750
+> 775
+> 800
+> 825
+> 850
+> Reward
+> 2= 0.4
+> =1
+> =2
+> =3
+> =4
+> =5
+> 00.2 0.4 0.6 0.8 1.0
+> 2
+> 0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> 2.5
+> 3.0
+> 3
+> 500
+> 550
+> 600
+> 650
+> 700
+> 750
+> 800
+> Reward
+
+Fig. 12: Reward weight sensitivity analysis. (a) Effect of exploration weight 
+
+ω2 on final reward with coordination weight fixed at ω3 = 1 .0. The shaded region indicates the optimal range ω2 ∈ [0 .4, 0.6] . (b) Effect of coordination weight ω3 on final reward with exploration weight fixed at ω2 = 0 .4. (c) Reward heatmap over the (ω2, ω 3) configuration space with ω1 = 5 . The star indicates the default configuration. 
+
+with independent Bernoulli thinning, where each transition 
+
+(st, at, r t, st+1 ) is inserted into the buffer with probability 
+
+1 − ploss , for ploss ∈ { 0.0, 0.2, 0.4, 0.6, 0.8}. All results are averaged over five random seeds, paired across all methods and ploss values. Performance degrades smoothly as ploss 
+
+increases, indicating graceful degradation under reduced re-play availability. At moderate loss levels ( ploss ≤ 0.4), both methods maintain stable learning dynamics, while higher loss primarily slows convergence due to delayed buffer saturation. The inset plots show that increasing ploss reduces effective buffer fill-rate, thereby limiting the diversity of stored transi-tions. Figure 14 summarizes final performance over the last 20 episodes. Across all loss levels, degradation is gradual rather than catastrophic, demonstrating the robustness of the proposed framework to experience/replay loss. Convergence here is defined as the first episode reaching 95% of each configuration’s own final reward. VI. C ONCLUSION 
+
+This work is motivated by the challenge of coordinated learning under spatial uncertainty, where agents must operate with incomplete and evolving information. We propose HBRL, a belief-guided warm-start reinforcement learning framework, that integrates LGCP-based spatial inference with non-myopic information-driven planning and off-policy deep reinforcement learning. The approach enables coordinated policy learning while accounting for uncertainty in spatial demand. Perfor-mance was evaluated by comparison with planning-only and 0 25 50 75 100 125 150 175 200                               
+
+> Episode
+> 0
+> 100
+> 200
+> 300
+> 400
+> 500
+> 600
+> 700
+> 800
+> 900
+> Reward
+> 50 100 150 200
+> Episode
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Fill Fraction
+> Buffer Dynamics
+> 25 50 75 100 125 150 175 200
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Expert Frac
+> HBRL ploss = 0.0
+> HBRL ploss = 0.2
+> HBRL ploss = 0.4
+> HBRL ploss = 0.6
+> HBRL ploss = 0.8
+> Pure RL ploss = 0.0
+> Pure RL ploss = 0.2
+> Pure RL ploss = 0.4
+> Pure RL ploss = 0.6
+> Pure RL ploss = 0.8
+
+Fig. 13: Training curves for different ploss values 0.2 0.4 0.6 0.8 0.2 0.4 0.6 0.8      
+
+> ploss
+> 200
+> 400
+> 600
+> 800
+> Reward (last 20 ep)  +19% +21% +48% +99%
+> Final Reward Convergence Episode
+> HBRL
+> Pure RL
+> 0
+> 50
+> 100
+> 150
+> 200
+> Convergence Episode
+> -5%
+> -18%
+> -4% +166%
+
+Fig. 14: Final Reward and Convergence vs. ploss 
+
+learning-only baselines across different overlap configurations, workload intensities, and training settings. The results show that the HBRL achieves faster convergence and consistently higher long-term reward, with significant reward and conver-gence speed improvements compared to baseline approaches. The framework is well-suited to multiple mobile agent settings where shared spatial structure can be exploited to accelerate learning. However, this work is restricted to the initial warm-start phase, which suggests extending the framework toward continuous belief–policy co-adaptation as a direction for future work. Additionally, the impact of scaling to significantly larger fleet sizes merits further investigation. Finally, while the framework is evaluated on wireless service provisioning, the underlying LGCP-SAC structure is domain-agnostic, and applying it to other spatial exploration contexts such as envi-ronmental monitoring or precision agriculture remains an open direction. VII. A CKNOWLEDGMENT 
+
+This work was supported in part by the Commonwealth Scholarship Commission, U.K., and in part by the Commu-nications Hub for Empowering Distributed ClouD Computing Applications and Research (CHEDDAR) funded by the UKRI Engineering and Physical Sciences Research Council (EPSRC) under Grant EP/X040518/1. The authors acknowledge the use of generative AI tools (OpenAI ChatGPT and Grammarly) to assist with language refinement. All conceptual development, experimental design, analysis, and conclusions were conducted and verified by the authors. REFERENCES [1] Patrick McEnroe, Shen Wang, and Madhusanka Liyanage. A survey on the convergence of edge computing and ai for uavs: Opportunities and challenges. IEEE Internet of Things Journal , 9(17):15435–15459, 2022. [2] M. Popovi´ c, J. Ott, J. R¨ uckin, and M. J. Kochenderfer. Learning-based methods for adaptive informative path planning. Robotics and Autonomous Systems , 179:104727, September 2024. [3] Andreas Krause, Ajit Singh, and Carlos Guestrin. Near-optimal sensor placements in Gaussian processes: Theory, efficient algorithms and empirical studies. Journal of Machine Learning Research , 9(2):235– 284, 2008. [4] L. Wang, K. Wang, C. Pan, W. Xu, N. Aslam, and A. Nallanathan. Deep reinforcement learning based dynamic trajectory control for UAV-assisted mobile edge computing. IEEE Transactions on Mobile Com-puting , 21(10):3536–3550, October 2022. [5] A. Krause and C. Guestrin. Nonmyopic active learning of Gaussian processes: An exploration–exploitation approach. In Proc. ICML , pages 449–456, Corvallis, OR, USA, 2007. [6] Yuhong Cao, Yizhuo Wang, Apoorva Vashisth, Haolin Fan, and Guil-laume Adrien Sartoretti. CAtNIPP: Context-aware attention-based net-work for informative path planning. In Conference on Robot Learning ,pages 1928–1937. PMLR, 2023. 15 
+
+[7] Weizhe Chen, Roni Khardon, and Lantao Liu. Adaptive robotic informa-tion gathering via non-stationary Gaussian processes. The International Journal of Robotics Research , 43(4):405–436, 2024. [8] Alex Stephens, Matthew Budd, Michal Staniaszek, Benoit Casseau, Paul Duckworth, Maurice Fallon, Nick Hawes, and Bruno Lacerda. Planning under uncertainty for safe robot exploration using Gaussian process prediction. Autonomous Robots , 48(7):18, 2024. [9] Jesper Møller, Anne Randi Syversveen, and Rasmus Plenge Waagepetersen. Log Gaussian Cox processes. Scandinavian Journal of Statistics , 25(3):451–482, 1998. [10] Havard Rue and Leonhard Held. Gaussian Markov Random Fields: Theory and Applications . Chapman and Hall/CRC, 2005. [11] Finn Lindgren, H˚ avard Rue, and Johan Lindstr¨ om. An explicit link between Gaussian fields and Gaussian Markov random fields: The stochastic partial differential equation approach. Journal of the Royal Statistical Society Series B: Statistical Methodology , 73(4):423–498, 2011. [12] H˚ avard Rue, Sara Martino, and Nicolas Chopin. Approximate Bayesian inference for latent Gaussian models by using integrated nested Laplace approximations. Journal of the Royal Statistical Society Series B: Statistical Methodology , 71(2):319–392, 2009. [13] Peter J. Diggle, Paula Moraga, Barry Rowlingson, and Benjamin M. Taylor. Spatial and spatio-temporal log-Gaussian Cox processes: Ex-tending the geostatistical paradigm. Statistical Science , 28(4):542–563, 2013. [14] Elliot Dovers, Wesley Brooks, Gordana C Popovic, and David I Warton. Fast, approximate maximum likelihood estimation of log-Gaussian Cox processes. Journal of Computational and Graphical Statistics ,32(4):1660–1670, 2023. [15] Elliot Dovers, Jakub Stoklosa, and David I Warton. Fitting log-Gaussian Cox processes using generalized additive model software. The American Statistician , 78(4):418–425, 2024. [16] C. M. Jones-Todd and A. B. M. van Helsdingen. stelfi: An R package for fitting Hawkes and log-Gaussian Cox point process models. Ecology and Evolution , 14(2):e11005, February 2024. [17] Nicoletta D’Angelo, Marianna Siino, Antonino D’Alessandro, and Giada Adelfio. Local spatial log-Gaussian Cox processes for seismic data. AStA Advances in Statistical Analysis , 106(4):633–671, 2022. [18] Y. Bai, H. Zhao, X. Zhang, Z. Chang, R. J¨ antti, and K. Yang. Toward autonomous multi-UAV wireless network: A survey of reinforcement learning-based approaches. IEEE Communications Surveys & Tutorials ,25(4):3038–3067, 2023. [19] Xuanhan Zhou, Jun Xiong, Haitao Zhao, Xiaoran Liu, Baoquan Ren, Xiaochen Zhang, Jibo Wei, and Hao Yin. Joint UAV trajectory and communication design with heterogeneous multi-agent reinforcement learning. Science China Information Sciences , 67(3):132302, 2024. [20] Danish Rizvi and David Boyle. Multi-agent reinforcement learning with action masking for UAV-enabled mobile communications. IEEE Transactions on Machine Learning in Communications and Networking ,3:117–132, 2025. [21] Bocheng Zhao, Mingying Huo, Li Zheng, Feng Wenyu, Yu Ze, Qi Naim-ing, and Wang Shaohai. Graph-based multi-agent reinforcement learning for collaborative search and tracking of multiple UAVs. Chinese Journal of Aeronautics , 38(3):103214, 2025. [22] T. Hester et al. Deep Q-learning from demonstrations. In Proc. AAAI ,pages 3223–3230, New Orleans, LA, USA, 2018. [23] Z. Zhu, K. Lin, A. K. Jain, and J. Zhou. Transfer learning in deep reinforcement learning: A survey. IEEE Transactions on Pattern Analysis and Machine Intelligence , 45(11):13344–13362, 2023. [24] A. Skrynnik et al. Forgetful experience replay in hierarchical reinforce-ment learning from expert demonstrations. Knowledge-Based Systems ,218:106844, April 2021. [25] H. Wang, Z. Arjmandzadeh, Y. Ye, J. Zhang, and B. Xu. Flexnet: A warm start method for deep reinforcement learning in hybrid electric vehicle energy management applications. Energy , 288:129773, February 2024. [26] Yong Zeng, Jie Xu, and Rui Zhang. Energy minimization for wireless communication with rotary-wing UAV. IEEE Transactions on Wireless Communications , 18(4):2329–2345, 2019. [27] Q. Wu, Y. Zeng, and R. Zhang. Joint trajectory and communication design for multi-UAV enabled wireless networks. IEEE Transactions on Wireless Communications , 17(3):2109–2121, March 2018. [28] Hao Hao, Changqiao Xu, Wei Zhang, Shujie Yang, and Gabriel-Miro Muntean. Joint task offloading, resource allocation, and trajectory design for multi-UAV cooperative edge computing with task priority. IEEE Transactions on Mobile Computing , 23(9):8649–8663, 2024. [29] Fuhong Song, Huanlai Xing, Xinhan Wang, Shouxi Luo, Penglin Dai, Zhiwen Xiao, and Bowen Zhao. Evolutionary multi-objective reinforcement learning based trajectory control and task offloading in UAV-assisted mobile edge computing. IEEE Transactions on Mobile Computing , 22(12):7387–7405, 2023. [30] Lucien Le Cam. An approximation theorem for the Poisson binomial distribution. Pacific Journal of Mathematics , 10(4):1181–1197, 1960. [31] Hippolyt Ritter, Aleksandar Botev, and David Barber. A scalable Laplace approximation for neural networks. In 6th international conference on learning representations, ICLR 2018-conference track proceedings ,volume 6. International Conference on Learning Representation, 2018. [32] James Kirkpatrick, Razvan Pascanu, Neil Rabinowitz, Joel Veness, Guillaume Desjardins, Andrei A Rusu, Kieran Milan, John Quan, Tiago Ramalho, Agnieszka Grabska-Barwinska, et al. Overcoming catastrophic forgetting in neural networks. Proceedings of the national academy of sciences , 114(13):3521–3526, 2017. [33] David Q Mayne, James B Rawlings, Christopher V Rao, and Pierre OM Scokaert. Constrained model predictive control: Stability and optimality. 
+
+Automatica , 36(6):789–814, 2000. [34] Leslie Pack Kaelbling, Michael L Littman, and Anthony R Cassandra. Planning and acting in partially observable stochastic domains. Artificial intelligence , 101(1-2):99–134, 1998. [35] Volodymyr Mnih, Koray Kavukcuoglu, David Silver, Andrei A Rusu, Joel Veness, Marc G Bellemare, Alex Graves, Martin Riedmiller, An-dreas K Fidjeland, Georg Ostrovski, et al. Human-level control through deep reinforcement learning. Nature , 518(7540):529–533, 2015. [36] Tuomas Haarnoja, Aurick Zhou, Pieter Abbeel, and Sergey Levine. Soft actor-critic: Off-policy maximum entropy deep reinforcement learning with a stochastic actor. In Proc. ICML , pages 1861–1870. PMLR, 2018. [37] John Schulman, Filip Wolski, Prafulla Dhariwal, Alec Radford, and Oleg Klimov. Proximal policy optimization algorithms. In arXiv preprint arXiv:1707.06347 , 2017. [38] Timothy P Lillicrap, Jonathan J Hunt, Alexander Pritzel, Nicolas Heess, Tom Erez, Yuval Tassa, David Silver, and Daan Wierstra. Continuous control with deep reinforcement learning. In Proc. ICLR , 2016. [39] Scott Fujimoto, Herke van Hoof, and David Meger. Addressing function approximation error in actor-critic methods. In Proc. ICML , pages 1587– 1596. PMLR, 2018. [40] Tuomas Haarnoja, Aurick Zhou, Kristian Hartikainen, George Tucker, Sehoon Ha, Jie Tan, Vikash Kumar, Henry Zhu, Abhishek Gupta, Pieter Abbeel, et al. Soft actor-critic algorithms and applications. arXiv preprint arXiv:1812.05905 , 2018. 
+
+APPENDIX 
+
+A. Warm Start Exploration Strategies 
+
+To motivate the choice of PathMI planning for Phase 1, we compare four action-selection methods in a planning-only setting (without RL). All strategies share the same belief model and differ only in trajectory planning: PathMI (multi-step lookahead via (30)), UCB (greedy, μc + κpσ2 
+
+> c
+
+, κ=2 ), 
+
+Lawnmower (boustrophedon sweep), and Random (uniform direction). To isolate the planning strategy from other frame-work components, we evaluate on a 1000 × 1000 m scenario (∆=10 m, two Gaussian hotspots, N =2 UAVs, rc=100 m and 10 seeds per configuration). Figures 16 and 17 report Pearson correlation between es-timated and ground-truth intensity and per-episode runtime. PathMI achieves median correlation 0.89 , approaching Lawn-mower ( 0.96 ) while requiring around 30% less time. UCB attains 0.81 with higher variance due to greedy local optima. Lawnmower achieves the highest correlation but cannot adapt to observed demand. These results support PathMI as the Phase 1 strategy, offering the best accuracy–computation trade-off among adaptive methods. 
+
+B. Learned Belief Intensity 
+
+Figure 15 presents the final belief intensity maps recon-structed by each method at selected training episodes. At 16 (a) Ground Truth (b) HBRL (Episode 100) (c) HBRL (Converged) (d) Pure RL (Episode 100) (e) Pure RL (Converged) 
+
+Fig. 15: Learned belief intensity maps at episode 100 and convergence for HBRL and Pure RL, compared against the ground truth PathMI UCB Lawnmower Random 
+
+> Strategy
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> 1.0
+> Correlation
+
+Fig. 16: Strategy vs. Correlation PathMI UCB Lawnmower Random 
+
+> Strategy
+> 50
+> 60
+> 70
+> 80
+> 90
+> Time (s)
+
+Fig. 17: Strategy vs. Runtime 
+
+episode 100, HBRL has already identified all four density centers across both operational regions, producing a belief map closely resembling the ground truth. In contrast, Pure RL at episode 100 has only discovered one density center per region, reflecting its slower learning and confirming that the perfor-mance gap due to sample efficiency. Animated visualizations of the belief evolution over the course of each episode are provided on the project page: https://smrizvi1.github.io/HBRL/

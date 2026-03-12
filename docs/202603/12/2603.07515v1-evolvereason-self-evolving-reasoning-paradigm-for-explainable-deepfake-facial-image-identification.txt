@@ -1,0 +1,276 @@
+Title: EvolveReason: Self-Evolving Reasoning Paradigm for Explainable Deepfake Facial Image Identification
+
+URL Source: https://arxiv.org/pdf/2603.07515v1
+
+Published Time: Tue, 10 Mar 2026 01:09:56 GMT
+
+Number of Pages: 9
+
+Markdown Content:
+# EvolveReason : Self-Evolving Reasoning Paradigm for Explainable Deepfake Facial Image Identification 
+
+## Binjia Zhou 1 † , Dawei Luo 3 † , Shuai Chen 3 and Feng Xu 3 , Seow 3 , Haoyuan Li 2 , Jiachi Wang 1 , Jiawen Wang 3 , Zunlei Feng 1 , Yijun Bei 1 ∗
+
+> 1
+
+## School of Software Technology, Zhejiang University 
+
+> 2
+
+## College of Computer Science and Technology, Zhejiang University 
+
+> 3
+
+## Ant Group 
+
+## Abstract 
+
+With the rapid advancement of AIGC technology, developing identification methods to address the se-curity challenges posed by deepfakes has become urgent. Face forgery identification techniques can be categorized into two types: traditional classifi-cation methods and explainable VLM approaches. The former provides classification results but lacks explanatory ability, while the latter, although ca-pable of providing coarse-grained explanations, of-ten suffers from hallucinations and insufficient de-tail. To overcome these limitations, we propose 
+
+EvolveReason , which mimics the reasoning and ob-servational processes of human auditors when iden-tifying face forgeries. By constructing a chain-of-thought dataset, CoT-Face, tailored for advanced VLMs, our approach guides the model to think in a human-like way, prompting it to output rea-soning processes and judgment results. This pro-vides practitioners with reliable analysis and helps alleviate hallucination. Additionally, our frame-work incorporates a forgery latent-space distribu-tion capture module, enabling EvolveReason to identify high-frequency forgery cues difficult to ex-tract from the original images. To further enhance the reliability of textual explanations, we introduce a self-evolution exploration strategy, leveraging re-inforcement learning to allow the model to itera-tively explore and optimize its textual descriptions in a two-stage process. Experimental results show that EvolveReason not only outperforms the cur-rent state-of-the-art methods in identification per-formance but also accurately identifies forgery de-tails and demonstrates generalization capabilities. 
+
+## 1 Introductions 
+
+In recent years, the steady progress of AIGC [Shuai et al. ,2024] has made it easy and feasible to generate highly realis-tic, hard-to-distinguish images. However, the ability to gen-erate high-quality content with just simple prompts and guid-
+
+* Corresponding author. † These authors contributed equally to this work. 
+
+Figure 1: Comparison of our method (b) against other existing ex-plainable approaches (a) in face forgery identification. 
+
+ance has significantly lowered the threshold for malicious ac-tors to fabricate false information, leading to issues such as bypassing face verification and telephone scams, which pose serious threats to public safety and the authenticity of public opinion. At the same time, it has placed a tremendous burden on human reviewers, making it an urgent task to assist them in effectively identifying sophisticated forgeries. In order to address the security threats posed by facial image forgery techniques, researchers initially focused on analyzing the facial images themselves to identify inherent visual artifacts in forged facial images [Cao et al. , 2022; Dong et al. , 2022]. Currently, the main solutions to address the above risks rely on two mainstream approaches, one is based on traditional visual methods, focusing on facial ma-nipulation methods [Li et al. , 2019] such as Face2Face [Thies 
+
+et al. , 2016] and FaceSwap [Korshunova et al. , 2017]. How-ever, relying solely on a visual modality for forgery detection treats the process as a black box, yielding only binary classifi-cation without critical visual cues and understanding the basis of the discrimination. Although segmentation-based methods can locate tampered regions via masks to provide visual ex-planations [Sun et al. , 2025], they still can’t generate natural language explanations, making them not friendly enough in understanding for reviewers. To enhance the explanatory ability and informational depth of facial image forgery identification models, some re-searchers have endeavored to incorporate textual informa-
+
+> arXiv:2603.07515v1 [cs.CV] 8 Mar 2026
+
+tion, developing multi-modal deepfake identification frame-works. Leveraging established text-image encoding tech-nologies such as CLIP [Radford et al. , 2021] and BLIP [Li et al. , 2022], a bridge for feature interaction between the image and text modalities has been constructed. Another attempt to overcome this uses vision and language models (VLM) [Zhang et al. , 2024; Kundu et al. , 2025a; Song et al. , 2024]. New approaches have experimented with pre-trained VLM, for example GPT 4o [Hurst et al. , 2024], to detect forged content while offering explanations that are easy for humans to follow, addressing challenges of accuracy and explanatory ability in deepfake identification. Although certain explana-tions can be provided, hallucinations remain a significant is-sue, counteracting the intended effect. Moreover, the datasets used in VLM-based methods, such as DD-VQA [Zhang et al. ,2024], contain a large amount of noise, posing considerable challenges for training VLM. To address these challenges, we introduce EvolveRea-son , a novel self-evolving reasoning multimodal explain-able framework. For forged explanatory ability identifica-tion, EvolveReason is trained on a newly chain-of-thoughts dataset, CoT-Face, and in order to ensure the accuracy of forgery identification and textual explanations, we have de-signed three module: a) To capture high-frequency forgery details that are difficult to identify in the RGB image, the forgery visual clue extraction enriches the downstream visual inputs by providing reconstructed differences and fourier fre-quency domain data. b) Based on the visual forgery clues, ini-tial cot alignment integrates the anti-forgery observation rea-soning into the VLM using the constructed CoT-Face dataset, allowing the model to initially develop the ability to explain forgery clues. c) To ensure the reliability of explanations of the text, self-evolving reasoning drives the VLM to ex-plore answers that surpass human-provided labels through re-inforcement learning, directly addressing and explaining the forgery traces of different regions. Through extensive exper-iments, we have demonstrated that our method achieves high forgery identification accuracy and provides reliable textual explanations for the forgery clues. The contributions of this work are as follows: • We propose the EvolveReason framework, which ad-dresses the issue of noise caused by mismatches between visual forgeries and textual descriptions, and enables the VLM to emulate human reviewers in observing forged images from a global perspective to key local details, achieving explainable deepfake identification. • The proposed self-evolving reasoning strategy employs a reinforcement learning-based reward mechanism to drive the VLM to explore the best thought and out-put, combined with the proposed distribution consis-tency constraint, effectively improve the model’s forgery identification performance and text reliability. • We have constructed a new chain-of-thoughts dataset called CoT-Face, which contains over 5,900 samples. Each sample includes multiple forgery traces, from over-all to local details, in forged images, laying the ground-work for training the model to adopt the forgery identi-fication approach of human reviewers. 
+
+## 2 Related Work 
+
+2.1 Conventional Face Forgery Methods 
+
+Mainstream approaches in this field rely on visual signal capture, traditional techniques magnify forgery traces in the frequency [Qian et al. , 2020; Luo et al. , 2021] and spa-tial domains [Bei et al. , 2024; Li et al. , 2020a], enabling precise identification of subtle manipulations and facial ar-tifacts. However, the rise of AIGC-style global forgeries has exposed the limitations of detectors that focus on lo-cal image regions. To meet this new challenge, a wave of GAN-based [Huang et al. , 2022; Guarnera et al. , 2020] and diffusion-based [Somepalli et al. , 2023] methods has emerged, achieving state-of-the-art performance in fine-detail analysis and cross-dataset generalization: for example, CN-NDetection [Wang et al. , 2020] trained on ProGAN [Kar-ras et al. , 2017] exhibits remarkable generalization, while DIRE [Wang et al. , 2023] effectively addresses diffusion-generated fakes because genuine images themselves can-not be perfectly reconstructed. Nevertheless, in complex open-world settings these methods still show restricted gen-eralization. Moreover, they usually frame the task as bi-nary classification, yielding only two-class outputs or coarse heatmaps that provide little insight into the model’s deci-sion process [Chen et al. , 2024; Kundu et al. , 2025b]. Sun 
+
+et al. attempts to enhance accuracy and visual explanation through masking, but downstream explanations using general large models cannot succinctly pinpoint forgery traces in text form. Therefore, it is essential to develop an open-world face-forgery analysis model that is both highly generalizable and robust, while also delivering user-friendly and explainable re-sults under realistic conditions across diverse real datasets. 
+
+2.2 VLM-based Explainable 
+
+Text-based deepfake explainability offers finer-grained in-sights than traditional visualization techniques [Huang et al. ,2024; Chang et al. , 2023; Gao et al. , 2025b], because it employs natural language to spell out specific inconsisten-cies or manipulations in a way people can readily follow. Early attempts simply used general-purpose VLM [Jia et al. , 2024], zero-shot identification with ChatGPT [Achiam 
+
+et al. , 2023] but these models lack forgery-specific knowl-edge from pre-training, so their accuracy and generaliza-tion were limited. DD-VQA [Zhang et al. , 2024] intro-duced a VQA-style dataset built on FaceForensics++ [Rossler 
+
+et al. , 2019], laying the groundwork for training dedicated, explainable large models in this domain. Based on that dataset, CorrDetail [Zhou et al. , 2025] reinforced the sen-sitivity of LLaVA’s image-features and cross-domain gen-eralization through a self-correcting Q&A scheme. Truth-Lens [Kundu et al. , 2025a] went further, injecting the fine-grained local feature perception of vision encoder such as DI-NOv2 [Oquab et al. , 2023] into VLM to heighten awareness of subtle forgeries. Sun et al. tackled inherent hallucination issues during explanation, it first masks forged regions for coarse localization and then fine-tunes a VLM with a com-prehensive prompting strategy and structured annotations. By contrast, EvolveReason not only introduces a brand-new CoT-Face dataset tailored to face forgery analysis but also fine-Figure 2: The framework of the proposed EvolveReason . During training, the forgery distribution latent space feature extraction is used to enhance high-frequency forgery clues in the input of forged images and restore detailed information. Subsequently, fine-tuning the VLM with the forgery identification knowledge guided by the chain-of-thought in the CoT-Face dataset encourages the model to mimic the real auditor’s process of observing and identifying forged images. Finally, reinforcement learning is employed to self-evolve the VLM’s text explanation ability, enhancing the reliability of explanations and identification. 
+
+tunes a VLM guided by correct reasoning chains. The re-sult is precise, fine-grained forgery identification that deliv-ers step-by-step explanations, from global assessment down to local cues, making the model’s decision logic transparent to end users. 
+
+2.3 Explainable Model with Chain-of-Thoughts 
+
+Similar to Chain-of-Thought (CoT) prompting in conven-tional large language models [Wang et al. , 2024a; Mitra et al. ,2024], reasoning prompts for VLM fall into two broad cate-gories. The first enriches the model with additional image-related cues to strengthen object recognition, as in Set-of-Marks [Yang et al. , 2023] and ICot [Gao et al. , 2025a]. The second guides reasoning through textual logic: DD-CoT [Zheng et al. , 2023] breaks a hard problem into a se-quence of simpler sub-problems that the model solves one by one before synthesizing the final answer, while CCoT [Mi-tra et al. , 2024] asks the VLM to describe every object in the image to support subsequent reasoning. Yet none of these ap-proaches provides a concrete tutorial that teaches the model how to observe an image accurately for a given downstream task. To fill this gap, we introduce a domain-specific CoT framework for face-forgery identification. Our method incre-mentally steers the VLM through the verification process and uses reinforcement learning to effectively prune redundant or repetitive content, thereby yielding more concise, readable, and explainable outputs across diverse scenarios. 
+
+## 3 CoT-Face Dataset 
+
+To address the challenges arising from the lack of proper guidance methods and corresponding datasets for effectively steering the reasoning process of VLMs in Face Forgery iden-tification, Fig.2 demonstrates how we constructed a special-ized dataset named CoT-Face tailored for the current domain, using high-parameter multi-modal large models and the FF++ dataset [Rossler et al. , 2019]. Specifically, we employed Qwen-72B-VL-MAX [Wang et al. , 2024b] to iteratively ad-dress multiple detailed queries, decomposing the complex overall judgment task into separate, key-region-specific ques-tions. Subsequently, leveraging Deepseek-R1’s [Guo et al. ,2025] strong reasoning and summarization capabilities, we integrated the iterative results from the previous phase and fed them into a downstream LLM. Guided by specific instruc-tions, this model condensed and refined the results into an ini-tial dataset comprising approximately 6,000 samples. Finally, professional forgery reviewers conducted a second round of verification, assessing everything from the smoothness of lo-cal details to the integrity of the overall structure, the correct-ness of the conclusions, and the precision of the descriptions, thereby refining and denoising the data. This process ulti-mately yielded a compact, high-quality CoT dataset suitable for training smaller VLM models, laying a solid foundation for subsequent downstream tasks. We provide the reviewers’ expertise and evaluation logic, along with detailed explanations of the methodology and dataset structure, in the supplementary material .4 Method 
+
+Fig.2 illustrates the overall framework of EvolveReason . The first subsection presents the forgery visual clue extraction module, which uses diffusion models to provide richer visual cues for detecting fine-grained facial forgeries, enhancing the VLM’s visual-feature extraction. The second subsection ex-plains how the CoT-Face dataset drives the VLM’s forgery-detection reasoning and steers its chain-of-thought process. The final subsection applies group relative policy optimiza-tion (GRPO) to fine-tune the VLM, optimizing the reward function to allow the model to autonomously evolve and ex-plore textual descriptions beyond human annotations. 
+
+4.1 Forgery Visual Clue Extraction (FVCE) 
+
+Most prior VLM-based approaches deliver additional image clues to the model through text prompts, yet this modality is not sufficiently congenial: forgery details are often subtle, so purely textual descriptions struggle to meet identification requirements. We therefore enrich the model’s visual input to strengthen its feature-capture capability. Concretely, we first feed the original image I into a pre-trained Stable Diffusion and extract restored images Rn,
+
+R1, R 2, ..., R n, ..., R N = Dif f usion (I),
+
+from N time steps, that show the most pronounced recon-struction effects. The last K restored image is then subtracted from the original to produce a set of difference images Dn as follows: 
+
+Dn = I − Rn, n ∈ (N, N − 1, . . . , N − K).
+
+This series preserves the coarse-to-fine restoration cues, ex-posing abundant structural information and local details. Be-cause image forgeries are largely reflected in high-frequency components, for example, techniques such as Face2Face and FaceSwap produce abrupt pixel-level changes, capturing this property allows the model to detect subtle features that would otherwise be hard to observe. Finally, we apply a Fourier transform to every Dn to obtain the corresponding frequency domain images Fn as follows: 
+
+Fn = F F T (Dn), n ∈ (N, N − 1, . . . , N − K).
+
+With these pre-processing steps completed, all image data are ready for downstream processing. 
+
+4.2 Initial Cot Alignment (ICA) 
+
+Most current VLM-based forgery identification methods give only a binary verdict or a very rough explanation. This train-ing paradigm turns the model into a black box: we cannot see whether it has truly learned a sound reasoning process, and human reviewers struggle to assess the reliability of its outputs. To overcome these issues, we apply special mea-sures during the fine-tuning and alignment stage. First, at the system-prompt level we instruct the VLM to enclose its reasoning in <think >. . . </think >tags and its final answer in 
+
+<answer >. . . </answer >tags, this is the basic output for-mat. The content inside these tags represents the forgery iden-tification knowledge the model must learn during fine-tuning and alignment. In addition, we supply a structured answer  
+
+> Figure 3: The overall workflow and schematic diagram of self-evolution reasoning.
+
+template, for example, we require the model to list detected forgery clues in a logical sequence for each region (Overall image, Face, Eyebrows, etc.). We reinforce these capabili-ties by concatenating extra visual information and modalities along the channel dimension to better suit the forgery identi-fication task. The specific formula is as follows: 
+
+ExtraInf o = Concat (XNn=N −K Fn, XNn=N −K Dn),Answer = V LM (I, ExtraInf o, P rompt, Label ),
+
+where I, Fn, and Dn are all generated by the FVCE module, the P rompt is the standard query, such as “Does the image look fake?” and the Label is taken directly from the dataset’s own annotated input. 
+
+4.3 Self-Evolving Reasoning (SER) 
+
+There has already been extensive application of reinforce-ment learning methods, such as GRPO, in general VLMs, which have verified effectiveness in helping models explore correct reasoning paths and improve performance through self-feedback across diverse settings. However, attempts to leverage these methods in face-forgery identification remain limited. Therefore, we propose a novel textual-exploration reward function that not only encourages the model to seek “aha” moments [Guo et al. , 2025] beyond the constraints of existing labels, but also leverages the answer distribution from multiple GRPO-based samplings to prudently constrain the model’s progression, as detailed in Fig. 3. For a given prompt Q, VLM samples C candidate re-sponses, we use the first version of EvolveReason , which has already acquired forgery identification knowledge, as a toxic data filter to eliminate other low-quality generated data, retaining only the top M responses, denoted as {Am}Mm=1 ,sampled from the policy πθ . We then evaluate each response using a reward function Rm(Q, A m), which measures the quality of the candidate response in the context of the given question. To determine the relative merits of these responses, GRPO normalizes the rewards by computing their mean and standard deviation, and then derives the advantage Adv as follows: 
+
+Adv = R − 1
+
+> M
+
+PMm=1 Rm
+
+r 
+
+> 1
+> M−1
+
+PMm=1 
+
+
+
+Rm − 1
+
+> M
+
+PMp=1 Rp
+
+2 .Figure 4: Qualitative examples of results on certain samples. For failure cases of Qwen3-235B-A22B and GPT-4o, EvolveReason achieves correct classification results along with corresponding explanations. 
+
+The goal of our GRPO is to explore and identify the sam-pled response with the highest advantage value, while the re-ward function is designed to align with human preferences. Accordingly, across T iterations we continually allow the VLM’s outputs to undergo self-evolution, aiming to produce the text that most accurately captures the forgery cues, which can be expressed as follows: 
+
+ At
+
+> 1
+
+, . . . , A tM
+
+ = GRP O  At−1,At = T eacherV LM (At
+
+> 1
+
+, A t
+
+> 2
+
+, . . . , A tM , ˆAt),
+
+where ˆAt means the ground-truth in specific t iteration and 
+
+t ∈ (2 , 3, . . . , T ), and we employ Qwen-72B-VL-MAX as the TeacherVLM. In this paper, we adopt three rule-based ap-proach for the reward function: 
+
+Rall = Rf mt + Racc + Rsee .
+
+Format Reward: The output answers are evaluated with two parts: 
+
+Rf mt = Rtag + Rkey .
+
+If the response contains specific tags, a reward is given as follows: 
+
+Rtag = 0 .5 if match (Ai, tags ) else 0.0,tags = “<think>..</think><answer> .. </answer> ”.
+
+If the response further contains keywords that match the keywords ∈ { Overall image, F ace, N ose, ..., N eck }, addi-tional rewards are incrementally granted: 
+
+Rkey = 1 .0 if keywords ∈ A else 0.0.
+
+Accuracy Reward: This portion of the reward is deter-mined mainly by whether the model’s output matches the la-bel in a binary classification sense, if they coincide, the re-ward is granted: 
+
+Racc = 1 .0 if Cls (A) == Cls ( ˆA) else 0.0,
+
+where Cls (·) denote their respective classification outcomes for the potentially forged image, either real or forgery. 
+
+Self-Evolution Reward: This reward term intro-duces a Teacher VLM that ranks the generated samples by their image–text alignment over multiple samplings 
+
+Rank (A1, A 2, ..., A M , ˆA). Uniquely, before the ranking step we treat the ground-truth label ˆA as an additional sample and include it in the candidate pool, after the ranking step, we as-sign rewards according to each sample’s position. Concretely, with the ground-truth label as our reference point, any sample that ranks above the label receives an extra bonus, encour-aging the model to boost the probability of these “beyond-upper-bound” explorations instead of merely gravitating to-ward the label. Samples that rank below the label receive only a baseline reward. Formally, this can be written as follows: 
+
+Rsee =
+
+(
+
+(β ∗ M −rM + e1− A· ˆA   
+
+> || A|| 2|| ˆA|| 2
+
+) ∗ α, r < ˆr
+
+(β ∗ M −rM ) ∗ α, r > ˆr ,
+
+where r and ˆr represents the rank of specific sample A and ˆA,the β is a hyperparameter, that is the reward weight we set to 
+
+1.5. Specifically, because we do not want these breakthrough cases to push the model’s exploration range too far, we mon-itor the distribution of multiple samples and check whether the outputs converge. If the distribution is still widely dis-persed, it suggests the model has not genuinely captured the image-forgery cues and is instead hallucinating. Therefore, we introduce a coefficient α:
+
+α = 1
+
+M
+
+XMm=1 
+
+A · Am
+
+|| A|| 2 || Am|| 2
+
+,
+
+which controls the model’s learning step size for capturing image-forgery cues while preventing hallucination. Methods Datasets Intra-Testing Cross-Testing FF++ (LQ) FF++ (HQ) CelebDF (trained on FF++ (LQ)) ACC ↑ AUC ↑ CIDEr ↑ SPICE ↑ Top-2 ↑ ACC ↑ AUC ↑ CIDEr ↑ SPICE ↑ Top-2 ↑ ACC ↑ AUC ↑ EER ↓                                                                                                                                                                                                   
+
+> XceptionNet [Rossler et al. , 2019] 86.86 93.50 ///95.04 96.30 ///60.11 61.80 41.73 RFM [Wang and Deng, 2021] 87.06 89.83 ///95.69 98.79 ///64.42 65.64 38.80 RECCE [Cao et al. , 2022] 91.03 95.02 ///97.06 99.32 ///67.96 68.71 35.73 UIA-VIT [Zhuang et al. , 2022] 91.05 94.88 ///98.62 99.33 ///69.80 70.15 35.82 HiFi-Net [Guo et al. , 2023] 89.25 92.10 ///97.41 98.56 ///67.20 68.80 36.13 PFG-DD [Lin et al. , 2024] 91.03 93.47 ///97.33 98.68 ///68.51 69.68 35.94 Forensics Adapter [Cui et al. , 2025] 93.56 96.20 ///98.76 99.44 ///73.37 74.55 33.06 CorrDetail [Zhou et al. , 2025] 94.41 96.93 ///99.28 99.92 ///72.32 72.80 33.87 RECCE (DD-VQA) [Zhang et al. , 2024] 92.08 95.36 2.06 0.69 34.6 98.65 99.79 2.43 0.77 42.2 69.46 70.21 35.63 FFAA [Huang et al. , 2024] 92.48 94.74 1.92 0.62 21.4 98.68 99.02 2.28 0.70 16.8 74.08 75.31 30.95 FakeReasoning [Gao et al. , 2025b] 92.79 95.51 2.14 0.66 21.5 98.71 99.78 2.25 0.74 25.6 72.68 73.94 31.07 SIDA [Huang et al. , 2025] 92.13 94.32 1.83 0.59 16.6 97.82 98.92 2.19 0.68 19.2 73.00 74.39 30.58 [Sun et al. , 2025] 91.86 94.07 1.97 0.60 20.4 98.97 99.16 2.31 0.74 27.4 73.91 76.87 31.38
+> EvolveReason (ours) 95.01 97.04 2.29 0.75 81.4 99.40 99.88 2.51 0.81 73.4 76.50 78.41 28.40
+
+Table 1: Comparison of EvolveReason with SOTA methods across both intra- and cross-datasets. The highest and second-highest perfor-mances are highlighted in best and second best, respectively. And / denotes methods that fail to generate interpretable text. Moreover, ACC and AUC denote that higher values are preferred, while EER signifies that lower values are desired. All scores are expressed in %. Module Intra-Testing Cross-Testing FVCE ICA SER LQ HQ CelebDF DFDC 
+
+% % % 88.44 91.87 65.58 69.42 
+
+% % " 91.91 94.59 71.03 74.97 
+
+% " % 92.75 96.15 73.11 76.59 
+
+" % % 91.20 94.81 68.59 74.31 
+
+% " " 96.11 98.43 77.39 78.28 
+
+" % " 93.80 96.72 74.07 76.80 
+
+" " % 95.92 97.38 75.20 78.51 
+
+" " " 97.04 99.88 78.41 80.94 
+
+Table 2: Ablation study of EvolveReason with FF++ datasets. Cross-domain testing is conducted on LQ. Best are highlighted in bold . All numbers are AUC (%). 
+
+## 5 Experiments 
+
+In this section, we introduce the experimental setup, present a performance comparison between EvolveReason and recent approaches across various datasets. 
+
+Architecture and Implementation Details. During the CoT-Face dataset construction phase, we queried Qwen-72B-VL-MAX to generate rationales and employed Deepseek-R1 to condense and refine them. For fine-tuning, we extracted distributions with Stable Diffusion v1.5 and used Qwen2.5-VL-7B as the base model. Training on the CoT-Face dataset was carried out with a learning rate of 2 e−5, for 4 epochs, using a batch size of 16 on NVIDIA A100 GPUs. More details (e.g., FVCE sensitivity analysis, SER mod-ule’s sampling strategy, time-efficiency analysis, and hyper-parameter settings) are provided in supplementary material. 
+
+CoT-Face Dataset. Based on the original data from the FF++ dataset, we have constructed the CoT-Face dataset, which consists of 5953 [image, question, answer] triples to support the chain-of-thoughts fine-tuning and SER. The dataset includes not only the condensed outputs and their cor-responding prompts, but the results from every generation stage polling step, making it easy to extend the corpus fur-ther, each example contains ten such polling iterations. 
+
+Evaluation Dataset and Metrics. We evaluate the method using the FF++ [Rossler et al. , 2019], Celebf [Li et al. ,2020b], DFD, DFDC [Dolhansky et al. , 2020] and Deep-FaceGen [Bei et al. , 2024] datasets. The DFD corpus com-prises more than 363 original clips, and beyond the footage it includes over 3,000 processed videos generated with the deepFake technique. The DFDC dataset comprises more than 100 , 000 videos produced with eight forgery techniques. CelebDF relies exclusively on face swapping and contains 5,639 manipulated clips. FF++ contributes 4,000 videos gen-erated with four techniques Deepfake, Face2Face, FaceSwap, and NeuralTextures. For both datasets, each video is cropped to face images, creating two of the field’s most common image-level benchmarks. DeepFaceGen offers both video and still-image forgeries, from which we collect forged faces produced by 27 methods, spanning conventional task-driven pipelines and our new prompt guided approach. Following prior benchmark practice, we report Accuracy (ACC), Equal Error Rate (EER), and Area Under the Curve (AUC). More experimental on DFD and DFDC, as well as analyses of failure cases, are provided in the supplementary material. 
+
+5.1 Comparison with SOTAs 
+
+We compare EvolveReason with mainstream approaches. These include traditional binary classifiers—XceptionNet, EN-B4, RFM, RECCE, UIA-ViT, HiFi-Net, PFG-DD, and Forensics Adapter—as well as VLM-based explainability methods such as CorrDetail, RECCE (DD-VQA), FFAA, FakeReasoning, and SIDA. We fine-tuned EvolveReason on the CoT-Face dataset constructed from FF++. As reported in Table.1, our model delivers the best overall performance. We compare the quality of text generation using the SPICE [Anderson et al. , 2016] and CIDEr [Vedantam et al. ,2015] metrics. Moreover, we employed ChatGPT-o3 to rank the explainable methods’ outputs on samples according to their image–text consistency. For each of 500 FF++ samples, we selected the top two methods; EvolveReason emerged most frequently in rankings. Fig.4 provides a visual com-parison of the explanations produced by EvolveReason and a generic VLM in the context of forgery identification. 
+
+5.2 Generalization on Different Datasets. 
+
+To further validate the effectiveness of EvolveReason , we de-signed experiments that probe its ability to generalize. On the CelebDF dataset, we first trained EvolveReason on CoT-Face and then transferred it to CelebDF for cross-dataset Figure 5: Generalization performance of EvolveReason versus the in-domain performance of existing methods. The radar chart illustrates identification performance across different forgery categories: solid lines represent baseline methods, while the dashed line corresponds to   
+
+> EvolveReason . The bar chart reports mean AUC for each approach. All six baseline methods were trained and evaluated on DeepFaceGen, whereas CorrDetail and EvolveReason were trained on FF++ and tested on DeepFaceGen, representing a cross-dataset evaluation.
+
+evaluation, comparing its performance with other methods also trained on FF++. For DeepFaceGen, we contrasted 
+
+EvolveReason with seven state-of-the-art identification mod-els. Notably, six of these models were tested in an intra-dataset manner—trained and evaluated on DeepFaceGen, whereas CorrDetail and EvolveReason were trained on FF++ and then tested on DeepFaceGen, constituting a cross-dataset setting. The results on CelebDF are summarized in Table.1. In the cross-dataset experiments, EvolveReason delivered the best performance, surpassing all competing approaches. On the more challenging DeepFaceGen benchmark (Fig.5), even under the less favorable scenario in which EvolveReason is trained only on CoT-Face but tested on DeepFaceGen, while all comparison methods undergo same-dataset training and testing— EvolveReason still outperforms the SOTA model. 
+
+5.3 Ablation Study 
+
+Illustrating the Effectiveness of FVCE. Table.2 demon-strates that the module, capturing high-frequency forgery cues and extracting latent-space features, boosts performance on both FF++ and CelebDF, in a consistent and significant manner, showing strong cross-domain generalization. This indicates that FVCE helps the base model tackle difficult, hard-to-spot samples at the raw-input level. We present the visualization results of the step-by-step restoration difference in the supplementary material to further demonstrate the ef-fectiveness of the diffusion mechanism in capturing high-frequency forgery cues. 
+
+Discussing the influence of ICA. To assess the perfor-mance gains brought by the chain-of-thought strategy, we compared EvolveReason with a generic VLM in terms of forgery identification capability. Besides measuring binary classification accuracy, we also examined whether the re-sponses are sufficiently fine-grained and whether they pro-vide reviewers with precise explanations of forged clues. As illustrated in Fig.4, our method accurately detects forged im-ages in several cases where the generic VLM fails, while also outputting its reasoning process from global overview down to local details step-by-step describing potential forgery arti-facts in each key region, and concluding with a concise, well-focused summary in answer section. 
+
+Observe the practicality of SER. To examine how the SER module enables self-evolution in EvolveReason ’s tex-tual outputs, we visualized the model’s responses on a CoT-Face sample before and after reinforcement. Prior to rein-forcement, the model underwent fine-tuning with knowledge injection; it produced rigid, template-like answers dictated by the prompt. It still reported fabricated details about the “Neck” area even when the forged image contained little to no neck region, and omitted other relevant cues, which is sub-optimal. After reinforcement, however, the model first evalu-ates whether each key region merits a response and provides more granular descriptions for those exhibiting forgery arti-facts. Its coverage of facial regions is more comprehensive and detailed, aligning better with auditors’ needs. Ablation visualizations are provided in the supplementary materials .
+
+## 6 Conclusion 
+
+In this paper, we propose EvolveReason , a new face-forgery identification framework that boosts both performance and explanatory ability through chain-of-thought training and guided forgery reasoning. The FVCE module captures subtle high-frequency artifacts and cues hard to spot in manipulated images, while ICA injects reasoning-driven forgery knowl-edge into the VLM, producing explanations auditors can readily understand. Finally, SER introduces a reinforcement-learning-based self-evolution strategy that overcomes the ceiling imposed by manual labels and expands the model’s capacity for textual exploration. Across multiple bench-marks, EvolveReason surpasses recent state-of-the-art meth-ods with higher accuracy and generalization. References 
+
+[Achiam et al. , 2023] Josh Achiam, Steven Adler, Sandhini Agarwal, Lama Ahmad, Ilge Akkaya, Florencia Leoni Aleman, Diogo Almeida, Janko Altenschmidt, Sam Alt-man, Shyamal Anadkat, et al. Gpt-4 technical report. 
+
+arXiv preprint arXiv:2303.08774 , 2023. [Anderson et al. , 2016] Peter Anderson, Basura Fernando, Mark Johnson, and Stephen Gould. Spice: Semantic propositional image caption evaluation. In ECCV , 2016. [Bei et al. , 2024] Yijun Bei, Hengrui Lou, Jinsong Geng, Erteng Liu, Lechao Cheng, Jie Song, Mingli Song, and Zunlei Feng. A large-scale universal evaluation benchmark for face forgery detection. arXiv preprint arXiv:2406.09181 , 2024. [Cao et al. , 2022] Junyi Cao, Chao Ma, Taiping Yao, Shen Chen, Shouhong Ding, and Xiaokang Yang. End-to-end reconstruction-classification learning for face forgery de-tection. In CVPR , pages 4113–4122, 2022. [Chang et al. , 2023] You-Ming Chang, Chen Yeh, Wei-Chen Chiu, and Ning Yu. Antifakeprompt: Prompt-tuned vision-language models are fake image detectors. arXiv preprint arXiv:2310.17419 , 2023. [Chen et al. , 2024] Shen Chen, Taiping Yao, Hong Liu, Xi-aoshuai Sun, Shouhong Ding, Rongrong Ji, et al. Diffu-sionfake: Enhancing generalization in deepfake detection via guided stable diffusion. NeurIPS , 37:101474–101497, 2024. [Cui et al. , 2025] Xinjie Cui, Yuezun Li, Ao Luo, Jiaran Zhou, and Junyu Dong. Forensics adapter: Adapting clip for generalizable face forgery detection. In CVPR , pages 19207–19217, 2025. [Dolhansky et al. , 2020] Brian Dolhansky, Joanna Bitton, Ben Pflaum, Jikuo Lu, Russ Howes, Menglin Wang, and Cristian Canton Ferrer. The deepfake detection challenge (dfdc) dataset. arXiv preprint arXiv:2006.07397 , 2020. [Dong et al. , 2022] S. Dong, Jin Wang, Jiajun Liang, Hao-qiang Fan, and Renhe Ji. Explaining deepfake detection by analysing image matching. In ECCV , 2022. [Gao et al. , 2025a] Jun Gao, Yongqi Li, Ziqiang Cao, and Wenjie Li. Interleaved-modal chain-of-thought. In CVPR ,pages 19520–19529, 2025. [Gao et al. , 2025b] Yueying Gao, Dongliang Chang, Bingyao Yu, Haotian Qin, Lei Chen, Kongming Liang, and Zhanyu Ma. Fakereasoning: Towards generaliz-able forgery detection and reasoning. arXiv preprint arXiv:2503.21210 , 2025. [Guarnera et al. , 2020] Luca Guarnera, Oliver Giudice, and Sebastiano Battiato. Deepfake detection by analyzing con-volutional traces. In CVPR workshops , pages 666–667, 2020. [Guo et al. , 2023] Xiao Guo, Xiaohong Liu, Zhiyuan Ren, Steven Grosz, Iacopo Masi, and Xiaoming Liu. Hierarchi-cal fine-grained image forgery detection and localization. In CVPR , pages 3155–3165, 2023. [Guo et al. , 2025] Daya Guo, Dejian Yang, Haowei Zhang, Junxiao Song, Ruoyu Zhang, Runxin Xu, Qihao Zhu, Shi-rong Ma, Peiyi Wang, Xiao Bi, et al. Deepseek-r1: In-centivizing reasoning capability in llms via reinforcement learning. arXiv preprint arXiv:2501.12948 , 2025. [Huang et al. , 2022] Yihao Huang, Felix Juefei-Xu, Qing Guo, Yang Liu, and Geguang Pu. Fakelocator: Robust localization of gan-based face manipulations. IEEE Trans-actions on Information Forensics and Security , 17:2657– 2672, 2022. [Huang et al. , 2024] Zhengchao Huang, Bin Xia, Zicheng Lin, Zhun Mou, Wenming Yang, and Jiaya Jia. Ffaa: Multimodal large language model based explainable open-world face forgery analysis assistant. arXiv preprint arXiv:2408.10072 , 2024. [Huang et al. , 2025] Zhenglin Huang, Jinwei Hu, Xiangtai Li, Yiwei He, Xingyu Zhao, Bei Peng, Baoyuan Wu, Xi-aowei Huang, and Guangliang Cheng. Sida: Social me-dia image deepfake detection, localization and explanation with large multimodal model. In CVPR , pages 28831– 28841, 2025. [Hurst et al. , 2024] Aaron Hurst, Adam Lerer, Adam PGoucher, Adam Perelman, Aditya Ramesh, Aidan Clark, AJ Ostrow, Akila Welihinda, Alan Hayes, Alec Rad-ford, et al. Gpt-4o system card. arXiv preprint arXiv:2410.21276 , 2024. [Jia et al. , 2024] Shan Jia, Reilin Lyu, Kangran Zhao, Yize Chen, Zhiyuan Yan, Yan Ju, Chuanbo Hu, Xin Li, Baoyuan Wu, and Siwei Lyu. Can chatgpt detect deep-fakes? a study of using multimodal large language models for media forensics. In CVPR , pages 4324–4333, 2024. [Karras et al. , 2017] Tero Karras, Timo Aila, Samuli Laine, and Jaakko Lehtinen. Progressive growing of gans for improved quality, stability, and variation. arXiv preprint arXiv:1710.10196 , 2017. [Korshunova et al. , 2017] Iryna Korshunova, Wenzhe Shi, Joni Dambre, and Lucas Theis. Fast face-swap using con-volutional neural networks. In ICCV , pages 3677–3685, 2017. [Kundu et al. , 2025a] Rohit Kundu, Athula Balachandran, and Amit K Roy-Chowdhury. Truthlens: Explainable deepfake detection for face manipulated and fully syn-thetic data. arXiv preprint arXiv:2503.15867 , 2025. [Kundu et al. , 2025b] Rohit Kundu, Hao Xiong, Vishal Mo-hanty, Athula Balachandran, and Amit K Roy-Chowdhury. Towards a universal synthetic video detector: From face or background manipulations to fully ai-generated content. In 
+
+CVPR , pages 28050–28060, 2025. [Li et al. , 2019] Lingzhi Li, Jianmin Bao, Hao Yang, Dong Chen, and Fang Wen. Faceshifter: Towards high fi-delity and occlusion aware face swapping. arXiv preprint arXiv:1912.13457 , 2019. [Li et al. , 2020a] Lingzhi Li, Jianmin Bao, Ting Zhang, Hao Yang, Dong Chen, Fang Wen, and Baining Guo. Face x-ray for more general face forgery detection. In CVPR ,pages 5001–5010, 2020. [Li et al. , 2020b] Yuezun Li, Xin Yang, Pu Sun, Honggang Qi, and Siwei Lyu. Celeb-df: A large-scale challenging dataset for deepfake forensics. In CVPR , pages 3207– 3216, 2020. [Li et al. , 2022] Junnan Li, Dongxu Li, Caiming Xiong, and Steven Hoi. Blip: Bootstrapping language-image pre-training for unified vision-language understanding and generation. In ICML , 2022. [Lin et al. , 2024] Li Lin, Xinan He, Yan Ju, Xin Wang, Feng Ding, and Shu Hu. Preserving fairness generalization in deepfake detection. In CVPR , pages 16815–16825, 2024. [Luo et al. , 2021] Yuchen Luo, Yong Zhang, Junchi Yan, and Wei Liu. Generalizing face forgery detection with high-frequency features. In CVPR , pages 16317–16326, 2021. [Mitra et al. , 2024] Chancharik Mitra, Brandon Huang, Trevor Darrell, and Roei Herzig. Compositional chain-of-thought prompting for large multimodal models. In CVPR ,pages 14420–14431, 2024. [Oquab et al. , 2023] Maxime Oquab, Timoth´ ee Darcet, Th´ eo Moutakanni, Huy Vo, Marc Szafraniec, Vasil Khali-dov, Pierre Fernandez, Daniel Haziza, Francisco Massa, Alaaeldin El-Nouby, et al. Dinov2: Learning ro-bust visual features without supervision. arXiv preprint arXiv:2304.07193 , 2023. [Qian et al. , 2020] Yuyang Qian, Guojun Yin, Lu Sheng, Zixuan Chen, and Jing Shao. Thinking in frequency: Face forgery detection by mining frequency-aware clues. In 
+
+ECCV , pages 86–103. Springer, 2020. [Radford et al. , 2021] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agar-wal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, Gretchen Krueger, and Ilya Sutskever. Learning transferable visual models from natural language supervi-sion, 2021. [Rossler et al. , 2019] Andreas Rossler, Davide Cozzolino, Luisa Verdoliva, Christian Riess, Justus Thies, and Matthias Nießner. Faceforensics++: Learning to detect manipulated facial images. In ICCV , pages 1–11, 2019. [Shuai et al. , 2024] Xincheng Shuai, Henghui Ding, Xingjun Ma, Rongcheng Tu, Yu-Gang Jiang, and Dacheng Tao. A survey of multimodal-guided image editing with text-to-image diffusion models. arXiv preprint arXiv:2406.14555 ,2024. [Somepalli et al. , 2023] Gowthami Somepalli, Vasu Singla, Micah Goldblum, Jonas Geiping, and Tom Goldstein. Dif-fusion art or digital forgery? investigating data replication in diffusion models. In CVPR , pages 6048–6058, 2023. [Song et al. , 2024] Xiufeng Song, Xiao Guo, Jiache Zhang, Qirui Li, Lei Bai, Xiaoming Liu, Guangtao Zhai, and Xi-aohong Liu. On learning multi-modal forgery representa-tion for diffusion generated video detection. arXiv preprint arXiv:2410.23623 , 2024. [Sun et al. , 2025] Ke Sun, Shen Chen, Taiping Yao, Ziyin Zhou, Jiayi Ji, Xiaoshuai Sun, Chia-Wen Lin, and Ron-grong Ji. Towards general visual-linguistic face forgery detection. In CVPR , pages 19576–19586, 2025. [Thies et al. , 2016] Justus Thies, Michael Zollhofer, Marc Stamminger, Christian Theobalt, and Matthias Nießner. Face2face: Real-time face capture and reenactment of rgb videos. In CVPR , pages 2387–2395, 2016. [Vedantam et al. , 2015] Ramakrishna Vedantam, C Lawrence Zitnick, and Devi Parikh. Cider: Consensus-based image description evaluation. In CVPR , pages 4566–4575, 2015. [Wang and Deng, 2021] Chengrui Wang and Weihong Deng. Representative forgery mining for fake face detection. In 
+
+CVPR , pages 14923–14932, 2021. [Wang et al. , 2020] Sheng-Yu Wang, Oliver Wang, Richard Zhang, Andrew Owens, and Alexei A Efros. Cnn-generated images are surprisingly easy to spot... for now. In CVPR , pages 8695–8704, 2020. [Wang et al. , 2023] Zhendong Wang, Jianmin Bao, Wen-gang Zhou, Weilun Wang, Hezhen Hu, Hong Chen, and Houqiang Li. Dire for diffusion-generated image detec-tion. In ICCV , pages 22445–22455, 2023. [Wang et al. , 2024a] Lei Wang, Yi Hu, Jiabang He, Xing Xu, Ning Liu, Hui Liu, and Heng Tao Shen. T-sciq: Teaching multimodal chain-of-thought reasoning via large language model signals for science question answering. In AAAI ,volume 38, pages 19162–19170, 2024. [Wang et al. , 2024b] Peng Wang, Shuai Bai, Sinan Tan, Shi-jie Wang, Zhihao Fan, Jinze Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, et al. Qwen2-vl: Enhanc-ing vision-language model’s perception of the world at any resolution. arXiv preprint arXiv:2409.12191 , 2024. [Yang et al. , 2023] Jianwei Yang, Hao Zhang, Feng Li, Xueyan Zou, Chunyuan Li, and Jianfeng Gao. Set-of-mark prompting unleashes extraordinary visual grounding in gpt-4v. arXiv preprint arXiv:2310.11441 , 2023. [Zhang et al. , 2024] Yue Zhang, Ben Colman, Xiao Guo, Ali Shahriyari, and Gaurav Bharaj. Common sense reason-ing for deepfake detection. In ECCV , pages 399–415. Springer, 2024. [Zheng et al. , 2023] Ge Zheng, Bin Yang, Jiajin Tang, Hong-Yu Zhou, and Sibei Yang. Ddcot: Duty-distinct chain-of-thought prompting for multimodal reasoning in language models. NeurIPS , 36:5168–5191, 2023. [Zhou et al. , 2025] Binjia Zhou, Hengrui Lou, Lizhe Chen, Haoyuan Li, Dawei Luo, Shuai Chen, Jie Lei, Zunlei Feng, and Yijun Bei. Corrdetail: Visual detail enhanced self-correction for face forgery detection, 2025. [Zhuang et al. , 2022] Wanyi Zhuang, Qi Chu, Zhentao Tan, Qiankun Liu, Haojie Yuan, Changtao Miao, Zixiang Luo, and Nenghai Yu. Uia-vit: Unsupervised inconsistency-aware method based on vision transformer for face forgery detection. In ECCV , pages 391–407. Springer, 2022.

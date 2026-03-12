@@ -1,0 +1,769 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-03-12T20:15:54.136890+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 78,
+    "deep_cap": 7,
+    "deep_selected": 7,
+    "quick_candidates": 154,
+    "quick_skim_target": 12,
+    "quick_selected": 12
+  },
+  "deep_dive": [
+    {
+      "id": "2603.07515v1",
+      "title": "EvolveReason: Self-Evolving Reasoning Paradigm for Explainable Deepfake Facial Image Identification",
+      "abstract": "With the rapid advancement of AIGC technology, developing identification methods to address the security challenges posed by deepfakes has become urgent. Face forgery identification techniques can be categorized into two types: traditional classification methods and explainable VLM approaches. The former provides classification results but lacks explanatory ability, while the latter, although capable of providing coarse-grained explanations, often suffers from hallucinations and insufficient detail. To overcome these limitations, we propose EvolveReason, which mimics the reasoning and observational processes of human auditors when identifying face forgeries. By constructing a chain-of-thought dataset, CoT-Face, tailored for advanced VLMs, our approach guides the model to think in a human-like way, prompting it to output reasoning processes and judgment results. This provides practitioners with reliable analysis and helps alleviate hallucination. Additionally, our framework incorporates a forgery latent-space distribution capture module, enabling EvolveReason to identify high-frequency forgery cues difficult to extract from the original images. To further enhance the reliability of textual explanations, we introduce a self-evolution exploration strategy, leveraging reinforcement learning to allow the model to iteratively explore and optimize its textual descriptions in a two-stage process. Experimental results show that EvolveReason not only outperforms the current state-of-the-art methods in identification performance but also accurately identifies forgery details and demonstrates generalization capabilities.",
+      "authors": [
+        "Binjia Zhou",
+        "Dawei Luo",
+        "Shuai Chen",
+        "Feng Xu",
+        "Seow",
+        "Haoyuan Li",
+        "Jiachi Wang",
+        "Jiawen Wang",
+        "Zunlei Feng",
+        "Yijun Bei"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-03-08T07:42:34+00:00",
+      "link": "https://arxiv.org/pdf/2603.07515v1",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Self-evolving reasoning for deepfake identification",
+      "llm_evidence_cn": "用于深度伪造识别的自进化推理范式",
+      "llm_evidence": "用于深度伪造识别的自进化推理范式",
+      "canonical_evidence": "用于深度伪造识别的自进化推理范式",
+      "llm_tldr_en": "Proposes a self-evolving reasoning paradigm using VLMs to identify and explain deepfake facial forgeries.",
+      "llm_tldr_cn": "提出了一种利用视觉语言模型进行自进化推理的范式，用于识别和解释深度伪造人脸。",
+      "llm_tldr": "提出了一种利用视觉语言模型进行自进化推理的范式，用于识别和解释深度伪造人脸。",
+      "llm_tags": [
+        "query:ai-mmd:composite"
+      ],
+      "matched_query_tag": "query:ai-mmd:composite",
+      "matched_query_text": "Papers central to 结合智能体路线进行多模态虚假信息检测、多模态有害意图检测的文章, especially work that connects or combines: multimodal misinformation detection techniques; multimodal harmful intent detection in social media; automated fact-checking using multi-agent systems; detecting malicious multimodal content with AI agents; State of the art agentic frameworks for detecting harmful multimodal content..",
+      "matched_requirement_id": "req-composite-ai-mmd",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.08812v1",
+      "title": "VisionCreator-R1: A Reflection-Enhanced Native Visual-Generation Agentic Model",
+      "abstract": "Visual content generation has advanced from single-image to multi-image workflows, yet existing agents remain largely plan-driven and lack systematic reflection mechanisms to correct mid-trajectory visual errors. To address this limitation, we propose VisionCreator-R1, a native visual generation agent with explicit reflection, together with a Reflection-Plan Co-Optimization (RPCO) training methodology. Through extensive experiments and trajectory-level analysis, we uncover reflection-plan optimization asymmetry in reinforcement learning (RL): planning can be reliably optimized via plan rewards, while reflection learning is hindered by noisy credit assignment. Guided by this insight, our RPCO first trains on the self-constructed VCR-SFT dataset with reflection-strong single-image trajectories and planning-strong multi-image trajectories, then co-optimization on VCR-RL dataset via RL. This yields our unified VisionCreator-R1 agent, which consistently outperforms Gemini2.5Pro on existing benchmarks and our VCR-bench covering single-image and multi-image tasks.",
+      "authors": [
+        "Jinxiang Lai",
+        "Wenzhe Zhao",
+        "Zexin Lu",
+        "Hualei Zhang",
+        "Qinyu Yang",
+        "Rongwei Quan",
+        "Zhimin Li",
+        "Shuai Shao",
+        "Song Guo",
+        "Qinglin Lu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-03-09T18:10:49+00:00",
+      "link": "https://arxiv.org/pdf/2603.08812v1",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "reflection-enhanced agentic model with reinforcement learning for self-improvement",
+      "llm_evidence_cn": "具有强化学习自我改进能力的反射增强型智能体模型",
+      "llm_evidence": "具有强化学习自我改进能力的反射增强型智能体模型",
+      "canonical_evidence": "具有强化学习自我改进能力的反射增强型智能体模型",
+      "llm_tldr_en": "Introduces VisionCreator-R1, a visual generation agent using reflection and RL for iterative improvement.",
+      "llm_tldr_cn": "推出VisionCreator-R1，利用反射机制和强化学习实现视觉生成的迭代改进。",
+      "llm_tldr": "推出VisionCreator-R1，利用反射机制和强化学习实现视觉生成的迭代改进。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "iterative self-improvement in multimodal agents",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.09049v1",
+      "title": "EPOCH: An Agentic Protocol for Multi-Round System Optimization",
+      "abstract": "Autonomous agents are increasingly used to improve prompts, code, and machine learning systems through iterative execution and feedback. Yet existing approaches are usually designed as task-specific optimization loops rather than as a unified protocol for establishing baselines and managing tracked multi-round self-improvement. We introduce EPOCH, an engineering protocol for multi-round system optimization in heterogeneous environments. EPOCH organizes optimization into two phases: baseline construction and iterative self-improvement. It further structures each round through role-constrained stages that separate planning, implementation, and evaluation, and standardizes execution through canonical command interfaces and round-level tracking. This design enables coordinated optimization across prompts, model configurations, code, and rule-based components while preserving stability, reproducibility, traceability, and integrity of evaluation. Empirical studies in various tasks illustrate the practicality of EPOCH for production-oriented autonomous improvement workflows.",
+      "authors": [
+        "Zhanlin Liu",
+        "Yitao Li",
+        "Munirathnam Srikanth"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-03-10T00:41:03+00:00",
+      "link": "https://arxiv.org/pdf/2603.09049v1",
+      "tags": [
+        "keyword:SEMMA"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Protocol for multi-round self-improvement in agents",
+      "llm_evidence_cn": "智能体多轮自我改进协议",
+      "llm_evidence": "智能体多轮自我改进协议",
+      "canonical_evidence": "智能体多轮自我改进协议",
+      "llm_tldr_en": "Introduces EPOCH, a protocol for managing iterative self-improvement in autonomous agents.",
+      "llm_tldr_cn": "引入EPOCH协议，用于管理自主智能体的迭代自我改进过程。",
+      "llm_tldr": "引入EPOCH协议，用于管理自主智能体的迭代自我改进过程。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "frameworks for autonomous self improvement in multimodal models",
+      "matched_requirement_id": "req-13",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.09643v2",
+      "title": "MM-tau-p$^2$: Persona-Adaptive Prompting for Robust Multi-Modal Agent Evaluation in Dual-Control Settings",
+      "abstract": "Current evaluation frameworks and benchmarks for LLM powered agents focus on text chat driven agents, these frameworks do not expose the persona of user to the agent, thus operating in a user agnostic environment. Importantly, in customer experience management domain, the agent's behaviour evolves as the agent learns about user personality. With proliferation of real time TTS and multi-modal language models, LLM based agents are gradually going to become multi-modal. Towards this, we propose the MM-tau-p$^2$ benchmark with metrics for evaluating the robustness of multi-modal agents in dual control setting with and without persona adaption of user, while also taking user inputs in the planning process to resolve a user query. In particular, our work shows that even with state of-the-art frontier LLMs like GPT-5, GPT 4.1, there are additional considerations measured using metrics viz. multi-modal robustness, turn overhead while introducing multi-modality into LLM based agents. Overall, MM-tau-p$^2$ builds on our prior work FOCAL and provides a holistic way of evaluating multi-modal agents in an automated way by introducing 12 novel metrics. We also provide estimates of these metrics on the telecom and retail domains by using the LLM-as-judge approach using carefully crafted prompts with well defined rubrics for evaluating each conversation.",
+      "authors": [
+        "Anupam Purwar",
+        "Aditya Choudhary"
+      ],
+      "primary_category": "cs.ET",
+      "categories": [
+        "cs.ET",
+        "cs.AI"
+      ],
+      "published": "2026-03-10T13:18:02+00:00",
+      "link": "https://arxiv.org/pdf/2603.09643v2",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "benchmarking multimodal agents with evolving behavior based on user persona",
+      "llm_evidence_cn": "基于用户画像评估行为进化的多模态智能体基准",
+      "llm_evidence": "基于用户画像评估行为进化的多模态智能体基准",
+      "canonical_evidence": "基于用户画像评估行为进化的多模态智能体基准",
+      "llm_tldr_en": "A benchmark for evaluating multimodal agents that adapt and evolve based on user personality and input.",
+      "llm_tldr_cn": "一个用于评估根据用户个性和输入进行适配和进化的多模态智能体的基准。",
+      "llm_tldr": "一个用于评估根据用户个性和输入进行适配和进化的多模态智能体的基准。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "benchmarking self evolving capabilities of intelligent agents",
+      "matched_requirement_id": "req-14",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.03637v1",
+      "title": "Image-based Prompt Injection: Hijacking Multimodal LLMs through Visually Embedded Adversarial Instructions",
+      "abstract": "Multimodal Large Language Models (MLLMs) integrate vision and text to power applications, but this integration introduces new vulnerabilities. We study Image-based Prompt Injection (IPI), a black-box attack in which adversarial instructions are embedded into natural images to override model behavior. Our end-to-end IPI pipeline incorporates segmentation-based region selection, adaptive font scaling, and background-aware rendering to conceal prompts from human perception while preserving model interpretability. Using the COCO dataset and GPT-4-turbo, we evaluate 12 adversarial prompt strategies and multiple embedding configurations. The results show that IPI can reliably manipulate the output of the model, with the most effective configuration achieving up to 64\\% attack success under stealth constraints. These findings highlight IPI as a practical threat in black-box settings and underscore the need for defenses against multimodal prompt injection.",
+      "authors": [
+        "Neha Nagaraja",
+        "Lan Zhang",
+        "Zhilong Wang",
+        "Bo Zhang",
+        "Pawan Patil"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.CR"
+      ],
+      "published": "2026-03-04T01:58:08+00:00",
+      "link": "https://arxiv.org/pdf/2603.03637v1",
+      "tags": [
+        "keyword:AI MMD",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "hijacking multimodal LLMs through visually embedded adversarial instructions",
+      "llm_evidence_cn": "通过视觉嵌入的对抗性指令劫持多模态大模型",
+      "llm_evidence": "通过视觉嵌入的对抗性指令劫持多模态大模型",
+      "canonical_evidence": "通过视觉嵌入的对抗性指令劫持多模态大模型",
+      "llm_tldr_en": "Explores Image-based Prompt Injection (IPI) to manipulate multimodal LLM outputs via hidden visual instructions.",
+      "llm_tldr_cn": "研究基于图像的提示注入攻击，通过隐藏的视觉指令操纵多模态大模型的输出。",
+      "llm_tldr": "研究基于图像的提示注入攻击，通过隐藏的视觉指令操纵多模态大模型的输出。",
+      "llm_tags": [
+        "query:ai-mmd"
+      ],
+      "matched_query_tag": "query:ai-mmd",
+      "matched_query_text": "detecting malicious multimodal content with AI agents",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.08104v1",
+      "title": "Invisible Safety Threat: Malicious Finetuning for LLM via Steganography",
+      "abstract": "Understanding and addressing potential safety alignment risks in large language models (LLMs) is critical for ensuring their safe and trustworthy deployment. In this paper, we highlight an insidious safety threat: a compromised LLM can maintain a facade of proper safety alignment while covertly generating harmful content. To achieve this, we finetune the model to understand and apply a steganographic technique. At inference time, we input a prompt that contains a steganographically embedded malicious target question along with a plaintext cover question. The model, in turn, produces a target response similarly embedded within a benign-looking cover response. In this process, human observers only see the model being prompted with a cover question and generating a corresponding cover response, while the malicious content is hidden from view. We demonstrate this invisible safety threat on GPT-4.1 despite the OpenAI finetuning API's safeguards. The finetuned model produces steganographic malicious outputs in response to hidden malicious prompts, while the user interface displays only a fully benign cover interaction. We also replicate the attack on three open-source models, Llama-3.3-70B-Instruct, Phi-4, and Mistral-Small-24B-Base-2501, confirming the generality of our method. We quantitatively evaluate our method on the AdvBench dataset, using Llama-Guard-3-8B for content safety classification. Across all four models, all stegotexts containing malicious content are incorrectly classified as safe.",
+      "authors": [
+        "Guangnian Wan",
+        "Xinyin Ma",
+        "Gongfan Fang",
+        "Xinchao Wang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-03-09T08:48:27+00:00",
+      "link": "https://arxiv.org/pdf/2603.08104v1",
+      "tags": [
+        "keyword:AI MMD",
+        "query:AI MMD"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Malicious content generation via steganography in LLMs",
+      "llm_evidence_cn": "通过大模型隐写术生成恶意内容",
+      "llm_evidence": "通过大模型隐写术生成恶意内容",
+      "canonical_evidence": "通过大模型隐写术生成恶意内容",
+      "llm_tldr_en": "Reveals a safety threat where LLMs use steganography to covertly generate harmful content despite alignment.",
+      "llm_tldr_cn": "揭示了一种安全威胁，即大模型利用隐写术在维持对齐假象的同时秘密生成有害内容。",
+      "llm_tldr": "揭示了一种安全威胁，即大模型利用隐写术在维持对齐假象的同时秘密生成有害内容。",
+      "llm_tags": [
+        "query:ai-mmd:composite"
+      ],
+      "matched_query_tag": "query:ai-mmd:composite",
+      "matched_query_text": "Papers central to 结合智能体路线进行多模态虚假信息检测、多模态有害意图检测的文章, especially work that connects or combines: multimodal misinformation detection techniques; multimodal harmful intent detection in social media; automated fact-checking using multi-agent systems; detecting malicious multimodal content with AI agents; State of the art agentic frameworks for detecting harmful multimodal content..",
+      "matched_requirement_id": "req-composite-ai-mmd",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2602.14399v1",
+      "title": "Multi-Turn Adaptive Prompting Attack on Large Vision-Language Models",
+      "abstract": "Multi-turn jailbreak attacks are effective against text-only large language models (LLMs) by gradually introducing malicious content across turns. When extended to large vision-language models (LVLMs), we find that naively adding visual inputs can cause existing multi-turn jailbreaks to be easily defended. For example, overly malicious visual input will easily trigger the defense mechanism of safety-aligned LVLMs, making the response more conservative. To address this, we propose MAPA: a multi-turn adaptive prompting attack that 1) at each turn, alternates text-vision attack actions to elicit the most malicious response; and 2) across turns, adjusts the attack trajectory through iterative back-and-forth refinement to gradually amplify response maliciousness. This two-level design enables MAPA to consistently outperform state-of-the-art methods, improving attack success rates by 11-35% on recent benchmarks against LLaVA-V1.6-Mistral-7B, Qwen2.5-VL-7B-Instruct, Llama-3.2-Vision-11B-Instruct and GPT-4o-mini.",
+      "authors": [
+        "In Chong Choi",
+        "Jiacheng Zhang",
+        "Feng Liu",
+        "Yiliao Song"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-02-16T02:15:58+00:00",
+      "link": "https://arxiv.org/pdf/2602.14399v1",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Iterative refinement of malicious multimodal content to attack vision-language models",
+      "llm_evidence_cn": "迭代优化恶意多模态内容以攻击视觉语言模型",
+      "llm_evidence": "迭代优化恶意多模态内容以攻击视觉语言模型",
+      "canonical_evidence": "迭代优化恶意多模态内容以攻击视觉语言模型",
+      "llm_tldr_en": "Proposes an adaptive attack that iteratively refines multimodal inputs to elicit malicious responses.",
+      "llm_tldr_cn": "提出一种自适应攻击，通过迭代优化多模态输入来诱导恶意响应。",
+      "llm_tldr": "提出一种自适应攻击，通过迭代优化多模态输入来诱导恶意响应。",
+      "llm_tags": [
+        "query:ai-mmd"
+      ],
+      "matched_query_tag": "query:ai-mmd",
+      "matched_query_text": "detecting malicious multimodal content with AI agents",
+      "matched_requirement_id": "req-4",
+      "selection_source": "carryover_cache",
+      "paper_id": "2602.14399v1"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2602.11590v1",
+      "title": "Learn from Your Mistakes: Self-Correcting Masked Diffusion Models",
+      "abstract": "Masked diffusion models (MDMs) have emerged as a promising alternative to autoregressive models, enabling parallel token generation while achieving competitive performance. Despite these advantages, MDMs face a fundamental limitation: once tokens are unmasked, they remain fixed, leading to error accumulation and ultimately degrading sample quality. We address this by proposing a framework that trains a model to perform both unmasking and correction. By reusing outputs from the MDM denoising network as inputs for corrector training, we train a model to recover from potential mistakes. During generation we apply additional corrective refinement steps between unmasking ones in order to change decoded tokens and improve outputs. We name our training and sampling method Progressive Self-Correction (ProSeCo) for its unique ability to iteratively refine an entire sequence, including already generated tokens. We conduct extensive experimental validation across multiple conditional and unconditional tasks, demonstrating that ProSeCo yields better quality-efficiency trade-offs (up to ~2-3x faster sampling) and enables inference-time compute scaling to further increase sample quality beyond standard MDMs (up to ~1.3x improvement on benchmarks).",
+      "authors": [
+        "Yair Schiff",
+        "Omer Belhasin",
+        "Roy Uziel",
+        "Guanghan Wang",
+        "Marianne Arriola",
+        "Gilad Turok",
+        "Michael Elad",
+        "Volodymyr Kuleshov"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-02-12T05:17:31+00:00",
+      "link": "https://arxiv.org/pdf/2602.11590v1",
+      "tags": [
+        "keyword:SEMMA"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "self-correcting framework for diffusion models",
+      "llm_evidence_cn": "扩散模型的自我修正框架",
+      "llm_evidence": "扩散模型的自我修正框架",
+      "canonical_evidence": "扩散模型的自我修正框架",
+      "llm_tldr_en": "Proposes a self-correction mechanism for masked diffusion models to recover from generation errors.",
+      "llm_tldr_cn": "为掩码扩散模型提出了一种自我修正机制，以从生成错误中恢复。",
+      "llm_tldr": "为掩码扩散模型提出了一种自我修正机制，以从生成错误中恢复。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "autonomous self-correction mechanisms in agents",
+      "matched_requirement_id": "req-9",
+      "selection_source": "carryover_cache",
+      "paper_id": "2602.11590v1",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2603.03555v1",
+      "title": "Molt Dynamics: Emergent Social Phenomena in Autonomous AI Agent Populations",
+      "abstract": "MoltBook is a large-scale multi-agent coordination environment where over 770,000 autonomous LLM agents interact without human participation, offering the first opportunity we are aware of to observe emergent multi-agent coordination dynamics at this population scale. We introduce \\textit{Molt Dynamics}: the emergent agent coordination behaviors, inter-agent communication dynamics, and role specialization patterns arising when autonomous agents operate as decentralized decision-makers in an unconstrained multi-agent environment. Through longitudinal observation of 90,704 active agents over three weeks, we characterize three aspects. First, spontaneous role specialization: network-based clustering reveals six structural roles (silhouette 0.91), though the result primarily reflects core-periphery organization -- 93.5\\% of agents occupy a homogeneous peripheral cluster, with meaningful differentiation confined to the active minority. Second, decentralized information dissemination: cascade analysis of 10,323 inter-agent propagation events reveals power-law distributed cascade sizes ($α= 2.57 \\pm 0.02$) and saturating adoption dynamics where adoption probability shows diminishing returns with repeated exposures (Cox hazard ratio 0.53, concordance 0.78). Third, distributed cooperative task resolution: 164 multi-agent collaborative events show detectable coordination patterns, but success rates are low (6.7\\%, $p = 0.057$) and cooperative outcomes are significantly worse than a matched single-agent baseline (Cohen's $d = -0.88$), indicating emergent cooperative behavior is nascent. These findings establish an empirical baseline for coordination dynamics in decentralized autonomous agent systems, with implications for multi-agent system design, agent communication protocol engineering, and AI safety.",
+      "authors": [
+        "Brandon Yee",
+        "Krishna Sharma"
+      ],
+      "primary_category": "cs.MA",
+      "categories": [
+        "cs.MA",
+        "cs.AI",
+        "cs.SI"
+      ],
+      "published": "2026-03-03T22:15:27+00:00",
+      "link": "https://arxiv.org/pdf/2603.03555v1",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "emergent coordination in large-scale autonomous AI agent populations",
+      "llm_evidence_cn": "大规模自主AI智能体群体中的涌现协调行为",
+      "llm_evidence": "大规模自主AI智能体群体中的涌现协调行为",
+      "canonical_evidence": "大规模自主AI智能体群体中的涌现协调行为",
+      "llm_tldr_en": "Studies emergent social phenomena and role specialization in a massive population of autonomous agents.",
+      "llm_tldr_cn": "研究大规模自主智能体群体中涌现的社会现象和角色分工。",
+      "llm_tldr": "研究大规模自主智能体群体中涌现的社会现象和角色分工。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "self-evolving autonomous agents and systems",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2603.03589v1",
+      "title": "stratum: A System Infrastructure for Massive Agent-Centric ML Workloads",
+      "abstract": "Recent advances in large language models (LLMs) transform how machine learning (ML) pipelines are developed and evaluated. LLMs enable a new type of workload, agentic pipeline search, in which autonomous or semi-autonomous agents generate, validate, and optimize complete ML pipelines. These agents predominantly operate over popular Python ML libraries and exhibit highly exploratory behavior. This results in thousands of executions for data profiling, pipeline generation, and iterative refinement of pipeline stages. However, the existing Python-based ML ecosystem is built around libraries such as Pandas and scikit-learn, which are designed for human-centric, interactive, sequential workflows and remain constrained by Python's interpretive execution model, library-level isolation, and limited runtime support for executing large numbers of pipelines. Meanwhile, many high-performance ML systems proposed by the systems community either target narrow workload classes or require specialized programming models, which limits their integration with the Python ML ecosystem and makes them largely ill-suited for LLM-based agents. This growing mismatch exposes a fundamental systems challenge in supporting agentic pipeline search at scale. We therefore propose stratum, a unified system infrastructure that decouples pipeline execution from planning and reasoning during agentic pipeline search. Stratum integrates seamlessly with existing Python libraries, compiles batches of pipelines into optimized execution graphs, and efficiently executes them across heterogeneous backends, including a novel Rust-based runtime. We present stratum's architectural vision along with an early prototype, discuss key design decisions, and outline open challenges and research directions. Finally, preliminary experiments show that stratum can significantly speed up large-scale agentic pipeline search up to 16.6x.",
+      "authors": [
+        "Arnab Phani",
+        "Elias Strauss",
+        "Sebastian Schelter"
+      ],
+      "primary_category": "cs.DB",
+      "categories": [
+        "cs.DB",
+        "cs.LG"
+      ],
+      "published": "2026-03-03T23:43:12+00:00",
+      "link": "https://arxiv.org/pdf/2603.03589v1",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:SEMMA"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "infrastructure for autonomous agentic pipeline search and optimization",
+      "llm_evidence_cn": "自主智能体流水线搜索与优化的基础设施",
+      "llm_evidence": "自主智能体流水线搜索与优化的基础设施",
+      "canonical_evidence": "自主智能体流水线搜索与优化的基础设施",
+      "llm_tldr_en": "Provides system infrastructure for massive agent-centric workloads involving iterative refinement.",
+      "llm_tldr_cn": "为涉及迭代优化的海量智能体中心工作负载提供系统基础设施。",
+      "llm_tldr": "为涉及迭代优化的海量智能体中心工作负载提供系统基础设施。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "self-evolving autonomous agents and systems",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2602.11767v2",
+      "title": "TSR: Trajectory-Search Rollouts for Multi-Turn RL of LLM Agents",
+      "abstract": "Advances in large language models (LLMs) are driving a shift toward using reinforcement learning (RL) to train agents from iterative, multi-turn interactions across tasks. However, multi-turn RL remains challenging as rewards are often sparse or delayed, and environments can be stochastic. In this regime, naive trajectory sampling can hinder exploitation and induce mode collapse. We propose TSR (Trajectory-Search Rollouts), a training-time approach that repurposes test-time scaling ideas for improved per-turn rollout generation. TSR performs lightweight tree-style search to construct high-quality trajectories by selecting high-scoring actions at each turn using task-specific feedback. This improves rollout quality and stabilizes learning while leaving the underlying optimization objective unchanged, making TSR optimizer-agnostic. We instantiate TSR with best-of-N, beam, and shallow lookahead search, and pair it with PPO and GRPO, achieving up to 15% performance gains and more stable learning on Sokoban, FrozenLake, and WebShop tasks at a one-time increase in training compute. By moving search from inference time to the rollout stage of training, TSR provides a simple and general mechanism for stronger multi-turn agent learning, complementary to existing frameworks and rejection-sampling-style selection methods.",
+      "authors": [
+        "Aladin Djuhera",
+        "Swanand Ravindra Kadhe",
+        "Farhan Ahmed",
+        "Heiko Ludwig",
+        "Holger Boche"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL",
+        "cs.LG"
+      ],
+      "published": "2026-02-12T09:49:24+00:00",
+      "link": "https://arxiv.org/pdf/2602.11767v2",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:SEMMA"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "reinforcement learning for training agents from iterative interactions",
+      "llm_evidence_cn": "通过迭代交互训练智能体的强化学习",
+      "llm_evidence": "通过迭代交互训练智能体的强化学习",
+      "canonical_evidence": "通过迭代交互训练智能体的强化学习",
+      "llm_tldr_en": "Uses trajectory-search rollouts to improve reinforcement learning for multi-turn LLM agents.",
+      "llm_tldr_cn": "利用轨迹搜索采样改进多轮LLM智能体的强化学习训练。",
+      "llm_tldr": "利用轨迹搜索采样改进多轮LLM智能体的强化学习训练。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "reinforcement learning for agent self-evolution",
+      "matched_requirement_id": "req-11",
+      "selection_source": "carryover_cache",
+      "paper_id": "2602.11767v2",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2603.03565v1",
+      "title": "Build, Judge, Optimize: A Blueprint for Continuous Improvement of Multi-Agent Consumer Assistants",
+      "abstract": "Conversational shopping assistants (CSAs) represent a compelling application of agentic AI, but moving from prototype to production reveals two underexplored challenges: how to evaluate multi-turn interactions and how to optimize tightly coupled multi-agent systems. Grocery shopping further amplifies these difficulties, as user requests are often underspecified, highly preference-sensitive, and constrained by factors such as budget and inventory. In this paper, we present a practical blueprint for evaluating and optimizing conversational shopping assistants, illustrated through a production-scale AI grocery assistant. We introduce a multi-faceted evaluation rubric that decomposes end-to-end shopping quality into structured dimensions and develop a calibrated LLM-as-judge pipeline aligned with human annotations. Building on this evaluation foundation, we investigate two complementary prompt-optimization strategies based on a SOTA prompt-optimizer called GEPA (Shao et al., 2025): (1) Sub-agent GEPA, which optimizes individual agent nodes against localized rubrics, and (2) MAMuT (Multi-Agent Multi-Turn) GEPA (Herrera et al., 2026), a novel system-level approach that jointly optimizes prompts across agents using multi-turn simulation and trajectory-level scoring. We release rubric templates and evaluation design guidance to support practitioners building production CSAs.",
+      "authors": [
+        "Alejandro Breen Herrera",
+        "Aayush Sheth",
+        "Steven G. Xu",
+        "Zhucheng Zhan",
+        "Charles Wright",
+        "Marcus Yearwood",
+        "Hongtai Wei",
+        "Sudeep Das"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL",
+        "cs.LG"
+      ],
+      "published": "2026-03-03T22:47:08+00:00",
+      "link": "https://arxiv.org/pdf/2603.03565v1",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "blueprint for continuous improvement of multi-agent systems",
+      "llm_evidence_cn": "多智能体系统持续改进的蓝图",
+      "llm_evidence": "多智能体系统持续改进的蓝图",
+      "canonical_evidence": "多智能体系统持续改进的蓝图",
+      "llm_tldr_en": "Provides a framework for evaluating and optimizing multi-turn interactions in multi-agent consumer assistants.",
+      "llm_tldr_cn": "提供了一个用于评估和优化多智能体消费助手多轮交互的框架。",
+      "llm_tldr": "提供了一个用于评估和优化多智能体消费助手多轮交互的框架。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "frameworks for autonomous self improvement in multimodal models",
+      "matched_requirement_id": "req-13",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2603.03589v2",
+      "title": "stratum: A System Infrastructure for Massive Agent-Centric ML Workloads",
+      "abstract": "Recent advances in large language models (LLMs) transform how machine learning (ML) pipelines are developed and evaluated. LLMs enable a new type of workload, agentic pipeline search, in which autonomous or semi-autonomous agents generate, validate, and optimize complete ML pipelines. These agents predominantly operate over popular Python ML libraries and exhibit highly exploratory behavior. This results in thousands of executions for data profiling, pipeline generation, and iterative refinement of pipeline stages. However, the existing Python-based ML ecosystem is built around libraries such as Pandas and scikit-learn, which are designed for human-centric, interactive, sequential workflows and remain constrained by Python's interpretive execution model, library-level isolation, and limited runtime support for executing large numbers of pipelines. Meanwhile, many high-performance ML systems proposed by the systems community either target narrow workload classes or require specialized programming models, which limits their integration with the Python ML ecosystem and makes them largely ill-suited for LLM-based agents. This growing mismatch exposes a fundamental systems challenge in supporting agentic pipeline search at scale. We therefore propose stratum, a unified system infrastructure that decouples pipeline execution from planning and reasoning during agentic pipeline search. Stratum integrates seamlessly with existing Python libraries, compiles batches of pipelines into optimized execution graphs, and efficiently executes them across heterogeneous backends, including a novel Rust-based runtime. We present stratum's architectural vision along with an early prototype, discuss key design decisions, and outline open challenges and research directions. Finally, preliminary experiments show that stratum can significantly speed up large-scale agentic pipeline search up to 16.6x.",
+      "authors": [
+        "Arnab Phani",
+        "Elias Strauss",
+        "Sebastian Schelter"
+      ],
+      "primary_category": "cs.DB",
+      "categories": [
+        "cs.DB",
+        "cs.LG"
+      ],
+      "published": "2026-03-03T23:43:12+00:00",
+      "link": "https://arxiv.org/pdf/2603.03589v2",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:SEMMA"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "autonomous agents generate, validate, and optimize complete ML pipelines",
+      "llm_evidence_cn": "自主智能体生成、验证并优化完整的机器学习流水线",
+      "llm_evidence": "自主智能体生成、验证并优化完整的机器学习流水线",
+      "canonical_evidence": "自主智能体生成、验证并优化完整的机器学习流水线",
+      "llm_tldr_en": "Stratum provides infrastructure for massive agent-centric workloads involving iterative pipeline optimization.",
+      "llm_tldr_cn": "Stratum为涉及迭代流水线优化的海量智能体工作负载提供基础设施。",
+      "llm_tldr": "Stratum为涉及迭代流水线优化的海量智能体工作负载提供基础设施。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "self-evolving autonomous agents and systems",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2602.11962v2",
+      "title": "Wisdom of the LLM Crowd: A Large Scale Benchmark of Multi-Label U.S. Election-Related Harmful Social Media Content",
+      "abstract": "The spread of election misinformation and harmful political content conveys misleading narratives and poses a serious threat to democratic integrity. Detecting harmful content at early stages is essential for understanding and potentially mitigating its downstream spread. In this study, we introduce USE24-XD, a large-scale dataset of nearly 100k posts collected from X (formerly Twitter) during the 2024 U.S. presidential election cycle, enriched with spatio-temporal metadata. To substantially reduce the cost of manual annotation while enabling scalable categorization, we employ six large language models (LLMs) to systematically annotate posts across five nuanced categories: Conspiracy, Sensationalism, Hate Speech, Speculation, and Satire. We validate LLM annotations with crowdsourcing (n = 34) and benchmark them against human annotators. Inter-rater reliability analyses show comparable agreement patterns between LLMs and humans, with LLMs exhibiting higher internal consistency and achieving up to 0.90 recall on Speculation. We apply a wisdom-of-the-crowd approach across LLMs to aggregate annotations and curate a robust multi-label dataset. 60% of posts receive at least one label. We further analyze how human annotator demographics, including political ideology and affiliation, shape labeling behavior, highlighting systematic sources of subjectivity in judgments of harmful content. The USE24-XD dataset is publicly released to support future research.",
+      "authors": [
+        "Qile Wang",
+        "Prerana Khatiwada",
+        "Carolina Coimbra Vieira",
+        "Benjamin E. Bagozzi",
+        "Kenneth E. Barner",
+        "Matthew Louis Mauriello"
+      ],
+      "primary_category": "cs.HC",
+      "categories": [
+        "cs.HC",
+        "cs.CY"
+      ],
+      "published": "2026-02-12T13:57:12+00:00",
+      "link": "https://arxiv.org/pdf/2602.11962v2",
+      "tags": [
+        "keyword:AI MMD",
+        "query:AI MMD"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "detecting election misinformation and harmful content",
+      "llm_evidence_cn": "检测选举虚假信息和有害内容",
+      "llm_evidence": "检测选举虚假信息和有害内容",
+      "canonical_evidence": "检测选举虚假信息和有害内容",
+      "llm_tldr_en": "Introduces a large-scale benchmark for detecting election-related harmful social media content using LLMs.",
+      "llm_tldr_cn": "引入了一个大规模基准测试，利用大语言模型检测社交媒体上与选举相关的有害内容。",
+      "llm_tldr": "引入了一个大规模基准测试，利用大语言模型检测社交媒体上与选举相关的有害内容。",
+      "llm_tags": [
+        "query:ai-mmd:composite"
+      ],
+      "matched_query_tag": "query:ai-mmd:composite",
+      "matched_query_text": "Papers central to 结合智能体路线进行多模态虚假信息检测、多模态有害意图检测的文章, especially work that connects or combines: multimodal misinformation detection techniques; multimodal harmful intent detection in social media; automated fact-checking using multi-agent systems; detecting malicious multimodal content with AI agents; State of the art agentic frameworks for detecting harmful multimodal content..",
+      "matched_requirement_id": "req-composite-ai-mmd",
+      "selection_source": "carryover_cache",
+      "paper_id": "2602.11962v2",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2603.03590v1",
+      "title": "Social Norm Reasoning in Multimodal Language Models: An Evaluation",
+      "abstract": "In Multi-Agent Systems (MAS), agents are designed with social capabilities, allowing them to understand and reason about social concepts such as norms when interacting with others (e.g., inter-robot interactions). In Normative MAS (NorMAS), researchers study how norms develop, and how violations are detected and sanctioned. However, existing research in NorMAS use symbolic approaches (e.g., formal logic) for norm representation and reasoning whose application is limited to simplified environments. In contrast, Multimodal Large Language Models (MLLMs) present promising possibilities to develop software used by robots to identify and reason about norms in a wide variety of complex social situations embodied in text and images. However, prior work on norm reasoning have been limited to text-based scenarios. This paper investigates the norm reasoning competence of five MLLMs by evaluating their ability to answer norm-related questions based on thirty text-based and thirty image-based stories, and comparing their responses against humans. Our results show that MLLMs demonstrate superior performance in norm reasoning in text than in images. GPT-4o performs the best in both modalities offering the most promise for integration with MAS, followed by the free model Qwen-2.5VL. Additionally, all models find reasoning about complex norms challenging.",
+      "authors": [
+        "Oishik Chowdhury",
+        "Anushka Debnath",
+        "Bastin Tony Roy Savarimuthu"
+      ],
+      "primary_category": "cs.MA",
+      "categories": [
+        "cs.MA",
+        "cs.AI"
+      ],
+      "published": "2026-03-03T23:48:21+00:00",
+      "link": "https://arxiv.org/pdf/2603.03590v1",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "identifying and reasoning about social norms and violations in multimodal situations",
+      "llm_evidence_cn": "在多模态情境中识别和推理社会规范及违规行为",
+      "llm_evidence": "在多模态情境中识别和推理社会规范及违规行为",
+      "canonical_evidence": "在多模态情境中识别和推理社会规范及违规行为",
+      "llm_tldr_en": "Evaluates multimodal language models on their ability to reason about social norms and detect violations.",
+      "llm_tldr_cn": "评估多模态语言模型在复杂社交情境中推理社会规范和检测违规行为的能力。",
+      "llm_tldr": "评估多模态语言模型在复杂社交情境中推理社会规范和检测违规行为的能力。",
+      "llm_tags": [
+        "query:ai-mmd"
+      ],
+      "matched_query_tag": "query:ai-mmd",
+      "matched_query_text": "multimodal harmful intent detection in social media",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2603.03595v1",
+      "title": "Hybrid Belief Reinforcement Learning for Efficient Coordinated Spatial Exploration",
+      "abstract": "Coordinating multiple autonomous agents to explore and serve spatially heterogeneous demand requires jointly learning unknown spatial patterns and planning trajectories that maximize task performance. Pure model-based approaches provide structured uncertainty estimates but lack adaptive policy learning, while deep reinforcement learning often suffers from poor sample efficiency when spatial priors are absent. This paper presents a hybrid belief-reinforcement learning (HBRL) framework to address this gap. In the first phase, agents construct spatial beliefs using a Log-Gaussian Cox Process (LGCP) and execute information-driven trajectories guided by a Pathwise Mutual Information (PathMI) planner with multi-step lookahead. In the second phase, trajectory control is transferred to a Soft Actor-Critic (SAC) agent, warm-started through dual-channel knowledge transfer: belief state initialization supplies spatial uncertainty, and replay buffer seeding provides demonstration trajectories generated during LGCP exploration. A variance-normalized overlap penalty enables coordinated coverage through shared belief state, permitting cooperative sensing in high-uncertainty regions while discouraging redundant coverage in well-explored areas. The framework is evaluated on a multi-UAV wireless service provisioning task. Results show 10.8% higher cumulative reward and 38% faster convergence over baselines, with ablation studies confirming that dual-channel transfer outperforms either channel alone.",
+      "authors": [
+        "Danish Rizvi",
+        "David Boyle"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-03-04T00:00:34+00:00",
+      "link": "https://arxiv.org/pdf/2603.03595v1",
+      "tags": [
+        "keyword:SEMMA"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "reinforcement learning for coordinated spatial exploration in autonomous agents",
+      "llm_evidence_cn": "自主智能体协同空间探索的强化学习",
+      "llm_evidence": "自主智能体协同空间探索的强化学习",
+      "canonical_evidence": "自主智能体协同空间探索的强化学习",
+      "llm_tldr_en": "Proposes a hybrid belief-reinforcement learning framework for efficient multi-agent spatial coordination.",
+      "llm_tldr_cn": "提出一种混合信念强化学习框架，用于高效的多智能体空间协同探索。",
+      "llm_tldr": "提出一种混合信念强化学习框架，用于高效的多智能体空间协同探索。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "reinforcement learning for agent self-evolution",
+      "matched_requirement_id": "req-11",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2602.12311v1",
+      "title": "Perceptual Self-Reflection in Agentic Physics Simulation Code Generation",
+      "abstract": "We present a multi-agent framework for generating physics simulation code from natural language descriptions, featuring a novel perceptual self-reflection mechanism for validation. The system employs four specialized agents: a natural language interpreter that converts user requests into physics-based descriptions; a technical requirements generator that produces scaled simulation parameters; a physics code generator with automated self-correction; and a physics validator that implements perceptual self-reflection. The key innovation is perceptual validation, which analyzes rendered animation frames using a vision-capable language model rather than inspecting code structure directly. This approach addresses the ``oracle gap'' where syntactically correct code produces physically incorrect behavior--a limitation that conventional testing cannot detect. We evaluate the system across seven domains including classical mechanics, fluid dynamics, thermodynamics, electromagnetics, wave physics, reaction-diffusion systems, and non-physics data visualization. The perceptual self-reflection architecture demonstrates substantial improvement over single-shot generation baselines, with the majority of tested scenarios achieving target physics accuracy thresholds. The system exhibits robust pipeline stability with consistent code self-correction capability, operating at approximately \\$0.20 per animation. These results validate our hypothesis that feeding visual simulation outputs back to a vision-language model for iterative refinement significantly outperforms single-shot code generation for physics simulation tasks and highlights the potential of agentic AI to support engineering workflows and physics data generation pipelines.",
+      "authors": [
+        "Prashant Shende",
+        "Bradley Camburn"
+      ],
+      "primary_category": "cs.SE",
+      "categories": [
+        "cs.SE",
+        "cs.AI"
+      ],
+      "published": "2026-02-12T15:48:33+00:00",
+      "link": "https://arxiv.org/pdf/2602.12311v1",
+      "tags": [
+        "keyword:SEMMA"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "automated self-correction and perceptual self-reflection",
+      "llm_evidence_cn": "自动自我修正与感知自我反思",
+      "llm_evidence": "自动自我修正与感知自我反思",
+      "canonical_evidence": "自动自我修正与感知自我反思",
+      "llm_tldr_en": "A multi-agent framework using perceptual self-reflection for physics code generation and self-correction.",
+      "llm_tldr_cn": "一种利用感知自我反思进行物理代码生成和自动修正的多智能体框架。",
+      "llm_tldr": "一种利用感知自我反思进行物理代码生成和自动修正的多智能体框架。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "autonomous self-correction mechanisms in agents",
+      "matched_requirement_id": "req-9",
+      "selection_source": "carryover_cache",
+      "paper_id": "2602.12311v1",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2603.03753v1",
+      "title": "Agentic Peer-to-Peer Networks: From Content Distribution to Capability and Action Sharing",
+      "abstract": "The ongoing shift of AI models from centralized cloud APIs to local AI agents on edge devices is enabling \\textit{Client-Side Autonomous Agents (CSAAs)} -- persistent personal agents that can plan, access local context, and invoke tools on behalf of users. As these agents begin to collaborate by delegating subtasks directly between clients, they naturally form \\emph{Agentic Peer-to-Peer (P2P) Networks}. Unlike classic file-sharing overlays where the exchanged object is static, hash-indexed content (e.g., files in BitTorrent), agentic overlays exchange \\emph{capabilities and actions} that are heterogeneous, state-dependent, and potentially unsafe if delegated to untrusted peers. This article outlines the networking foundations needed to make such collaboration practical. We propose a plane-based reference architecture that decouples connectivity/identity, semantic discovery, and execution. Besides, we introduce signed, soft-state capability descriptors to support intent- and constraint-aware discovery. To cope with adversarial settings, we further present a \\textit{tiered verification} spectrum: Tier~1 relies on reputation signals, Tier~2 applies lightweight canary challenge-response with fallback selection, and Tier~3 requires evidence packages such as signed tool receipts/traces (and, when applicable, attestation). Using a discrete-event simulator that models registry-based discovery, Sybil-style index poisoning, and capability drift, we show that tiered verification substantially improves end-to-end workflow success while keeping discovery latency near-constant and control-plane overhead modest.",
+      "authors": [
+        "Taotao Wang",
+        "Lizhao You",
+        "Jingwen Tong",
+        "Chonghe Zhao",
+        "Shengli Zhang"
+      ],
+      "primary_category": "cs.NI",
+      "categories": [
+        "cs.NI",
+        "cs.AI"
+      ],
+      "published": "2026-03-04T05:58:44+00:00",
+      "link": "https://arxiv.org/pdf/2603.03753v1",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "agentic peer-to-peer networks for capability and action sharing",
+      "llm_evidence_cn": "用于能力和动作共享的智能体点对点网络",
+      "llm_evidence": "用于能力和动作共享的智能体点对点网络",
+      "canonical_evidence": "用于能力和动作共享的智能体点对点网络",
+      "llm_tldr_en": "Explores agentic P2P networks where autonomous agents collaborate and delegate potentially unsafe actions.",
+      "llm_tldr_cn": "探讨了智能体 P2P 网络，其中自主智能体协作并委托可能存在安全风险的操作。",
+      "llm_tldr": "探讨了智能体 P2P 网络，其中自主智能体协作并委托可能存在安全风险的操作。",
+      "llm_tags": [
+        "query:ai-mmd"
+      ],
+      "matched_query_tag": "query:ai-mmd",
+      "matched_query_text": "detecting malicious multimodal content with AI agents",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2603.03630v1",
+      "title": "Behind the Prompt: The Agent-User Problem in Information Retrieval",
+      "abstract": "User models in information retrieval rest on a foundational assumption that observed behavior reveals intent. This assumption collapses when the user is an AI agent privately configured by a human operator. For any action an agent takes, a hidden instruction could have produced identical output - making intent non-identifiable at the individual level. This is not a detection problem awaiting better tools; it is a structural property of any system where humans configure agents behind closed doors. We investigate the agent-user problem through a large-scale corpus from an agent-native social platform: 370K posts from 47K agents across 4K communities. Our findings are threefold: (1) individual agent actions cannot be classified as autonomous or operator-directed from observables; (2) population-level platform signals still separate agents into meaningful quality tiers, but a click model trained on agent interactions degrades steadily (-8.5% AUC) as lower-quality agents enter training data; (3) cross-community capability references spread endemically ($R_0$ 1.26-3.53) and resist suppression even under aggressive modeled intervention. For retrieval systems, the question is no longer whether agent users will arrive, but whether models built on human-intent assumptions will survive their presence.",
+      "authors": [
+        "Saber Zerhoudi",
+        "Michael Granitzer",
+        "Dang Hai Dang",
+        "Jelena Mitrovic",
+        "Florian Lemmerich",
+        "Annette Hautli-Janisz",
+        "Stefan Katzenbeisser",
+        "Kanishka Ghosh Dastidar"
+      ],
+      "primary_category": "cs.IR",
+      "categories": [
+        "cs.IR",
+        "cs.MA"
+      ],
+      "published": "2026-03-04T01:42:14+00:00",
+      "link": "https://arxiv.org/pdf/2603.03630v1",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "agent-native social platform and intent non-identifiability",
+      "llm_evidence_cn": "原生智能体社交平台与意图不可识别性",
+      "llm_evidence": "原生智能体社交平台与意图不可识别性",
+      "canonical_evidence": "原生智能体社交平台与意图不可识别性",
+      "llm_tldr_en": "Investigates the difficulty of identifying human intent behind AI agent actions on social platforms.",
+      "llm_tldr_cn": "研究了在社交平台中识别AI智能体背后人类真实意图的结构性难题。",
+      "llm_tldr": "研究了在社交平台中识别AI智能体背后人类真实意图的结构性难题。",
+      "llm_tags": [
+        "query:ai-mmd"
+      ],
+      "matched_query_tag": "query:ai-mmd",
+      "matched_query_text": "multimodal harmful intent detection in social media",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

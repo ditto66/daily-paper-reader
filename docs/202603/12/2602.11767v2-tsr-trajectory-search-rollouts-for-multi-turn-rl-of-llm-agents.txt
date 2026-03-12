@@ -1,0 +1,933 @@
+Title: TSR: Trajectory-Search Rollouts for Multi-Turn RL of LLM Agents
+
+URL Source: https://arxiv.org/pdf/2602.11767v2
+
+Published Time: Tue, 24 Feb 2026 01:45:20 GMT
+
+Number of Pages: 17
+
+Markdown Content:
+# TSR: Trajectory-Search Rollouts for Multi-Turn RL of LLM Agents 
+
+Aladin Djuhera 1 Swanand Ravindra Kadhe 2 Farhan Ahmed 2 Heiko Ludwig 2 Holger Boche 1
+
+## Abstract 
+
+Advances in large language models (LLMs) are driving a shift toward using reinforcement learn-ing (RL) to train agents from iterative, multi-turn interactions across tasks. However, multi-turn RL remains challenging as rewards are often sparse or delayed, and environments can be stochas-tic. In this regime, naive trajectory sampling can hinder exploitation and induce mode collapse. We propose TSR (Trajectory-Search Rollouts), a training-time approach that repurposes test-time scaling ideas for improved per-turn rollout gener-ation. TSR performs lightweight tree-style search to construct high-quality trajectories by select-ing high-scoring actions at each turn using task-specific feedback. This improves rollout quality and stabilizes learning while leaving the under-lying optimization objective unchanged, making TSR optimizer-agnostic. We instantiate TSR with best-of-N , beam, and shallow lookahead search, and pair it with PPO and GRPO, achieving up to 15% performance gains and more stable learning on Sokoban, FrozenLake, and WebShop tasks at a one-time increase in training compute. By mov-ing search from inference time to the rollout stage of training, TSR provides a simple and general mechanism for stronger multi-turn agent learn-ing, complementary to existing frameworks and rejection-sampling-style selection methods. 
+
+## 1. Introduction 
+
+Large language models (LLMs) are increasingly trained as interactive agents via reinforcement learning (RL), where the model acts over multiple turns in an environment and learns from feedback obtained through interaction rather than from static corpora (Nakano et al., 2022; Zhou et al., 2024; 2025). To this end, recent works have taken strides in developing diverse practical frameworks for multi-turn    
+
+> 1Technical University Munich 2IBM Research. Correspondence to: Aladin Djuhera <aladin.djuhera@tum.de >, Swanand Ravin-dra Kadhe <swanand.kadhe@ibm.com >.
+> Preprint. February 24, 2026.
+
+RL training of LLM agents (Wang et al., 2025; Luo et al., 2025; Xi et al., 2025a; Cao et al., 2025; Cui et al., 2025; Zhu et al., 2025b). Across these systems, the training loop typically alternates between (i) generating rollouts for a batch of prompts, i.e., trajectories of corresponding agent–environment interactions, and (ii) updating the policy via policy-gradient methods (e.g., PPO (Schulman et al., 2017) and GRPO (Shao et al., 2024)), using trajectory-level returns or per-turn rewards obtained from the environment. Despite these advances, multi - turn RL remains brittle: per-turn rewards can be sparse or delayed, environments may be stochastic, and interaction horizons are often long. Under these conditions, naive rollout sampling, i.e., independently sampling full-length trajectories from the current policy, can leave advantage estimates at the mercy of low - quality or unlucky rollouts. This can amplify variance, slow explo-ration, and precipitate mode collapse known as Echo Trap 
+
+(Wang et al., 2025), where model performance abruptly de-clines during training due to spikes in gradients. Several works have tried addressing the brittleness in RL, e.g., via turn-level credit assignment (Wei et al., 2025) and rejection-sampling-style rollouts such as GFPO (Shrivastava et al., 2025), RAFT (Dong et al., 2023), and StarPO (Wang et al., 2025). However, balancing exploration and exploitation, particularly in multi-turn environments, remains challeng-ing. We provide an overview of related works in App. A. In this work, we ask the following fundamental question: 
+
+If multi-turn RL is allowed a fixed but non - trivial amount of additional compute at the trajectory rollout stage, how much can we improve the performance and stability of train-ing? Our answer is to move trajectory search from inference to training. Here, we draw inspiration from test - time scal-ing methods for reasoning (Snell et al., 2024), which have shown that spending additional compute budget to train-time search during RL can reliably improve solution quality at inference time. Specifically, we ask whether a similar compute -for - quality trade -off is applicable to multi-turn RL training by upgrading the per-turn rollout generator itself. We introduce TSR (Trajectory -Search Rollouts), atraining -time rollout framework that repurposes test - time search ideas to construct higher - quality trajectories per prompt before computing policy - gradient targets. At a high-level, for each prompt, TSR runs a lightweight tree - style 1
+
+> arXiv:2602.11767v2 [cs.AI] 21 Feb 2026 TSR: Trajectory-Search Rollouts for Multi-Turn RL of LLM Agents
+
+search over action sequences using available task feedback such as per-turn rewards or other metrics, and then selects the highest -scoring trajectory (or a subset) to compute ad-vantages for a standard policy-gradient update. This ap-proach optimizes the trajectory rollout per-turn and thus avoids running into unlucky rollouts due to indiscriminate full-length trajectory sampling. As a result, TSR does not alter the underlying optimization objective nor requires a particular policy - gradient algorithm. It thus changes only how rollouts are generated, making TSR optimizer -agnostic and directly compatible with other existing frameworks. In our experiments, we instantiate TSR with best-of-N ,beam, and lookahead search methods, treating the corre-sponding search budgets (e.g., N , beam width, lookahead depth) as train-time compute knobs. We evaluate TSR for Qwen2.5-0.5B and Qwen2.5-3B models (Qwen et al., 2025) across three representative environments: Sokoban (We-ber et al., 2018), a deterministic logic puzzle, FrozenLake (Brockman et al., 2016), a popular stochastic RL game, and WebShop (Yao et al., 2023a), a long-horizon, agentic web navigation benchmark. Under a fixed, one-time increase in train-time compute, TSR yields up to 15% absolute performance gains and significantly smoother training dy-namics. In summary, our main contributions are: • Trajectory Search Framework. We introduce TSR, an effective rollout-generation framework for multi-turn RL that uses tree - style search techniques inspired from test-time scaling to construct higher - quality tra-jectories by optimizing rollouts at the per-turn level .• Optimizer-Agnostic and Modular Design. TSR changes only how rollouts are generated, making it compatible with standard policy-gradient methods (e.g., PPO, GRPO) and agent training frameworks. • Empirical Validation across Diverse Environments. 
+
+We demonstrate that TSR improves performance on deterministic, stochastic, and long-horizon tasks, en-abling significantly smaller models to match or surpass the performance of larger models. 
+
+## 2. Background and Problem Setup 
+
+We define preliminaries for multi-turn RL training and dis-cuss the importance of high-quality rollout generation. 
+
+2.1. Multi-Turn RL as a Partially Observable Markov Decision Process (POMDP) 
+
+Our focus is on agentic tasks, specifically multi-turn interac-tive decision-making, such as games, embodied navigation, or web-based interactions. Similar to (Xi et al., 2025a; Luo et al., 2025; Zhou et al., 2024), we model such multi-turn decision-making problems as a Partially Observable Markov Decision Process (POMDP) defined by the tuple 
+
+M = ⟨U , S, A, O, P, R⟩ , where U denotes the task space, 
+
+S the state space, A the action space, and O the observa-tion space. P : S × A → S represents the state transition function and R : U × S × A → R the reward function. Given a task u ∈ U , the LLM with policy πθ parameterized by θ generates a first action a0 ∼ πθ (· | u) and its state is transitioned according to s1 ∼ P (· | s0, a 0). A correspond-ing scalar reward r0 = R(u, s 0, a 0) is provided to evaluate the quality of the action, and the agent receives an obser-vation o0 ∈ O from the environment. At each time step t,given the history τ<t = ( a0, o 0, r 0, . . . , a t−1, o t−1, r t−1),the agent generates the next action via at ∼ πθ (· | u, τ <t ).This process continues for a maximum turn-length (horizon) 
+
+K, resulting in the trajectory 
+
+τ = ( a0, o 0, r 0, . . . , a K , o K , r K ) (1) with corresponding cumulative reward R(τ ) = PKt=0 rt.
+
+2.2. Policy Optimization for Multi-Turn RL 
+
+Policy gradient methods (Sutton et al., 1999) aim to maxi-mize the expected cumulative reward, defined as the objec-tive function J(θ) = Eτ ∼πθ [R(τ )] , by performing gradient ascent in the direction of increasing expected return, i.e., 
+
+θnew = θ + η∇θ J(θ) , (2) where η denotes the learning rate. In the multi-turn setting, the corresponding policy gradient is given by 
+
+∇θ J(θ) = Eτ ∼πθ
+
+"K−1X
+
+> t=0
+
+∇θ log πθ (at | τ<t ) ˆAt
+
+#
+
+, (3) where ˆAt is an advantage estimate, measuring how much better action at is compared to the policy’s average behavior. In general, directly computing policy gradients is challeng-ing because the gradient estimator typically suffers from high variance. To mitigate this, modern policy optimization methods, such as PPO (Schulman et al., 2017) and GRPO (Shao et al., 2024), constrain the update step size and em-ploy variance-reduction baselines for more reliable credit assignment. We provide details on how PPO and GRPO estimate advantages for the multi-turn setting in App. B. In this work, we do not alter these algorithms but instead modify the rollout generation process. Rather than sampling trajectories purely from the current policy πθ , we optimize rollouts on a per-turn level using tree-search methods to improve the quality of the data used to estimate ˆAt.2TSR: Trajectory-Search Rollouts for Multi-Turn RL of LLM Agents 
+
+2.3. Why Rollout Quality and Diversity Drive Stability 
+
+The effectiveness and stability of learning in multi-turn RL depend critically on the properties of the rollout distribution ,which directly controls the signal-to-noise ratio of advan-tage estimates, and which regions of the state-action space receive learning signal at all (Schulman et al., 2015; 2017; Mroueh et al., 2025). In agentic environments, however, naive stochastic rollouts often suffer from several issues: 1. Sparse or Delayed Rewards. Per-turn rewards can be sparse, binary, or even delayed until the end of the episode such that most prefixes receive no immediate feedback. For example, consider a web agent that must purchase a specific item. Success requires a precise se-quence of logical actions: search for item, click on item page, click on right color, click on buy . If the agent executes the first three steps perfectly but fails to click “Buy Now” at the final step, the reward at the trajectory level is often zero. Under naive sampling, a developing policy might generate thousands of such “near-miss” trajectories. This makes advantage estimation challeng-ing as Monte Carlo returns can have high variance and bootstrapped estimators depend on value predictions that are hard to learn when intermediate rewards are uninformative (Schulman et al., 2015; 2017). 2. Irreversible Traps. Many multi-turn environments are 
+
+prefix-sensitive : early mistakes can create irreversible states in which the episode becomes unsalvageable, collapsing the effective horizon for learning. This motivates further search and heuristics to avoid such doomed prefixes (Ignatenko & Pravosud, 2023). To il-lustrate this, Fig. 1 shows how a single early mistake in Sokoban can render an episode unsalvageable, whereas simple rollout selection recovers a feasible trajectory. 3. Insufficient Diversity. On-policy methods can be-come unstable if the collected rollouts lack diversity. For example, if the agent repeatedly samples the same successful trajectory for a given state, the relative ad-vantage for every action becomes zero ( ˆAt ≈ 0), ef-fectively stalling gradient updates in PPO and GRPO. This lack of exploration leads to brittle policies that overfit to specific actions or shortcut behaviors rather than learning robust, generalizable heuristics. Thus, effective training requires a rollout distribution that balances exploitation (finding high rewards) with suf-ficient exploration (covering diverse logic paths) to prevent the policy from getting stuck in local optima. Taken together, these issues suggest that beyond the choice of optimization algorithm (e.g., PPO/GRPO), the quality of rollouts is a central factor in multi-turn RL. Motivated by the practical example in Fig. 1, we study whether allocating a modest, one-time increase in training-time compute during  
+
+> Avoiding the “Corner Trap” in Sokoban
+> Task: The agent (A) must push the box (B) into the target (T). However, a “Pillar” in the upper corner blocks the path, requiring the agent to push the box downward first and then to the right to avoid getting stuck in a deadlock.
+> A) Current State ( st)
+> Pillar
+
+## ×T
+
+> BA
+> “Bad Push”
+> B) Deadlock State ( st+1 )
+> Pillar
+
+## ×T                           
+
+> BA
+> STUCK
+> 1. Naive Rollout Sampling (Failure). The agent priori-tizes the immediate “valid” interaction: Push Right .•The Mistake: The box is pushed against the wall. •The Deadlock: To push the box down to the target (×), the agent must stand on the cell above the box. However, that cell is occupied by a Pillar .•Outcome: The box is frozen and the agent circles aimlessly until the episode ends (Reward = 0).
+> 2. Best-of-4Rollout (Success). The agent investigates
+> N= 4 different possibilities (up, down, right, left). •Exploration: Some rollouts begin with Push Right
+> and reach the deadlock shown in B, while others first reposition the agent. •Selection: Only rollouts that preserve access above the box can complete the task and have non-zero reward. •Outcome: Best-of-4selects a feasible trajectory and avoids the irreversible trap.
+> Figure 1. The “Corner Trap”: An Irreversible Mistake. A naive rollout sees Push Right as progress, but it traps the box between the wall and the pillar. Best-of-N= 4 rollout sampling explores multiple possibilities and selects one that avoids the dead-end.
+
+trajectory search can address these issues. Specifically, we formulate the following hypothesis: 
+
+Hypothesis: Per-Turn Rollout Optimization 
+
+In sparse-reward, multi-turn POMDPs, replacing naive stochastic sampling with per-turn trajectory optimization yields a rollout distribution with higher effective learning signal and improved stability, without modifying the policy optimization. We test this hypothesis by augmenting rollout generation via lightweight tree search guided by task feedback or proxy scores. This repurposes test-time search ideas for train-time data collection, analogous in spirit to recent process-reward-guided tree search methods for collecting higher-quality reasoning traces (Yao et al., 2023b; Zhang et al., 2024). 3TSR: Trajectory-Search Rollouts for Multi-Turn RL of LLM Agents LLM Agent 
+
+𝑢  𝑎 0 
+
+> 𝑖
+
+𝑜 0 
+
+> 𝑖
+
+𝑟 𝑡 −1
+
+> 𝑖
+
+𝑎 𝑡 
+
+> 𝑖
+
+𝑜 𝑡 
+
+> 𝑖
+
+𝑟 0 
+
+> 𝑖
+
+𝑟 𝑡     
+
+> 𝑖
+> GRPO
+> PPO Update
+> policy
+> Trajectories {𝜏 1,…,𝜏 𝐿 }
+
+𝑢 
+
+𝑎 0 
+
+> 𝑖 ,1
+
+𝑜 0 
+
+> 𝑖 ,1
+
+𝑟 0
+
+> 𝑖 ,1
+
+𝑢  𝑎 0 
+
+> 𝑖
+
+𝑜 0 
+
+> 𝑖
+
+𝑟 0 
+
+> 𝑖
+
+𝑎 𝐾  
+
+> 𝑖
+
+𝑜 𝐾  
+
+> 𝑖
+
+𝑟 𝐾 
+
+> 𝑖
+> Naive
+> Rollout
+
+𝑎 0 
+
+> 𝑖 ,2
+
+𝑜 0 
+
+> 𝑖 ,2
+
+𝑟 0
+
+> 𝑖 ,2
+
+𝑎 1 
+
+> 𝑖 ,1
+
+𝑜 1 
+
+> 𝑖 ,1
+
+𝑟 1
+
+> 𝑖 ,1
+
+𝑎 1 
+
+> 𝑖 ,2
+
+𝑜 1 
+
+> 𝑖 ,2
+
+𝑟 1
+
+> 𝑖 ,2
+
+𝑎 2 
+
+> 𝑖 ,2
+
+𝑜 2 
+
+> 𝑖 ,2
+
+𝑟 2
+
+> 𝑖 ,2
+
+𝑎 2 
+
+> 𝑖 ,3
+
+𝑜 2 
+
+> 𝑖 ,3
+
+𝑟 2
+
+> 𝑖 ,3
+
+𝑎 0 
+
+> 𝑖 ,3
+
+𝑜 0 
+
+> 𝑖 ,3
+
+𝑟 0
+
+> 𝑖 ,3
+
+𝑎 1 
+
+> 𝑖 ,3
+
+𝑜 1 
+
+> 𝑖 ,3
+
+𝑟 1
+
+> 𝑖 ,3
+
+𝑎 2 
+
+> 𝑖 ,1
+
+𝑜 2 
+
+> 𝑖 ,1
+
+𝑟 2
+
+> 𝑖 ,1
+
+𝑅 (𝜏 𝑖 )𝑅 (𝜏 𝑖 )𝐴 𝑖 
+
+> Advantage
+> Estimation
+
+𝑅 (𝜏 𝑖 )𝑅 (𝜏 𝑖 )𝑅 (𝜏 𝑖 ) Policy  
+
+> Update
+> Trajectory -
+> level Reward
+> Trajectory Search Rollout (TSR)
+
+…
+
+…
+
+Figure 2. (Left ) Multi-turn RL with naive rollouts: trajectories are sampled independently without any search. ( Right ) Trajectory Search Rollouts (TSR): lightweight tree-style search to construct high-quality trajectories by selecting high-scoring actions at each turn. 
+
+## 3. Optimizing Rollouts with Trajectory Search 
+
+In this section, we formalize rollout generation as a trajec-tory search problem and introduce TSR, a tree-search rollout framework for constructing higher-quality trajectories. 
+
+3.1. Trajectory Rollouts via Tree Search 
+
+We consider multi-turn rollout generation as a sequential decision making process that induces a search tree over possible action sequences (see Fig. 2). Starting from an initial state s0, each node in the tree corresponds to a partial trajectory prefix τ<t , and edges correspond to candidate actions sampled from the current policy. 
+
+Candidate Action Set. At each turn t, instead of sampling a single action from the corresponding policy πθ (· | τ<t ),we sample a candidate action set 
+
+At = {a(1)  
+
+> t
+
+, . . . , a (M ) 
+
+> t
+
+} , a(j) 
+
+> t
+
+∼ πθ (· | τ<t ) , (4) where M controls the per-turn branching factor. This step corresponds to expanding a node in the trajectory tree. 
+
+Scoring Function. We evaluate the desirability of taking action at at prefix τ<t with outcome ot from the environ-ment using a scoring function 
+
+S(τ<t , a t, o t) ∈ R . (5) 
+
+S(·) is task-dependent and may simply correspond to the turn-level reward. However, it may also incorporate heuris-tic signals, learned value estimates, or proxy feedback if immediate rewards are unavailable. This abstraction allows our framework to support: (1) reward-based scoring in de-terministic settings (e.g., logic puzzles such as Sokoban), (2) 
+
+heuristic or risk-aware scoring in stochastic environments (e.g., FrozenLake), and (3) progress-based or semantic scor-ing in delayed-reward settings (e.g., WebShop). 
+
+Trajectory Search Rollouts (TSR). Given the candidate action set and scoring function, rollout generation proceeds by selecting actions according to a search strategy Fϕ pa-rameterized by search parameters ϕ. Formally, we define: TSR : ( πθ , u, S, K, Fϕ) −→ { τ1, . . . , τ M } , (6) where u ∈ U denotes a task instance with initial state s0, and 
+
+Fϕ selects and composes actions by optimizing trajectory prefixes under the scoring function S over a finite horizon 
+
+K. Here, the number of trajectories L generated by TSR is a hyper-parameter, which we omit from the input parameters for notational simplicity. By repeatedly expanding candidate actions and selecting according to S(·), rollout generation corresponds to traversing a truncated tree. The collected trajectories are then used in each policy optimization step. Crucially, TSR modifies only the rollout generation process ,i.e., the policy objective and update rules remain unchanged. 
+
+3.2. Search Strategies 
+
+We instantiate TSR with best-of-N , beam, and shallow lookahead search. While these are popular test-time scaling techniques traditionally applied at inference time to improve a single output, here we adapt them to training-time rollout generation for multi-turn RL. 
+
+Trajectory-Level Best-of-N . For a given initial state, we independently sample a set of N complete trajectories 
+
+{τ (1) , . . . , τ (N )} from the base policy πθ , where each tra-jectory is typically scored using its cumulative reward R(τ ).Rollout generation then retains only the best trajectory: 
+
+τ ∗ = arg max     
+
+> τ∈{ τ(1) ,...,τ (N)}
+
+R(τ ) . (7) Best-of-N aims to improve training signal quality by filter-ing out low-reward rollouts. However, because selection occurs only after full trajectories are generated, it does not influence intermediate action choices and may still waste rollout budget on suboptimal prefixes. We therefore view trajectory-level best-of-N as a naive baseline of search with depth K and branching only at the root. 4TSR: Trajectory-Search Rollouts for Multi-Turn RL of LLM Agents 
+
+Per-Turn Beam Search. To incorporate search decisions throughout the trajectory, at each turn t, we sample a candi-date action set At and score each candidate action at (along with its outcome ot) using S(τ<t , a t, o t). Instead of com-mitting to a single action, beam search maintains a set of B
+
+active partial trajectories (beams), retaining the top-ranked prefixes after each expansion. Formally, if Bt denotes the set of active beams at turn t, then 
+
+Bt+1 = Top B
+
+n
+
+(τ<t ◦at) τ<t ∈ B t, a t ∈ A t
+
+o
+
+, (8) where ◦ denotes trajectory concatenation and ranking is performed using accumulated or per-step scores. After K
+
+turns, the highest-scoring trajectory is selected for training. Per-turn beam search actively steers rollout generation to-ward promising regions of the trajectory space and enables recovery from locally suboptimal actions. 
+
+Shallow Lookahead Search. Similar to beam search, shallow lookahead evaluates candidate actions at each turn but additionally includes a short horizon of future steps (depth D ≪ K) before selection. This corresponds to evalu-ating a truncated subtree rooted at τ<t and choosing actions based on predicted downstream outcomes. Lookahead may improve quality relative to greedy scoring, while incurring less computational overhead than maintaining a full beam. Fig. 5 in App. C provides an overview of these three search methods used for multi-turn trajectory rollout generation. 
+
+3.3. Instance Filtering for Enhanced Task Diversity 
+
+While TSR improves the quality of trajectories ( exploita-tion ), it does not by itself guarantee sufficient task-level 
+
+diversity ( exploration ). An established mechanism to pro-mote such diversity is instance-level filtering (Wang et al., 2025), which hierarchically samples distinct task realiza-tions before generating corresponding rollouts. Specifically, at each training iteration, instance filtering first samples P task instances (or groups ), where each group cor-responds to a different initial state (e.g., different Sokoban layouts, WebShop tasks, or problem statements). Within each group u with initial state s0, the agent generates L
+
+corresponding rollout trajectories 
+
+{τ (1) , . . . , τ (L)} ∼ πθ (· | u) , (9) resulting in a total of P × L trajectories per iteration. For each group, instance filtering then defines an outcome uncer-tainty under the current policy πθ as the standard deviation of resulting trajectory returns: 
+
+U (u; πθ ) = Std τ ∼πθ (·| u)
+
+R(τ ) . (10) During training, groups are ranked according to U (u; πθ ),and only the top-p% most uncertain groups are retained 
+
+Algorithm 1 TSR with Instance-Level Filtering  
+
+> 1:
+
+Input: Policy πθ , Task distribution D, Sample Size 
+
+P , Group Size N , Filter Ratio p, Search Strategy Fϕ,maximum Turn Horizon K, Score Function S. 
+
+> 2:
+
+Output: Optimized Policy πθ∗ 
+
+> 3:
+
+for each training step do  
+
+> 4:
+
+Sample P task groups {u1, . . . , u P } ∼ D . 
+
+> 5:
+
+for each group ui do  
+
+> 6:
+
+// Generate L trajectories using TSR :
+
+Gi ← TSR (πθ , u i, S, K, Fϕ). 
+
+> 7:
+
+// Compute outcome uncertainty for each xi:
+
+Ui = Std( {R(τ ) | τ ∈ G i}). 
+
+> 8:
+
+end for  
+
+> 9:
+
+Rank groups by Ui and select top-p% subset Xtop . 
+
+> 10:
+
+Update πθ via PPO/GRPO using trajectories in Xtop . 
+
+> 11:
+
+end for 
+
+for policy updates, while low-variance groups are discarded. The motivation for group-based instance filtering stems from active learning (Settles, 2011) where groups with low reward variance tend to be uninformative: trajectories either solve trivial problems (uniformly high reward) or consistently fail (uniformly low reward), providing little learning signal. Empirically, (Wang et al., 2025) show that uncertainty-based filtering can delay or prevent mode collapse by maintaining a diverse training set. In our experiments, we therefore combine TSR with uncertainty-based instance filtering to jointly optimize rollout quality and task diversity. Alg. 1 summarizes the joint operation. Since TSR is modular, it can be combined with other mecha-nisms that encourage exploration (e.g., ScalingInter-RL (Xi et al., 2025a)) or hierarchical RL methods (e.g., (Luo et al., 2025)). A systematic study of integrating TSR with com-plementary methods is an interesting direction for future work. 
+
+## 4. Experimental Setup 
+
+To ensure reproducibility, we base our experiments on RA-GEN (Wang et al., 2025), a popular framework for training and evaluating LLM agents in RL settings. 
+
+4.1. Environments and Tasks 
+
+We choose three diverse multi-turn environments from the RAGEN framework, selected to test agent performance un-der varying degrees of reasoning complexity: 1. Sokoban (Weber et al., 2018). A logic puzzle in which the agent must push boxes into target locations. Feed-back is deterministic and immediate, allowing to score per-turn rollouts via environment rewards. 5TSR: Trajectory-Search Rollouts for Multi-Turn RL of LLM Agents 0 20 40 60 80 100 120 140 160 180 200 
+
+> Training Steps
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> Success Rate
+> Sokoban (Qwen2.5-0.5B)
+> Instance Filtering TSR (Best-of-N) TSR (Lookahead) TSR (Beam Search)
+
+(a) Sokoban (Qwen2.5-0.5B) 0 20 40 60 80 100 120 140 160 180 200  
+
+> Training Steps
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> Success Rate
+> Sokoban (Qwen2.5-3B)
+> Instance Filtering TSR (Best-of-N) TSR (Lookahead) TSR (Beam Search)
+
+(b) Sokoban (Qwen2.5-3B) 0 10 20 30 40 50 60 70 80 90 100  
+
+> Training Steps
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> Success Rate
+> WebShop (Qwen2.5-3B)
+> Instance Filtering TSR (Best-of-N) TSR (Lookahead) TSR (Beam Search)
+
+(c) WebShop (Qwen2.5-3B) 0 20 40 60 80 100 120 140 160 180 200 
+
+> Training Steps
+> 0.10
+> 0.15
+> 0.20
+> 0.25
+> 0.30
+> Success Rate
+> Frozen Lake (Qwen2.5-0.5B)
+> Instance Filtering TSR (Best-of-N) TSR (Lookahead) TSR (Beam Search)
+
+(d) FrozenLake (Qwen2.5-0.5B) 0 20 40 60 80 100 120 140 160 180 200  
+
+> Training Steps
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> Success Rate
+> Frozen Lake (Qwen2.5-3B)
+> Instance Filtering TSR (Best-of-N) TSR (Lookahead) TSR (Beam Search)
+
+(e) FrozenLake (Qwen2.5-3B) 
+
+Figure 3. Success Rate on Held-Out Validation Sets. Comparison of TSR variants (Best-of-N , Lookahead, Beam Search) against the Instance Filtering baseline across all environments. Shaded regions show standard deviation across 3 runs. 
+
+2. FrozenLake (Brockman et al., 2016). A stochastic navigation task where the agent must cross a frozen lake to reach a goal while avoiding obstacles (holes in the ice). The iced surface is slippery such that the same action can stochastically lead to different next states. Rewards are extremely sparse, with a positive signal provided only upon reaching the goal. 3. WebShop (Yao et al., 2023a). A deterministic e-commerce scenario in which the agent must navigate a website to purchase an item. Rewards are delayed as success is only signaled upon successful purchase, resulting in a long-horizon credit assignment problem. To address sparse or delayed reward feedback in FrozenLake and WebShop, we employ task-specific proxy scores to guide rollout generation. Details on the scoring functions and examples for each environment are provided in App. D. 
+
+4.2. Training and Baselines 
+
+For our main experiments, we train Qwen2.5-0.5B and Qwen2.5-3B instruct models (Qwen et al., 2025) on Sokoban and FrozenLake, and only the larger Qwen2.5-3B model on WebShop due to the higher reasoning complexity required for this task. We use PPO for Sokoban and GRPO for FrozenLake and WebShop, as GRPO has been shown to provide more stable learning for these tasks (Wang et al., 2025). Following (Yu et al., 2025; Wang et al., 2025), we remove the KL term during optimization and apply asym-metric clipping (via clip-higher). For each batch, we sample 
+
+P = 16 task groups (prompts) and L = 16 rollouts per group, with a maximum turn horizon of K = 5 . Our base-line is instance-level filtering with naive rollout sampling using a filtering ratio of p = 0 .25 , similar to the default RAGEN implementation. When instantiating TSR with best-of-N , we sample N = 28 trajectories and retain the top L = 16 . For beam search, we use a branching factor of M = 4 and beam width B = 2 . For lookahead search, we use the same B and M with depth D = 2 . We selected these parameters after performing ablations on N , M , B,and D (see App. F). Note that after trajectory search rollout and filtering, all methods yield the same number of trajectories per group, ensuring a fair comparison. We provide additional details on our training setup in App. E. 
+
+4.3. Evaluation and Metrics 
+
+Across all three tasks, we report success rate as final task accuracy, evaluated on a held-out validation set of 256 fixed prompts per environment. For inference, we use tempera-ture T = 0 .5 and truncate episodes after 5 turns, consistent with the maximum turn horizon K. Besides success rate (an indicator for task completion ), we report rollout entropy (an indicator for diversity ( exploration ), and average reward distribution for exploitation . Training stability is analyzed via gradient norm statistics, where sudden spikes indicate potential mode collapse. We additionally report average re-sponse length ( reasoning verbosity ) and the average number of interaction turns ( token efficiency and task-completion latency ). Further details on evaluations are given in App. E. 6TSR: Trajectory-Search Rollouts for Multi-Turn RL of LLM Agents 
+
+Table 1. Results (Sokoban & FrozenLake). We report Success Rate ( ↑), Average Response Length in tokens ( ↓), and Average Interaction Turns ( ↓) on the held-out validation set. Bold indicates the best performance within each environment and model size.                                                                       
+
+> Task Method Qwen2.5-0.5B Qwen2.5-3B
+> Success Rate ( ↑)Resp. Len ( ↓)Turns ( ↓)Success Rate ( ↑)Resp. Len ( ↓)Turns ( ↓)
+> Sokoban
+> Base Model 8.9 293 4.7 16.0 272 4.6 Instance Filtering 29.0 105 4.4 43.7 161 4.1 TSR (Best-of-N)33.3 103 4.3 47.7 165 4.0 TSR (Lookahead) 36.1 101 4.0 49.5 158 3.8 TSR (Beam Search) 38.3 98 3.8 52.3 152 3.6 FrozenLake
+> Base Model 6.4 276 4.6 12.7 225 3.9 Instance Filtering 19.7 157 4.1 48.7 174 3.6 TSR (Best-of-N)25.0 182 4.2 55.0 161 3.5 TSR (Lookahead) 27.8 168 3.8 57.0 135 3.3 TSR (Beam Search) 30.0 152 3.5 60.7 98 3.1
+
+Table 2. Results (WebShop, Qwen2.5-3B). Success Rate ( ↑), Average Response Length ( ↓), and Average Interaction Turns ( ↓)on the held-out validation set. Bold indicates the best results.                    
+
+> Method Qwen2.5-3B
+> Success Rate ( ↑)Resp. Len ( ↓)Turns ( ↓)Base Model 3.0 747 7.7 Instance Filtering 70.3 519 6.8 TSR (Best-of-N)77.3 504 6.5 TSR (Lookahead) 82.3 475 6.1 TSR (Beam Search) 85.3 453 5.8
+
+## 5. Results and Discussion 
+
+We present key results and statistics assessing final task performance, training stability, and scaling behavior. We refer to App. F for supplementary ablations and results. 
+
+5.1. TSR Performance Comparison and Success Rates 
+
+We present success rate across training steps for all agent tasks in Fig. 3 and summarize overall task performance (final success rate) in Table 1 for Sokoban and FrozenLake, and in Table 2 for WebShop. Across all tasks and models, TSR methods consistently out-perform the instance-filtering baseline, which only promotes task-level diversity but does not optimize rollouts at the per-turn level. For example, with the 3B model, TSR (Beam Search) achieves a success rate of 52.3% on Sokoban and 60.7% on FrozenLake, improvements of 8.4% and 12.0% over instance filtering. Similarly, TSR (Lookahead) and TSR (Best-of-N ) achieve improvements ranging from 4– 12%, depending on task and model size. The largest gains are observed on WebShop, where best-of-N , lookahead, and beam search achieve performance improvements of 7.0%, 12.3%, and 15.0%, respectively, demonstrating that TSR yields particularly strong benefits in long-horizon settings. Among TSR variants, beam search consistently achieves the strongest performance, followed by lookahead, with best-of-
+
+N providing smaller gains. These trends are also reflected in the learning dynamics, where beam search converges faster (see Fig. 3). Overall, we have the following three takeaways. First, beam search maintains multiple partial trajectories throughout rollout generation, enabling recovery from early irreversible mistakes and providing robustness to proxy-scoring noise and environment stochasticity, par-ticularly in FrozenLake and WebShop. Second, lookahead commits to a single action based on proxy signals of fu-ture outcomes. While effective in deterministic settings like Sokoban, its gains are constrained by proxy quality and diminish as search depth increases. Third, best-of-N im-proves training signal by selecting higher-quality completed 
+
+trajectories, i.e., selection occurs only after full rollouts are generated. As a result, it acts as an oversampled vari-ant of instance filtering, increasing the chance of “luckier” trajectories without actively steering intermediate decisions. 
+
+5.2. Exploitation, Exploration, and Training Stability 
+
+We analyze exploitation, exploration, and training stability using diagnostic statistics, shown exemplarily in Fig. 4 for the Sokoban task with the Qwen2.5-3B model. For exploitation, we analyze average training rewards in Fig. 4a. Across all TSR variants, average rewards increase steadily over training, indicating effective learning and pol-icy improvement. In particular, we see trends consistent with overall task performance: beam search has on average higher rewards, followed by lookahead and best-of-N . This indicates that TSR shifts the exploitation bias toward higher rewards, resulting in higher performance due to finding bet-ter trajectories compared to the instance filtering baseline. For exploration, we analyze rollout entropy in Fig. 4b, which measures the uncertainty of the model’s token predictions. Across all methods, entropy decays smoothly over training, 7TSR: Trajectory-Search Rollouts for Multi-Turn RL of LLM Agents 0 20 40 60 80 100 120 140 160 180 200 
+
+> Training Steps
+> 0
+> 1
+> 2
+> 3
+> 4
+> 5
+> Mean Training Reward  Sokoban (Qwen2.5-3B)
+> Instance Filtering TSR (Best-of-N) TSR (Lookahead) TSR (Beam Search)
+
+(a) Average Reward (Exploitation) 0 20 40 60 80 100 120 140 160 180 200  
+
+> Training Steps
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> Rollout Entropy
+> Sokoban (Qwen2.5-3B)
+> Instance Filtering TSR (Best-of-N) TSR (Lookahead) TSR (Beam Search)
+
+(b) Rollout Entropy (Exploration) 0 20 40 60 80 100 120 140 160 180 200  
+
+> Training Steps
+> 1.4
+> 1.6
+> 1.8
+> 2.0
+> 2.2
+> Gradient Norm  (`2)
+> Sokoban (Qwen2.5-3B)
+> Instance Filtering TSR (Best-of-N) TSR (Lookahead) TSR (Beam Search)
+
+(c) Gradient Norm (Stability) 
+
+Figure 4. Exploitation, Exploration, and Stability Metrics for Sokoban (Qwen2.5-3B). (a) TSR methods achieve higher average training rewards than Instance Filtering, indicating improved exploitation from higher-quality rollouts. (b) Rollout entropy decreases smoothly over training, suggesting sustained exploration early on, followed by gradual policy consolidation. (c) Gradient norms remain stable and free of large spikes across TSR methods, consistent with stable optimization dynamics and the absence of Echo Trap collapse. 
+
+indicating that the agent is sufficiently exploring different strategies with uncertain outcomes in the beginning before converging to a more concentrated, exploitative behavior with a specific reasoning path. Importantly, TSR variants exhibit a similar entropy decay profile to the instance filter-ing baseline, suggesting that trajectory search rollout does not alter or destabilize exploration–exploitation dynamics. Furthermore, we analyze gradient norms in Fig. 4c as a measure of training stability. Sharp spikes in gradient norms are indicative of the “Echo Trap” phenomenon and can lead to irreversible instability and mode collapse (Wang et al., 2025; Xi et al., 2025a). Across all methods, gradient norms remain within a narrow range without pronounced spikes, indicating stable training dynamics. 
+
+5.3. Inference Efficiency 
+
+In addition to final success rates, Tables 1 and 2 report aver-age response length and interaction turns to assess whether increased training-time compute can improve solution qual-ity, token efficiency, and latency at inference time. Across environments, trajectory search methods consistently re-duce both metrics, indicating improved decision-making at test time. In particular, beam search produces the short-est responses and fewest turns on average, with lookahead achieving comparable reductions. Overall, these results sug-gest that training-time trajectory search not only improves task success but also yields more concise interactions at deployment time. We substantiate these results by providing a qualitative example for the WebShop task in App. F.1. 
+
+5.4. Comparison to Larger Models 
+
+To assess whether training with TSR can challenge larger models, we benchmark our Qwen2.5-0.5B agents against GPT-4o (Hurst et al., 2024) and Qwen2.5-72B (Qwen et al., 2025) for Sokoban and FrozenLake tasks in Table 3. De-spite being orders of magnitude smaller, our TSR (Beam Search)-trained agent outperforms GPT-4o by 10.6% on 
+
+Table 3. Comparison to Larger Models. Qwen2.5-0.5B trained via TSR outperforms GPT-4o and Qwen2.5-72B models. 
+
+Model / Method Sokoban FrozenLake 
+
+GPT-4o (zero-shot) 27.73 26.56 Qwen2.5-72B (zero-shot) 19.53 23.83 Qwen2.5-0.5B (Instance Filtering) 29.00 19.70 Qwen2.5-0.5B (TSR Best-of-N ) 33.30 25.00 Qwen2.5-0.5B (TSR Lookahead) 36.10 27.80 Qwen2.5-0.5B (TSR Beam Search) 38.30 30.00 
+
+Table 4. Scaling Effects (Sokoban, Qwen2.5-3B). Performance gains saturate as search budgets increase. The transition from Greedy ( B = 1 ) to Beam ( B = 2 ) offers the best trade-off, while aggressive sampling ( M = 6 ) yields diminishing returns. 
+
+Method Search Budget Succes Rate ∆
+
+TSR (Beam Search) 
+
+M = 2 , B = 1 50.6 –
+
+M = 2 , B = 2 52.3 +1.7 
+
+M = 6 , B = 2 53.4 +1.1 
+
+Sokoban and 3.4% on FrozenLake. In particular, all meth-ods, including instance level filtering, outperform on the Sokoban task. This suggests that multi-turn RL with TSR can yield performance that surpasses significantly larger, state-of-the-art generalist models. 
+
+5.5. Scaling Search Budget vs. Performance 
+
+We further study how increasing training-time search bud-gets affects final performance. As shown in Table 4, we observe diminishing marginal returns. For beam search, the largest improvement ( +1 .7% ) comes from increasing the beam width from B = 1 to B = 2 , enabling the agent to escape local optima. Further increasing the number of action samples from M = 2 to M = 6 yields only modest gains ( +1 .1% ). We observe similar behavior for other TSR variants. This justifies our choice of moderate budgets (e.g., 
+
+B = 2 , M = 4 ) for the main experiments. We provide more detailed scaling experiments for beam search in App. F.2. 8TSR: Trajectory-Search Rollouts for Multi-Turn RL of LLM Agents 
+
+## 6. Conclusion 
+
+In this work, we introduced Trajectory-Search Rollouts (TSR), a framework that repurposes inference-time search algorithms, such as beam search, lookahead, and best-of-
+
+N , to enhance the training data quality of policy gradient methods in multi-turn agentic RL. By actively exploring and pruning trajectories on a per-turn-level during the rollout phase, TSR overcomes the exploration challenges inherent in sparse- or delayed-reward environments and substantially increases final task accuracy, while effectively preventing mode collapse. Our methodology is simple, general, and optimizer-agnostic, and can thus be paired with any policy gradient method in principle. Empirically, we demonstrate that a 0.5B model trained with TSR not only significantly outperforms strong RL baselines but also surpasses larger generalist models on three representative tasks and envi-ronments. Our findings thus confirm that allocating ad-ditional compute at the trajectory rollout stage improves performance and stability in multi-turn RL training. 
+
+## Impact Statement 
+
+This paper presents work whose goal is to advance the field of Machine Learning. There are many potential societal consequences of our work, none which we feel must be specifically highlighted here. 
+
+## References 
+
+Alzorgan, H. and Razi, A. Monte Carlo Beam Search for Actor-Critic Reinforcement Learning in Continuous Con-trol, 2025. URL https://arxiv.org/abs/2505. 09029 .Brockman, G., Cheung, V., Pettersson, L., Schneider, J., Schulman, J., Tang, J., and Zaremba, W. Ope-nAI Gym, 2016. URL https://arxiv.org/abs/ 1606.01540 .Cao, S., Li, D., Zhao, F., Yuan, S., Hegde, S. R., Chen, C., Ruan, C., Griggs, T., Liu, S., Tang, E., Liaw, R., Moritz, P., Zaharia, M., Gonzalez, J. E., and Stoica, I. SkyRL-Agent: Efficient RL Training for Multi-turn LLM Agent, 2025. URL https://arxiv.org/ abs/2511.16108 .Cui, G., Yuan, L., Wang, Z., Wang, H., Zhang, Y., Chen, J., Li, W., He, B., Fan, Y., Yu, T., Xu, Q., Chen, W., Yuan, J., Chen, H., Zhang, K., Lv, X., Wang, S., Yao, Y., Han, X., Peng, H., Cheng, Y., Liu, Z., Sun, M., Zhou, B., and Ding, N. Process Reinforcement through Implicit Rewards, 2025. URL https://arxiv.org/abs/ 2502.01456 .Dong, H., Xiong, W., Goyal, D., Zhang, Y., Chow, W., Pan, R., Diao, S., Zhang, J., Shum, K., and Zhang, T. RAFT: Reward rAnked FineTuning for Generative Foundation Model Alignment, 2023. URL https: //arxiv.org/abs/2304.06767 .Gui, L., G ˆarbacea, C., and Veitch, V. BoNBoN Alignment for Large Language Models and the Sweetness of Best-of-n Sampling, 2024. URL https://arxiv.org/ abs/2406.00832 .Hurst, A., Lerer, A., Goucher, A. P., Perelman, A., Ramesh, A., Clark, A., Ostrow, A., Welihinda, A., Hayes, A., Radford, A., et al. GPT-4o System Card. arXiv preprint arXiv:2410.21276 , 2024. Ignatenko, O. and Pravosud, R. Solving Sokoban Game with a Heuristic for Avoiding Dead-End States. In ICTERI , 2023. https://doi.org/10.1007/ 978-3-031-48325-7_4 .Lefebvre, R. and Durand, A. On Shallow Planning under Partial Observability, 2025. URL https://arxiv. org/abs/2407.15820 .Luo, X., Zhang, Y., He, Z., Wang, Z., Zhao, S., Li, D., Qiu, L. K., and Yang, Y. Agent Lightning: Train ANY AI Agents with Reinforcement Learning, 2025. URL 
+
+https://arxiv.org/abs/2508.03680 .Mroueh, Y., Dupuis, N., Belgodere, B., Nitsure, A., Rigotti, M., Greenewald, K., Navratil, J., Ross, J., and Rios, J. Revisiting Group Relative Policy Optimization: Insights into On-Policy and Off-Policy Training. arXiv preprint arXiv:2505.22257 , 2025. Nakano, R., Hilton, J., Balaji, S., Wu, J., Ouyang, L., Kim, C., Hesse, C., Jain, S., Kosaraju, V., Saunders, W., Jiang, X., Cobbe, K., Eloundou, T., Krueger, G., Button, K., Knight, M., Chess, B., and Schulman, J. We-bGPT: Browser-Assisted Question-Answering with Hu-man Feedback, 2022. URL https://arxiv.org/ abs/2112.09332 .Ouyang, L., Wu, J., Jiang, X., Almeida, D., Wainwright, C. L., Mishkin, P., Zhang, C., Agarwal, S., Slama, K., Ray, A., Schulman, J., Hilton, J., Kelton, F., Miller, L., Simens, M., Askell, A., Welinder, P., Christiano, P., Leike, J., and Lowe, R. Training Language Models to Follow Instructions with Human Feedback, 2022. URL https: //arxiv.org/abs/2203.02155 .Qwen, :, Yang, A., Yang, B., Zhang, B., Hui, B., Zheng, B., Yu, B., Li, C., Liu, D., Huang, F., Wei, H., Lin, H., Yang, J., Tu, J., Zhang, J., Yang, J., Yang, J., Zhou, J., Lin, J., Dang, K., Lu, K., Bao, K., Yang, K., Yu, L., Li, M., Xue, M., Zhang, P., Zhu, Q., Men, R., Lin, R., Li, T., Tang, T., Xia, T., Ren, X., Ren, X., Fan, Y., 9TSR: Trajectory-Search Rollouts for Multi-Turn RL of LLM Agents 
+
+Su, Y., Zhang, Y., Wan, Y., Liu, Y., Cui, Z., Zhang, Z., and Qiu, Z. Qwen2.5 Technical Report, 2025. URL 
+
+https://arxiv.org/abs/2412.15115 .Schulman, J., Moritz, P., Levine, S., Jordan, M. I., and Abbeel, P. High-Dimensional Continuous Control Us-ing Generalized Advantage Estimation. arXiv preprint arXiv:1506.02438 , 2015. Schulman, J., Wolski, F., Dhariwal, P., Radford, A., and Klimov, O. Proximal Policy Optimization Algo-rithms, 2017. URL https://arxiv.org/abs/ 1707.06347 .Schulman, J., Moritz, P., Levine, S., Jordan, M., and Abbeel, P. High-Dimensional Continuous Control Us-ing Generalized Advantage Estimation, 2018. URL 
+
+https://arxiv.org/abs/1506.02438 .Settles, B. From Theories to Queries: Active Learning in Practice. In Active Learning and Experimental Design Workshop in Conjunction with AISTATS 2010 , pp. 1–18. JMLR Workshop and Conference Proceedings, 2011. Shao, Z., Wang, P., Zhu, Q., Xu, R., Song, J., Bi, X., Zhang, H., Zhang, M., Li, Y. K., Wu, Y., and Guo, D. DeepSeekMath: Pushing the Limits of Mathemat-ical Reasoning in Open Language Models, 2024. URL 
+
+https://arxiv.org/abs/2402.03300 .Shen, J., Bai, H., Zhang, L., Zhou, Y., Setlur, A., Tong, S., Caples, D., Jiang, N., Zhang, T., Talwalkar, A., and Kumar, A. Thinking vs. Doing: Agents that Reason by Scaling Test-Time Interaction, 2025. URL https: //arxiv.org/abs/2506.07976 .Shrivastava, V., Awadallah, A., Balachandran, V., Garg, S., Behl, H., and Papailiopoulos, D. Sample More to Think Less: Group Filtered Policy Optimization for Concise Reasoning, 2025. URL https://arxiv.org/abs/ 2508.09726 .Snell, C., Lee, J., Xu, K., and Kumar, A. Scaling LLM Test-Time Compute Optimally can be More Effective than Scaling Model Parameters, 2024. URL https: //arxiv.org/abs/2408.03314 .Sutton, R. S., McAllester, D., Singh, S., and Mansour, Y. Policy Gradient Methods for Reinforcement Learning with Function Approximation. Advances in neural infor-mation processing systems , 12, 1999. Wang, H., Hao, S., Dong, H., Zhang, S., Bao, Y., Yang, Z., and Wu, Y. Offline Reinforcement Learning for LLM Multi-Step Reasoning, 2024. URL https://arxiv. org/abs/2412.16145 .Wang, Z., Wang, K., Wang, Q., Zhang, P., Li, L., Yang, Z., Jin, X., Yu, K., Nguyen, M. N., Liu, L., Gottlieb, E., Lu, Y., Cho, K., Wu, J., Fei-Fei, L., Wang, L., Choi, Y., and Li, M. RAGEN: Understanding Self-Evolution in LLM Agents via Multi-Turn Reinforcement Learning, 2025. URL https://arxiv.org/abs/2504.20073 .Weber, T., Racani `ere, S., Reichert, D. P., Buesing, L., Guez, A., Rezende, D. J., Badia, A. P., Vinyals, O., Heess, N., Li, Y., Pascanu, R., Battaglia, P., Hassabis, D., Silver, D., and Wierstra, D. Imagination-Augmented Agents for Deep Reinforcement Learning, 2018. URL https: //arxiv.org/abs/1707.06203 .Wei, Q., Zeng, S., Li, C., Brown, W., Frunza, O., Deng, W., Schneider, A., Nevmyvaka, Y., Zhao, Y. K., Garcia, A., and Hong, M. Reinforcing Multi-Turn Reasoning in LLM Agents via Turn-Level Reward Design, 2025. URL 
+
+https://arxiv.org/abs/2505.11821 .Xi, Z., Ding, Y., Chen, W., Hong, B., Guo, H., Wang, J., Yang, D., Liao, C., Guo, X., He, W., Gao, S., Chen, L., Zheng, R., Zou, Y., Gui, T., Zhang, Q., Qiu, X., Huang, X., Wu, Z., and Jiang, Y.-G. AgentGym: Evolv-ing Large Language Model-based Agents across Diverse Environments, 2024. URL https://arxiv.org/ abs/2406.04151 .Xi, Z., Huang, J., Liao, C., Huang, B., Guo, H., Liu, J., Zheng, R., Ye, J., Zhang, J., Chen, W., He, W., Ding, Y., Li, G., Chen, Z., Du, Z., Yao, X., Xu, Y., Chen, J., Gui, T., Wu, Z., Zhang, Q., Huang, X., and Jiang, Y.-G. AgentGym-RL: Training LLM Agents for Long-Horizon Decision Making through Multi-Turn Reinforce-ment Learning, 2025a. URL https://arxiv.org/ abs/2509.08755 .Xi, Z., Liao, C., Li, G., Yang, Y., Chen, W., Zhang, Z., Wang, B., Jin, S., Zhou, Y., Guan, J., Wu, W., Ji, T., Gui, T., Zhang, Q., and Huang, X. AgentPRM: Process Reward Models for LLM Agents via Step-Wise Promise and Progress, 2025b. URL https://arxiv.org/ abs/2511.08325 .Yao, S., Chen, H., Yang, J., and Narasimhan, K. Web-Shop: Towards Scalable Real-World Web Interaction with Grounded Language Agents, 2023a. URL https: //arxiv.org/abs/2207.01206 .Yao, S., Yu, D., Zhao, J., Shafran, I., Griffiths, T. L., Cao, Y., and Narasimhan, K. Tree of Thoughts: Deliberate Problem Solving with Large Language Models. arXiv preprint arXiv:2305.10601 , 2023b. Yu, Q., Zhang, Z., Zhu, R., Yuan, Y., Zuo, X., Yue, Y., Dai, W., Fan, T., Liu, G., Liu, L., Liu, X., Lin, H., Lin, Z., Ma, B., Sheng, G., Tong, Y., Zhang, C., Zhang, M., 10 TSR: Trajectory-Search Rollouts for Multi-Turn RL of LLM Agents 
+
+Zhang, W., Zhu, H., Zhu, J., Chen, J., Chen, J., Wang, C., Yu, H., Song, Y., Wei, X., Zhou, H., Liu, J., Ma, W.-Y., Zhang, Y.-Q., Yan, L., Qiao, M., Wu, Y., and Wang, M. DAPO: An Open-Source LLM Reinforcement Learning System at Scale, 2025. URL https://arxiv.org/ abs/2503.14476 .Zhang, D., Zhoubian, S., Hu, Z., Yue, Y., Dong, Y., and Tang, J. ReST-MCTS*: LLM Self-Training via Process Reward Guided Tree Search. arXiv preprint arXiv:2406.03816 , 2024. Zhou, Y., Zanette, A., Pan, J., Levine, S., and Kumar, A. ArCHer: Training Language Model Agents via Hierar-chical Multi-Turn RL, 2024. URL https://arxiv. org/abs/2402.19446 .Zhou, Y., Jiang, S., Tian, Y., Weston, J., Levine, S., Sukhbaatar, S., and Li, X. SWEET-RL: Training Multi-Turn LLM Agents on Collaborative Reasoning Tasks, 2025. URL https://arxiv.org/abs/ 2503.15478 .Zhu, K., Li, H., Wu, S., Xing, T., Ma, D., Tang, X., Liu, M., Yang, J., Liu, J., Jiang, Y. E., Zhang, C., Lin, C., Wang, J., Zhang, G., and Zhou, W. Scaling Test-time Compute for LLM Agents, 2025a. URL https://arxiv.org/ abs/2506.12928 .Zhu, Z., Xie, C., Lv, X., and slime Contributors. slime: An LLM post-training framework for RL Scaling. https: //github.com/THUDM/slime , 2025b. GitHub repository. Corresponding author: Xin Lv. 
+
+## A. Related Works 
+
+We present a short overview of relevant related works. 
+
+Multi -Turn Agent RL Frameworks. There are many practical frameworks to train multi-turn RL agents in di-verse environments. For example, Agent Lightning (Luo et al., 2025) and AgentGym -RL (Xi et al., 2025a) pro-vides decoupled training systems and modular pipelines, building on AgentGym (Xi et al., 2024) which only pri-marily focuses on environment diversity and data collec-tion. SkyRL (Cao et al., 2025) offers a full-stack library for tool-use agents, utilizing asynchronous weight updates to maximize troughput. Similarly, slime (Zhu et al., 2025b) decouples training from rollouts by connecting Megatron with SGLang, specifically targeting high-performance scal-ing for multi-turn RL. RAGEN/StarPO (Wang et al., 2025) provides a trajectory - level RL formulation and documents instability patterns; StarPO - S (Wang et al., 2025) mitigates collapse via instance filtering (retain top -p% most -uncertain prompts, measured by reward - std across repeated rollouts) and gradient shaping. Agent Lightning (Luo et al., 2025) and AgentGym -RL (Xi et al., 2025a) provide decoupled training systems and modular pipelines across environments and RL algorithms. TSR is orthogonal: we upgrade the rollout generator with per -turn search; the optimizer, loss, and framework remain unchanged. We also adopt instance filtering from (Wang et al., 2025) as a separate stabilizer in our experiments, but our key novelty is trajectory search within the training rollout loop. 
+
+Test - time scaling Prior work has investigated various inference-time scaling strategies such as Best-of-N (BoN) sampling (Ouyang et al., 2022; Gui et al., 2024), beam search (Wang et al., 2024; Alzorgan & Razi, 2025), and shallow lookahead (Lefebvre & Durand, 2025). These ap-proaches demonstrate compute -optimal allocation at infer-ence, showing reliable gains under fixed extra compute. TSR transfers this idea to training -time rollouts: search once (during training), benefit many (during inference), and optionally combine with light test - time search if desired. Our instantiations follow BoN, beam search, and shallow lookahead without claiming compute-optimal allocation. 
+
+Rejection - sampling - style selection Several single - turn training works perform response - level filtering. For exam-ple, GFPO (Shrivastava et al., 2025) filters by response length or reward -per - token within GRPO - style updates. On the other hand, RAFT -style methods (Dong et al., 2023) train on positively rewarded samples. TSR differs on two axes: (i) multi - turn agent RL with interactive environments, and (ii) trajectory -level, per - turn tree search to construct candidate paths before selection. We view these lines as complementary and compare to search - free selection base-lines under matched compute. 
+
+Test-time scaling for multi-turn RL Recent studies have extended inference scaling to agents by identifying “compute-optimal” frontiers for agents by balancing search breadth against environmental feedback depth (Zhu et al., 2025a). This includes scaling external interactions and back-tracking to compensate for base policy reasoning limits (Shen et al., 2025). Unlike these inference-only approaches, TSR shifts search-intensive compute to the training phase, distilling high-quality trajectories into the model weights to reduce test-time latency. 
+
+Turn-level credit assignment Recent work addresses sparse trajectory rewards by extending PPO and GRPO to multi-turn variants (MT-PPO/MT-GRPO) by introduc-ing turn-level reward designs (Wei et al., 2025), enabling immediate feedback via verifiable signals or LLM-judging. Similarly, the AgentPRM framework (Xi et al., 2025b) uti-lizes process reward models to provide step-wise evaluations for long-horizon tasks. While these methods refine the learn-11 TSR: Trajectory-Search Rollouts for Multi-Turn RL of LLM Agents 
+
+Figure 5. Illustration of TSR tree-search–based rollout generation with best-of-N , beam search, and shallow lookahead search methods. 
+
+ing signal, TSR focuses on trajectory generation, making it complementary for multi-turn stability. 
+
+## B. Policy Gradient Methods in Multi-Turn RL 
+
+The core idea of policy gradient methods (Sutton et al., 1999) is to perform gradient ascent according to an objective 
+
+J(θ), which typically represents the expected cumulative reward that the agent receives when following the policy πθ
+
+and interacting with the environment. We focus on two widely adopted approaches and adapt them to the multi-turn setting: 
+
+Proximal Policy Optimization (PPO). PPO (Schulman et al., 2017) stabilizes training by limiting the magnitude of policy updates via a clipped surrogate objective: 
+
+JPPO (θ) = Eτ ∼πθold 
+
+"
+
+1
+
+K
+
+> K−1
+
+X
+
+> t=0
+
+min 
+
+
+
+rt(θ) ˆAt,
+
+clip (rt(θ), 1 − ϵ, 1 + ϵ) ˆAt
+
+#
+
+, (11) where rt(θ) = πθ (at|τ<t )  
+
+> πθold (at|τ<t )
+
+is the turn-level importance-sampling ratio between the updated and behavior policy. In standard PPO, ˆAt is typically computed using General-ized Advantage Estimation (GAE) (Schulman et al., 2018), which relies on a learned value function (critic). 
+
+Group Relative Policy Optimization (GRPO). Learn-ing a separate value function can still be computationally expensive and unstable. GRPO (Shao et al., 2024) avoids an explicit critic by estimating advantages using relative comparisons. Given a group of G trajectories with returns 
+
+{R1, . . . , R G} sampled for the same task, the advantage for the i-th trajectory is computed as: 
+
+ˆAi = Ri − mean( R1, . . . , R G)std( R1, . . . , R G) + ϵ . (12) GRPO then optimizes a PPO-style clipped objective aver-aged over the group: 
+
+JGRPO (θ) = 
+
+E{τi}Gi=1 ∼πθold 
+
+"
+
+1
+
+G
+
+> G
+
+X
+
+> i=1
+
+1
+
+KiKi−1X
+
+> t=0
+
+min 
+
+
+
+ri,t (θ) ˆAi,
+
+clip (ri,t (θ), 1 − ϵ, 1 + ϵ) ˆAi
+
+#
+
+, (13) where Ki denotes the number of turns in τi, and ri,t (θ) =    
+
+> πθ(ai,t |τi,<t )
+> πθold (ai,t |τi,<t )
+
+is the per-turn importance-sampling ratio, defined analogously to PPO. 
+
+## C. Trajectory Search Rollout Search Strategies 
+
+We instantiate our TSR framework with concrete search strategies inspired by test-time scaling (Snell et al., 2024), including best-of-N , beam search, and shallow lookahead. 
+
+Best-of-N . From a given Sokoban state, the policy sam-ples N complete rollouts independently. Trajectories that commit early to irreversible moves (e.g., pushing a box into a dead-end) terminate with low return, while trajectories that preserve maneuverability succeed. TSR retains only the highest-scoring trajectory for training. 12 TSR: Trajectory-Search Rollouts for Multi-Turn RL of LLM Agents 
+
+Beam Search. At each turn, beam search maintains multi-ple partial Sokoban trajectories and expands them in parallel. Prefixes that lead toward dead-end configurations are pruned once their future feasibility collapses, allowing the search to continue only along branches that remain solvable. 
+
+Shallow Lookahead. For each candidate action in the current Sokoban state, shallow lookahead briefly simu-lates a few future steps before committing. Actions whose short-horizon continuations quickly lead to blocked or low-mobility states are avoided in favor of actions that preserve access for subsequent box pushes. Fig. 5 provides a conceptual overview of best-of-N , beam search, and shallow lookahead search strategies applied in the multi-turn RL setting. 
+
+## D. RL Environments 
+
+This section provides a detailed description of the Sokoban, FrozenLake, and WebShop environments used throughout our experiments, as well as the derivation of task-specific proxy scores to assess per-turn interactions during multi-turn rollout generation. 
+
+D.1. Environment Descriptions Sokoban (Weber et al., 2018) A determinist logic puzzle where the agent is tasked with pushing a set of boxes into designated target locations within a grid-based warehouse. The task requires the agent to navigate the grid and inter-act with boxes via orthogonal pushes, constrained by the inability to pull the boxes or push multiple boxes simulta-neously. The objective is to reach a state where all boxes are positioned on the target locations, requiring the agent to navigate the grid and avoid deadlocks where the blocks are pushed into a corner. Rewards are immediate and rolled out per turn with focus on accuracy and efficiency: +1 per box on target, -1 per box off target, +10 on task completion, and -0.1 per action. A sample environment is shown in Figure 6.  
+
+> Figure 6. A sample Sokoban environment.
+
+FrozenLake (Brockman et al., 2016) A stochastic nav-igation game where the agent is tasked with crossing a grid-based frozen lake from a starting point to a goal loca-tion. The environment consists of a grid containing safe frozen tiles, lethal holes, and a terminal goal tile. The task requires the agent to navigate using orthogonal movements, constrained by the potential for stochastic transitions where the agent may slide in a direction unintended due to the slippery ice. Each movement action succeeds with proba-bility 1/3 and deviates perpendicularly with probability 2/3. Rewards are sparse and rolled out upon reaching the goal: +1 on successful completion and 0 for all others. A sample environment is shown in Figure 7.  
+
+> Figure 7. A sample FrozenLake environment.
+
+WebShop (Yao et al., 2023a) A determinist e-commerce scenario where the agent is tasked with finding and purchas-ing specific products on a simulated e-commerce platform. The environment consists of over a million real-world prod-ucts, categorized by attributes, descriptions, and pricing. The task requires the agent to navigate the website by execut-ing high-level actions such as searching, clicking on product links, and selecting options. The agent is constrained by the need to match a natural language instruction that specifies multiple product constraints. The objective is to reach the final checkout state with the correct item, requiring the agent to effectively filter irrelevant search results and accurately map user requirements to available product specifications. 
+
+D.2. Task-Specific Score Design 
+
+Unlike Sokoban, per-turn rollout generation in FrozenLake and WebShop cannot be effectively guided by environment rewards, as rewards are either extremely sparse or delayed. In these settings, intermediate reward signals are uninforma-tive or entirely unavailable, rendering direct reward-based scoring ineffective. Instead, we employ task-specific proxy scores that encode progress and safety, enabling TSR to rank candidate actions during rollout generation. All proxy scores are lightweight and do not require training an auxil-iary value function. 
+
+FrozenLake. FrozenLake exhibits stochastic transition dynamics and provides a non-zero reward only upon reach-ing the goal. To guide rollout generation, we define a heuris-tic score that balances progress toward the goal with risk avoidance. Let st denote the agent’s current grid position, 
+
+g the goal location, and H the set of hole states. We define 13 TSR: Trajectory-Search Rollouts for Multi-Turn RL of LLM Agents 
+
+the score function 
+
+SFL (st, a t) = −d(st+1 , g ) − λ · I[st+1 ∈ H ], (14) where d(·, ·) denotes the Manhattan distance on the grid, 
+
+I[·] is the indicator function, and λ > 0 controls the penalty for transitioning into a hole. This score favors actions that reduce distance to the goal while strongly penalizing un-safe transitions. Despite stochastic dynamics, this heuristic provides a meaningful local signal for ranking candidate actions during rollout construction. 
+
+WebShop. WebShop is deterministic but characterized by delayed rewards, as success is only signaled after a correct purchase at episode termination. Consequently, per-turn en-vironment rewards are unavailable during rollout generation. Similar to the original WebShop implementation (Yao et al., 2023a), we define a proxy score based on task progress and instruction–page alignment. Let u denote the user instruc-tion and pt the textual content of the current webpage. We define 
+
+SWS (ht, a t) = α · I[progress (ht+1 )] + β · sim (u, p t+1 ),
+
+(15) where progress (·) is a binary indicator capturing key mile-stones (e.g., reaching a product page, adding an item to the cart, entering checkout), and sim (·, ·) denotes a lightweight textual similarity measure between the instruction and the current page (e.g., keyword overlap). The weights α, β > 0
+
+balance structural progress and semantic alignment. This proxy score provides a weak but informative signal for guid-ing long-horizon rollout generation. 
+
+## E. Training and Evaluation Setup 
+
+Our training setup closely follows the experimental configu-ration of RAGEN (Wang et al., 2025), and we therefore only summarize the key parameters and explicitly note deviations. Unless stated otherwise, all environment settings, optimiza-tion details, and implementation choices are identical to those used in the RAGEN framework. 
+
+Models and Optimization. We initialize all agents from Qwen2.5-Instruct checkpoints. For Sokoban and Frozen-Lake, we train both Qwen2.5-0.5B and Qwen2.5-3B models, while for WebShop we train only Qwen2.5-3B due to its longer context and higher reasoning demands. Policy op-timization is done using PPO for Sokoban and GRPO for FrozenLake and WebShop, consistent with RAGEN’s find-ings on stability under stochastic and sparse-reward settings. 
+
+Rollout and Update Configuration. Training proceeds for up to 200 rollout–update iterations for Sokoban and FrozenLake, and 100 iterations for WebShop. At each it-eration, we sample P = 16 task instances (prompts), each generating N = 16 rollouts, resulting in 256 trajectories per iteration. Each trajectory is limited to a maximum of 5 interaction turns, with up to 5 actions per turn and at most 10 total actions per episode. 
+
+Optimization Hyperparameters. We use the Adam opti-mizer with learning rate 1 × 10 −6 for both actor and critic (when applicable), and (β1, β 2) = (0 .9, 0.999) . For PPO, advantages are computed using Generalized Advantage Es-timation (GAE) with γ = 1 .0 and λ = 1 .0, and a clipping parameter ϵ = 0 .2. For GRPO, advantages are computed via group-relative normalization over rollouts sampled from the same task instance. Entropy regularization with coefficient 
+
+β = 0 .001 is applied in all experiments. Following RA-GEN, we impose a response-format penalty of −0.1 when the model fails to produce a valid structured output. 
+
+Batching and Infrastructure. The update batch size is set to E = 32 , with a mini-batch size of 4 per GPU. All experiments are conducted on 8 NVIDIA A100 GPUs using Fully Sharded Data Parallel (FSDP) training. Rollout gener-ation is accelerated using vLLM with retained computation graphs across prefill and sampling, and distributed execution is handled via Ray. 
+
+Evaluation Protocol. Evaluation is performed on a fixed set of 256 held-out prompts per environment. Decoding uses temperature T = 0 .5, and episodes are truncated after 5 turns or 10 total actions. We report the following metrics: 1. Success Rate / Final Task Accuracy. Task completion rate on the fixed validation prompts, e.g., solving the puzzle in Sokoban, reaching the goal in FrozenLake, and completing a successful purchase in WebShop. 2. Rollout Entropy. Average token-level entropy of sam-pled responses, used as a proxy for exploration and policy uncertainty. Sharp drops indicate premature convergence or collapse. 3. Average Response Length. Mean number of gener-ated tokens per rollout, capturing verbosity and (in our setup) the extent of reasoning traces. 4. Gradient Norm. ℓ2 norm of the policy gradient vector as an indicator of training stability. Sudden spikes correlate with unstable updates and potential collapse. 5. Average Number of Turns. Average number of inter-action turns per episode before termination (success, failure, or truncation), to measure whether TSR reduces interaction budget after training. 6. Wall-Clock Time. Total training time per run (on 8 NVIDIA A100 GPUs), reported to quantify the com-putational overhead introduced by search-based rollout generation. 14 TSR: Trajectory-Search Rollouts for Multi-Turn RL of LLM Agents 
+
+## F. Supplementary Results 
+
+In this section, we provide additional ablations and results. 
+
+F.1. Inference Efficiency 
+
+We provide a qualitative example of inference efficiency for the WebShop task, where we show a typical failure mode of the baseline agent (looping / redundant actions) and a more direct rollout from TSR-beam. 
+
+a) Instance Filtering: longer, looping behavior 
+
+Turn 1 
+
+Instruction: Find decorative pillows ... color beige latte ... size 20’’x20’’ ... under $30 ... 
+
+Output: <think>Search for beige pillows with size 20x20.</think> <answer>search[bisque pillow beige 20x20]</answer> 
+
+Reward: 0.0 
+
+Turn 2 
+
+State: Search results page (50 items). Output: <think>Click a result and then filter color/size.</think> <answer>click[b08l2zdwn2]</answer> 
+
+Reward: 0.0 
+
+Turn 3 
+
+State: Filters shown ( color: beige latte, black, ... , size: 18’’x18’’, ... ). Output: <think>Try clicking color filters.</think> <answer>click[beige latte]</answer> 
+
+Reward: 0.0 
+
+Turn 4–8 
+
+Output: (repeated filter clicks /back-and-forth navigation) 
+
+Reward: 0.0 
+
+(Agent exhausts actions or remains in an unproductive loop. )
+
+TSR (Beam Search): shorter, goal-directed behavior 
+
+Turn 1 
+
+Output: <think>Use a targeted query to reduce backtracking.</think> <answer>search[decorative pillow cover beige latte]</answer> 
+
+Reward: 0.0 
+
+Turn 2 
+
+State: Search results page. Output: <think>Select the most compatible result, then finish checkout.</think> <answer>click[b09f6scw47]</answer> 
+
+Reward: 0.0 
+
+Turn 3 
+
+State: Product page with options + buy now .Output: <answer>click[buy now]</answer> 
+
+Reward: +1.0 
+
+F.2. Scaling Search Budgets 
+
+We provide additional experiments analyzing the effect of scaling search budget parameters for TSR (Beam Search) in Tables 5, 6, and 7 for Sokoban, FrozenLake, and WebShop, respectively. The results corroborate our main findings and show that the largest gains arise from increasing the beam width from B = 1 to B = 2 . In contrast, increasing the number of action samples M exhibits diminishing returns, leading to a plateauing performance trend. Overall, we find that moderate search budgets (e.g., B = 2 , M = 4 ) offer a favorable trade-off between performance and computational cost. Similar trends are observed for TSR (Best-of-N ) and TSR (Lookahead) variants, which we omit for brevity. 
+
+Table 5. Sokoban: Beam Search Scaling. Increasing beam width (B) from 1 to 2 yields the largest gain. Increasing samples ( M )shows diminishing returns.                                                  
+
+> Budget Qwen2.5-0.5B Qwen2.5-3B
+> Succ. ↑Len ↓Turns ↓Succ. ↑Len ↓Turns ↓
+> M=2 , B =1 36.8 101 3.95 50.6 156 3.70
+> M=4 , B =1 37.6 99 3.88 51.4 154 3.65
+> M=6 , B =1 37.9 98 3.85 51.8 153 3.62
+> M=2 , B =2 38.3 98 3.80 52.3 152 3.60
+> M=4 , B =2 39.1 96 3.75 53.1 150 3.55
+> M=6 , B =2 39.4 95 3.72 53.4 149 3.52
+
+Table 6. FrozenLake: Beam Search Scaling. Performance trends are consistent with Sokoban, where wider beams ( B = 2 ) outper-form greedy search ( B = 1 ) across all sample counts.                                                  
+
+> Budget Qwen2.5-0.5B Qwen2.5-3B
+> Succ. ↑Len ↓Turns ↓Succ. ↑Len ↓Turns ↓
+> M=2 , B =1 28.7 160 3.65 58.9 110 3.20
+> M=4 , B =1 29.3 157 3.58 59.6 106 3.16
+> M=6 , B =1 29.5 156 3.56 59.9 104 3.14
+> M=2 , B =2 30.0 152 3.50 60.7 98 3.10
+> M=4 , B =2 30.6 150 3.47 61.3 96 3.08
+> M=6 , B =2 30.8 149 3.46 61.5 95 3.07
+
+Table 7. WebShop: Beam Search Scaling (Qwen2.5-3B). Perfor-mance trends are consistent with Sokoban and FrozenLake, where wider beams ( B = 2 ) outperform greedy search ( B = 1 ). 
+
+Budget Qwen2.5-3B 
+
+Succ. ↑ Len ↓ Turns ↓
+
+M =2 , B =1 83.6 470 6.05 
+
+M =4 , B =1 84.5 462 5.90 
+
+M =6 , B =1 84.8 458 5.86 
+
+M =2 , B =2 85.3 453 5.80 
+
+M =4 , B =2 86.0 448 5.75 
+
+M =6 , B =2 86.3 446 5.72 
+
+15 TSR: Trajectory-Search Rollouts for Multi-Turn RL of LLM Agents 
+
+F.3. Wall-Clock Time Analysis 
+
+Shifting trajectory search from inference time to training time incurs additional computational overhead during train-ing. While part of this cost can be amortized at inference time through improved efficiency (e.g., fewer interaction turns and shorter responses), it remains important to analyze the overall wall-clock cost and convergence behavior. Tables 8, 9, and 10 report wall-clock training times for the Sokoban, FrozenLake, and WebShop tasks, respectively, under the search configurations used in the main body. In particular, we report wall-clock time (in hours), the number of training steps and elapsed time required to reach 80% of the final success rate, and the corresponding steps and wall-clock time to final convergence. In general, trajectory search rollout incurs more training-time overhead compared to the instance-level filtering base-line. However, when considering both time-to-convergence metrics and the learning dynamics shown in Fig. 3, we observe that trajectory search rollout methods typically con-verge in fewer training iterations. As a result, the total time to reach convergence remains comparable to the instance-level filtering baseline across tasks and model sizes, despite the higher per-iteration cost. Overall, these results indicate that TSR does not signifi-cantly slow down end-to-end training. Instead, they trade increased per-step computation for faster convergence and improved final performance, yielding similar wall-clock time to convergence while achieving higher accuracy. 16 TSR: Trajectory-Search Rollouts for Multi-Turn RL of LLM Agents 
+
+Table 8. Wall-clock time and convergence analysis on Sokoban (Qwen2.5-0.5B and Qwen2.5-3B). We report final success rate, total wall-clock training time, and the number of steps and wall-clock time required to reach 80% of final performance and full convergence.                                                    
+
+> Model Method Final Success Rate (%) Wall Time (h) Steps to 80% Time to 80% (h) Steps to Convergence Time to Convergence (h)
+> Qwen2.5-0.5B Instance Filtering 29.0 1.72 90 0.77 180 1.54 TSR (Best-of-N)33.3 2.51 60 0.75 120 1.51
+> TSR (Lookahead) 36.1 3.11 55 0.86 105 1.63 TSR (Beam Search) 38.3 3.69 50 0.92 90 1.66 Qwen2.5-3B Instance Filtering 43.7 2.22 100 1.11 180 1.99
+> TSR (Best-of-N)47.7 3.37 70 1.18 150 2.53 TSR (Lookahead) 49.5 3.96 45 0.89 150 2.96 TSR (Beam Search) 52.3 4.56 55 1.25 90 2.05
+
+Table 9. Wall-clock time and convergence analysis on FrozenLake (Qwen2.5-0.5B and Qwen2.5-3B). We report final success rate, total wall-clock training time, and the number of steps and wall-clock time required to reach 80% of final performance and full convergence.                                                    
+
+> Model Method Final Success Rate (%) Wall Time (h) Steps to 80% Time to 80% (h) Steps to Convergence Time to Convergence (h)
+> Qwen2.5-0.5B Instance Filtering 19.7 1.34 80 0.54 120 0.80
+> TSR (Best-of-N)25.0 2.64 70 0.93 100 1.32 TSR (Lookahead) 27.8 2.53 60 0.76 90 1.14 TSR (Beam Search) 30.0 2.38 60 0.71 80 0.95 Qwen2.5-3B Instance Filtering 48.7 1.85 150 1.39 170 1.57 TSR (Best-of-N)55.0 3.47 110 1.91 140 2.43 TSR (Lookahead) 57.0 3.19 90 1.44 130 2.08 TSR (Beam Search) 60.7 2.90 80 1.16 100 1.45
+
+Table 10. Wall-clock time and convergence analysis on WebShop (Qwen2.5-3B). We report final success rate, total wall-clock training time, and the number of steps and wall-clock time required to reach 80% of final performance and full convergence. 
+
+Method Final Success Rate (%) Wall Time (h) Steps to 80% Time to 80% (h) Steps to Convergence Time to Convergence (h) 
+
+Instance Filtering 70.3 6.24 78 4.87 85 5.31 
+
+TSR (Best-of-N ) 77.3 9.75 60 5.85 70 6.83 TSR (Lookahead) 82.3 12.78 45 5.75 65 8.31 TSR (Beam Search) 85.3 14.94 45 6.73 50 7.47 
+
+17

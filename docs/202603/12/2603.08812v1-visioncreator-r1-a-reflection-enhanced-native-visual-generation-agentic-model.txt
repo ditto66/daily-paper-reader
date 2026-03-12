@@ -1,0 +1,521 @@
+Title: VisionCreator-R1: A Reflection-Enhanced Native Visual-Generation Agentic Model
+
+URL Source: https://arxiv.org/pdf/2603.08812v1
+
+Published Time: Wed, 11 Mar 2026 00:06:33 GMT
+
+Number of Pages: 16
+
+Markdown Content:
+Tencent Hunyuan 
+
+# VisionCreator-R1: A Reflection-Enhanced Native Visual-Generation Agentic Model 
+
+Jinxiang Lai 2∗, Wenzhe Zhao 1∗, Zexin Lu 1∗, Hualei Zhang 2, Qinyu Yang 1,Rongwei Quan 1, Zhimin Li 1, Shuai Shao 1, Song Guo 2§ , Qinglin Lu 1† 
+
+> 1
+
+Tencent Hunyuan, 2Hong Kong University of Science and Technology 
+
+> ∗
+
+Equal contribution, §Corresponding Author, †Project lead 
+
+# Abstract 
+
+Visual content generation has advanced from single-image to multi-image work-flows, yet existing agents remain largely plan-driven and lack systematic reflection mechanisms to correct mid-trajectory visual errors. To address this limitation, we propose VisionCreator-R1 , a native visual generation agent with explicit reflection, together with a Reflection–Plan Co-Optimization (RPCO) training methodol-ogy. Through extensive experiments and trajectory-level analysis, we uncover reflection–plan optimization asymmetry in reinforcement learning (RL): planning can be reliably optimized via plan rewards, while reflection learning is hindered by noisy credit assignment. Guided by this insight, our RPCO first trains on the self-constructed VCR-SFT dataset with reflection-strong single-image trajectories and planning-strong multi-image trajectories, then co-optimization on VCR-RL 
+
+dataset via RL. This yields our unified VisionCreator-R1 agent, which consistently outperforms Gemini2.5Pro on existing benchmarks and our VCR-bench covering single-image and multi-image tasks. 
+
+# 1 Introduction 
+
+AI-assisted visual generation has rapidly evolved from single-image generation (Ho et al., 2020; Ramesh et al., 2022; Labs, 2024; Lin et al., 2024) to complex, multi-image and video workflows (Wu et al., 2025; Xiao et al., 2025; Xu et al., 2025a; Xue et al., 2025; Guo et al., 2025). Existing methods for visual generation have made some progress, yet they still face numerous challenges. Workflow-specific agents (Wu et al., 2025; Xiao et al., 2025; Xu et al., 2025a) rely on hand-crafted pipelines tailored to narrow domains and struggle to adapt when task structure or tools change. Workflow-guided agents (Xue et al., 2025; Guo et al., 2025) orchestrate external tools through carefully designed system prompts and coordination logic, but this hard-coded control flow prevents end-to-end optimization of understanding, planning, and generation. This inevitably hinders the seamless alignment of complex user instructions with precise visual outputs and precludes the system from learning globally effective policies. Motivated by the need for a unified and differentiable architecture, a recent native visual generation agent named VisionCreator (Lai et al., 2026) integrates Understanding, Thinking, Planning, and Creation (UTPC) into a single trainable framework, outperforming “VLM + tools” systems on multi-step visual generation tasks. Yet these agents remain fundamentally plan-driven , where designed system prompts or training signals prioritize the rationality of plans and tool calls. This exclusive focus on procedural correctness precludes a retrospective mechanism for structured reflection and self-correction . Consequently, minor deviations in early stages propagate unchecked, leading to severe error accumulation in long-horizon, multi-image workflows. As shown in Fig. 1 (a), without-Reflection outputs an Undesired Answer, which will cause error accumulation in subsequent trajectories. Recent works such as JarvisEvo Lin et al. (2025) and ReasonEdit Yin et al. (2025) demonstrate that introducing reflection into single-image editing can improve visual quality. However, these settings involve short-horizon tasks with minimal planning requirements. In contrast, native visual agents must handle diverse workloads spanning single-image and multi-image, all of which rely heavily on robust planning. This raises a new challenge: how to co-optimize planning and reflection within a native visual generation agent to improve long-horizon behavior. 1
+
+> arXiv:2603.08812v1 [cs.CV] 9 Mar 2026
+
+Figure 1: Comparison between without-Reflection, with Good-Reflection, Under-Reflection and Over-Reflection. In this paper, we systematically study reflection as a trainable behavior inside a native visual generation agent. We seek to answer three core questions: (i) Why is reflection necessary for visual gen-eration agents? (ii) How can effective reflection be rewarded without encouraging superficial or ungrounded edits? (iii) How can we effectively jointly optimize planning and reflection within a unified framework? To this end, we introduce VisionCreator-R1 and propose a Reflection–Plan Co-Optimization (RPCO) 
+
+methodology that progresses from decoupled to fused training. 
+
+Stage 1: Isolating reflection on single-image tasks. To ensure that performance gains can be unambiguously attributed to reflection, we begin with single-image generation tasks where the demand for explicit planning is minimal. Under this setting, the resulting Strong-Reflection model surpasses Gemini2.5Pro on single-image benchmarks, establishing that reflection is both learnable and beneficial for visual generation. 
+
+Stage 2: Extending to multi-image tasks and revealing optimization asymmetry. Motivated by the need to handle realistic, multi-image tasks, we then extend reflection-optimized models to multi-image workflows via Reinforcement Learning (RL). While overall task performance and plan scores improve, reflection quality shows no improvement in multi-image trajectories. Through analysis, we identify a fundamental optimization asymmetry between planning and reflection: plan rewards directly supervise planning decisions, whereas reflection rewards are computed solely from post-reflection visual outcomes and are influenced by planning quality, tool execution fidelity, and image generation stochasticity. This noisy credit assignment makes reflection difficult to optimize under long-horizon RL. 
+
+Stage 3: RPCO methodology. To address this challenge, we propose an advantage-complementary training strategy. As depicted in Fig. 3 (b), we perform supervised fine-tuning (SFT) on the self-constructed VCR-SFT dataset with a mixture of reflection-strong single-image trajectories and planning-strong multi-image trajectories, yielding a balanced Reflection–Plan SFT model. Starting from this initialization, we then apply multi-task RL on our VCR-RL dataset . In this regime, planning continues to improve under reliable plan-level rewards, while reflection capability learned during SFT is preserved. The final VisionCreator-R1 model achieves consistent gains over Gemini2.5Pro on existing benchmarks and our VCR-bench covering single-image and multi-image tasks. In summary, our contributions are as follows: (i) We identify a critical transferability gap where reflection capabilities learned in single-image settings fail to generalize to multi-image scenar-ios. Through theoretical analysis, we attribute this failure to a fundamental structural variance asymmetry: while planning benefits from stable rewards, reflection optimization in long-horizon tasks is hindered by collapsed signal-to-noise ratios due to trajectory-level stochasticity. (ii) We propose VisionCreator-R1, a native visual generation agent trained via a novel RPCO paradigm. Guided by our theoretical analysis, RPCO adopts a ”decoupled-then-fused” strategy, isolating reflection learning in low-noise settings before synergizing it with planning via multi-task RL. (iii) We construct VCR-SFT and VCR-RL datasets to support RPCO methodology. And we propose VCR-Bench, a VLM-graded benchmark covering single-image, multi-image, and image-to-image tasks with multiple evaluation points per query, enabling standardized assessment. 22 Related Works 
+
+2.1 Image Generation 
+
+Modern image generation models, such as autoregressive models (Chen et al., 2020; Fan et al., 2024; Han et al., 2024; Tian et al., 2024; Sun et al., 2024; Pang et al., 2024) and diffusion models (Ho et al., 2020; Ramesh et al., 2022; Labs, 2024; Saharia et al., 2022; Lin et al., 2024), offer single-step text-to-image and image-to-image capabilities. However, they do not themselves provide mechanisms for task decomposition, tool orchestration, or structured reflection over intermediate results. VisionCreator-R1 treats these generators as callable tools, focusing on how to plan, reflect, and correct across long visual trajectories. 
+
+2.2 Visual Generation Agents Workflow-Specific Agents (Wu et al., 2025; Xiao et al., 2025; Xu et al., 2025a) design domain-specific pipelines for tasks like movie-style storyboarding or episodic content creation. They struggle when task structure or tools deviate from the handcrafted templates. Workflow-Guided Agents (Xue et al., 2025; Guo et al., 2025; Xu et al., 2025b; Huang et al., 2025) focus on generating ComfyUI-compatible node graphs. They advance automated workflow construction, but are tied to a specific execution backend, and typically realise control flow via static prompts and rules. Native Visual Agents such as VisionCreator (Lai et al., 2026) unify UTPC in a trainable framework, outperforming ”VLM+tools” baselines. However, existing UTPC agents are still plan-driven : training and evaluation primarily supervise whether plans are reasonable, and tools are called valid. They lack an explicit, structured reflection path to evaluate intermediate images and trigger self-corrections. Our VisionCreator-R1 builds on this line of work but introduces reflection and studies how to co-optimise reflection and planning. 
+
+# 3 Empirical and Analytical Foundation 
+
+3.1 Agentic Framework 
+
+As illustrated in Fig. 3 (a), we instantiate the UTPCR framework to construct a dynamic loop of Act–Reflect–Think–Act. Unlike traditional feed-forward pipelines, our agent incorporates an explicit reflection path to enable self-correction. In this loop, the agent utilizes its visual under-standing capabilities to: (i) scrutinize intermediate visual results for quality and consistency, (ii) detect deviations from the user’s instructions and prior context, and (iii) formulate corrective plans, triggering targeted edits or re-generation, to ensure the trajectory aligns precisely with the desired outcome. 
+
+3.2 Reflection Optimization on Single-Image Tasks 
+
+Figure 2: Performance - Reflection Quality. To cleanly study reflection independent of complex plan-ning, we begin with single-image tasks involving image gen-eration and editing tools. First, we construct UTPCR-format reflection trajectories by querying Gemini2.5Pro. Second, we perform SFT on this corpus to endow the agent with explicit reflection structures and basic reflection behaviors in the UTPCR trajectory. Finally, we introduce RL driven by the visual reflection reward Rreflect defined in Eq. 5 to further optimize the effectiveness of reflection in improv-ing final visual quality. Through this two-stage SFT+RL training, we obtain a Strong-Reflection model that consistently outperforms Gemini2.5Pro on single-image tasks, providing clear evidence that our reflection mechanism and reward design are effective for visual generation agents. 
+
+Single-Image Reflection Experiments. Fig. 2 shows that increasing the Good-Reflection per-centage leads to the improvement of final visual generation. And Tab. 1 summarizes the detailed experiments on the single-image task in VCR-Bench. Several observations can be made from 3it: (i) Merely adding a reflection structure is insufficient to guarantee performance gains. Gem-ini2.5Pro and Qwen3VL32B show only marginal improvements over the baseline. (ii) Reflection learned purely via SFT (SFT-Reflection model) leads to degraded performance and a strong bias toward under-reflection, indicating that the model becomes overly conservative. (iii) After in-troducing RL with the proposed Rreflect , both the single-img performance and the proportion of good-reflection increase steadily from Reflection-s30 to Strong-Reflection (i.e., Reflection-s180). Meanwhile, under-reflection decreases substantially, and over-reflection remains at a moderate level. This quantitatively validates that for single-image tasks, the visual reflection reward success-fully incentivizes grounded reflection, directly leading to tangible gains in visual fidelity. 
+
+3.3 Reflection and Planning in Multi-Image Tasks 
+
+Table 1: Reflection experiment on Single-Img task in VCR-Bench. Ref. Quality (U/G/O): reflection quality with under-/good-/over-reflection percentages. And all models’ plan score on the single-image task is larger than 99.5%.                
+
+> Model Single-Img Ref. Quality (U/G/O)
+> Qwen-Image-Fast 0.505 –Gemini2.5Pro 0.515 32.0%/55.4%/12.6% Qwen3VL32B 0.500 41.3%/49.7%/9.0% SFT-Reflection 0.499 58.2%/38.9%/2.9% Reflection-s30 0.510 47.7%/48.9%/3.3% Reflection-s130 0.521 33.7%/58.5%/7.8% Strong-Reflection 0.543 23.7%/ 66.9% /9.4%
+
+Direct transfer from single-image reflec-tion to multi-image via RL. We first examine whether a reflection-optimized model trained on single-image tasks can be directly extended to multi-image set-tings. Starting from the Strong-Reflection 
+
+model—which achieves the highest single-image performance, we further per-form RL training on the multi-image dataset, obtaining the Reflection-Plan Con-flict model. Multi-image tasks require the agent to reason over longer horizons, con-struct reference images, maintain cross-image consistency, and follow structured narratives. However, as shown in Tab. 2, direct RL transfer yields good improve-ments in multi-image performance (0.617), but still underperforms strong planners such as Gemini2.5Pro (0.649). Table 2: Transfer from single-image reflection to multi-image tasks. Model: SR is Strong-Reflection model, RPC is Reflection-Plan Conflict model, GPro is Gem-ini2.5Pro.          
+
+> Model Multi-Img Ref. Quality (U/G/O) Plan Score
+> SR 0.565 68.6%/21.6%/9.8% 0.8285 RPC 0.617 73.9%/16.5%/9.7% 0.8431 GPro 0.649 61.6%/31.8%/6.6% 0.9667
+
+Trajectory-level analysis of reflection and planning. Compared with the Strong-Reflection model, the Reflection-Plan Con-flict model exhibits: (i) only marginal improvement in plan score (0.8431 vs. 0.8285), and (ii) a further degradation in reflection quality, with the proportion of high-quality reflections decreasing from 21.6% to 16.5%. This indicates that single-image reflection capabilities cannot be di-rectly transferred to multi-image workflows via RL. While this approach improves planning performance, it leads to a degradation in reflection quality. 
+
+Why reflection capabilities are difficult to optimize in multi-image tasks. Our Theorem 3.1 reveals that the difficulty arises from a fundamental structural variance asymmetry between planning and reflection rewards in the GRPO optimization objective. 
+
+Theorem 3.1 (Structural Variance Asymmetry in Multi-Image GRPO) . Consider the GRPO optimiza-tion objective and its stochastic gradient estimator for a single token generation step t in trajectory i . Given state s = ( q, oi,<t) and sampled action a = oi,t, the gradient estimator is 
+
+ˆg =
+
+
+
+ˆAi,t + β
+
+ πref (a | s)
+
+πθ (a | s) − 1
+
+ 
+
+∇θ log πθ (a | s), (1) 
+
+where ˆAi,t is normalized advantage derived from trajectory-level reward, πθ is the current policy, πref is a fixed reference policy, and β is the KL regularization coefficient. The total variance of ˆg admits the following decomposition: 
+
+Σ := Var ( ˆg) = Es,a
+
+h
+
+Var τ|s,a( ˆg)
+
+i| {z }
+
+> Στ
+
++ Es
+
+h
+
+Var a|s
+
+
+
+Eτ|s,a[ ˆg]
+
+i | {z }
+
+> Σa
+
+, (2) 4Figure 3: (a) Our Native VisionCreator-R1 framework. (b) Reflection–Plan Co-Optimization (RPCO) Training Paradigm. 
+
+where τ denotes the stochastic trajectory. Στ captures the variance induced by environmental dynamics and reward stochasticity, while Σa captures the variance induced by stochastic action sampling. Then, a fundamental structural variance asymmetry holds between planning and reflection objectives: 
+
+• For planning rewards Rplan , which are evaluated deterministically conditioned on the action, the conditional trajectory variance is negligible, Var τ|s,a( ˆAi,t) ≈ 0 ⇒ Στ ≈ 0, (3) 
+
+and the gradient variance is dominated by Σa, yielding a stable optimization regime. 
+
+• For reflection rewards Rreflect in multi-image generation, which depend on stochastic downstream visual outcomes, the conditional trajectory variance is strictly positive and often dominant, Var τ|s,a( ˆAi,t) ≫ 0 ⇒ Στ ≫ Σa. (4) 
+
+Consequently, reflection optimization in multi-image GRPO suffers from a collapsed Signal-to-Noise Ratio, making it fundamentally harder to optimize than planning. 
+
+Intuitively, for planning, the reward signal Rplan evaluates the action aplan directly via a determin-istic LLM-based evaluator (assessing logical coherence and tool matching). Since the planning rewards Rplan excludes the stochastic image generation process, environmental noise is negligi-ble ( Στ ≈ 0). Consequently, the gradient variance is dominated by Σa, which provides a stable exploration signal for the optimizer. In contrast, the optimization of reflection faces severe challenges due to the specific nature of multi-image tasks. First, unlike single-image generation, multi-image tasks require maintaining long-horizon properties like cross-image consistency and narrative structure, leading to an exponential expansion of the decision space. Second, the reflection reward Rreflect relies on the post-reflection visual outcome , meaning the conditional trajectory τ|areflect encompasses the entire generation chain. This couples the reflection action with the high stochasticity of image generation process and tool execution, resulting in a scenario where trajectory variance dominates ( Στ ≫ Σa). As a result, the variance in the reflection rewards is driven primarily by generation noise rather than the quality of the reflection action itself ( Στ ≫ Σa). This noise drowns out the useful signal, making it intractable for the agent to distinguish between erroneous reflection and the inherent noise of image generation. Consequently, reflection capabilities become difficult to optimize in multi-image tasks, rendering direct transfer from single-image models via RL infeasible. To overcome this limitation and effectively jointly optimize planning and reflection, we propose the RPCO strategy. 54 RPCO Methodology 
+
+In this section, we introduce the RPCO strategy, designed to achieve the synergistic optimization of planning and reflection capabilities, which is a prerequisite for robust performance across both single-image and multi-image tasks. To address the optimization asymmetry discussed in Theorem 3.1, RPCO adopts a ’decouple-then-fuse’ paradigm. We first require a stable initialization via SFT to establish foundational behaviors, followed by RL to enforce long-horizon consistency and co-adaptation. The efficacy of this initialization hinges on the quality of the SFT data. As demon-strated in Tab. 1, the Strong-Reflection model exhibits superior reflection capabilities compared to Gemini2.5Pro, while the latter excels in complex global planning. Consequently, we construct our training data by distilling high-quality reflection trajectories from the Strong-Reflection model and robust planning trajectories from Gemini2.5Pro. In summary, as illustrated in Fig. 3 (b), the RPCO strategy is instantiated as a progressive three-stage training framework: (i) We first derive a Strong-Reflection model via SFT followed by single-image RL, explicitly honing visual diagnostic capabilities. (ii) We synthesize the VCR-SFT dataset by amalgamating distilled reflection trajec-tories (from Stage 1) with expert planning traces (from Gemini2.5Pro); subsequent fine-tuning on this composite corpus establishes a robust foundation with balanced priors. (iii) Finally, we leverage the VCR-RL dataset to conduct multi-task RL within multi-image workflows, facilitating the synergistic co-optimization of planning and reflection. 
+
+4.1 Reflection on Single-Image Tasks 
+
+We initially gather UTPCR trajectories from Gemini2.5Pro for SFT, establishing foundational reflection behaviors. Subsequently, we apply GRPO guided by the visual reflection reward (Eq. 5) and rule-based rewards to refine output fidelity. 
+
+Reflection Reward Rreflect . For reflection, we decompose each user request into K evaluation checkpoints {q1, . . . , qK } (e.g., subject correctness, style consistency, attribute accuracy, scene matching, action depiction, text accuracy) and let I denote the final accepted image set after reflection. A VLM-based judge (Qwen3VL32B) evaluates whether I satisfies each checkpoint 
+
+qk, yielding binary decisions ck ∈ { accept , refuse }. The Reflection Reward is defined as the satisfied-checkpoint ratio: 
+
+Rreflect = 1
+
+K
+
+> K
+
+# ∑
+
+> k=1
+
+1(ck =accept ). (5) 
+
+Rule-based Rewards. We additionally use: (i) Format Reward Rformat : checks UTPCR tag pres-ence, uniqueness, order, and non-emptiness across turns, penalizing trajectories with malformed structures. (ii) Tool Call Reward Rtool : assigns a discrete score ∈ { 0, 0.1, 0.8, 1 } based on whether tool calls succeed, whether failures are self-corrected, and whether at least some calls succeed. (iii) 
+
+Result Reward Rresult : binary success based on whether the number of generated images matches the requested counts. 
+
+Total Reward Rtotal . For a trajectory, the overall reward is 
+
+Rtotal = 1
+
+|W | ∑
+
+> i∈W
+
+wi · Ri, (6) where W = {reflection , format , tool , result } is the set of reward dimensions. wi is the weight of dimension i (set to 1 by default), Each Ri ∈ [0, 1 ] is a normalized sub-reward. Reflection Reward 
+
+Rreflect focuses on reflection visual quality. Format / Tool / Result Rewards Rformat , Rtool , Rresult 
+
+are lightweight, rule-based components ensuring UTPCR structural correctness, successful tool execution, and basic output constraints, respectively. Through this training phase, we obtain the Strong-Reflection model, which exhibits reflection capabilities superior to Gemini2.5Pro, thereby laying a solid foundation for acquiring high-quality reflection data. 
+
+4.2 Advantage-complementary SFT 
+
+Then, we adopt an advantage-complementary SFT strategy to achieve a high-quality performance initialization. First, we construct an SFT corpus that combines: (i) Reflection-strong single-image 
+
+6trajectories generated by the Strong-Reflection model, which provide high-quality reflection patterns with clear error diagnosis and correction; (ii) Planning-strong multi-image trajectories generated by Gemini2.5Pro, which exhibit coherent global plans and high plan scores. Then, these trajectories form the UTPCR-style dataset used for SFT, resulting in the Reflection-Plan SFT model. As shown in Tab. 2, this model achieves a substantial improvement in multi-image planning (plan score 0.9452) while restoring balanced reflection behavior. 
+
+4.3 Multi-task RL & Co-Optimization 
+
+Building upon the Reflection-Plan SFT model, which is initialized with balanced planning and reflection capabilities, we further perform multi-task RL on both single-image and multi-image tasks to achieve the co-optimization of high-level reasoning and visual self-correction. Upon completion of this training phase, we obtain the VisionCreator-R1 model. The multi-dimensional reward design for GRPO is as follows: 
+
+Plan Reward Rplan . Given a user requirement Q and an agent-generated plan P, we employ an external LLM-based evaluator feval (Q, P) ∈ { 0, 1, . . . , N} to assess (i) requirement completeness, (ii) logical coherence of the sub-task sequence, and (iii) tool–goal matching. The normalized Plan Reward is: 
+
+Rplan = feval (Q, P)
+
+N . (7) This reward is applied at the plan stage and is the primary signal driving the improvement of long-horizon, reference-aware planning in multi-image settings. 
+
+Total Reward Rtotal . We adopt the unified reward formulation consistent with Eq. 6, but expand the component set to W = {reflection , plan , format , tool , result } to facilitate the synergistic co-optimization of planning and reflection capabilities. In this setup, the Plan Reward Rplan explicitly evaluates the rationality of the generated plan. In practice, Plan Reward Rplan and Reflection Reward Rreflect serve as the dominant learning signals driving high-level reasoning and visual self-correction, respectively, while the remaining terms function primarily as structural regularizers to ensure stability during long-horizon training. 
+
+Figure 4: Task distribution of the VCR dataset. 
+
+# 5 VCR Dataset 
+
+We construct VCR-SFT and VCR-RL datasets to support RPCO methodology. And we propose VCR-Bench for standardized assessment. Fig. 4 shows the task distribution of the VCR dataset, which includes the tasks of Single-Img, Multi-Img, and Img2Img. 
+
+5.1 VCR-Data: SFT and RL Resources VCR-SFT. VCR-SFT is designed for supervised fine-tuning and provides explicit UTPCR-format trajectories, with explicit tags for understanding, thinking, planning, creation, and reflection. VCR-SFT dataset distribution is presented in Fig. 5. To ensure the quality of the SFT data, we strictly filter the trajectories by retaining only those that achieve perfect scores with {Rplan = 1, 
+
+Rformat = 1, Rtool = 1}. More importantly, VCR-SFT provides effective supervision for improving reflection capability and planning capability. Specifically, VCR-SFT consists of two complementary subsets: (i) Single-image reflection-strong trajectories , collected from our Strong-Reflection model. They provide high-quality supervision for grounded visual reflection behaviors. (ii) Multi-image 
+
+7Figure 5: VCR-SFT dataset distribution. 
+
+planning-strong trajectories , collected from Gemini2.5Pro on multi-image tasks. These trajectories emphasize strong global planning. 
+
+VCR-RL. VCR-RL is designed for RL. Each VCR-RL sample contains a user query and a list of reflection evaluation checkpoints that specify desired properties of the final visual outputs . During RL training, the reflection reward is computed by applying a VLM-based judge to the post-reflection images against the query-specific reflection checkpoints, i.e., each query’s checkpoints are tailored to its specific requirements. This diversity trains the agent to adapt its reflection and correction strategies to varied task demands, enhancing robustness and generalization. 
+
+5.2 VCR-Bench: Evaluation Suite 
+
+Table 3: Comparison of semantic consistency (G SC), perceptual quality (G PQ), overall score (G O) on GEdit-Bench.                    
+
+> Model G SC G PQ G O Gemini 2.0 (DeepMind, 2025) 6.73 6.61 6.32 BAGEL (Deng et al., 2025) 7.36 6.83 6.52 FLUX.1 Kontext Pro (Labs et al., 2025) 7.02 7.60 6.56 Step1X-Edit (Liu et al., 2025) 7.66 7.35 6.97 Qwen-Image-Fast 7.26 7.34 7.03 VisionCreator-R1 7.60 7.33 7.23
+
+VCR-Bench reports final task perfor-mance, also supports trajectory-level anal-ysis by computing reflection and plan statistics from inference traces. Each benchmark query contains a user instruc-tion and a set of evaluation checkpoints, and we employ Gemini2.5Pro as a VLM-based judge for automatic evaluation. 
+
+# 6 Experiment 
+
+6.1 Baselines and Implementations 
+
+The used image generation and editing tool Qwen-Image-Fast is Qwen-Image-Edit-2509-Lightning-4steps-V1.0 Qwen (2025). All compared agent models (i.e., Qwen3VL32B, Gemini2.5Pro) integrate the same UTPCR-format system prompt as shown in Appendix. Our VsionCreator-R1 adopts Qwen3VL32B as the base model, and sets N = 6 for plan reward. 
+
+6.2 Results on GEdit-Bench 
+
+Table 4: Performance Comparison on VCR-Bench.                 
+
+> Model Single-Img Multi-Img Img2mg
+> Evaluated by Gemini2.5Pro
+> Qwen-Image-Fast 0.505 0.480 0.672 Qwen3VL32B 0.500 0.601 0.806 Gemini2.5Pro 0.515 0.649 0.816 VisionCreator-R1 0.532 0.700 0.836
+> Evaluated by Human
+> VC-R1 vs. Gemini +14.8% +9.3% +5.8%
+
+Tab. 3 reports the results on the GEdit-Bench (Liu et al., 2025), which evaluates image editing models on user instructions across 11 diverse categories. The results show that our agent, VisionCreator-R1, achieves the highest overall score (7.23). Notably, VisionCreator-R1 significantly improves the semantic consistency score compared to the base tool (7.60 vs. 7.26), demonstrating that our agent’s reflection and planning abilities enable more accu-rate and intent-aligned editing. 8Table 5: Reflection-Plan experiment on VCR-Bench. Reflection Quality and Plan Score are calculated on Multi-Img task traces.                                 
+
+> Model Single-Img Multi-Img Reflection Quality (U/G/O) Plan Score
+> Qwen-Image-Fast 0.505 0.480 ––Gemini2.5Pro 0.515 0.649 61.6%/31.8%/6.6% 0.9667 Qwen3VL32B 0.500 0.601 75.4%/21.4%/3.3% 0.8125 Strong-Reflection 0.543 0.565 68.6%/21.6%/9.8% 0.8285 Reflection-Plan Conflict 0.539 0.617 73.9%/16.5%/9.7% 0.8431 Reflection-Plan SFT 0.523 0.647 64.0%/ 32.4% /3.6% 0.9452 VisionCreator-R1 0.532 0.700 63.5%/31.0%/5.5% 0.9746
+
+6.3 Results on VCR-Bench 
+
+Tab. 4 summarizes the performance comparison on VCR-Bench across three representative task categories: single-image generation, multi-image generation, and image-to-image editing. 
+
+Automatic evaluation by Gemini2.5Pro. For automatic evaluation, we employ Gemini2.5Pro as a strong VLM-based judge to score each model output against multiple predefined evaluation checkpoints. Under this protocol, VisionCreator-R1 consistently achieves the best performance across all three task categories. Notably, the gain on multi-image tasks is the most pronounced, where VisionCreator-R1 outperforms Gemini2.5Pro itself by a large margin (0.700 vs. 0.649). This result indicates that explicit reflection and reflection–plan co-optimization enable more reliable long-horizon reasoning and error correction than purely plan-driven generation. 
+
+Figure 6: Plan-Reflection with Performance. 
+
+Human evaluation. To validate that automatic scores align with human preference, we con-duct a pairwise human evaluation between 
+
+VisionCreator-R1 and Gemini2.5Pro . Human an-notators are asked to judge which output bet-ter satisfies the user intent across all evaluation checkpoints. As shown in Tab. 4, VisionCreator-R1 is preferred over Gemini2.5Pro in 14.8% of single-image task, 9.3% of multi-image task, and 5.8% of image-to-image task. These re-sults confirm that the improvements measured by VLM-based evaluation correspond to tan-gible quality gains perceived by human users. The consistency between automatic and human evaluations supports the reliability of VCR-Bench as a testbed for evaluating visual generation. 
+
+6.4 Ablation Studies on VCR-Bench Evaluation protocol and statistics in Tab. 5. For single-image tasks , we report only the final task performance, since earlier experiments have already established a strong positive correlation between reflection quality and final task performance. In contrast, multi-image tasks involve long-horizon decision making with multiple intermediate steps. Therefore, in addition to final task performance, we report trajectory-level statistics computed from multi-image inference traces, including reflection behavior analysis and plan scores. All reflection and planning statistics in Tab. 5 are computed exclusively from multi-image task traces. 
+
+Discussion. In Tab. 5, from Strong-Reflection model to Reflection-Plan Conflict model , we observe that when planning capability is weak, directly optimizing reflection via RL leads to reflection degradation. According to Theorem 3.1, weak planning produces more invalid intermediate images, triggering frequent reflection and additional tool invocations. This lengthens trajectories and amplifies diffusion-induced stochasticity, causing the trajectory variance Στ to dominate the gradient estimator. Under this high-variance regime, GRPO cannot reliably attribute rewards to reflection actions, resulting in unstable optimization. This explains why strong planning prior to reflection-optimized RL is necessary. Consistent with this analysis, initializing from Reflection-Plan SFT substantially stabilizes training, leading to the strongest overall performance in VisionCreator-R1 . Fig. 6 demonstrates that improving reflection and planning capabilities achieves obvious performance gains in multi-image tasks. 9Figure 7: Visualization comparisons. 
+
+# 7 Conclusion 
+
+We study reflection as a trainable capability in native visual generation agents and show that na ¨ıvely optimizing reflection via RL is fundamentally limited by a structural variance asymmetry. By isolating reflection in low-noise single-image settings, we demonstrate that reflection is learnable and substantially improves visual quality. We further show that in multi-image tasks, planning and reflection exhibit asymmetric optimization regimes, motivating a decoupled-then-fused strategy. Guided by this insight, we propose RPCO and introduce VisionCreator-R1, which consistently outperforms Gemini2.5Pro across single-image, multi-image, and image-to-image benchmarks. Our results establish principled guidelines for training reflection-aware visual agents under long-horizon stochastic environments. We further release VCR-SFT, VCR-RL, and VCR-Bench to support future research on reflection-aware visual generation. 10 A Rigorous Derivation of Gradient Variance in GRPO 
+
+A.1 The GRPO Gradient Estimator 
+
+The gradient of the GRPO objective is estimated by sampling a group of outputs {oi}Gi=1. To analyze the optimization difficulty, we focus on the stochastic gradient estimator ˆg for a single token generation step t in a single trajectory i.Let s be the context (q, oi,<t) and a be the current token oi,t. The estimator ˆg is (assume πθ = πold 
+
+for simplified analysis): ˆg =
+
+"
+
+ˆAi,t + β πre f (a|s)
+
+πθ (a|s) − 1
+
+!# 
+
+∇θ log πθ (a|s), (8) where ˆAi,t denotes the advantage derived from the group rewards ( ˆAi,t = ri −μr 
+
+> σr
+
+), in which ri
+
+crucially depends on the entire final trajectory τ. The term involving β represents the KL regular-ization; for a fixed policy state θ and reference policy πre f , given action a, this term is deterministic. We denote this deterministic scalar part as D(a, s) = β
+
+ πre f  
+
+> πθ
+
+− 1
+
+
+
+. Consequently, the stochasticity inherent in ˆg stems from two sources: the policy-driven action sampling ( a ∼ πθ ) for token se-lection, and the trajectory stochasticity ( τ|a). The latter encapsulates the variability of the image diffusion process, which governs the advantage estimate ˆAi,t.
+
+A.2 Variance Decomposition via Law of Total Variance 
+
+We decompose the total variance Σ := Var ( ˆg) by recursively applying the Law of Total Variance. First, we decompose the variance with respect to the state s:
+
+Σ = Var s,a,τ ( ˆg) = Es
+
+h
+
+Var a,τ|s( ˆg)
+
+i
+
++ Var s
+
+
+
+Ea,τ|s[ ˆg]
+
+
+
+. (9) Next, we further decompose the inner term Var a,τ|s( ˆg) by conditioning on the action a, given the state s:
+
+Σ = Es
+
+h
+
+Ea|s
+
+h
+
+Var τ|s,a( ˆg)
+
+i
+
++ Var a|s
+
+
+
+Eτ|s,a[ ˆg]
+
+i 
+
++ Var s
+
+
+
+Ea,τ|s[ ˆg]
+
+| {z }
+
+> Σs
+
+= Es,a
+
+h
+
+Var τ|s,a( ˆg)
+
+i| {z }
+
+> Στ
+
++ Es
+
+h
+
+Var a|s
+
+
+
+Eτ|s,a[ ˆg]
+
+i | {z }
+
+> Σa
+
++Σs,(10) where Στ represents the variance attributable to environmental dynamics and reward stochasticity, conditioned on a specific state and action. Σa denotes the variance resulting from the policy’s stochastic action sampling given a state; notably, this is the specific component minimized by the baseline in GRPO. Finally, Σs captures the variability stemming from the underlying distribution of states (i.e., input prompts). Since Σs measures the variance of the true gradients across different prompts and is independent of the algorithm design, we omit it from our consideration. Thus, 
+
+Σ = Στ + Σa.
+
+A.3 Step-by-Step Derivation of Terms 
+
+First, we analyze the variance of the gradient estimator ˆg conditioned on a specific action a, denoted as Στ . Given a fixed action a, both the function v = ∇θ log πθ (a|s) and the KL-divergence term 
+
+D(a, s) are treated as constants. Consequently, the conditional variance arises solely from the Advantage term ˆAi,t, which fluctuates due to the stochastic nature of the trajectory rewards ri (e.g., inherent noise in the diffusion process). Substituting the expression for ˆ g into the conditional variance formulation yields: Var τ|a( ˆg) = Var τ|a
+
+ ( ˆAi,t + D(a, s)) · v
+
+= vv ⊤ · Var τ|a( ˆAi,t). (11) 11 The total trajectory variance Στ is obtained by taking the expectation over the action space: 
+
+Στ = Ea
+
+h
+
+∥∇ θ log πθ (a|s)∥2 · Var τ|a( ˆAi,t)
+
+i
+
+. (12) This derivation reveals a critical challenge in image-generating tasks, particularly when employing reflection mechanism. Since the advantage ˆAi,t depends on the stochastic outcomes of the diffusion model, the term Var τ|a( ˆAi,t) can become exceedingly large. Even when the agent selects a consistent reflection token a, the varying quality of the generated images introduces significant noise into the reward signal, thereby amplifying the overall variance of the estimator. Moreover, the synthesis of multiple images introduces significantly higher environmental dynamics and compounded stochasticity. This amplified variance renders the optimization landscape far more volatile, making the training process significantly more difficult than in standard single-image tasks. Next, we analyze the expectation term Eτ|a[ ˆg].
+
+Eτ|a[ ˆg] = Eτ|a
+
+( ˆAi,t + D(a, s)) · ∇ θ log πθ (a|s)
+
+=
+
+
+
+Eτ|a[ ˆAi,t] + D(a, s)
+
+
+
+· ∇ θ log πθ (a|s). (13) Let A(s, a) = Eτ|a[ ˆAi,t] be the expected advantage of taking action a. This represents the quality of the action, averaged over environmental noise. Thus, Σa is the variance of this expected gradient across different actions: 
+
+Σa = Var a
+
+"
+
+A(s, a) + β πre f (a|s)
+
+πθ (a|s) − 1
+
+!# 
+
+· ∇ θ log πθ (a|s)
+
+!
+
+. (14) This term encapsulates the informative learning signal, quantifying the gradient variability induced by the agent’s exploration across the action space a.Finally, combining the terms: Var ( ˆg) = Ea[∥∇ log π∥2 · Var τ|a( ˆAi,t)] 
+
+| {z }
+
+> Στ
+
++ Var a
+
+"
+
+A(s, a) + β πre f (a|s)
+
+πθ (a|s) − 1
+
+!# 
+
+· ∇ θ log πθ (a|s)
+
+!| {z }
+
+> Σa
+
+(15) We identify a critical disparity in the variance composition between the planning and reflection objectives, which we term structural asymmetry .For the planning mechanism ( Rplan ), the reward evaluation is typically deterministic. Conditioned on a fixed action a, the reward signal remains invariant, rendering the conditional variance negligible: Var τ|a( ˆAi,t) ≈ 0 =⇒ Στ ≈ 0. (16) Under these conditions, the total variance is dominated by the variance term Σa. Consequently, the optimization process remains stable, as the gradient primarily reflects the useful learning signal derived from action exploration. In contrast, the reflection mechanism ( Rre f lect ) is inherently contingent upon the stochastic out-comes of the diffusion model. This compounded stochasticity causes the conditional variance to become excessively large: Var τ|a( ˆAi,t) ≫ 0 =⇒ Στ ≫ Σa. (17) Consequently, the gradient estimator becomes dominated by the trajectory noise Στ rather than the informative signal Σa. This imbalance precipitates a collapse in the Signal-to-Noise Ratio, rendering the optimization landscape highly volatile. Under such conditions, the stable acquisition of gradients is obstructed, making the reflection capabilities difficult to optimize. 12 B VisionCreator-R1 Reward Design 
+
+In this section, we describe the multi-dimensional reward system used to train VisionCreator-R1 with reinforcement learning. The reward mechanism decomposes the supervision signal into complementary components that jointly guide the agent through high-level planning, structural compliance, tool execution, result satisfaction, and visual reflection. 
+
+B.1 Overall Reward Function 
+
+We aggregate multiple sub-rewards via a weighted average to ensure the agent receives learning signals at all stages of the UTPCR pipeline. The total reward is calculated as 
+
+Rtotal = 1
+
+|W | ∑
+
+> i∈W
+
+wi · Ri, (18) where W represents the set of reward dimensions comprising plan, format, tool, result, and reflection components. The weight wi for each dimension is set to 1 by default, while each sub-reward Ri is normalized to the range [0, 1 ]. Specifically, the Plan Reward Rplan , Format Reward 
+
+Rformat , and Reflection Reward Rreflect take values within [0, 1 ]. The Tool Call Reward Rtool assumes discrete values from the set {0, 0.1, 0.8, 1 }, and the Result Reward Rresult is a binary value in {0, 1 }.This design balances the training process, preventing the agent from being driven solely by the final output quality. 
+
+B.2 Plan Reward 
+
+The Plan Reward evaluates the quality of the agent’s task plan, ensuring it correctly understands user requirements and proposes a coherent, tool-aware execution strategy. Let the user requirement be Q and the agent’s plan be P. We utilize an external LLM-based evaluator feval (Q, P) that returns a discrete score in the range {1, 2, . . . , N} with N = 6. This score is normalized to obtain the final reward 
+
+Rplan = feval (Q, P)
+
+N . (19) The evaluator feval jointly considers three critical aspects: requirement completeness, which checks if the plan covers the correct output types and counts; logical coherence, which assesses the reasonableness of sub-task decomposition and ordering; and tool matching, which verifies that the chosen tools are appropriate for the intended sub-goals. 
+
+B.3 Format Reward 
+
+The Format Reward assesses whether the agent’s outputs strictly follow the predefined UTPCR tag schema, a crucial factor for stable training and reliable tool orchestration. We enforce three canonical patterns depending on the dialogue turn. The first turn must follow the sequence of thinking, planning, thinking, tool calling, and tool result processing. Middle turns consist of reflection, thinking, tool calling, and tool result processing. The final turn requires a sequence of reflection, thinking, and the final answer. For a trajectory with T turns, let st ∈ [0, 1 ] denote the format score of turn t. The trajectory-level reward is defined as the minimum score across all turns, Rformat = min t st, ensuring that a single badly formatted turn penalizes the entire interaction. For each individual turn, the score is calculated as 
+
+st = Nvalid + 1order 
+
+Nrequired + 1 , (20) where Nvalid is the number of tags passing validation, Nrequired is the expected number of tags for that turn type, and 1order is an indicator function that equals 1 if the tag order is fully correct. A tag is considered valid if and only if it exists, appears exactly once, and contains non-empty content. 
+
+B.4 Tool Call Reward 
+
+The Tool Call Reward measures the correctness and robustness of tool usage based on execution success. It encourages consistent success while providing partial credit for self-correcting behavior. 13 We define a success indicator success (r) which equals 1 if the tool execution result r indicates success, and 0 otherwise. For a trajectory with n tool calls and results (r1, . . . , rn), we define three conditions: α = ∏n−1 
+
+> i=1
+
+success (ri) represents success in all intermediate calls; β = success (rn)
+
+represents success in the final call; and γ = max i success (ri) indicates at least one successful call occurred. The Tool Call Reward is assigned according to a piecewise schedule: 
+
+Rtool =
+
+
+
+1.0, if α = 1 ∧ β = 1, 0.8, if α = 0 ∧ β = 1, 0.1, if β = 0 ∧ γ = 1, 0.0, otherwise. (21) This scheme assigns the maximum reward of 1.0 for consistently correct usage. It grants 0.8 for self-corrected paths where early failures are followed by a successful final call, 0.1 for partial progress where failures persist but some attempts succeeded, and 0.0 for complete failure. 
+
+B.5 Result Reward 
+
+The Result Reward validates whether the final task output satisfies basic quantitative constraints, specifically the requested numbers of images and videos. Let Nexp img and Nact img be the expected and actual image counts, and Nexp vid and Nact vid be the expected and actual video counts. The reward is defined as 
+
+Rresult = 1(Nact img =Nexp img ) · 1(Nact vid =Nexp vid ). (22) This formula yields a value of 1 only if both image and video counts strictly match the requirements, and 0 otherwise. This binary signal enforces minimum task completion criteria independent of finer-grained visual quality. 
+
+B.6 Reflection Reward 
+
+The Reflection Reward leverages a VLM to evaluate whether the post-reflection images satisfy a set of pre-defined evaluation points derived from the user requirement. We decompose the user requirement into K checkpoints {q1, . . . , qK }. Given the final image set I, a VLM-based judge 
+
+g(qk, I) determines whether each checkpoint qk is accepted or refused. Letting ck denote the judgment result, the reward is calculated as the fraction of satisfied checkpoints: 
+
+Rreflect = 1
+
+K
+
+> K
+
+# ∑
+
+> k=1
+
+1(ck =accept ). (23) The evaluation points typically cover subject correctness, style consistency, attribute accuracy, scene matching, action depiction, and text accuracy. 
+
+B.7 Reward Properties and Interactions 
+
+The proposed reward system integrates a mixture of discrete and continuous signals to stabilize RL training while providing rich supervision over structure and content. Rformat serves as a continuous signal, whereas Rplan , Rtool , Rresult , and Rreflect provide discrete feedback steps. There are inherent dependencies among these dimensions: high-quality plans increase the likelihood of meeting basic output constraints, while correct tool usage is a prerequisite for achieving desired results. Furthermore, effective reflection combined with strong initial results leads to high post-reflection visual quality. Collectively, this multi-dimensional design covers the full lifecycle of a VisionCreator-R1 trajectory, enabling the Reflection–Plan Co-Optimization framework to balance improvements in planning and reflection capabilities. 14 References 
+
+Mark Chen, Alec Radford, Rewon Child, Jeffrey Wu, Heewoo Jun, David Luan, and Ilya Sutskever. Generative pretraining from pixels. In International conference on machine learning, pp. 1691– 1703. PMLR, 2020. Google DeepMind. Gemini 2.0. https://gemini.google.com/, 2025. Chaorui Deng, Deyao Zhu, Kunchang Li, Chenhui Gou, Feng Li, Zeyu Wang, Shu Zhong, Weihao Yu, Xiaonan Nie, Ziang Song, et al. Emerging properties in unified multimodal pretraining. arXiv preprint arXiv:2505.14683, 2025. Lijie Fan, Tianhong Li, Siyang Qin, Yuanzhen Li, Chen Sun, Michael Rubinstein, Deqing Sun, Kaiming He, and Yonglong Tian. Fluid: Scaling autoregressive text-to-image generative models with continuous tokens. arXiv preprint arXiv:2410.13863, 2024. Litao Guo, Xinli Xu, Luozhou Wang, Jiantao Lin, Jinsong Zhou, Zixin Zhang, Bolan Su, and Ying-Cong Chen. Comfymind: Toward general-purpose generation via tree-based planning and reactive feedback. arXiv preprint arXiv:2505.17908, 2025. Jian Han, Jinlai Liu, Yi Jiang, Bin Yan, Yuqi Zhang, Zehuan Yuan, Bingyue Peng, and Xiaobing Liu. Infinity: Scaling bitwise autoregressive modeling for high-resolution image synthesis. arXiv preprint arXiv:2412.04431, 2024. Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denoising diffusion probabilistic models. Advances in neural information processing systems, 33:6840–6851, 2020. Oucheng Huang, Yuhang Ma, Zeng Zhao, Mingrui Wu, Jiayi Ji, Rongsheng Zhang, Zhipeng Hu, Xiaoshuai Sun, and Rongrong Ji. Comfygpt: A self-optimizing multi-agent system for comprehensive comfyui workflow generation. arXiv preprint arXiv:2503.17671, 2025. Black Forest Labs. Flux. https://github.com/black-forest-labs/flux , 2024. Black Forest Labs, Stephen Batifol, Andreas Blattmann, Frederic Boesel, Saksham Consul, Cyril Di-agne, Tim Dockhorn, Jack English, Zion English, Patrick Esser, et al. Flux. 1 kontext: Flow match-ing for in-context image generation and editing in latent space. arXiv preprint arXiv:2506.15742, 2025. Jinxiang Lai, Zexin Lu, Jiajun He, Rongwei Quan, Wenzhe Zhao, Qinyu Yang, Qi Chen, Qin Lin, Chuyue Li, Tao Gao, Yuhao Shan, Song Guo, and Qinglin Lu. Visioncreator: A native visual-generation agentic model with understanding, thinking, planning and creation. arXiv, 2026. Bin Lin, Yunyang Ge, Xinhua Cheng, Zongjian Li, Bin Zhu, Shaodong Wang, Xianyi He, Yang Ye, Shenghai Yuan, Liuhan Chen, et al. Open-sora plan: Open-source large video generation model. arXiv preprint arXiv:2412.00131, 2024. Yunlong Lin, Linqing Wang, Kunjie Lin, Zixu Lin, Kaixiong Gong, Wenbo Li, Bin Lin, Zhenxi Li, Shiyi Zhang, Yuyang Peng, et al. Jarvisevo: Towards a self-evolving photo editing agent with synergistic editor-evaluator optimization. arXiv preprint arXiv:2511.23002, 2025. Shiyu Liu, Yucheng Han, Peng Xing, Fukun Yin, Rui Wang, Wei Cheng, Jiaqi Liao, Yingming Wang, Honghao Fu, Chunrui Han, et al. Step1x-edit: A practical framework for general image editing. arXiv preprint arXiv:2504.17761, 2025. Yatian Pang, Peng Jin, Shuo Yang, Bin Lin, Bin Zhu, Zhenyu Tang, Liuhan Chen, Francis EH Tay, Ser-Nam Lim, Harry Yang, et al. Next patch prediction for autoregressive visual generation. arXiv preprint arXiv:2412.15321, 2024. Qwen. Qwen-image-lightning. https://huggingface.co/lightx2v/Qwen-Image-Lightning , 2025. Aditya Ramesh, Prafulla Dhariwal, Alex Nichol, Casey Chu, and Mark Chen. Hierarchical text-conditional image generation with clip latents. arXiv preprint arXiv:2204.06125, 1(2):3, 2022. Chitwan Saharia, William Chan, Saurabh Saxena, Lala Li, Jay Whang, Emily L Denton, Kamyar Ghasemipour, Raphael Gontijo Lopes, Burcu Karagol Ayan, Tim Salimans, et al. Photoreal-istic text-to-image diffusion models with deep language understanding. Advances in neural information processing systems, 35:36479–36494, 2022. 15 Peize Sun, Yi Jiang, Shoufa Chen, Shilong Zhang, Bingyue Peng, Ping Luo, and Zehuan Yuan. Autoregressive model beats diffusion: Llama for scalable image generation. arXiv preprint arXiv:2406.06525, 2024. Keyu Tian, Yi Jiang, Zehuan Yuan, Bingyue Peng, and Liwei Wang. Visual autoregressive modeling: Scalable image generation via next-scale prediction. arXiv preprint arXiv:2404.02905, 2024. Weijia Wu, Zeyu Zhu, and Mike Zheng Shou. Automated movie generation via multi-agent cot planning. arXiv preprint arXiv:2503.07314, 2025. Junfei Xiao, Ceyuan Yang, Lvmin Zhang, Shengqu Cai, Yang Zhao, Yuwei Guo, Gordon Wetzstein, Maneesh Agrawala, Alan Yuille, and Lu Jiang. Captain cinema: Towards short movie generation. arXiv preprint arXiv:2507.18634, 2025. Xuenan Xu, Jiahao Mei, Chenliang Li, Yuning Wu, Ming Yan, Shaopeng Lai, Ji Zhang, and Mengyue Wu. Mm-storyagent: Immersive narrated storybook video generation with a multi-agent paradigm across text, image and audio. arXiv preprint arXiv:2503.05242, 2025a. Zhenran Xu, Yiyu Wang, Xue Yang, Longyue Wang, Weihua Luo, Kaifu Zhang, Baotian Hu, and Min Zhang. Comfyui-r1: Exploring reasoning models for workflow generation. arXiv preprint arXiv:2506.09790, 2025b. Xiangyuan Xue, Zeyu Lu, Di Huang, Zidong Wang, Wanli Ouyang, and Lei Bai. Comfybench: Benchmarking llm-based agents in comfyui for autonomously designing collaborative ai systems. In Proceedings of the Computer Vision and Pattern Recognition Conference, pp. 24614–24624, 2025. Fukun Yin, Shiyu Liu, Yucheng Han, Zhibo Wang, Peng Xing, Rui Wang, Wei Cheng, Yingming Wang, Aojie Li, Zixin Yin, et al. Reasonedit: Towards reasoning-enhanced image editing models. arXiv preprint arXiv:2511.22625, 2025. 16

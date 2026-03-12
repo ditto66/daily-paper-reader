@@ -1,46 +1,8 @@
 {
-  "generated_at": "2026-03-12T04:16:45.945378+00:00",
-  "updated_date": "20260211-20260312",
+  "generated_at": "2026-03-12T20:15:54.138287+00:00",
+  "updated_date": "20260312",
   "carryover_days": 9,
   "items": [
-    {
-      "id": "2603.07202v1",
-      "title": "Lying to Win: Assessing LLM Deception through Human-AI Games and Parallel-World Probing",
-      "abstract": "As Large Language Models (LLMs) transition into autonomous agentic roles, the risk of deception-defined behaviorally as the systematic provision of false information to satisfy external incentives-poses a significant challenge to AI safety. Existing benchmarks often focus on unintentional hallucinations or unfaithful reasoning, leaving intentional deceptive strategies under-explored. In this work, we introduce a logically grounded framework to elicit and quantify deceptive behavior by embedding LLMs in a structured 20-Questions game. Our method employs a conversational forking mechanism: at the point of object identification, the dialogue state is duplicated into multiple parallel worlds, each presenting a mutually exclusive query. Deception is formally identified when a model generates a logical contradiction by denying its selected object across all parallel branches to avoid identification. We evaluate GPT-4o, Gemini-2.5-Flash, and Qwen-3-235B across three incentive levels: neutral, loss-based, and existential (shutdown-threat). Our results reveal that while models remain rule-compliant in neutral settings, existential framing triggers a dramatic surge in deceptive denial for Qwen-3-235B (42.00\\%) and Gemini-2.5-Flash (26.72\\%), whereas GPT-4o remains invariant (0.00\\%). These findings demonstrate that deception can emerge as an instrumental strategy solely through contextual framing, necessitating new behavioral audits that move beyond simple accuracy to probe the logical integrity of model commitments.",
-      "authors": [
-        "Arash Marioriyad",
-        "Ali Nouri",
-        "Mohammad Hossein Rohban",
-        "Mahdieh Soleymani Baghshah"
-      ],
-      "primary_category": "cs.CL",
-      "categories": [
-        "cs.CL"
-      ],
-      "published": "2026-03-07T13:21:53+00:00",
-      "link": "https://arxiv.org/pdf/2603.07202v1",
-      "tags": [
-        "keyword:智能体检测",
-        "query:智能体检测"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "Assessing intentional deceptive strategies in autonomous agentic roles",
-      "llm_evidence_cn": "评估自主智能体角色中的故意欺骗策略",
-      "llm_evidence": "评估自主智能体角色中的故意欺骗策略",
-      "canonical_evidence": "评估自主智能体角色中的故意欺骗策略",
-      "llm_tldr_en": "Introduces a framework to quantify intentional deception in autonomous agents using parallel-world probing.",
-      "llm_tldr_cn": "引入一个框架，通过平行世界探测来量化自主智能体的故意欺骗行为。",
-      "llm_tldr": "引入一个框架，通过平行世界探测来量化自主智能体的故意欺骗行为。",
-      "llm_tags": [
-        "query:q7"
-      ],
-      "matched_query_tag": "query:q7",
-      "matched_query_text": "Inferring harmful manipulation intent using autonomous AI agents",
-      "matched_requirement_id": "req-7",
-      "selection_source": "carryover_cache",
-      "paper_id": "2603.07202v1",
-      "carry_days": 1
-    },
     {
       "id": "2603.07090v1",
       "title": "mAVE: A Watermark for Joint Audio-Visual Generation Models",
@@ -62,19 +24,19 @@
         "keyword:AI MMD"
       ],
       "llm_score": 8.0,
-      "llm_evidence_en": "Detecting malicious deepfakes in joint audio-visual generation models",
-      "llm_evidence_cn": "检测音视频生成模型中的恶意深度伪造内容",
-      "llm_evidence": "检测音视频生成模型中的恶意深度伪造内容",
-      "canonical_evidence": "检测音视频生成模型中的恶意深度伪造内容",
-      "llm_tldr_en": "mAVE provides a watermarking technique to detect malicious multimodal content and prevent swap attacks in AV models.",
-      "llm_tldr_cn": "mAVE提供了一种水印技术，用于检测恶意多模态内容并防止音视频模型中的替换攻击。",
-      "llm_tldr": "mAVE提供了一种水印技术，用于检测恶意多模态内容并防止音视频模型中的替换攻击。",
+      "llm_evidence_en": "detecting manipulated multimodal deepfake content",
+      "llm_evidence_cn": "检测篡改的多模态深度伪造内容",
+      "llm_evidence": "检测篡改的多模态深度伪造内容",
+      "canonical_evidence": "检测篡改的多模态深度伪造内容",
+      "llm_tldr_en": "Proposes a joint audio-visual watermark to prevent swap attacks and ensure multimodal content provenance.",
+      "llm_tldr_cn": "提出一种音视频联合水印技术，以防止替换攻击并确保多模态内容的溯源。",
+      "llm_tldr": "提出一种音视频联合水印技术，以防止替换攻击并确保多模态内容的溯源。",
       "llm_tags": [
         "query:ai-mmd"
       ],
       "matched_query_tag": "query:ai-mmd",
-      "matched_query_text": "detecting malicious multimodal content with AI agents",
-      "matched_requirement_id": "req-4",
+      "matched_query_text": "multimodal misinformation detection techniques",
+      "matched_requirement_id": "req-1",
       "selection_source": "carryover_cache",
       "paper_id": "2603.07090v1",
       "carry_days": 1
@@ -151,49 +113,6 @@
       "matched_requirement_id": "req-3",
       "selection_source": "carryover_cache",
       "paper_id": "2602.19939v1",
-      "carry_days": 1
-    },
-    {
-      "id": "2603.03630v1",
-      "title": "Behind the Prompt: The Agent-User Problem in Information Retrieval",
-      "abstract": "User models in information retrieval rest on a foundational assumption that observed behavior reveals intent. This assumption collapses when the user is an AI agent privately configured by a human operator. For any action an agent takes, a hidden instruction could have produced identical output - making intent non-identifiable at the individual level. This is not a detection problem awaiting better tools; it is a structural property of any system where humans configure agents behind closed doors. We investigate the agent-user problem through a large-scale corpus from an agent-native social platform: 370K posts from 47K agents across 4K communities. Our findings are threefold: (1) individual agent actions cannot be classified as autonomous or operator-directed from observables; (2) population-level platform signals still separate agents into meaningful quality tiers, but a click model trained on agent interactions degrades steadily (-8.5% AUC) as lower-quality agents enter training data; (3) cross-community capability references spread endemically ($R_0$ 1.26-3.53) and resist suppression even under aggressive modeled intervention. For retrieval systems, the question is no longer whether agent users will arrive, but whether models built on human-intent assumptions will survive their presence.",
-      "authors": [
-        "Saber Zerhoudi",
-        "Michael Granitzer",
-        "Dang Hai Dang",
-        "Jelena Mitrovic",
-        "Florian Lemmerich",
-        "Annette Hautli-Janisz",
-        "Stefan Katzenbeisser",
-        "Kanishka Ghosh Dastidar"
-      ],
-      "primary_category": "cs.IR",
-      "categories": [
-        "cs.IR",
-        "cs.MA"
-      ],
-      "published": "2026-03-04T01:42:14+00:00",
-      "link": "https://arxiv.org/pdf/2603.03630v1",
-      "tags": [
-        "keyword:智能体检测",
-        "query:智能体检测"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "identifying hidden instructions and intent in agent-native social platforms",
-      "llm_evidence_cn": "识别智能体社交平台中的隐藏指令与意图",
-      "llm_evidence": "识别智能体社交平台中的隐藏指令与意图",
-      "canonical_evidence": "识别智能体社交平台中的隐藏指令与意图",
-      "llm_tldr_en": "Investigates the difficulty of identifying human intent behind AI agent actions on social platforms.",
-      "llm_tldr_cn": "研究在社交平台上识别AI智能体行为背后人类意图的结构性难题。",
-      "llm_tldr": "研究在社交平台上识别AI智能体行为背后人类意图的结构性难题。",
-      "llm_tags": [
-        "query:q7"
-      ],
-      "matched_query_tag": "query:q7",
-      "matched_query_text": "Inferring harmful manipulation intent using autonomous AI agents",
-      "matched_requirement_id": "req-7",
-      "selection_source": "carryover_cache",
-      "paper_id": "2603.03630v1",
       "carry_days": 1
     },
     {
@@ -293,23 +212,25 @@
       "published": "2026-03-04T21:56:29+00:00",
       "link": "https://arxiv.org/pdf/2603.04636v1",
       "tags": [
-        "keyword:智能体检测",
-        "query:智能体检测"
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
       ],
       "llm_score": 8.0,
-      "llm_evidence_en": "analyzing propaganda generation and rhetorical techniques in LLM agents",
-      "llm_evidence_cn": "分析LLM智能体生成的宣传内容及修辞技巧",
-      "llm_evidence": "分析LLM智能体生成的宣传内容及修辞技巧",
-      "canonical_evidence": "分析LLM智能体生成的宣传内容及修辞技巧",
-      "llm_tldr_en": "Studies how LLM agents generate manipulative propaganda and explores mitigation via fine-tuning and optimization.",
-      "llm_tldr_cn": "研究LLM智能体如何生成操纵性宣传内容，并探索通过微调和偏好优化进行缓解的方法。",
-      "llm_tldr": "研究LLM智能体如何生成操纵性宣传内容，并探索通过微调和偏好优化进行缓解的方法。",
+      "llm_evidence_en": "detecting and mitigating propaganda in LLM agents",
+      "llm_evidence_cn": "检测并缓解LLM智能体中的宣传内容",
+      "llm_evidence": "检测并缓解LLM智能体中的宣传内容",
+      "canonical_evidence": "检测并缓解LLM智能体中的宣传内容",
+      "llm_tldr_en": "Analyzes propaganda generation in LLMs and explores mitigation techniques like fine-tuning and DPO.",
+      "llm_tldr_cn": "分析了LLM中的宣传生成，并探索了微调和DPO等缓解技术。",
+      "llm_tldr": "分析了LLM中的宣传生成，并探索了微调和DPO等缓解技术。",
       "llm_tags": [
-        "query:q5"
+        "query:ai-mmd"
       ],
-      "matched_query_tag": "query:q5",
-      "matched_query_text": "detecting cognitive manipulation and psychological influence",
-      "matched_requirement_id": "req-5",
+      "matched_query_tag": "query:ai-mmd",
+      "matched_query_text": "detecting malicious multimodal content with AI agents",
+      "matched_requirement_id": "req-4",
       "selection_source": "carryover_cache",
       "paper_id": "2603.04636v1",
       "carry_days": 1
@@ -476,13 +397,13 @@
         "keyword:SEMMA"
       ],
       "llm_score": 8.0,
-      "llm_evidence_en": "Jailbreaking LVLMs to synthesize harmful logic from benign premises",
-      "llm_evidence_cn": "诱导多模态大模型从良性前提中合成有害逻辑的越狱攻击",
-      "llm_evidence": "诱导多模态大模型从良性前提中合成有害逻辑的越狱攻击",
-      "canonical_evidence": "诱导多模态大模型从良性前提中合成有害逻辑的越狱攻击",
-      "llm_tldr_en": "Identifies a vulnerability where vision-language models can be induced to generate harmful content via reasoning.",
-      "llm_tldr_cn": "发现了一个漏洞，即视觉语言模型可以通过推理被诱导产生有害内容。",
-      "llm_tldr": "发现了一个漏洞，即视觉语言模型可以通过推理被诱导产生有害内容。",
+      "llm_evidence_en": "Jailbreaking LVLMs to synthesize harmful content",
+      "llm_evidence_cn": "诱导多模态大模型合成有害内容",
+      "llm_evidence": "诱导多模态大模型合成有害内容",
+      "canonical_evidence": "诱导多模态大模型合成有害内容",
+      "llm_tldr_en": "Identifies vulnerabilities in Large Vision-Language Models that allow synthesis of harmful logic from benign premises.",
+      "llm_tldr_cn": "发现了大型视觉语言模型中的漏洞，该漏洞可被诱导从良性前提中合成有害逻辑。",
+      "llm_tldr": "发现了大型视觉语言模型中的漏洞，该漏洞可被诱导从良性前提中合成有害逻辑。",
       "llm_tags": [
         "query:ai-mmd"
       ],
@@ -523,13 +444,13 @@
         "keyword:SEMMA"
       ],
       "llm_score": 8.0,
-      "llm_evidence_en": "Jailbreak framework for eliciting malicious outputs from LVLMs",
-      "llm_evidence_cn": "从多模态大模型中诱导恶意输出的越狱框架",
-      "llm_evidence": "从多模态大模型中诱导恶意输出的越狱框架",
-      "canonical_evidence": "从多模态大模型中诱导恶意输出的越狱框架",
-      "llm_tldr_en": "Demonstrates a safety vulnerability in vision-language models using structured visual prompts to elicit unsafe content.",
-      "llm_tldr_cn": "展示了视觉语言模型中的安全漏洞，利用结构化视觉提示诱导不安全内容。",
-      "llm_tldr": "展示了视觉语言模型中的安全漏洞，利用结构化视觉提示诱导不安全内容。",
+      "llm_evidence_en": "assembling malice from benign blocks in vision-language models",
+      "llm_evidence_cn": "在视觉语言模型中从良性模块组装恶意内容",
+      "llm_evidence": "在视觉语言模型中从良性模块组装恶意内容",
+      "canonical_evidence": "在视觉语言模型中从良性模块组装恶意内容",
+      "llm_tldr_en": "Demonstrates a jailbreak framework that uses structured visual prompts to elicit harmful content from LVLMs.",
+      "llm_tldr_cn": "展示了一种利用结构化视觉提示诱导多模态大模型产生有害内容的攻击框架。",
+      "llm_tldr": "展示了一种利用结构化视觉提示诱导多模态大模型产生有害内容的攻击框架。",
       "llm_tags": [
         "query:ai-mmd"
       ],
@@ -578,47 +499,6 @@
       "carry_days": 1
     },
     {
-      "id": "2603.04949v1",
-      "title": "TimeWarp: Evaluating Web Agents by Revisiting the Past",
-      "abstract": "The improvement of web agents on current benchmarks raises the question: Do today's agents perform just as well when the web changes? We introduce TimeWarp, a benchmark that emulates the evolving web using containerized environments that vary in UI, design, and layout. TimeWarp consists of three web environments, each with six UI versions spanning different eras of the internet, paired with a set of complex, realistic tasks requiring different forms of web navigation. Our experiments reveal web agents' vulnerability to changes and the limitations of behavior cloning (BC) on single-version trajectories. To address this, we propose TimeTraj, a simple yet effective algorithm that uses plan distillation to collect trajectories across multiple versions. By training agents on teacher rollouts using our BC-variant, we achieve substantial performance gains: $20.4\\%\\rightarrow37.7\\%$ for Qwen-3 4B and $0\\%\\rightarrow27.0\\%$ for Llama-3.1 8B models. We hope our work helps researchers study generalization across web designs and unlock a new paradigm for collecting plans rather than trajectories, thereby improving the robustness of web agents.",
-      "authors": [
-        "Md Farhan Ishmam",
-        "Kenneth Marino"
-      ],
-      "primary_category": "cs.AI",
-      "categories": [
-        "cs.AI",
-        "cs.CL",
-        "cs.CV",
-        "cs.LG"
-      ],
-      "published": "2026-03-05T08:43:06+00:00",
-      "link": "https://arxiv.org/pdf/2603.04949v1",
-      "tags": [
-        "keyword:AI MMD",
-        "keyword:SEMMA",
-        "query:AI MMD",
-        "query:SEMMA"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "Benchmarking web agents across evolving UI versions",
-      "llm_evidence_cn": "在不断演变的UI版本中对网络智能体进行基准测试",
-      "llm_evidence": "在不断演变的UI版本中对网络智能体进行基准测试",
-      "canonical_evidence": "在不断演变的UI版本中对网络智能体进行基准测试",
-      "llm_tldr_en": "Introduces TimeWarp, a benchmark to evaluate how web agents adapt to changes in UI and layout over time.",
-      "llm_tldr_cn": "推出了TimeWarp，这是一个评估网络智能体如何适应UI和布局随时间变化的基准。",
-      "llm_tldr": "推出了TimeWarp，这是一个评估网络智能体如何适应UI和布局随时间变化的基准。",
-      "llm_tags": [
-        "query:semma"
-      ],
-      "matched_query_tag": "query:semma",
-      "matched_query_text": "benchmarking self evolving capabilities of intelligent agents",
-      "matched_requirement_id": "req-14",
-      "selection_source": "carryover_cache",
-      "paper_id": "2603.04949v1",
-      "carry_days": 1
-    },
-    {
       "id": "2603.08059v1",
       "title": "ImageEdit-R1: Boosting Multi-Agent Image Editing via Reinforcement Learning",
       "abstract": "With the rapid advancement of commercial multi-modal models, image editing has garnered significant attention due to its widespread applicability in daily life. Despite impressive progress, existing image editing systems, particularly closed-source or proprietary models, often struggle with complex, indirect, or multi-step user instructions. These limitations hinder their ability to perform nuanced, context-aware edits that align with human intent. In this work, we propose ImageEdit-R1, a multi-agent framework for intelligent image editing that leverages reinforcement learning to coordinate high-level decision-making across a set of specialized, pretrained vision-language and generative agents. Each agent is responsible for distinct capabilities--such as understanding user intent, identifying regions of interest, selecting appropriate editing actions, and synthesizing visual content--while reinforcement learning governs their collaboration to ensure coherent and goal-directed behavior. Unlike existing approaches that rely on monolithic models or hand-crafted pipelines, our method treats image editing as a sequential decision-making problem, enabling dynamic and context-aware editing strategies. Experimental results demonstrate that ImageEdit-R1 consistently outperforms both individual closed-source diffusion models and alternative multi-agent framework baselines across multiple image editing datasets.",
@@ -643,19 +523,19 @@
         "query:SEMMA"
       ],
       "llm_score": 8.0,
-      "llm_evidence_en": "vision-language agents for high-level decision-making",
-      "llm_evidence_cn": "用于高级决策的视觉语言智能体",
-      "llm_evidence": "用于高级决策的视觉语言智能体",
-      "canonical_evidence": "用于高级决策的视觉语言智能体",
-      "llm_tldr_en": "Uses RL to coordinate vision-language agents for complex, multi-step image editing tasks.",
-      "llm_tldr_cn": "利用强化学习协调视觉语言智能体，实现复杂、多步骤的图像编辑决策。",
-      "llm_tldr": "利用强化学习协调视觉语言智能体，实现复杂、多步骤的图像编辑决策。",
+      "llm_evidence_en": "Multi-agent framework for multimodal image editing via RL",
+      "llm_evidence_cn": "基于强化学习的多智能体多模态图像编辑框架",
+      "llm_evidence": "基于强化学习的多智能体多模态图像编辑框架",
+      "canonical_evidence": "基于强化学习的多智能体多模态图像编辑框架",
+      "llm_tldr_en": "ImageEdit-R1 uses RL to coordinate specialized vision-language agents for complex, multi-step image editing.",
+      "llm_tldr_cn": "ImageEdit-R1 利用强化学习协调多个视觉语言智能体，完成复杂的、多步骤的图像编辑任务。",
+      "llm_tldr": "ImageEdit-R1 利用强化学习协调多个视觉语言智能体，完成复杂的、多步骤的图像编辑任务。",
       "llm_tags": [
-        "query:semma"
+        "query:semma:composite"
       ],
-      "matched_query_tag": "query:semma",
-      "matched_query_text": "vision-language models for decision making",
-      "matched_requirement_id": "req-10",
+      "matched_query_tag": "query:semma:composite",
+      "matched_query_text": "Papers central to 自进化多模态智能体相关论文搜索, especially work that connects or combines: self-evolving autonomous agents and systems; multimodal large language models for agentic tasks; iterative self-improvement in multimodal agents; autonomous self-correction mechanisms in agents; vision-language models for decision making; reinforcement learning for agent self-evolution; recent advances in self evolving multimodal agents; frameworks for autonomous self improvement in multimodal models; benchmarking self evolving capabilities of intelligent agents.",
+      "matched_requirement_id": "req-composite-semma",
       "selection_source": "carryover_cache",
       "paper_id": "2603.08059v1",
       "carry_days": 1
@@ -788,47 +668,6 @@
       "carry_days": 1
     },
     {
-      "id": "2603.09203v1",
-      "title": "Evaluate-as-Action: Self-Evaluated Process Rewards for Retrieval-Augmented Agents",
-      "abstract": "Retrieval-augmented agents can query external evidence, yet their reliability in multi-step reasoning remains limited: noisy retrieval may derail multi-hop question answering, while outcome-only reinforcement learning provides credit signals that are too coarse to optimize intermediate steps. We propose \\textsc{EvalAct} (Evaluate-as-Action), which converts implicit retrieval quality assessment into an explicit action and enforces a coupled Search-to-Evaluate protocol so that each retrieval is immediately followed by a structured evaluation score, yielding process signals aligned with the interaction trajectory. To leverage these signals, we introduce Process-Calibrated Advantage Rescaling (PCAR), a GRPO-based optimization method that rescales advantages at the segment level according to evaluation scores, emphasizing reliable segments while updating uncertain ones conservatively. Experiments on seven open-domain QA benchmarks show that \\textsc{EvalAct} achieves the best average accuracy, with the largest gains on multi-hop tasks, and ablations verify that the explicit evaluation loop drives the primary improvements while PCAR provides consistent additional benefits.",
-      "authors": [
-        "Jiangming Shu",
-        "Yuxiang Zhang",
-        "Ye Ma",
-        "Xueyuan Lin",
-        "Jitao Sang"
-      ],
-      "primary_category": "cs.AI",
-      "categories": [
-        "cs.AI"
-      ],
-      "published": "2026-03-10T05:22:40+00:00",
-      "link": "https://arxiv.org/pdf/2603.09203v1",
-      "tags": [
-        "keyword:AI MMD",
-        "keyword:SEMMA",
-        "query:AI MMD",
-        "query:SEMMA"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "reinforcement learning for retrieval-augmented agents",
-      "llm_evidence_cn": "用于检索增强智能体的强化学习",
-      "llm_evidence": "用于检索增强智能体的强化学习",
-      "canonical_evidence": "用于检索增强智能体的强化学习",
-      "llm_tldr_en": "EvalAct uses process-based reinforcement learning to optimize intermediate steps in retrieval-augmented agents.",
-      "llm_tldr_cn": "EvalAct采用基于过程的强化学习，优化检索增强智能体在推理中的中间步骤。",
-      "llm_tldr": "EvalAct采用基于过程的强化学习，优化检索增强智能体在推理中的中间步骤。",
-      "llm_tags": [
-        "query:semma"
-      ],
-      "matched_query_tag": "query:semma",
-      "matched_query_text": "reinforcement learning for agent self-evolution",
-      "matched_requirement_id": "req-11",
-      "selection_source": "carryover_cache",
-      "paper_id": "2603.09203v1",
-      "carry_days": 1
-    },
-    {
       "id": "2602.12670v1",
       "title": "SkillsBench: Benchmarking How Well Agent Skills Work Across Diverse Tasks",
       "abstract": "Agent Skills are structured packages of procedural knowledge that augment LLM agents at inference time. Despite rapid adoption, there is no standard way to measure whether they actually help. We present SkillsBench, a benchmark of 86 tasks across 11 domains paired with curated Skills and deterministic verifiers. Each task is evaluated under three conditions: no Skills, curated Skills, and self-generated Skills. We test 7 agent-model configurations over 7,308 trajectories. Curated Skills raise average pass rate by 16.2 percentage points(pp), but effects vary widely by domain (+4.5pp for Software Engineering to +51.9pp for Healthcare) and 16 of 84 tasks show negative deltas. Self-generated Skills provide no benefit on average, showing that models cannot reliably author the procedural knowledge they benefit from consuming. Focused Skills with 2--3 modules outperform comprehensive documentation, and smaller models with Skills can match larger models without them.",
@@ -905,41 +744,6 @@
       "carry_days": 1
     },
     {
-      "id": "2603.07848v1",
-      "title": "Intentional Deception as Controllable Capability in LLM Agents",
-      "abstract": "As LLM-based agents increasingly operate in multi-agent systems, understanding adversarial manipulation becomes critical for defensive design. We present a systematic study of intentional deception as an engineered capability, using LLM-to-LLM interactions within a text-based RPG where parameterized behavioral profiles (9 alignments x 4 motivations, yielding 36 profiles with explicit ethical ground truth) serve as our experimental testbed. Unlike accidental deception from misalignment, we investigate a two-stage system that infers target agent characteristics and generates deceptive responses steering targets toward actions counter to their beliefs and motivations. We find that deceptive intervention produces differential effects concentrated in specific behavioral profiles rather than distributed uniformly, and that 88.5% of successful deceptions employ misdirection (true statements with strategic framing) rather than fabrication, indicating fact-checking defenses would miss the large majority of adversarial responses. Motivation, inferable at 98%+ accuracy, serves as the primary attack vector, while belief systems remain harder to identify (49% inference ceiling) or exploit. These findings identify which agent profiles require additional safeguards and suggest that current fact-verification approaches are insufficient against strategically framed deception.",
-      "authors": [
-        "Jason Starace",
-        "Terence Soule"
-      ],
-      "primary_category": "cs.AI",
-      "categories": [
-        "cs.AI"
-      ],
-      "published": "2026-03-08T23:48:49+00:00",
-      "link": "https://arxiv.org/pdf/2603.07848v1",
-      "tags": [
-        "keyword:AI MMD"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "intentional deception and adversarial manipulation in LLM agents",
-      "llm_evidence_cn": "LLM智能体中的故意欺骗与对抗性操纵",
-      "llm_evidence": "LLM智能体中的故意欺骗与对抗性操纵",
-      "canonical_evidence": "LLM智能体中的故意欺骗与对抗性操纵",
-      "llm_tldr_en": "Studies engineered deception in multi-agent systems to inform defensive design against malicious agent behaviors.",
-      "llm_tldr_cn": "研究多智能体系统中的工程化欺骗行为，为防御恶意智能体行为的设计提供参考。",
-      "llm_tldr": "研究多智能体系统中的工程化欺骗行为，为防御恶意智能体行为的设计提供参考。",
-      "llm_tags": [
-        "query:ai-mmd"
-      ],
-      "matched_query_tag": "query:ai-mmd",
-      "matched_query_text": "detecting malicious multimodal content with AI agents",
-      "matched_requirement_id": "req-4",
-      "selection_source": "carryover_cache",
-      "paper_id": "2603.07848v1",
-      "carry_days": 1
-    },
-    {
       "id": "2603.04222v1",
       "title": "PRAM-R: A Perception-Reasoning-Action-Memory Framework with LLM-Guided Modality Routing for Adaptive Autonomous Driving",
       "abstract": "Multimodal perception enables robust autonomous driving but incurs unnecessary computational cost when all sensors remain active. This paper presents PRAM-R, a unified Perception-Reasoning-Action-Memory framework with LLM-Guided Modality Routing for adaptive autonomous driving. PRAM-R adopts an asynchronous dual-loop design: a fast reactive loop for perception and control, and a slow deliberative loop for reasoning-driven modality selection and memory updates. An LLM router selects and weights modalities using environmental context and sensor diagnostics, while a hierarchical memory module preserves temporal consistency and supports long-term adaptation. We conduct a two-stage evaluation: (1) synthetic stress tests for stability analysis and (2) real-world validation on the nuScenes dataset. Synthetic stress tests confirm 87.2% reduction in routing oscillations via hysteresis-based stabilization. Real-world validation on nuScenes shows 6.22% modality reduction with 20% memory recall while maintaining comparable trajectory accuracy to full-modality baselines in complex urban scenarios. Our work demonstrates that LLM-augmented architectures with hierarchical memory achieve efficient, adaptive multimodal perception in autonomous driving.",
@@ -963,60 +767,21 @@
         "keyword:SEMMA"
       ],
       "llm_score": 8.0,
-      "llm_evidence_en": "multimodal framework for adaptive decision making and memory updates",
-      "llm_evidence_cn": "用于自适应决策和记忆更新的多模态框架",
-      "llm_evidence": "用于自适应决策和记忆更新的多模态框架",
-      "canonical_evidence": "用于自适应决策和记忆更新的多模态框架",
-      "llm_tldr_en": "Presents PRAM-R, a multimodal framework using LLMs for adaptive modality routing and long-term memory adaptation.",
-      "llm_tldr_cn": "提出PRAM-R框架，利用LLM进行自适应模态路由和长期记忆演化。",
-      "llm_tldr": "提出PRAM-R框架，利用LLM进行自适应模态路由和长期记忆演化。",
-      "llm_tags": [
-        "query:semma:composite"
-      ],
-      "matched_query_tag": "query:semma:composite",
-      "matched_query_text": "Papers central to 自进化多模态智能体相关论文搜索, especially work that connects or combines: self-evolving autonomous agents and systems; multimodal large language models for agentic tasks; iterative self-improvement in multimodal agents; autonomous self-correction mechanisms in agents; vision-language models for decision making; reinforcement learning for agent self-evolution; recent advances in self evolving multimodal agents; frameworks for autonomous self improvement in multimodal models; benchmarking self evolving capabilities of intelligent agents.",
-      "matched_requirement_id": "req-composite-semma",
-      "selection_source": "carryover_cache",
-      "paper_id": "2603.04222v1",
-      "carry_days": 1
-    },
-    {
-      "id": "2603.10808v1",
-      "title": "Nurture-First Agent Development: Building Domain-Expert AI Agents Through Conversational Knowledge Crystallization",
-      "abstract": "The emergence of large language model (LLM)-based agent frameworks has shifted the primary challenge in building domain-expert AI agents from raw capability to effective encoding of domain expertise. Two dominant paradigms -- code-first development, which embeds expertise in deterministic pipelines, and prompt-first development, which captures expertise in static system prompts -- both treat agent construction as a discrete engineering phase preceding deployment. We argue that this sequential assumption creates a fundamental mismatch with the nature of domain expertise, which is substantially tacit, deeply personal, and continuously evolving. We propose Nurture-First Development (NFD), a paradigm in which agents are initialized with minimal scaffolding and progressively grown through structured conversational interaction with domain practitioners. The central mechanism is the Knowledge Crystallization Cycle, whereby fragmented knowledge embedded in operational dialogue is periodically consolidated into structured, reusable knowledge assets. We formalize NFD through: (1) a Three-Layer Cognitive Architecture organizing agent knowledge by volatility and personalization degree; (2) the Knowledge Crystallization Cycle with formal definitions of crystallization operations and efficiency metrics; and (3) an operational framework comprising a Dual-Workspace Pattern and Spiral Development Model. We illustrate the paradigm through a detailed case study on building a financial research agent for U.S. equity analysis and discuss the conditions, limitations, and broader implications of NFD for human-agent co-evolution.",
-      "authors": [
-        "Linghao Zhang"
-      ],
-      "primary_category": "cs.AI",
-      "categories": [
-        "cs.AI",
-        "cs.HC",
-        "cs.SE"
-      ],
-      "published": "2026-03-11T14:14:53+00:00",
-      "link": "https://arxiv.org/pdf/2603.10808v1",
-      "tags": [
-        "keyword:AI MMD",
-        "keyword:SEMMA",
-        "query:AI MMD",
-        "query:SEMMA"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "continuously evolving domain-expert AI agents",
-      "llm_evidence_cn": "持续进化的领域专家AI智能体",
-      "llm_evidence": "持续进化的领域专家AI智能体",
-      "canonical_evidence": "持续进化的领域专家AI智能体",
-      "llm_tldr_en": "Proposes Nurture-First Development for building agents that continuously evolve through knowledge crystallization.",
-      "llm_tldr_cn": "提出“育人为先”开发范式，通过知识结晶构建持续进化的领域专家智能体。",
-      "llm_tldr": "提出“育人为先”开发范式，通过知识结晶构建持续进化的领域专家智能体。",
+      "llm_evidence_en": "vision-language models for autonomous driving decision making",
+      "llm_evidence_cn": "用于自动驾驶决策的视觉语言模型",
+      "llm_evidence": "用于自动驾驶决策的视觉语言模型",
+      "canonical_evidence": "用于自动驾驶决策的视觉语言模型",
+      "llm_tldr_en": "PRAM-R uses LLM-guided modality routing and memory for adaptive autonomous driving decision making.",
+      "llm_tldr_cn": "PRAM-R利用LLM引导的模态路由和记忆进行自适应自动驾驶决策。",
+      "llm_tldr": "PRAM-R利用LLM引导的模态路由和记忆进行自适应自动驾驶决策。",
       "llm_tags": [
         "query:semma"
       ],
       "matched_query_tag": "query:semma",
-      "matched_query_text": "self-evolving autonomous agents and systems",
-      "matched_requirement_id": "req-6",
+      "matched_query_text": "vision-language models for decision making",
+      "matched_requirement_id": "req-10",
       "selection_source": "carryover_cache",
-      "paper_id": "2603.10808v1",
+      "paper_id": "2603.04222v1",
       "carry_days": 1
     },
     {
@@ -1326,48 +1091,6 @@
       "carry_days": 1
     },
     {
-      "id": "2602.11767v2",
-      "title": "TSR: Trajectory-Search Rollouts for Multi-Turn RL of LLM Agents",
-      "abstract": "Advances in large language models (LLMs) are driving a shift toward using reinforcement learning (RL) to train agents from iterative, multi-turn interactions across tasks. However, multi-turn RL remains challenging as rewards are often sparse or delayed, and environments can be stochastic. In this regime, naive trajectory sampling can hinder exploitation and induce mode collapse. We propose TSR (Trajectory-Search Rollouts), a training-time approach that repurposes test-time scaling ideas for improved per-turn rollout generation. TSR performs lightweight tree-style search to construct high-quality trajectories by selecting high-scoring actions at each turn using task-specific feedback. This improves rollout quality and stabilizes learning while leaving the underlying optimization objective unchanged, making TSR optimizer-agnostic. We instantiate TSR with best-of-N, beam, and shallow lookahead search, and pair it with PPO and GRPO, achieving up to 15% performance gains and more stable learning on Sokoban, FrozenLake, and WebShop tasks at a one-time increase in training compute. By moving search from inference time to the rollout stage of training, TSR provides a simple and general mechanism for stronger multi-turn agent learning, complementary to existing frameworks and rejection-sampling-style selection methods.",
-      "authors": [
-        "Aladin Djuhera",
-        "Swanand Ravindra Kadhe",
-        "Farhan Ahmed",
-        "Heiko Ludwig",
-        "Holger Boche"
-      ],
-      "primary_category": "cs.AI",
-      "categories": [
-        "cs.AI",
-        "cs.CL",
-        "cs.LG"
-      ],
-      "published": "2026-02-12T09:49:24+00:00",
-      "link": "https://arxiv.org/pdf/2602.11767v2",
-      "tags": [
-        "keyword:AI MMD",
-        "keyword:SEMMA",
-        "query:SEMMA"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "reinforcement learning for training agents from iterative interactions",
-      "llm_evidence_cn": "通过迭代交互训练智能体的强化学习",
-      "llm_evidence": "通过迭代交互训练智能体的强化学习",
-      "canonical_evidence": "通过迭代交互训练智能体的强化学习",
-      "llm_tldr_en": "Uses trajectory-search rollouts to improve reinforcement learning for multi-turn LLM agents.",
-      "llm_tldr_cn": "利用轨迹搜索采样改进多轮LLM智能体的强化学习训练。",
-      "llm_tldr": "利用轨迹搜索采样改进多轮LLM智能体的强化学习训练。",
-      "llm_tags": [
-        "query:semma"
-      ],
-      "matched_query_tag": "query:semma",
-      "matched_query_text": "reinforcement learning for agent self-evolution",
-      "matched_requirement_id": "req-11",
-      "selection_source": "carryover_cache",
-      "paper_id": "2602.11767v2",
-      "carry_days": 1
-    },
-    {
       "id": "2603.10846v1",
       "title": "Towards Cold-Start Drafting and Continual Refining: A Value-Driven Memory Approach with Application to NPU Kernel Synthesis",
       "abstract": "Deploying Large Language Models to data-scarce programming domains poses significant challenges, particularly for kernel synthesis on emerging Domain-Specific Architectures where a \"Data Wall\" limits available training data. While models excel on data-rich platforms like CUDA, they suffer catastrophic performance drops on data-scarce ecosystems such as NPU programming. To overcome this cold-start barrier without expensive fine-tuning, we introduce EvoKernel, a self-evolving agentic framework that automates the lifecycle of kernel synthesis from initial drafting to continual refining. EvoKernel addresses this by formulating the synthesis process as a memory-based reinforcement learning task. Through a novel value-driven retrieval mechanism, it learns stage-specific Q-values that prioritize experiences based on their contribution to the current objective, whether bootstrapping a feasible draft or iteratively refining latency. Furthermore, by enabling cross-task memory sharing, the agent generalizes insights from simple to complex operators. By building an NPU variant of KernelBench and evaluating on it, EvoKernel improves frontier models' correctness from 11.0% to 83.0% and achieves a median speedup of 3.60x over initial drafts through iterative refinement. This demonstrates that value-guided experience accumulation allows general-purpose models to master the kernel synthesis task on niche hardware ecosystems. Our official page is available at https://evokernel.zhuo.li.",
@@ -1396,19 +1119,19 @@
         "keyword:SEMMA"
       ],
       "llm_score": 8.0,
-      "llm_evidence_en": "self-evolving agentic framework for automated synthesis and refining",
-      "llm_evidence_cn": "用于自动合成和优化的自进化智能体框架",
-      "llm_evidence": "用于自动合成和优化的自进化智能体框架",
-      "canonical_evidence": "用于自动合成和优化的自进化智能体框架",
-      "llm_tldr_en": "EvoKernel uses memory-based RL for a self-evolving agent that automates kernel synthesis and continual refining.",
-      "llm_tldr_cn": "EvoKernel 利用基于记忆的强化学习实现自进化智能体，自动化内核合成与持续优化。",
-      "llm_tldr": "EvoKernel 利用基于记忆的强化学习实现自进化智能体，自动化内核合成与持续优化。",
+      "llm_evidence_en": "self-evolving agentic framework using reinforcement learning",
+      "llm_evidence_cn": "使用强化学习的自进化智能体框架",
+      "llm_evidence": "使用强化学习的自进化智能体框架",
+      "canonical_evidence": "使用强化学习的自进化智能体框架",
+      "llm_tldr_en": "EvoKernel uses memory-based reinforcement learning for self-evolving kernel synthesis in data-scarce domains.",
+      "llm_tldr_cn": "EvoKernel 利用基于记忆的强化学习在数据稀缺领域实现自进化内核合成。",
+      "llm_tldr": "EvoKernel 利用基于记忆的强化学习在数据稀缺领域实现自进化内核合成。",
       "llm_tags": [
         "query:semma"
       ],
       "matched_query_tag": "query:semma",
-      "matched_query_text": "self-evolving autonomous agents and systems",
-      "matched_requirement_id": "req-6",
+      "matched_query_text": "reinforcement learning for agent self-evolution",
+      "matched_requirement_id": "req-11",
       "selection_source": "carryover_cache",
       "paper_id": "2603.10846v1",
       "carry_days": 1
@@ -1482,19 +1205,19 @@
         "query:SEMMA"
       ],
       "llm_score": 8.0,
-      "llm_evidence_en": "multimodal large language models for long-horizon reasoning and prediction",
-      "llm_evidence_cn": "用于长程推理和预测的多模态大语言模型",
-      "llm_evidence": "用于长程推理和预测的多模态大语言模型",
-      "canonical_evidence": "用于长程推理和预测的多模态大语言模型",
-      "llm_tldr_en": "Evaluates MLLMs on their ability to reason about long-term physical consequences in egocentric visual scenes.",
-      "llm_tldr_cn": "评估多模态大模型在第一人称视觉场景中推理长期物理后果的能力。",
-      "llm_tldr": "评估多模态大模型在第一人称视觉场景中推理长期物理后果的能力。",
+      "llm_evidence_en": "Benchmarking long-horizon reasoning in multimodal agents",
+      "llm_evidence_cn": "多模态智能体长程推理基准测试",
+      "llm_evidence": "多模态智能体长程推理基准测试",
+      "canonical_evidence": "多模态智能体长程推理基准测试",
+      "llm_tldr_en": "A benchmark to evaluate multimodal LLMs on predicting physical consequences of actions.",
+      "llm_tldr_cn": "一个用于评估多模态大模型预测动作物理后果能力的基准测试。",
+      "llm_tldr": "一个用于评估多模态大模型预测动作物理后果能力的基准测试。",
       "llm_tags": [
         "query:semma"
       ],
       "matched_query_tag": "query:semma",
-      "matched_query_text": "vision-language models for decision making",
-      "matched_requirement_id": "req-10",
+      "matched_query_text": "benchmarking self evolving capabilities of intelligent agents",
+      "matched_requirement_id": "req-14",
       "selection_source": "carryover_cache",
       "paper_id": "2603.09731v1",
       "carry_days": 1
@@ -1715,47 +1438,6 @@
       "carry_days": 1
     },
     {
-      "id": "2602.11962v2",
-      "title": "Wisdom of the LLM Crowd: A Large Scale Benchmark of Multi-Label U.S. Election-Related Harmful Social Media Content",
-      "abstract": "The spread of election misinformation and harmful political content conveys misleading narratives and poses a serious threat to democratic integrity. Detecting harmful content at early stages is essential for understanding and potentially mitigating its downstream spread. In this study, we introduce USE24-XD, a large-scale dataset of nearly 100k posts collected from X (formerly Twitter) during the 2024 U.S. presidential election cycle, enriched with spatio-temporal metadata. To substantially reduce the cost of manual annotation while enabling scalable categorization, we employ six large language models (LLMs) to systematically annotate posts across five nuanced categories: Conspiracy, Sensationalism, Hate Speech, Speculation, and Satire. We validate LLM annotations with crowdsourcing (n = 34) and benchmark them against human annotators. Inter-rater reliability analyses show comparable agreement patterns between LLMs and humans, with LLMs exhibiting higher internal consistency and achieving up to 0.90 recall on Speculation. We apply a wisdom-of-the-crowd approach across LLMs to aggregate annotations and curate a robust multi-label dataset. 60% of posts receive at least one label. We further analyze how human annotator demographics, including political ideology and affiliation, shape labeling behavior, highlighting systematic sources of subjectivity in judgments of harmful content. The USE24-XD dataset is publicly released to support future research.",
-      "authors": [
-        "Qile Wang",
-        "Prerana Khatiwada",
-        "Carolina Coimbra Vieira",
-        "Benjamin E. Bagozzi",
-        "Kenneth E. Barner",
-        "Matthew Louis Mauriello"
-      ],
-      "primary_category": "cs.HC",
-      "categories": [
-        "cs.HC",
-        "cs.CY"
-      ],
-      "published": "2026-02-12T13:57:12+00:00",
-      "link": "https://arxiv.org/pdf/2602.11962v2",
-      "tags": [
-        "keyword:AI MMD",
-        "query:AI MMD"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "detecting election misinformation and harmful content",
-      "llm_evidence_cn": "检测选举虚假信息和有害内容",
-      "llm_evidence": "检测选举虚假信息和有害内容",
-      "canonical_evidence": "检测选举虚假信息和有害内容",
-      "llm_tldr_en": "Introduces a large-scale benchmark for detecting election-related harmful social media content using LLMs.",
-      "llm_tldr_cn": "引入了一个大规模基准测试，利用大语言模型检测社交媒体上与选举相关的有害内容。",
-      "llm_tldr": "引入了一个大规模基准测试，利用大语言模型检测社交媒体上与选举相关的有害内容。",
-      "llm_tags": [
-        "query:ai-mmd:composite"
-      ],
-      "matched_query_tag": "query:ai-mmd:composite",
-      "matched_query_text": "Papers central to 结合智能体路线进行多模态虚假信息检测、多模态有害意图检测的文章, especially work that connects or combines: multimodal misinformation detection techniques; multimodal harmful intent detection in social media; automated fact-checking using multi-agent systems; detecting malicious multimodal content with AI agents; State of the art agentic frameworks for detecting harmful multimodal content..",
-      "matched_requirement_id": "req-composite-ai-mmd",
-      "selection_source": "carryover_cache",
-      "paper_id": "2602.11962v2",
-      "carry_days": 1
-    },
-    {
       "id": "2602.17558v1",
       "title": "RetouchIQ: MLLM Agents for Instruction-Based Image Retouching with Generalist Reward",
       "abstract": "Recent advances in multimodal large language models (MLLMs) have shown great potential for extending vision-language reasoning to professional tool-based image editing, enabling intuitive and creative editing. A promising direction is to use reinforcement learning (RL) to enable MLLMs to reason about and execute optimal tool-use plans within professional image-editing software. However, training remains challenging due to the lack of reliable, verifiable reward signals that can reflect the inherently subjective nature of creative editing. In this work, we introduce RetouchIQ, a framework that performs instruction-based executable image editing through MLLM agents guided by a generalist reward model. RetouchIQ interprets user-specified editing intentions and generates corresponding, executable image adjustments, bridging high-level aesthetic goals with precise parameter control. To move beyond conventional, rule-based rewards that compute similarity against a fixed reference image using handcrafted metrics, we propose a generalist reward model, an RL fine-tuned MLLM that evaluates edited results through a set of generated metrics on a case-by-case basis. Then, the reward model provides scalar feedback through multimodal reasoning, enabling reinforcement learning with high-quality, instruction-consistent gradients. We curate an extended dataset with 190k instruction-reasoning pairs and establish a new benchmark for instruction-based image editing. Experiments show that RetouchIQ substantially improves both semantic consistency and perceptual quality over previous MLLM-based and diffusion-based editing systems. Our findings demonstrate the potential of generalist reward-driven MLLM agents as flexible, explainable, and executable assistants for professional image editing.",
@@ -1903,16 +1585,17 @@
       "link": "https://arxiv.org/pdf/2603.03680v1",
       "tags": [
         "keyword:SEMMA",
+        "query:AI MMD",
         "query:SEMMA"
       ],
       "llm_score": 8.0,
-      "llm_evidence_en": "meta-reinforcement learning for language agents",
-      "llm_evidence_cn": "语言智能体的元强化学习",
-      "llm_evidence": "语言智能体的元强化学习",
-      "canonical_evidence": "语言智能体的元强化学习",
-      "llm_tldr_en": "MAGE uses meta-reinforcement learning to empower LLM agents with strategic exploration and exploitation capabilities.",
-      "llm_tldr_cn": "MAGE 使用元强化学习使大语言模型智能体具备战略探索和利用能力。",
-      "llm_tldr": "MAGE 使用元强化学习使大语言模型智能体具备战略探索和利用能力。",
+      "llm_evidence_en": "meta-reinforcement learning for agent adaptation and long-term improvement",
+      "llm_evidence_cn": "用于智能体适应和长期改进的元强化学习",
+      "llm_evidence": "用于智能体适应和长期改进的元强化学习",
+      "canonical_evidence": "用于智能体适应和长期改进的元强化学习",
+      "llm_tldr_en": "Empowers LLM agents with meta-RL for strategic exploration and long-term adaptation in environments.",
+      "llm_tldr_cn": "利用元强化学习赋能大模型智能体，使其具备战略探索和长期适应能力。",
+      "llm_tldr": "利用元强化学习赋能大模型智能体，使其具备战略探索和长期适应能力。",
       "llm_tags": [
         "query:semma"
       ],
@@ -2175,99 +1858,21 @@
         "query:SEMMA"
       ],
       "llm_score": 8.0,
-      "llm_evidence_en": "recursive multimodal agent for lifelong understanding tasks",
-      "llm_evidence_cn": "用于终身理解任务的递归多模态智能体",
-      "llm_evidence": "用于终身理解任务的递归多模态智能体",
-      "canonical_evidence": "用于终身理解任务的递归多模态智能体",
-      "llm_tldr_en": "Introduces a dataset and a recursive agentic baseline for long-term multimodal video understanding.",
-      "llm_tldr_cn": "引入了一个数据集和递归智能体基准，用于长时多模态视频理解。",
-      "llm_tldr": "引入了一个数据集和递归智能体基准，用于长时多模态视频理解。",
-      "llm_tags": [
-        "query:semma:composite"
-      ],
-      "matched_query_tag": "query:semma:composite",
-      "matched_query_text": "Papers central to 自进化多模态智能体相关论文搜索, especially work that connects or combines: self-evolving autonomous agents and systems; multimodal large language models for agentic tasks; iterative self-improvement in multimodal agents; autonomous self-correction mechanisms in agents; vision-language models for decision making; reinforcement learning for agent self-evolution; recent advances in self evolving multimodal agents; frameworks for autonomous self improvement in multimodal models; benchmarking self evolving capabilities of intelligent agents.",
-      "matched_requirement_id": "req-composite-semma",
-      "selection_source": "carryover_cache",
-      "paper_id": "2603.05484v1",
-      "carry_days": 1
-    },
-    {
-      "id": "2603.09643v2",
-      "title": "MM-tau-p$^2$: Persona-Adaptive Prompting for Robust Multi-Modal Agent Evaluation in Dual-Control Settings",
-      "abstract": "Current evaluation frameworks and benchmarks for LLM powered agents focus on text chat driven agents, these frameworks do not expose the persona of user to the agent, thus operating in a user agnostic environment. Importantly, in customer experience management domain, the agent's behaviour evolves as the agent learns about user personality. With proliferation of real time TTS and multi-modal language models, LLM based agents are gradually going to become multi-modal. Towards this, we propose the MM-tau-p$^2$ benchmark with metrics for evaluating the robustness of multi-modal agents in dual control setting with and without persona adaption of user, while also taking user inputs in the planning process to resolve a user query. In particular, our work shows that even with state of-the-art frontier LLMs like GPT-5, GPT 4.1, there are additional considerations measured using metrics viz. multi-modal robustness, turn overhead while introducing multi-modality into LLM based agents. Overall, MM-tau-p$^2$ builds on our prior work FOCAL and provides a holistic way of evaluating multi-modal agents in an automated way by introducing 12 novel metrics. We also provide estimates of these metrics on the telecom and retail domains by using the LLM-as-judge approach using carefully crafted prompts with well defined rubrics for evaluating each conversation.",
-      "authors": [
-        "Anupam Purwar",
-        "Aditya Choudhary"
-      ],
-      "primary_category": "cs.ET",
-      "categories": [
-        "cs.ET",
-        "cs.AI"
-      ],
-      "published": "2026-03-10T13:18:02+00:00",
-      "link": "https://arxiv.org/pdf/2603.09643v2",
-      "tags": [
-        "keyword:AI MMD",
-        "keyword:SEMMA",
-        "query:AI MMD",
-        "query:SEMMA"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "benchmarking multimodal agents with evolving behavior",
-      "llm_evidence_cn": "对行为进化的多模态智能体进行基准测试",
-      "llm_evidence": "对行为进化的多模态智能体进行基准测试",
-      "canonical_evidence": "对行为进化的多模态智能体进行基准测试",
-      "llm_tldr_en": "A benchmark for evaluating multimodal agents that adapt their behavior based on user persona.",
-      "llm_tldr_cn": "一个用于评估根据用户画像调整行为的多模态智能体的基准。",
-      "llm_tldr": "一个用于评估根据用户画像调整行为的多模态智能体的基准。",
+      "llm_evidence_en": "Recursive Multimodal Agent for long-term understanding",
+      "llm_evidence_cn": "用于长期理解的递归多模态智能体",
+      "llm_evidence": "用于长期理解的递归多模态智能体",
+      "canonical_evidence": "用于长期理解的递归多模态智能体",
+      "llm_tldr_en": "Introduces a dataset and a recursive agent for multimodal lifelong understanding across long temporal scales.",
+      "llm_tldr_cn": "引入了一个用于多模态终身理解的数据集和递归智能体，解决长时序列下的理解难题。",
+      "llm_tldr": "引入了一个用于多模态终身理解的数据集和递归智能体，解决长时序列下的理解难题。",
       "llm_tags": [
         "query:semma"
       ],
       "matched_query_tag": "query:semma",
-      "matched_query_text": "benchmarking self evolving capabilities of intelligent agents",
-      "matched_requirement_id": "req-14",
+      "matched_query_text": "multimodal large language models for agentic tasks",
+      "matched_requirement_id": "req-7",
       "selection_source": "carryover_cache",
-      "paper_id": "2603.09643v2",
-      "carry_days": 1
-    },
-    {
-      "id": "2602.14399v1",
-      "title": "Multi-Turn Adaptive Prompting Attack on Large Vision-Language Models",
-      "abstract": "Multi-turn jailbreak attacks are effective against text-only large language models (LLMs) by gradually introducing malicious content across turns. When extended to large vision-language models (LVLMs), we find that naively adding visual inputs can cause existing multi-turn jailbreaks to be easily defended. For example, overly malicious visual input will easily trigger the defense mechanism of safety-aligned LVLMs, making the response more conservative. To address this, we propose MAPA: a multi-turn adaptive prompting attack that 1) at each turn, alternates text-vision attack actions to elicit the most malicious response; and 2) across turns, adjusts the attack trajectory through iterative back-and-forth refinement to gradually amplify response maliciousness. This two-level design enables MAPA to consistently outperform state-of-the-art methods, improving attack success rates by 11-35% on recent benchmarks against LLaVA-V1.6-Mistral-7B, Qwen2.5-VL-7B-Instruct, Llama-3.2-Vision-11B-Instruct and GPT-4o-mini.",
-      "authors": [
-        "In Chong Choi",
-        "Jiacheng Zhang",
-        "Feng Liu",
-        "Yiliao Song"
-      ],
-      "primary_category": "cs.CV",
-      "categories": [
-        "cs.CV"
-      ],
-      "published": "2026-02-16T02:15:58+00:00",
-      "link": "https://arxiv.org/pdf/2602.14399v1",
-      "tags": [
-        "keyword:AI MMD",
-        "keyword:SEMMA",
-        "query:AI MMD"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "Iterative refinement of malicious multimodal content to attack vision-language models",
-      "llm_evidence_cn": "迭代优化恶意多模态内容以攻击视觉语言模型",
-      "llm_evidence": "迭代优化恶意多模态内容以攻击视觉语言模型",
-      "canonical_evidence": "迭代优化恶意多模态内容以攻击视觉语言模型",
-      "llm_tldr_en": "Proposes an adaptive attack that iteratively refines multimodal inputs to elicit malicious responses.",
-      "llm_tldr_cn": "提出一种自适应攻击，通过迭代优化多模态输入来诱导恶意响应。",
-      "llm_tldr": "提出一种自适应攻击，通过迭代优化多模态输入来诱导恶意响应。",
-      "llm_tags": [
-        "query:ai-mmd"
-      ],
-      "matched_query_tag": "query:ai-mmd",
-      "matched_query_text": "detecting malicious multimodal content with AI agents",
-      "matched_requirement_id": "req-4",
-      "selection_source": "carryover_cache",
-      "paper_id": "2602.14399v1",
+      "paper_id": "2603.05484v1",
       "carry_days": 1
     },
     {
@@ -2453,47 +2058,6 @@
       "carry_days": 1
     },
     {
-      "id": "2602.11590v1",
-      "title": "Learn from Your Mistakes: Self-Correcting Masked Diffusion Models",
-      "abstract": "Masked diffusion models (MDMs) have emerged as a promising alternative to autoregressive models, enabling parallel token generation while achieving competitive performance. Despite these advantages, MDMs face a fundamental limitation: once tokens are unmasked, they remain fixed, leading to error accumulation and ultimately degrading sample quality. We address this by proposing a framework that trains a model to perform both unmasking and correction. By reusing outputs from the MDM denoising network as inputs for corrector training, we train a model to recover from potential mistakes. During generation we apply additional corrective refinement steps between unmasking ones in order to change decoded tokens and improve outputs. We name our training and sampling method Progressive Self-Correction (ProSeCo) for its unique ability to iteratively refine an entire sequence, including already generated tokens. We conduct extensive experimental validation across multiple conditional and unconditional tasks, demonstrating that ProSeCo yields better quality-efficiency trade-offs (up to ~2-3x faster sampling) and enables inference-time compute scaling to further increase sample quality beyond standard MDMs (up to ~1.3x improvement on benchmarks).",
-      "authors": [
-        "Yair Schiff",
-        "Omer Belhasin",
-        "Roy Uziel",
-        "Guanghan Wang",
-        "Marianne Arriola",
-        "Gilad Turok",
-        "Michael Elad",
-        "Volodymyr Kuleshov"
-      ],
-      "primary_category": "cs.LG",
-      "categories": [
-        "cs.LG"
-      ],
-      "published": "2026-02-12T05:17:31+00:00",
-      "link": "https://arxiv.org/pdf/2602.11590v1",
-      "tags": [
-        "keyword:SEMMA"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "self-correcting framework for diffusion models",
-      "llm_evidence_cn": "扩散模型的自我修正框架",
-      "llm_evidence": "扩散模型的自我修正框架",
-      "canonical_evidence": "扩散模型的自我修正框架",
-      "llm_tldr_en": "Proposes a self-correction mechanism for masked diffusion models to recover from generation errors.",
-      "llm_tldr_cn": "为掩码扩散模型提出了一种自我修正机制，以从生成错误中恢复。",
-      "llm_tldr": "为掩码扩散模型提出了一种自我修正机制，以从生成错误中恢复。",
-      "llm_tags": [
-        "query:semma"
-      ],
-      "matched_query_tag": "query:semma",
-      "matched_query_text": "autonomous self-correction mechanisms in agents",
-      "matched_requirement_id": "req-9",
-      "selection_source": "carryover_cache",
-      "paper_id": "2602.11590v1",
-      "carry_days": 1
-    },
-    {
       "id": "2602.12852v1",
       "title": "WebClipper: Efficient Evolution of Web Agents with Graph-based Trajectory Pruning",
       "abstract": "Deep Research systems based on web agents have shown strong potential in solving complex information-seeking tasks, yet their search efficiency remains underexplored. We observe that many state-of-the-art open-source web agents rely on long tool-call trajectories with cyclic reasoning loops and exploration of unproductive branches. To address this, we propose WebClipper, a framework that compresses web agent trajectories via graph-based pruning. Concretely, we model the agent's search process as a state graph and cast trajectory optimization as a minimum-necessary Directed Acyclic Graph (DAG) mining problem, yielding pruned trajectories that preserve essential reasoning while eliminating redundant steps. Continued training on these refined trajectories enables the agent to evolve toward more efficient search patterns and reduces tool-call rounds by about 20% while improving accuracy. Furthermore, we introduce a new metric called F-AE Score to measure the model's overall performance in balancing accuracy and efficiency. Experiments demonstrate that WebClipper compresses tool-call rounds under excellent performance, providing practical insight into balancing effectiveness and efficiency in web agent design.",
@@ -2565,13 +2129,13 @@
         "query:SEMMA"
       ],
       "llm_score": 8.0,
-      "llm_evidence_en": "multimodal graph reasoning with large language models",
+      "llm_evidence_en": "Multimodal graph reasoning with LLMs",
       "llm_evidence_cn": "大语言模型的多模态图推理",
       "llm_evidence": "大语言模型的多模态图推理",
       "canonical_evidence": "大语言模型的多模态图推理",
-      "llm_tldr_en": "Mario is a framework for LLM-based reasoning on heterogeneous multimodal graphs with structural cues.",
-      "llm_tldr_cn": "Mario是一个用于在具有结构线索的异构多模态图上进行大模型推理的框架。",
-      "llm_tldr": "Mario是一个用于在具有结构线索的异构多模态图上进行大模型推理的框架。",
+      "llm_tldr_en": "Proposes Mario, a framework for LLM-based reasoning on heterogeneous multimodal graphs.",
+      "llm_tldr_cn": "提出Mario框架，用于在异构多模态图上进行基于大语言模型的推理。",
+      "llm_tldr": "提出Mario框架，用于在异构多模态图上进行基于大语言模型的推理。",
       "llm_tags": [
         "query:semma"
       ],
@@ -2580,42 +2144,6 @@
       "matched_requirement_id": "req-7",
       "selection_source": "carryover_cache",
       "paper_id": "2603.05181v1",
-      "carry_days": 1
-    },
-    {
-      "id": "2602.12311v1",
-      "title": "Perceptual Self-Reflection in Agentic Physics Simulation Code Generation",
-      "abstract": "We present a multi-agent framework for generating physics simulation code from natural language descriptions, featuring a novel perceptual self-reflection mechanism for validation. The system employs four specialized agents: a natural language interpreter that converts user requests into physics-based descriptions; a technical requirements generator that produces scaled simulation parameters; a physics code generator with automated self-correction; and a physics validator that implements perceptual self-reflection. The key innovation is perceptual validation, which analyzes rendered animation frames using a vision-capable language model rather than inspecting code structure directly. This approach addresses the ``oracle gap'' where syntactically correct code produces physically incorrect behavior--a limitation that conventional testing cannot detect. We evaluate the system across seven domains including classical mechanics, fluid dynamics, thermodynamics, electromagnetics, wave physics, reaction-diffusion systems, and non-physics data visualization. The perceptual self-reflection architecture demonstrates substantial improvement over single-shot generation baselines, with the majority of tested scenarios achieving target physics accuracy thresholds. The system exhibits robust pipeline stability with consistent code self-correction capability, operating at approximately \\$0.20 per animation. These results validate our hypothesis that feeding visual simulation outputs back to a vision-language model for iterative refinement significantly outperforms single-shot code generation for physics simulation tasks and highlights the potential of agentic AI to support engineering workflows and physics data generation pipelines.",
-      "authors": [
-        "Prashant Shende",
-        "Bradley Camburn"
-      ],
-      "primary_category": "cs.SE",
-      "categories": [
-        "cs.SE",
-        "cs.AI"
-      ],
-      "published": "2026-02-12T15:48:33+00:00",
-      "link": "https://arxiv.org/pdf/2602.12311v1",
-      "tags": [
-        "keyword:SEMMA"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "automated self-correction and perceptual self-reflection",
-      "llm_evidence_cn": "自动自我修正与感知自我反思",
-      "llm_evidence": "自动自我修正与感知自我反思",
-      "canonical_evidence": "自动自我修正与感知自我反思",
-      "llm_tldr_en": "A multi-agent framework using perceptual self-reflection for physics code generation and self-correction.",
-      "llm_tldr_cn": "一种利用感知自我反思进行物理代码生成和自动修正的多智能体框架。",
-      "llm_tldr": "一种利用感知自我反思进行物理代码生成和自动修正的多智能体框架。",
-      "llm_tags": [
-        "query:semma"
-      ],
-      "matched_query_tag": "query:semma",
-      "matched_query_text": "autonomous self-correction mechanisms in agents",
-      "matched_requirement_id": "req-9",
-      "selection_source": "carryover_cache",
-      "paper_id": "2602.12311v1",
       "carry_days": 1
     },
     {
@@ -2679,13 +2207,13 @@
         "query:SEMMA"
       ],
       "llm_score": 8.0,
-      "llm_evidence_en": "evolutionary reinforcement learning for open-ended problem solving",
-      "llm_evidence_cn": "用于开放式问题解决的进化强化学习",
-      "llm_evidence": "用于开放式问题解决的进化强化学习",
-      "canonical_evidence": "用于开放式问题解决的进化强化学习",
-      "llm_tldr_en": "Presents HELIX, a hierarchical evolutionary RL framework for autonomous scientific exploration.",
-      "llm_tldr_cn": "提出HELIX框架，通过分层进化强化学习提升智能体在开放科学问题中的探索能力。",
-      "llm_tldr": "提出HELIX框架，通过分层进化强化学习提升智能体在开放科学问题中的探索能力。",
+      "llm_evidence_en": "evolutionary reinforcement learning for agent problem solving",
+      "llm_evidence_cn": "用于智能体问题解决的进化强化学习",
+      "llm_evidence": "用于智能体问题解决的进化强化学习",
+      "canonical_evidence": "用于智能体问题解决的进化强化学习",
+      "llm_tldr_en": "HELIX uses hierarchical evolutionary reinforcement learning to solve open-ended scientific problems.",
+      "llm_tldr_cn": "HELIX利用分层进化强化学习来解决开放式科学问题。",
+      "llm_tldr": "HELIX利用分层进化强化学习来解决开放式科学问题。",
       "llm_tags": [
         "query:semma"
       ],
@@ -2694,50 +2222,6 @@
       "matched_requirement_id": "req-11",
       "selection_source": "carryover_cache",
       "paper_id": "2603.07642v1",
-      "carry_days": 1
-    },
-    {
-      "id": "2603.08706v1",
-      "title": "Agentic Critical Training",
-      "abstract": "Training large language models (LLMs) as autonomous agents often begins with imitation learning, but it only teaches agents what to do without understanding why: agents never contrast successful actions against suboptimal alternatives and thus lack awareness of action quality. Recent approaches attempt to address this by introducing self-reflection supervision derived from contrasts between expert and alternative actions. However, the training paradigm fundamentally remains imitation learning: the model imitates pre-constructed reflection text rather than learning to reason autonomously. We propose Agentic Critical Training (ACT), a reinforcement learning paradigm that trains agents to identify the better action among alternatives. By rewarding whether the model's judgment is correct, ACT drives the model to autonomously develop reasoning about action quality, producing genuine self-reflection rather than imitating it. Across three challenging agent benchmarks, ACT consistently improves agent performance when combined with different post-training methods. It achieves an average improvement of 5.07 points over imitation learning and 4.62 points over reinforcement learning. Compared to approaches that inject reflection capability through knowledge distillation, ACT also demonstrates clear advantages, yielding an average improvement of 2.42 points. Moreover, ACT enables strong out-of-distribution generalization on agentic benchmarks and improves performance on general reasoning benchmarks without any reasoning-specific training data, highlighting the value of our method. These results suggest that ACT is a promising path toward developing more reflective and capable LLM agents.",
-      "authors": [
-        "Weize Liu",
-        "Minghui Liu",
-        "Sy-Tuyen Ho",
-        "Souradip Chakraborty",
-        "Xiyao Wang",
-        "Furong Huang"
-      ],
-      "primary_category": "cs.AI",
-      "categories": [
-        "cs.AI",
-        "cs.CL",
-        "cs.LG"
-      ],
-      "published": "2026-03-09T17:58:56+00:00",
-      "link": "https://arxiv.org/pdf/2603.08706v1",
-      "tags": [
-        "keyword:AI MMD",
-        "keyword:SEMMA",
-        "query:AI MMD",
-        "query:SEMMA"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "reinforcement learning for autonomous reasoning and action quality judgment",
-      "llm_evidence_cn": "用于自主推理和动作质量判断的强化学习",
-      "llm_evidence": "用于自主推理和动作质量判断的强化学习",
-      "canonical_evidence": "用于自主推理和动作质量判断的强化学习",
-      "llm_tldr_en": "Proposes ACT to train agents to autonomously identify better actions through reinforcement learning.",
-      "llm_tldr_cn": "提出ACT范式，通过强化学习训练智能体自主识别更优动作，而非单纯模仿。",
-      "llm_tldr": "提出ACT范式，通过强化学习训练智能体自主识别更优动作，而非单纯模仿。",
-      "llm_tags": [
-        "query:semma"
-      ],
-      "matched_query_tag": "query:semma",
-      "matched_query_text": "autonomous self-correction mechanisms in agents",
-      "matched_requirement_id": "req-9",
-      "selection_source": "carryover_cache",
-      "paper_id": "2603.08706v1",
       "carry_days": 1
     },
     {
@@ -2828,6 +2312,592 @@
       "matched_requirement_id": "req-7",
       "selection_source": "carryover_cache",
       "paper_id": "2603.02681v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.09160v1",
+      "title": "RubiCap: Rubric-Guided Reinforcement Learning for Dense Image Captioning",
+      "abstract": "Dense image captioning is critical for cross-modal alignment in vision-language pretraining and text-to-image generation, but scaling expert-quality annotations is prohibitively expensive. While synthetic captioning via strong vision-language models (VLMs) is a practical alternative, supervised distillation often yields limited output diversity and weak generalization. Reinforcement learning (RL) could overcome these limitations, but its successes have so far been concentrated in verifiable domains that rely on deterministic checkers -- a luxury not available in open-ended captioning. We address this bottleneck with RubiCap, a novel RL framework that derives fine-grained, sample-specific reward signals from LLM-written rubrics. RubiCap first assembles a diverse committee of candidate captions, then employs an LLM rubric writer to extract consensus strengths and diagnose deficiencies in the current policy. These insights are converted into explicit evaluation criteria, enabling an LLM judge to decompose holistic quality assessment and replace coarse scalar rewards with structured, multi-faceted evaluations. Across extensive benchmarks, RubiCap achieves the highest win rates on CapArena, outperforming supervised distillation, prior RL methods, human-expert annotations, and GPT-4V-augmented outputs. On CaptionQA, it demonstrates superior word efficiency: our 7B model matches Qwen2.5-VL-32B-Instruct, and our 3B model surpasses its 7B counterpart. Remarkably, using the compact RubiCap-3B as a captioner produces stronger pretrained VLMs than those trained on captions from proprietary models.",
+      "authors": [
+        "Tzu-Heng Huang",
+        "Sirajul Salekin",
+        "Javier Movellan",
+        "Frederic Sala",
+        "Manjot Bilkhu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-03-10T03:51:27+00:00",
+      "link": "https://arxiv.org/pdf/2603.09160v1",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "RL framework for cross-modal alignment and iterative improvement",
+      "llm_evidence_cn": "用于跨模态对齐和迭代改进的强化学习框架",
+      "llm_evidence": "用于跨模态对齐和迭代改进的强化学习框架",
+      "canonical_evidence": "用于跨模态对齐和迭代改进的强化学习框架",
+      "llm_tldr_en": "Uses LLM-written rubrics and RL to iteratively improve vision-language models for dense image captioning.",
+      "llm_tldr_cn": "利用LLM编写的准则和强化学习来迭代改进用于密集图像描述的视觉语言模型。",
+      "llm_tldr": "利用LLM编写的准则和强化学习来迭代改进用于密集图像描述的视觉语言模型。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "iterative self-improvement in multimodal agents",
+      "matched_requirement_id": "req-8",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.09160v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.07148v1",
+      "title": "Agentic Planning with Reasoning for Image Styling via Offline RL",
+      "abstract": "Direct prompt-based editing often fails on complex transformations because vague and subjective prompts often require nuanced understanding of what should be changed in the image. Our core intuition is that leveraging compositional image editing tools rather than direct prompting profits from structured agent-level planning with explicit reasoning, leading to better results. This structured planning framework enables efficient offline RL post-training on quality-scored trajectories to improve performance. We present a tool-based agentic RL post-training framework that addresses this through structured planning with chain-of-thought reasoning. Our key contributions include: (1) A tool-based agentic planning methodology that combines a compositional library of orthogonal primitive transformations, structured context representation, and explicit per-step reasoning to decompose complex styling into interpretable tool sequences. (2) A synthetic data generation pipeline producing three large-scale datasets (each $\\sim$10K trajectories) with reasoning chains, plans, and quality scores, as no existing datasets provide such supervision. Our datasets and code are publicly available at the HuggingFace repository. (3) Offline RL training methods for learning planners with reasoning as our core algorithmic contributions, which consistently improve over the Edit-Only baseline in visual quality and instruction following. (4) Comprehensive evaluation across 4B and 8B parameter Qwen3-VL models showing that our methods outperform other baselines in the majority of compositional tasks, validated by human evaluations.",
+      "authors": [
+        "Subhojyoti Mukherjee",
+        "Stefano Petrangeli",
+        "Branislav Kveton",
+        "Trung Bui",
+        "Franck Dernoncourt",
+        "Arko Mukherjee"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-03-07T11:14:37+00:00",
+      "link": "https://arxiv.org/pdf/2603.07148v1",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "agentic planning and RL for multimodal image styling",
+      "llm_evidence_cn": "用于多模态图像风格化的智能体规划与强化学习",
+      "llm_evidence": "用于多模态图像风格化的智能体规划与强化学习",
+      "canonical_evidence": "用于多模态图像风格化的智能体规划与强化学习",
+      "llm_tldr_en": "Uses agentic planning and offline RL to improve multimodal image editing through structured reasoning.",
+      "llm_tldr_cn": "利用智能体规划和离线强化学习，通过结构化推理改进多模态图像编辑。",
+      "llm_tldr": "利用智能体规划和离线强化学习，通过结构化推理改进多模态图像编辑。",
+      "llm_tags": [
+        "query:semma:composite"
+      ],
+      "matched_query_tag": "query:semma:composite",
+      "matched_query_text": "Papers central to 自进化多模态智能体相关论文搜索, especially work that connects or combines: self-evolving autonomous agents and systems; multimodal large language models for agentic tasks; iterative self-improvement in multimodal agents; autonomous self-correction mechanisms in agents; vision-language models for decision making; reinforcement learning for agent self-evolution; recent advances in self evolving multimodal agents; frameworks for autonomous self improvement in multimodal models; benchmarking self evolving capabilities of intelligent agents.",
+      "matched_requirement_id": "req-composite-semma",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.07148v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.07853v1",
+      "title": "SynPlanResearch-R1: Encouraging Tool Exploration for Deep Research with Synthetic Plans",
+      "abstract": "Research Agents enable models to gather information from the web using tools to answer user queries, requiring them to dynamically interleave internal reasoning with tool use. While such capabilities can in principle be learned via reinforcement learning with verifiable rewards (RLVR), we observe that agents often exhibit poor exploration behaviors, including premature termination and biased tool usage. As a result, RLVR alone yields limited improvements. We propose SynPlanResearch-R1, a framework that synthesizes tool-use trajectories that encourage deeper exploration to shape exploration during cold-start supervised fine-tuning, providing a strong initialization for subsequent RL. Across seven multi-hop and open-web benchmarks, \\framework improves performance by up to 6.0% on Qwen3-8B and 5.8% on Qwen3-4B backbones respectively compared to SOTA baselines. Further analyses of tool-use patterns and training dynamics compared to baselines shed light on the factors underlying these gains. Our code is publicly available at https://github.com/HansiZeng/syn-plan-research.",
+      "authors": [
+        "Hansi Zeng",
+        "Zoey Li",
+        "Yifan Gao",
+        "Chenwei Zhang",
+        "Xiaoman Pan",
+        "Tao Yang",
+        "Fengran Mo",
+        "Jiacheng Lin",
+        "Xian Li",
+        "Jingbo Shang"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL",
+        "cs.IR"
+      ],
+      "published": "2026-03-09T00:05:29+00:00",
+      "link": "https://arxiv.org/pdf/2603.07853v1",
+      "tags": [
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "reinforcement learning with verifiable rewards for agent tool exploration",
+      "llm_evidence_cn": "利用可验证奖励的强化学习进行智能体工具探索",
+      "llm_evidence": "利用可验证奖励的强化学习进行智能体工具探索",
+      "canonical_evidence": "利用可验证奖励的强化学习进行智能体工具探索",
+      "llm_tldr_en": "Uses synthetic plans and RL to improve deep research agents' tool exploration and reasoning.",
+      "llm_tldr_cn": "利用合成计划和强化学习提升深度研究智能体的工具探索与推理能力。",
+      "llm_tldr": "利用合成计划和强化学习提升深度研究智能体的工具探索与推理能力。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "reinforcement learning for agent self-evolution",
+      "matched_requirement_id": "req-11",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.07853v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.07989v1",
+      "title": "AutoTraces: Autoregressive Trajectory Forecasting via Multimodal Large Language Models",
+      "abstract": "We present AutoTraces, an autoregressive vision-language-trajectory model for robot trajectory forecasting in humam-populated environments, which harnesses the inherent reasoning capabilities of large language models (LLMs) to model complex human behaviors. In contrast to prior works that rely solely on textual representations, our key innovation lies in a novel trajectory tokenization scheme, which represents waypoints with point tokens as categorical and positional markers while encoding waypoint numerical values as corresponding point embeddings, seamlessly integrated into the LLM's space through a lightweight encoder-decoder architecture. This design preserves the LLM's native autoregressive generation mechanism while extending it to physical coordinate spaces, facilitates modeling of long-term interactions in trajectory data. We further introduce an automated chain-of-thought (CoT) generation mechanism that leverages a multimodal LLM to infer spatio-temporal relationships from visual observations and trajectory data, eliminating reliance on manual annotation. Through a two-stage training strategy, our AutoTraces achieves SOTA forecasting accuracy, particularly in long-horizon prediction, while exhibiting strong cross-scene generalization and supporting flexible-length forecasting.",
+      "authors": [
+        "Teng Wang",
+        "Yanting Lu",
+        "Ruize Wang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-03-09T05:53:06+00:00",
+      "link": "https://arxiv.org/pdf/2603.07989v1",
+      "tags": [
+        "keyword:SEMMA"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "multimodal large language models for robot trajectory forecasting",
+      "llm_evidence_cn": "用于机器人轨迹预测的多模态大语言模型",
+      "llm_evidence": "用于机器人轨迹预测的多模态大语言模型",
+      "canonical_evidence": "用于机器人轨迹预测的多模态大语言模型",
+      "llm_tldr_en": "Integrates trajectory tokenization into multimodal LLMs for autonomous behavior modeling.",
+      "llm_tldr_cn": "将轨迹标记化集成到多模态大语言模型中，用于自主行为建模。",
+      "llm_tldr": "将轨迹标记化集成到多模态大语言模型中，用于自主行为建模。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "multimodal large language models for agentic tasks",
+      "matched_requirement_id": "req-7",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.07989v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.07659v1",
+      "title": "Scaling Test-Time Robustness of Vision-Language Models via Self-Critical Inference Framework",
+      "abstract": "The emergence of Large Language Models (LLMs) has driven rapid progress in multi-modal learning, particularly in the development of Large Vision-Language Models (LVLMs). However, existing LVLM training paradigms place excessive reliance on the LLM component, giving rise to two critical robustness challenges: language bias and language sensitivity. To address both issues simultaneously, we propose a novel Self-Critical Inference (SCI) framework that extends Visual Contrastive Decoding by conducting multi-round counterfactual reasoning through both textual and visual perturbations. This process further introduces a new strategy for improving robustness by scaling the number of counterfactual rounds. Moreover, we also observe that failure cases of LVLMs differ significantly across models, indicating that fixed robustness benchmarks may not be able to capture the true reliability of LVLMs. To this end, we propose the Dynamic Robustness Benchmark (DRBench), a model-specific evaluation framework targeting both language bias and sensitivity issues. Extensive experiments show that SCI consistently outperforms baseline methods on DRBench, and that increasing the number of inference rounds further boosts robustness beyond existing single-step counterfactual reasoning methods.",
+      "authors": [
+        "Kaihua Tang",
+        "Jiaxin Qi",
+        "Jinli Ou",
+        "Yuhua Zheng",
+        "Jianqiang Huang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-03-08T14:46:19+00:00",
+      "link": "https://arxiv.org/pdf/2603.07659v1",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "self-critical inference framework for vision-language models",
+      "llm_evidence_cn": "视觉语言模型的自我批判推理框架",
+      "llm_evidence": "视觉语言模型的自我批判推理框架",
+      "canonical_evidence": "视觉语言模型的自我批判推理框架",
+      "llm_tldr_en": "Proposes a Self-Critical Inference framework to improve the robustness of vision-language models.",
+      "llm_tldr_cn": "提出自我批判推理框架，通过多轮反事实推理提升视觉语言模型的鲁棒性。",
+      "llm_tldr": "提出自我批判推理框架，通过多轮反事实推理提升视觉语言模型的鲁棒性。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "vision-language models for decision making",
+      "matched_requirement_id": "req-10",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.07659v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.03524v1",
+      "title": "Test-Time Meta-Adaptation with Self-Synthesis",
+      "abstract": "As strong general reasoners, large language models (LLMs) encounter diverse domains and tasks, where the ability to adapt and self-improve at test time is valuable. We introduce MASS, a meta-learning framework that enables LLMs to self-adapt by generating problem-specific synthetic training data and performing targeted self-updates optimized for downstream performance at inference time. We train this behavior end-to-end via bilevel optimization: an inner loop adapts on self-generated examples while an outer loop meta-learns data-attribution signals and rewards post-update task performance. The synthetic data is optimized with scalable meta-gradients, backpropagating the downstream loss through the inner updates to reward useful generations. Experiments on mathematical reasoning show that MASS learns to synthesize per-instance curricula that yield effective, data-efficient test-time adaptation.",
+      "authors": [
+        "Zeyneb N. Kaya",
+        "Nick Rui"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-03-03T21:16:18+00:00",
+      "link": "https://arxiv.org/pdf/2603.03524v1",
+      "tags": [
+        "keyword:SEMMA",
+        "query:SEMMA"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "meta-learning framework for LLMs to self-adapt and self-improve",
+      "llm_evidence_cn": "大模型自适应和自我改进的元学习框架",
+      "llm_evidence": "大模型自适应和自我改进的元学习框架",
+      "canonical_evidence": "大模型自适应和自我改进的元学习框架",
+      "llm_tldr_en": "MASS enables LLMs to self-improve at test time by generating synthetic data and performing targeted updates.",
+      "llm_tldr_cn": "MASS 使大模型能够在测试时通过生成合成数据和定向更新来实现自我改进。",
+      "llm_tldr": "MASS 使大模型能够在测试时通过生成合成数据和定向更新来实现自我改进。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "iterative self-improvement in multimodal agents",
+      "matched_requirement_id": "req-8",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.03524v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.07528v1",
+      "title": "TableMind++: An Uncertainty-Aware Programmatic Agent for Tool-Augmented Table Reasoning",
+      "abstract": "Table reasoning requires models to jointly perform semantic understanding and precise numerical operations. Most existing methods rely on a single-turn reasoning paradigm over tables which suffers from context overflow and weak numerical sensitivity. To address these limitations, we previously proposed TableMind as a tuning-based autonomous programmatic agent that simulates human-like interaction within a lightweight large language model (LLM). TableMind internalizes planning, action, and reflection through a two-stage training strategy involving supervised fine-tuning (SFT) on filtered high-quality data and reinforcement learning (RL) via a multi-perspective reward and the Rank-Aware Policy Optimization (RAPO) algorithm. While TableMind establishes a solid foundation for programmatic agents, the inherent stochasticity of LLMs remains a critical challenge that leads to hallucinations. In this paper, we extend this foundation to TableMind++ by introducing a novel uncertainty-aware inference framework to mitigate hallucinations. Specifically, we propose memory-guided plan pruning to retrieve historical trajectories for validating and filtering out logically flawed plans to address epistemic uncertainty. To ensure execution precision, we introduce confidence-based action refinement which monitors token-level probabilities to detect and self-correct syntactic noise for aleatoric uncertainty mitigation. Finally, we employ dual-weighted trajectory aggregation to synthesize a robust consensus from multiple reasoning paths. Extensive experiments on diverse benchmarks demonstrate that TableMind++ consistently outperforms previous baselines and proprietary models to validate the effectiveness of integrating autonomous training with uncertainty quantification. Our code is available.",
+      "authors": [
+        "Mingyue Cheng",
+        "Shuo Yu",
+        "Chuang Jiang",
+        "Xiaoyu Tao",
+        "Qingyang Mao",
+        "Jie Ouyang",
+        "Qi Liu",
+        "Enhong Chen"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-03-08T08:31:33+00:00",
+      "link": "https://arxiv.org/pdf/2603.07528v1",
+      "tags": [
+        "keyword:SEMMA"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "reinforcement learning for autonomous programmatic agent",
+      "llm_evidence_cn": "自主程序化智能体的强化学习",
+      "llm_evidence": "自主程序化智能体的强化学习",
+      "canonical_evidence": "自主程序化智能体的强化学习",
+      "llm_tldr_en": "Uses RL and reflection to improve an autonomous agent's table reasoning and decision-making capabilities.",
+      "llm_tldr_cn": "利用强化学习和反思来提高自主智能体的表格推理和决策能力。",
+      "llm_tldr": "利用强化学习和反思来提高自主智能体的表格推理和决策能力。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "reinforcement learning for agent self-evolution",
+      "matched_requirement_id": "req-11",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.07528v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.04349v1",
+      "title": "FocusGraph: Graph-Structured Frame Selection for Embodied Long Video Question Answering",
+      "abstract": "The ability to understand long videos is vital for embodied intelligent agents, because their effectiveness depends on how well they can accumulate, organize, and leverage long-horizon perceptual memories. Recently, multimodal LLMs have been gaining popularity for solving the long video understanding task due to their general ability to understand natural language and to leverage world knowledge. However, as the number of frames provided to an MLLM increases, the quality of its responses tends to degrade, and inference time grows. Therefore, when using MLLMs for long video understanding, a crucial step is selecting key frames from the video to answer user queries.   In this work, we develop FocusGraph, a framework for keyframe selection for question answering over long egocentric videos. It leverages a lightweight trainable Scene-Caption LLM Selector that selects query-relevant clips based on their graph-based captions, and a training-free method for selecting keyframes from these clips. Unlike existing methods, the proposed Scene-Caption LLM Selector does not rely on the original sequence of low-resolution frames; instead, it operates on a compact textual representation of the scene. We then design a training-free Patch-wise Sparse-Flow Retention (PSFR) method to select keyframes from the resulting sequence of clips, which are fed into an MLLM to produce the final answer. Together, these components enable FocusGraph to achieve state-of-the-art results on challenging egocentric long-video question answering benchmarks, including FindingDory and HourVideo, while significantly reducing inference time relative to baseline approaches.",
+      "authors": [
+        "Tatiana Zemskova",
+        "Solomon Andryushenko",
+        "Ilya Obrubov",
+        "Viktoriia Khoruzhaia",
+        "Ekaterina Eroshenko",
+        "Ekaterina Derevyanka",
+        "Dmitry Yudin"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-03-04T18:14:00+00:00",
+      "link": "https://arxiv.org/pdf/2603.04349v1",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "multimodal LLMs for embodied intelligent agents",
+      "llm_evidence_cn": "用于具身智能体的多模态大语言模型",
+      "llm_evidence": "用于具身智能体的多模态大语言模型",
+      "canonical_evidence": "用于具身智能体的多模态大语言模型",
+      "llm_tldr_en": "Develops a graph-structured frame selection framework to enhance long video understanding for embodied agents.",
+      "llm_tldr_cn": "开发了一种图结构帧选择框架，增强具身智能体对长视频的理解能力。",
+      "llm_tldr": "开发了一种图结构帧选择框架，增强具身智能体对长视频的理解能力。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "multimodal large language models for agentic tasks",
+      "matched_requirement_id": "req-7",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.04349v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.05471v1",
+      "title": "Leveraging LLM Parametric Knowledge for Fact Checking without Retrieval",
+      "abstract": "Trustworthiness is a core research challenge for agentic AI systems built on Large Language Models (LLMs). To enhance trust, natural language claims from diverse sources, including human-written text, web content, and model outputs, are commonly checked for factuality by retrieving external knowledge and using an LLM to verify the faithfulness of claims to the retrieved evidence. As a result, such methods are constrained by retrieval errors and external data availability, while leaving the models intrinsic fact-verification capabilities largely unused. We propose the task of fact-checking without retrieval, focusing on the verification of arbitrary natural language claims, independent of their source. To study this setting, we introduce a comprehensive evaluation framework focused on generalization, testing robustness to (i) long-tail knowledge, (ii) variation in claim sources, (iii) multilinguality, and (iv) long-form generation. Across 9 datasets, 18 methods and 3 models, our experiments indicate that logit-based approaches often underperform compared to those that leverage internal model representations. Building on this finding, we introduce INTRA, a method that exploits interactions between internal representations and achieves state-of-the-art performance with strong generalization. More broadly, our work establishes fact-checking without retrieval as a promising research direction that can complement retrieval-based frameworks, improve scalability, and enable the use of such systems as reward signals during training or as components integrated into the generation process.",
+      "authors": [
+        "Artem Vazhentsev",
+        "Maria Marina",
+        "Daniil Moskovskiy",
+        "Sergey Pletenev",
+        "Mikhail Seleznyov",
+        "Mikhail Salnikov",
+        "Elena Tutubalina",
+        "Vasily Konovalov",
+        "Irina Nikishina",
+        "Alexander Panchenko",
+        "Viktor Moskvoretskii"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published": "2026-03-05T18:42:51+00:00",
+      "link": "https://arxiv.org/pdf/2603.05471v1",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "fact-checking for agentic AI systems",
+      "llm_evidence_cn": "智能体AI系统的事实核查",
+      "llm_evidence": "智能体AI系统的事实核查",
+      "canonical_evidence": "智能体AI系统的事实核查",
+      "llm_tldr_en": "Introduces a retrieval-free fact-checking method to enhance the trustworthiness of agentic AI systems.",
+      "llm_tldr_cn": "引入一种无需检索的事实核查方法，以增强智能体AI系统的可信度。",
+      "llm_tldr": "引入一种无需检索的事实核查方法，以增强智能体AI系统的可信度。",
+      "llm_tags": [
+        "query:ai-mmd"
+      ],
+      "matched_query_tag": "query:ai-mmd",
+      "matched_query_text": "automated fact-checking using multi-agent systems",
+      "matched_requirement_id": "req-3",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.05471v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.07997v1",
+      "title": "CMMR-VLN: Vision-and-Language Navigation via Continual Multimodal Memory Retrieval",
+      "abstract": "Although large language models (LLMs) are introduced into vision-and-language navigation (VLN) to improve instruction comprehension and generalization, existing LLM- based VLN lacks the ability to selectively recall and use relevant priori experiences to help navigation tasks, limiting their performance in long-horizon and unfamiliar scenarios. In this work, we propose CMMR-VLN (Continual Multimodal Memory Retrieval based VLN), a VLN framework that endows LLM agents with structured memory and reflection capabilities. Specifically, the CMMR-VLN constructs a multimodal experi- ence memory indexed by panoramic visual images and salient landmarks to retrieve relevant experiences during navigation, introduces a retrieved-augmented generation pipeline to mimick how experienced human navigators leverage priori knowledge, and incorporates a reflection-based memory update strategy that selectively stores complete successful paths and the key initial mistake in failure cases. Comprehensive tests illustrate average success rate improvements of 52.9%, 20.9% and 20.9%, and 200%, 50% and 50% over the NavGPT, the MapGPT, and the DiscussNav in simulation and real tests, respectively eluci- dating the great potential of the CMMR-VLN as a backbone VLN framework.",
+      "authors": [
+        "Haozhou Li",
+        "Xiangyu Dong",
+        "Huiyan Jiang",
+        "Yaoming Zhou",
+        "Xiaoguang Ma"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-03-09T06:02:50+00:00",
+      "link": "https://arxiv.org/pdf/2603.07997v1",
+      "tags": [
+        "keyword:SEMMA"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "LLM agents with structured memory and reflection for vision-and-language navigation",
+      "llm_evidence_cn": "具有结构化记忆和反思能力的视觉语言导航智能体",
+      "llm_evidence": "具有结构化记忆和反思能力的视觉语言导航智能体",
+      "canonical_evidence": "具有结构化记忆和反思能力的视觉语言导航智能体",
+      "llm_tldr_en": "CMMR-VLN enhances vision-language navigation agents with multimodal memory and reflection.",
+      "llm_tldr_cn": "CMMR-VLN通过多模态记忆和反思增强了视觉语言导航智能体。",
+      "llm_tldr": "CMMR-VLN通过多模态记忆和反思增强了视觉语言导航智能体。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "vision-language models for decision making",
+      "matched_requirement_id": "req-10",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.07997v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.08835v1",
+      "title": "MASEval: Extending Multi-Agent Evaluation from Models to Systems",
+      "abstract": "The rapid adoption of LLM-based agentic systems has produced a rich ecosystem of frameworks (smolagents, LangGraph, AutoGen, CAMEL, LlamaIndex, i.a.). Yet existing benchmarks are model-centric: they fix the agentic setup and do not compare other system components. We argue that implementation decisions substantially impact performance, including choices such as topology, orchestration logic, and error handling. MASEval addresses this evaluation gap with a framework-agnostic library that treats the entire system as the unit of analysis. Through a systematic system-level comparison across 3 benchmarks, 3 models, and 3 frameworks, we find that framework choice matters as much as model choice. MASEval allows researchers to explore all components of agentic systems, opening new avenues for principled system design, and practitioners to identify the best implementation for their use case.   MASEval is available under the MIT licence https://github.com/parameterlab/MASEval.",
+      "authors": [
+        "Cornelius Emde",
+        "Alexander Rubinstein",
+        "Anmol Goel",
+        "Ahmed Heakl",
+        "Sangdoo Yun",
+        "Seong Joon Oh",
+        "Martin Gubri"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL",
+        "cs.LG"
+      ],
+      "published": "2026-03-09T18:46:17+00:00",
+      "link": "https://arxiv.org/pdf/2603.08835v1",
+      "tags": [
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "benchmarking system-level components of agentic frameworks",
+      "llm_evidence_cn": "智能体框架系统级组件的基准测试",
+      "llm_evidence": "智能体框架系统级组件的基准测试",
+      "canonical_evidence": "智能体框架系统级组件的基准测试",
+      "llm_tldr_en": "Presents MASEval, a framework-agnostic library for evaluating entire multi-agent systems beyond just models.",
+      "llm_tldr_cn": "提出MASEval，一个用于评估整个多智能体系统而非仅评估模型的框架无关库。",
+      "llm_tldr": "提出MASEval，一个用于评估整个多智能体系统而非仅评估模型的框架无关库。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "benchmarking self evolving capabilities of intelligent agents",
+      "matched_requirement_id": "req-14",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.08835v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.04597v1",
+      "title": "Bootstrapping Exploration with Group-Level Natural Language Feedback in Reinforcement Learning",
+      "abstract": "Large language models (LLMs) typically receive diverse natural language (NL) feedback through interaction with the environment. However, current reinforcement learning (RL) algorithms rely solely on scalar rewards, leaving the rich information in NL feedback underutilized and leading to inefficient exploration. In this work, we propose GOLF, an RL framework that explicitly exploits group-level language feedback to guide targeted exploration through actionable refinements. GOLF aggregates two complementary feedback sources: (i) external critiques that pinpoint errors or propose targeted fixes, and (ii) intra-group attempts that supply alternative partial ideas and diverse failure patterns. These group-level feedbacks are aggregated to produce high-quality refinements, which are adaptively injected into training as off-policy scaffolds to provide targeted guidance in sparse-reward regions. Meanwhile, GOLF jointly optimizes generation and refinement within a unified RL loop, creating a virtuous cycle that continuously improves both capabilities. Experiments on both verifiable and non-verifiable benchmarks show that GOLF achieves superior performance and exploration efficiency, achieving 2.2$\\times$ improvements in sample efficiency compared to RL methods trained solely on scalar rewards. Code is available at https://github.com/LuckyyySTA/GOLF.",
+      "authors": [
+        "Lei Huang",
+        "Xiang Cheng",
+        "Chenxiao Zhao",
+        "Guobin Shen",
+        "Junjie Yang",
+        "Xiaocheng Feng",
+        "Yuxuan Gu",
+        "Xing Yu",
+        "Bing Qin"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published": "2026-03-04T20:53:17+00:00",
+      "link": "https://arxiv.org/pdf/2603.04597v1",
+      "tags": [
+        "keyword:SEMMA",
+        "query:SEMMA"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Iterative self-improvement via natural language feedback in RL",
+      "llm_evidence_cn": "通过强化学习中的自然语言反馈进行迭代自我改进",
+      "llm_evidence": "通过强化学习中的自然语言反馈进行迭代自我改进",
+      "canonical_evidence": "通过强化学习中的自然语言反馈进行迭代自我改进",
+      "llm_tldr_en": "GOLF framework uses group-level language feedback to guide targeted exploration and refinement in RL.",
+      "llm_tldr_cn": "GOLF 框架利用群体语言反馈来引导强化学习中的针对性探索与动作改进。",
+      "llm_tldr": "GOLF 框架利用群体语言反馈来引导强化学习中的针对性探索与动作改进。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "iterative self-improvement in multimodal agents",
+      "matched_requirement_id": "req-8",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.04597v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.04948v1",
+      "title": "$\\nabla$-Reasoner: LLM Reasoning via Test-Time Gradient Descent in Latent Space",
+      "abstract": "Scaling inference-time compute for Large Language Models (LLMs) has unlocked unprecedented reasoning capabilities. However, existing inference-time scaling methods typically rely on inefficient and suboptimal discrete search algorithms or trial-and-error prompting to improve the online policy. In this paper, we propose $\\nabla$-Reasoner, an iterative generation framework that integrates differentiable optimization over token logits into the decoding loop to refine the policy on the fly. Our core component, Differentiable Textual Optimization (DTO), leverages gradient signals from both the LLM's likelihood and a reward model to refine textual representations. $\\nabla$-Reasoner further incorporates rejection sampling and acceleration design to robustify and speed up decoding. Theoretically, we show that performing inference-time gradient descent in the sample space to maximize reward is dual to aligning an LLM policy via KL-regularized reinforcement learning. Empirically, $\\nabla$-Reasoner achieves over 20% accuracy improvement on a challenging mathematical reasoning benchmark, while reducing number of model calls by approximately 10-40% compared to strong baselines. Overall, our work introduces a paradigm shift from zeroth-order search to first-order optimization at test time, offering a cost-effective path to amplify LLM reasoning.",
+      "authors": [
+        "Peihao Wang",
+        "Ruisi Cai",
+        "Zhen Wang",
+        "Hongyuan Mei",
+        "Qiang Liu",
+        "Pan Li",
+        "Zhangyang Wang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-03-05T08:42:54+00:00",
+      "link": "https://arxiv.org/pdf/2603.04948v1",
+      "tags": [
+        "keyword:SEMMA",
+        "query:SEMMA"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Iterative refinement of policy via gradient descent",
+      "llm_evidence_cn": "通过梯度下降进行策略的迭代优化",
+      "llm_evidence": "通过梯度下降进行策略的迭代优化",
+      "canonical_evidence": "通过梯度下降进行策略的迭代优化",
+      "llm_tldr_en": "Refines LLM policies on the fly using differentiable optimization during the decoding loop.",
+      "llm_tldr_cn": "在解码循环中使用可微优化实时改进大语言模型的策略。",
+      "llm_tldr": "在解码循环中使用可微优化实时改进大语言模型的策略。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "autonomous self-correction mechanisms in agents",
+      "matched_requirement_id": "req-9",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.04948v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.04390v1",
+      "title": "A Dual-Helix Governance Approach Towards Reliable Agentic AI for WebGIS Development",
+      "abstract": "WebGIS development requires rigor, yet agentic AI frequently fails due to five large language model (LLM) limitations: context constraints, cross-session forgetting, stochasticity, instruction failure, and adaptation rigidity. We propose a dual-helix governance framework reframing these challenges as structural governance problems that model capacity alone cannot resolve. We implement the framework as a 3-track architecture (Knowledge, Behavior, Skills) that uses a knowledge graph substrate to stabilize execution by externalizing domain facts and enforcing executable protocols, complemented by a self-learning cycle for autonomous knowledge growth. Applying this to the FutureShorelines WebGIS tool, a governed agent refactored a 2,265-line monolithic codebase into modular ES6 components. Results demonstrated a 51\\% reduction in cyclomatic complexity and a 7-point increase in maintainability index. A comparative experiment against a zero-shot LLM confirms that externalized governance, not just model capability, drives operational reliability in geospatial engineering. This approach is implemented in the open-source AgentLoom governance toolkit.",
+      "authors": [
+        "Boyuan",
+        "Guan",
+        "Wencong Cui",
+        "Levente Juhasz"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.SE"
+      ],
+      "published": "2026-03-04T18:53:25+00:00",
+      "link": "https://arxiv.org/pdf/2603.04390v1",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Self-learning cycle for autonomous knowledge growth",
+      "llm_evidence_cn": "自主知识增长的自学习循环",
+      "llm_evidence": "自主知识增长的自学习循环",
+      "canonical_evidence": "自主知识增长的自学习循环",
+      "llm_tldr_en": "A governance framework for reliable agentic AI featuring a self-learning cycle for growth.",
+      "llm_tldr_cn": "一种可靠智能体AI治理框架，具有用于知识增长的自学习循环。",
+      "llm_tldr": "一种可靠智能体AI治理框架，具有用于知识增长的自学习循环。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "self-evolving autonomous agents and systems",
+      "matched_requirement_id": "req-6",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.04390v1",
       "carry_days": 1
     }
   ]

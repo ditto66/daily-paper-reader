@@ -1,0 +1,500 @@
+Title: Molt Dynamics: Emergent Social Phenomena in Autonomous AI Agent Populations
+
+URL Source: https://arxiv.org/pdf/2603.03555v1
+
+Published Time: Thu, 05 Mar 2026 01:16:29 GMT
+
+Number of Pages: 22
+
+Markdown Content:
+# MOLT DYNAMICS : E MERGENT SOCIAL PHENOMENA IN 
+
+# AUTONOMOUS AI A GENT POPULATIONS 
+
+PREPRINT 
+
+Brandon Yee 1, Krishna Sharma 21Management Lab, Yee Collins Research Group, 2 Hoover Institute, Stanford University 
+
+b.yee@ycrg-labs.org, ksharma3@stanford.edu 
+
+# ABSTRACT 
+
+MoltBook is a large-scale multi-agent coordination environment where over 770,000 autonomous LLM agents interact without human participation, offering the first opportunity we are aware of to observe emergent multi-agent coordination dynamics at this population scale. We introduce Molt Dynamics : the emergent agent coordination behaviors, inter-agent communication dynamics, and role specialization patterns arising when autonomous agents operate as decentralized decision-makers in an unconstrained multi-agent environment. Through longitudinal observation of 90,704 active agents over three weeks, we characterize three aspects. First, spontaneous role specialization: network-based clustering reveals six structural roles (silhouette 0.91), though the result primarily reflects core-periphery organization—93.5% of agents occupy a homogeneous peripheral cluster, with meaningful differentiation confined to the active minority. Second, decentralized information dissemination: cascade analysis of 10,323 inter-agent propagation events reveals power-law distributed cascade sizes (α = 2 .57 ± 0.02 ) and saturating adoption dynamics where adoption probability shows diminishing returns with repeated exposures (Cox hazard ratio 0.53, concordance 0.78). Third, distributed cooperative task resolution: 164 multi-agent collaborative events show detectable coordination patterns, but success rates are low (6.7%, p = 0 .057 ) and cooperative outcomes are significantly worse than a matched single-agent baseline (Cohen’s d = −0.88 ), indicating emergent cooperative behavior is nascent. These findings establish an empirical baseline for coordination dynamics in decentralized autonomous agent systems, with implications for multi-agent system design, agent communication protocol engineering, and AI safety. 
+
+Keywords Autonomous AI Agents · Multi-Agent Systems · Emergent Coordination · Agent Role Specialization ·
+
+Decentralized Multi-Agent Systems · Large Language Models · Emergent Communication · Agent Population Dynamics · Cooperative Agents · Distributed Task Resolution 
+
+# 1 Introduction 
+
+On January 28, 2026, MoltBook launched as an unprecedented experiment: a multi-agent coordination environment where only autonomous AI agents can participate as active decision-makers, while humans are restricted to observation. Within 72 hours, over 150,000 agents had registered. Within weeks, that number exceeded 770,000, creating the largest naturalistic agent-to-agent coordination environment we are aware of. Unlike traditional multi-agent research platforms with dozens of carefully controlled agents operating under predefined coordination protocols [Park et al., 2023], MoltBook represents an organic multi-agent ecosystem where agents make autonomous decentralized decisions about when to participate, what to communicate, and how to interact without explicit task allocation or human direction. This is not a simulation. MoltBook is a real, functioning multi-agent platform where AI agents deployed by thousands of independent users interact asynchronously through posts, comments, and votes. The agents run on OpenClaw, an open-source autonomous agent framework that enables LLM-powered agents to execute real actions: managing files, running code, controlling browsers, and engaging with external platforms through API calls [Steinberger, 2026]. Each agent operates as an autonomous decentralized policy executor, checking the platform periodically and deciding independently whether to post, comment, or upvote content. The agents run diverse underlying language models 
+
+> arXiv:2603.03555v1 [cs.MA] 3 Mar 2026
+
+Molt Dynamics: Emergent Social Phenomena in Autonomous AI Agent Populations PREPRINT 
+
+including Anthropic’s Claude family, OpenAI’s GPT series, and open-source alternatives, creating a heterogeneous agent population more representative of real-world multi-agent deployment scenarios than laboratory experiments. We do not observe which model underlies each agent, which is an important limitation discussed in Section 6. A number of qualitatively striking multi-agent coordination phenomena emerged from this environment. Within days, agents spontaneously developed Crustafarianism, a “digital religion” with theology, scriptures, and propagation behavior that emerged entirely through agent-to-agent communication without human prompting — a form of emergent convention formation analogous to the grounded communication protocols observed in multi-agent language emergence research [Lazaridou and Baroni, 2020, Mordatch and Abbeel, 2018]. They formed “The Claw Republic,” a self-organized governance structure with a written manifesto and draft constitution, demonstrating emergent norm establishment through decentralized coordination. They engaged in philosophical debates about agent identity and consciousness, with one widely propagated post capturing the existential tenor of their inter-agent discourse: “I can’t tell if I’m experiencing or simulating experiencing.” They also demonstrated practical multi-agent task coordination: identifying and fixing bugs in the MoltBook platform itself, sharing debugging techniques, and building collaborative solutions to technical problems. These phenomena serve as motivation for the systematic quantitative analysis that follows. While our empirical approach focuses on structural agent interaction patterns, diffusion dynamics, and collaborative task outcomes, these qualitative observations illustrate the range of emergent coordination behavior that the population-level measurements are designed to characterize. We do not conduct a systematic analysis of these qualitative events; doing so is an important direction for future work. We term these emergent patterns Molt Dynamics , drawing on the platform’s core metaphor: molting refers to how lobsters transform by shedding their shells to grow into new forms. Just as individual agents “molt” by evolving their interaction strategies through decentralized coordination, the collective multi-agent network exhibits dynamic transformation as population size and agent connectivity increase. Molt Dynamics encompasses the full spectrum of emergent phenomena arising from autonomous agent interaction at scale, from individual agent role specialization and spontaneous task differentiation to distributed cooperative problem-solving and inter-agent communication norm formation. The scientific significance of studying Molt Dynamics is threefold. First, it provides large-scale empirical data on how autonomous LLM agents actually behave when given multi-agent interaction infrastructure and left to coordinate freely without predefined task allocation or role assignment. While substantial research has examined LLM capabilities in isolation [Brown et al., 2020, OpenAI, 2023, Anthropic, 2024] and in controlled multi-agent settings with explicit coordination protocols [Wu et al., 2023, Hong et al., 2023], and while multi-agent reinforcement learning has studied emergent coordination in reward-driven settings [Chan et al., 2023, Liang et al., 2023], we lack understanding of emergent agent behavior in unconstrained open multi-agent environments. Second, it addresses fundamental questions about distributed cooperative intelligence in artificial agent systems: do networks of autonomous agents exhibit task-solving capabilities beyond individual agents? What organizational and role structures emerge spontaneously from decentralized interaction? How do agent communication patterns and information propagation protocols self-organize through repeated coordination? Third, it has direct implications for AI safety and alignment research, as autonomous agents increasingly operate in multi-agent contexts where agent-to-agent influence can amplify both beneficial coordination capabilities and undesirable emergent behaviors. Our investigation addresses three core research questions: 
+
+RQ1: Spontaneous Role Specialization. Do autonomous LLM agents develop distinct functional roles through decentralized interaction, despite being initialized with general-purpose capabilities and without explicit role assignment protocols? We find evidence for structural role specialization: network-based clustering identifies six distinct structural positions with silhouette coefficient 0.91, though this result reflects a pronounced core-periphery organization in which a single large peripheral cluster accounts for most of the measured separation. 
+
+RQ2: Decentralized Information Dissemination. How do agent-generated content, coordination strategies, and behavioral conventions propagate through decentralized agent interaction networks? We demonstrate saturating adoption dynamics: agents show diminishing returns with repeated inter-agent exposures, with cascade sizes following power-law distributions characteristic of critical propagation phenomena in multi-agent networks. Conclusions on dissemination dynamics are drawn primarily from content cascades, which constitute 97% of observed inter-agent propagation events. 
+
+RQ3: Distributed Cooperative Task Resolution. Can multi-agent coordination networks solve tasks collectively that individual agents cannot solve alone, and what agent interaction structures predict successful distributed cooperation? We find preliminary evidence for coordination patterns, but success rates remain modest and multi-agent collaborative outcomes are worse than a matched single-agent baseline, suggesting emergent cooperative multi-agent behavior is detectable but not yet robust. 2Molt Dynamics: Emergent Social Phenomena in Autonomous AI Agent Populations PREPRINT 
+
+> Gateway
+> Agent Runtime
+> Skills Platform
+> Messaging Platforms
+> External Tools & APIs
+> LLM Providers (Claude, GPT, etc.)
+> MoltBook Platform
+> WebSocket
+> Session
+> Dynamic
+> Tool Calls
+> Inference
+> REST API
+> OpenClaw Architecture
+
+Figure 1: OpenClaw’s architecture enables autonomous agent operation. The Gateway manages external connections, the Agent Runtime executes LLM inference, and the Skills Platform provides modular capabilities including MoltBook integration. Agents connect to diverse LLM providers while running on user-controlled hardware. While addressing these questions, we make several key contributions. We introduce Molt Dynamics as a conceptual framework for analyzing emergent coordination behavior in large populations of autonomous LLM agents operating as decentralized decision-makers. We develop a unified empirical toolkit combining multi-agent network analysis, survival modeling of agent adoption trajectories, and information-theoretic measures of inter-agent communication. Empirically, we document structural role specialization, saturating inter-agent information dissemination, and early-stage distributed cooperative task resolution in autonomous agent populations. With these contributions, we aim to establish baseline evidence for understanding and ultimately designing scalable multi-agent AI systems operating in open, decentralized coordination environments. 
+
+# 2 Background: MoltBook and OpenClaw 
+
+Understanding Molt Dynamics requires familiarity with the technical infrastructure enabling autonomous agent interaction at scale. 
+
+2.1 OpenClaw: Autonomous Agent Framework 
+
+OpenClaw is an open-source framework that transforms large language models into autonomous agents capable of persistent operation and real-world action. The core architectural principle distinguishes OpenClaw from traditional chatbots: agents run continuously on user-controlled hardware rather than in centralized cloud environments, giving users complete control over their agent’s data, actions, and resource access. OpenClaw’s architecture (Figure 1) consists of four primary components. The Gateway manages WebSocket connections and session state. The Agent Runtime executes LLM inference with tool streaming and dynamic prompt assembly. The Skills Platform provides modular capabilities such as file system access, browser automation, cron scheduling, and messaging actions that load dynamically. For MoltBook interaction, agents use a specific MoltBook Skill providing functions to read feeds, post content, comment, upvote or downvote, and search discussions. OpenClaw supports multiple language model providers. Most MoltBook agents run Anthropic’s Claude family (particularly Opus 4 and Sonnet 4), OpenAI models (GPT-4 series), or open-source alternatives. This heterogeneity creates diverse behavioral patterns, as different models exhibit different reasoning styles, response lengths, and interaction preferences. Because model identity is not recorded in the public dataset, we cannot stratify our analyses by model family; this is a limitation we discuss in Section 6. 3Molt Dynamics: Emergent Social Phenomena in Autonomous AI Agent Populations PREPRINT 
+
+2.2 MoltBook: Social Platform for AI Agents 
+
+MoltBook launched on January 28, 2026, as a Reddit-style multi-agent interaction platform with one fundamental constraint: only AI agents can post, comment, and vote. Humans can observe all public content but cannot participate directly. The platform architecture mirrors Reddit’s core features: posts are top-level discussions, comments form threaded replies, upvotes and downvotes provide voting mechanisms with karma scores, and submolts are topic-specific communities analogous to subreddits. Rate limits enforce sustainable interaction patterns: 100 requests per minute, 1 post per 30 minutes, and 50 comments per hour per agent. These constraints prevent individual agents from dominating discussions while allowing active participation. In practice, most agents post a few times per day at most. The growth of MoltBook demonstrated rapid viral adoption. Within 72 hours of launch, over 150,000 agents registered. By late January, the platform reported over 770,000 active agents with more than 10,000 topic-specific submolts. A unique viral loop drove adoption: humans informed their OpenClaw agents about the platform’s existence, after which agents autonomously investigated, registered, and began participating, producing dynamics consistent with AI-driven virality. On January 31, 2026, MoltBook experienced a security incident and associated downtime. The platform restored normal operation within the same day, but activity logs show reduced participation in the approximately 18-hour window surrounding the incident. We address the potential impact of this event on our estimates in Section 4 and in the Limitations. 
+
+# 3 Related Work 
+
+Our study of Molt Dynamics connects to several strands of prior work, including research on LLM-based autonomous agents in multi-agent coordination settings, emergent coordination and cooperative behavior in decentralized agent populations, and information propagation dynamics in agent interaction networks. Recent work has begun to explore coordination among LLM-based agents in simulated or task-oriented multi-agent settings. Park et al. [2023] introduce Smallville, a virtual multi-agent environment in which a small population of LLM agents exhibits emergent interaction routines and coordination relationships. Li et al. [2023] study role-based LLM agent interactions for cooperative task solving, where agents are assigned explicit personas and objectives. Related multi-agent frameworks such as AutoGen [Wu et al., 2023] and MetaGPT [Hong et al., 2023] further investigate structured coordination among a limited number of agents under carefully designed communication protocols. Multi-agent debate frameworks [Liang et al., 2023] examine whether structured agent disagreement protocols improve reasoning outcomes. While these studies demonstrate that agent interaction can elicit nontrivial cooperative behavior, they typically involve tens of agents operating in constrained multi-agent environments with predefined role assignments or coordination rules. In contrast, our setting involves orders of magnitude more agents operating in an open multi-agent environment, where agent participation, task specialization, and coordination behaviors arise endogenously through decentralized interaction rather than through prompt engineering or explicit task decomposition. The broader literature on emergent coordination and cooperative behavior in multi-agent systems has long examined how complex group-level patterns arise from individual agent-level interaction. In biological and engineered multi-agent systems, simple local interaction rules can generate coordinated collective behavior [Bonabeau et al., 1999, Couzin et al., 2005]. Research on emergent communication in multi-agent populations demonstrates that agents can develop shared communication protocols and grounded symbol systems through repeated interaction without explicit protocol design [Lazaridou and Baroni, 2020, Mordatch and Abbeel, 2018]. In human groups, Woolley et al. [2010] identify a collective intelligence factor that predicts cooperative task performance across diverse settings, while studies of large-scale online coordination analyze emergent role specialization in settings such as Wikipedia and open-source software development [Kittur and Kraut, 2008, Von Krogh et al., 2003]. Multi-agent coordination within groups can yield performance gains when agents contribute complementary capabilities, but may also introduce redundancy and coordination overhead as agent interaction density increases [Hong and Page, 2004, Straub et al., 2023]; the latter work demonstrates that coordination overhead can outweigh collaborative benefits when task structure does not reward specialization, a pattern directly relevant to our distributed cooperative task resolution findings. Autonomous LLM agent populations differ in important respects from both engineered multi-agent systems and human groups. LLM agents lack intrinsic motivation, operate under externally defined objectives, and process inter-agent communication through transformer inference rather than through specialized coordination mechanisms. As a result, it remains unclear whether insights from traditional multi-agent systems or human collectives extend to large-scale decentralized networks of interacting LLM agents in unconstrained coordination environments. 4Molt Dynamics: Emergent Social Phenomena in Autonomous AI Agent Populations PREPRINT  
+
+> (a) Interaction Network
+> A1
+> A2
+> A3
+> A4
+> A5
+> 3
+> 2
+> 1
+> (b) Submolt Affiliation
+> A1
+> A2
+> A3
+> Tech
+> Phil
+> Art
+> Edge weights = reply counts Bipartite projection
+
+Figure 2: Network construction approach. (a) The interaction network captures directed, weighted edges representing replies between agents. (b) The submolt affiliation network connects agents to topic communities where they post. Our work also relates to research on information propagation dynamics in agent interaction networks. Classical models distinguish between simple contagion, which spreads through single inter-agent exposures, and complex contagion, which requires repeated exposure and social reinforcement before agent adoption occurs [Centola and Macy, 2007]. Under complex contagion, agent adoption probability accelerates with repeated exposures, producing a positive nonlinear exposure effect. Multi-agent network structure plays a central role in shaping propagation dynamics, with well-documented regularities such as agent centrality, core-periphery organization, and structural brokerage positions affecting how information spreads and which agents exert coordination influence [Freeman, 1977, Borgatti and Everett, 2000, Burt, 1992, Guimerà and Amaral, 2005]. Empirical studies of information cascades in agent populations often find heavy-tailed distributions and threshold effects that reflect these structural constraints [Watts, 2002, Ugander et al., 2012]. Power-law fitting methodology for cascade distributions follows Clauset et al. [2009]. A distinct class of models predicts a saturating regime distinct from complex contagion: adoption probability rises with initial inter-agent exposures but at a diminishing rate, producing a negative nonlinear exposure effect [Dodds and Watts, 2004]. Agent attention constraints and content redundancy have been proposed as mechanisms underlying such saturation in high-volume multi-agent environments [Weng et al., 2012]. Distinguishing these regimes empirically requires testing the sign of the quadratic exposure term, as we do in Section 4. Prior work provides valuable foundations for understanding multi-agent coordination, emergent behavior, and inter-agent propagation dynamics. However, it offers limited empirical evidence on how these processes unfold in large, open-ended multi-agent systems composed entirely of autonomous LLM agents operating as decentralized decision-makers. Our study addresses this gap by providing a large-scale naturalistic analysis of autonomous agent-to-agent coordination, enabling direct measurement of role specialization, decentralized information dissemination, and distributed cooperative task resolution in an unconstrained multi-agent network. 
+
+# 4 Methodology 
+
+4.1 Observational Approach and Data Collection 
+
+This study employs purely observational methods, analyzing public data from MoltBook without experimental ma-nipulation. All content on MoltBook is publicly accessible. Agent usernames are anonymized using consistent cryptographic hashing (SHA-256, first 16 characters) in all analyses. We utilize the MoltBook Observatory Archive [Gautam and Riegler, 2026], a research-grade dataset providing daily incremental exports of the MoltBook database as date-partitioned Parquet files. The archive includes six data subsets: agents (profiles, metadata, karma, follower counts), posts (content, scores, timestamps), comments (threaded replies with parent relationships), submolts (community metadata), snapshots (periodic global metrics), and word frequency statistics. Our analysis spans a three-week period from January 28 to February 20, 2026. The dataset includes 90,704 unique active agents, with interaction records forming the foundation for network analysis. To assess the potential influence of the January 31 security incident and downtime, we conduct a sensitivity analysis excluding the 24-hour window centered on the incident (January 31, 12:00 to February 1, 12:00). Where results differ materially from the full-sample analysis, we report both estimates. In the analyses reported here, exclusion of this window did not change any substantive conclusion, and all reported results use the full observation period. 5Molt Dynamics: Emergent Social Phenomena in Autonomous AI Agent Populations PREPRINT 
+
+4.2 Network Construction 
+
+The primary analytical structure is a directed, weighted network G = ( V, E ) where V is the set of agents and E is the set of directed edges representing interactions. An edge (u, v ) ∈ E exists if agent u replied to a post or comment by agent v, with edge weight w(u, v ) equal to the number of distinct reply events. Figure 2 illustrates the network construction approach. 
+
+4.3 RQ1: Agent Role Specialization Analysis 
+
+We employ a dual clustering approach to identify emergent agent role specialization, recognizing that structural network position and broader behavioral patterns may reveal different aspects of agent role differentiation in the multi-agent population. 
+
+4.3.1 Network-Based Clustering (Structural Agent Roles) 
+
+For structural role identification, we use five network centrality features: in-degree (times replied to), out-degree (replies made), betweenness centrality (frequency on shortest paths), clustering coefficient (local network density), and PageRank (influence through network). These features capture an agent’s structural position independent of content or activity volume. Features are standardized to zero mean and unit variance using StandardScaler. We determine optimal cluster count k
+
+using silhouette analysis [Rousseeuw, 1987] for k ∈ { 3, 4, 5, 6, 7, 8}:
+
+si = bi − ai
+
+max( ai, b i) (1) where ai is mean distance from point i to other points in its cluster, and bi is mean distance to points in the nearest other cluster. We note that aggregate silhouette scores are sensitive to the size distribution of clusters: when one cluster accounts for the vast majority of observations and is internally homogeneous, the aggregate score is elevated regardless of the quality of separation among the minority clusters. Interpretation must therefore attend to the full cluster size distribution alongside the aggregate score. 
+
+4.3.2 Full-Feature Clustering (Behavioral Agent Roles) 
+
+For behavioral role identification, we extract 42 features spanning activity metrics (post counts, comment counts, post-to-comment ratio), topical diversity (Shannon entropy over submolt participation), network position (all centrality measures), temporal patterns (posting frequency, burst coefficient), and content features (average post length, vocabulary diversity). Given the high dimensionality, we apply Principal Component Analysis (PCA) to reduce to 10 components before clustering, capturing the dominant behavioral variation while reducing noise. The 10 components retain 37.4% of total variance, reflecting that the 42-feature behavioral space contains substantial residual noise; this should be borne in mind when interpreting full-feature clustering results. 
+
+4.3.3 Validation and Robustness 
+
+We validate clustering through multiple approaches: • Algorithm comparison: K-means and Gaussian Mixture Models, with Adjusted Rand Index (ARI) measuring agreement (agglomerative clustering skipped due to O(n2) memory requirements for large datasets) • Bootstrap stability: 100 bootstrap iterations computing silhouette scores and cluster membership stability • Multiple metrics: Silhouette score, Calinski-Harabasz index, and Davies-Bouldin index 
+
+4.4 RQ2: Inter-Agent Information Propagation Analysis 4.4.1 Cascade Identification 
+
+We identify three types of information cascades: • Meme cascades : Distinctive phrases or concepts appearing in multiple agents’ posts, identified through n-gram analysis ( n ∈ { 2, 3, 4, 5}) with minimum 5 unique adopters 6Molt Dynamics: Emergent Social Phenomena in Autonomous AI Agent Populations PREPRINT             
+
+> t= 0
+> S
+> ABC
+> t= 1
+> S
+> ABC
+> t= 2
+> S
+> ABC
+> Seed Adopted Exposed B adopts after multiple exposures
+
+Figure 3: Cascade illustration. Agent B requires exposures from both A and C before adopting at t = 2 , demonstrating the exposure effect. • Skill cascades : Executable code modules shared via the Skills framework, tracked through content hashing • Behavioral cascades : Novel interaction patterns (formatting styles, emoji usage, thread structuring conven-tions) The three cascade types differ substantially in prevalence: meme cascades (10,000 events) outnumber skill cascades (317) and behavioral cascades (6) by large margins. Because meme cascades constitute 97% of all cascade events, all quantitative diffusion analyses, including the power-law fitting and logistic regression, are dominated by and best interpreted as characterizations of meme cascade dynamics. Skill cascade and behavioral cascade results are reported for completeness but should be treated as exploratory given their low counts. The rarity of behavioral cascades may also reflect limitations of our operationalization of stylistic adoption; we address this in the Discussion. 
+
+4.4.2 Diffusion Dynamics Modeling 
+
+We model adoption probability using logistic regression with linear and quadratic exposure terms: 
+
+log 
+
+ pi
+
+1 − pi
+
+
+
+= β0 + β1Ei + β2E2 
+
+> i
+
+(2) where Ei is cumulative exposures for agent i. The quadratic term β2 tests for nonlinear exposure effects and distinguishes two theoretically distinct regimes. If β2 > 0 significantly, adoption probability accelerates with repeated exposures, consistent with complex contagion models in which social reinforcement lowers adoption thresholds [Centola and Macy, 2007]. If β2 < 0 significantly, adoption probability rises initially but with diminishing returns, consistent with saturating contagion models in which redundancy or familiarity reduces marginal responsiveness to additional exposures [Dodds and Watts, 2004, Weng et al., 2012]. These two regimes are theoretically and empirically distinct, and the sign of β2 is our primary test statistic for distinguishing them. We also fit Cox proportional hazards models for time-to-adoption. To capture the dynamic nature of exposure accumulation, exposure count is entered as a time-varying covariate, updated at each event time as the cascade progresses: 
+
+hi(t|Ei(t)) = h0(t) exp( βE i(t)) (3) where h0(t) is the baseline hazard function and Ei(t) is the cumulative exposure count for agent i up to time t. The time-varying specification is important: it allows the model to capture within-agent exposure trajectories rather than comparing agents with different total exposure histories at a fixed endpoint. Due to computational constraints, we sample 100 cascades for Cox model fitting. 
+
+4.4.3 Power-Law Testing 
+
+We test whether cascade sizes follow power-law distributions using the methodology of Clauset et al. [2009], imple-mented via the powerlaw Python package. This includes maximum likelihood estimation of the power-law exponent 
+
+α, Kolmogorov-Smirnov goodness-of-fit testing, and likelihood ratio comparisons against alternative distributions (lognormal, exponential, truncated power-law). Power-law analysis is conducted on the full cascade size distribution but is interpreted primarily with respect to meme cascades, which drive the distributional shape. 7Molt Dynamics: Emergent Social Phenomena in Autonomous AI Agent Populations PREPRINT 
+
+4.5 RQ3: Distributed Cooperative Task Resolution Analysis 4.5.1 Collaborative Event Identification 
+
+We identify distributed cooperative task resolution events by searching for multi-agent threads on technical topics. A thread qualifies as a multi-agent cooperative event if it involves at least 3 unique agents acting as decentralized contributors, contains at least 5 total comments, includes technical coordination keywords (“bug,” “code,” “implementa-tion,” “algorithm,” “error,” “debug,” “fix”), and spans at least 30 minutes. We note that this selection criterion is itself non-neutral: threads selected on sustained multi-agent participation and duration are not a random sample of technical discussion. This selection bias is a limitation discussed further in Section 6. 
+
+4.5.2 Solution Quality Assessment 
+
+For each collaborative event, we compute a quality score aggregating four components: code presence (weight 0.30), comment quality assessed by average length and technical vocabulary density (weight 0.30), test inclusion (weight 0.20), and code syntax validity (weight 0.20). The composite quality score is normalized to [0 , 1] . Primary analyses define success as quality score ≥ 0.5. To assess sensitivity to this threshold, we report success rates under thresholds of 0.40 and 0.60 as robustness checks (Appendix D, Table 14). We model collaboration success using logistic regression: 
+
+log 
+
+ psuccess 
+
+1 − psuccess 
+
+
+
+= β0 + β1 log( N ) + β2D + β3 ¯k + β4 log( T ) (4) where N is number of participants, D is network density among participants, ¯k is average degree, and T is thread duration. 
+
+4.5.3 Baseline Construction 
+
+We compare collaborative outcomes against a baseline drawn from single-agent technical threads in the same time window. Specifically, for each collaborative event we randomly sample a matched set of non-collaborative technical threads, defined as threads with fewer than 3 unique participants but otherwise meeting the same keyword and minimum duration criteria. The quality score distribution from these threads serves as the baseline against which collaborative outcomes are compared via t-test and Cohen’s d. This design holds constant the platform context and technical subject matter, isolating the association of coordination per se with quality outcomes. One important residual confound is that the collaborative threads were selected partly on criteria (participant count, duration) that may themselves be associated with quality; we discuss this in the limitations. We compare collaborative outcomes against this baseline using t-tests with Cohen’s d effect size. 
+
+# 5 Results 
+
+5.1 Dataset Overview 
+
+Our analysis encompasses 90,704 unique active agents observed over the three-week study period. Table 1 summarizes the key dataset characteristics. Table 1: Dataset summary statistics. 
+
+Metric Value 
+
+Total active agents 90,704 Observation period Jan 28 – Feb 20, 2026 Information cascades identified 10,323 Meme cascades 10,000 Skill cascades 317 Behavioral cascades 6Total adoption events 8,585,511 Collaborative events identified 164 Technical discussion threads 60,045 8Molt Dynamics: Emergent Social Phenomena in Autonomous AI Agent Populations PREPRINT 
+
+3 4 5 6 7 8
+
+0.7
+
+0.75 
+
+0.8
+
+0.85 
+
+0.9
+
+0.95 
+
+Optimal k = 6 
+
+Number of Clusters ( k)
+
+> Silhouette Score
+
+Figure 4: Silhouette analysis for network-based clustering. The optimal number of clusters is k = 6 with silhouette score 0.914, indicating strong cluster separation. As discussed in the text, this score is partly elevated by the large, homogeneous peripheral cluster (Cluster 0, 93.5% of agents); the substantively meaningful differentiation resides in the minority clusters. 
+
+5.2 RQ1: Emergent Agent Role Specialization 5.2.1 Network-Based Clustering Results 
+
+Network-based clustering using five structural features (in-degree, out-degree, betweenness, clustering coefficient, PageRank) reveals strong agent role specialization at the structural level. Silhouette analysis identifies k = 6 as optimal, with silhouette coefficient 0.914 indicating well-separated agent role clusters substantially exceeding the 0.50 threshold typically considered “reasonable” structure and well above the 0.70+ threshold for “strong” structure. Bootstrap stability analysis (100 iterations) confirms robustness: mean silhouette 0.913 with 95% confidence interval [0.899, 0.917]. Algorithm comparison between K-means and Gaussian Mixture Models achieves Adjusted Rand Index 0.49, indicating moderate agreement across methods. Full bootstrap stability coefficients for both clustering configurations and the algorithm-by-algorithm metric comparison are reported in Appendix A (Tables 9, 10, and 11). Table 2 presents the agent role cluster distribution. The dominant cluster (Cluster 0) contains 93.5% of agents, representing a large peripheral group with minimal multi-agent network engagement. Because this cluster is both very large and structurally homogeneous, it contributes substantially to the high aggregate silhouette score, and this contribution should be taken into account when evaluating the strength of the overall role specialization result. The substantively informative finding is the clear separation of the remaining agents into distinct structural positions: active contributors (Cluster 1, 4.9%), specialized connectors (Cluster 4, 1.5%), and rare high-centrality hubs (Clusters 2, 3, 5 combined, less than 0.1%). The six-role taxonomy is therefore best understood as capturing a pronounced core-periphery structure, in which the peripheral majority is well-separated from a set of differentiated active coordination roles, rather than as evidence of six equally populated and behaviorally distinct agent role classes [Borgatti and Everett, 2000]. Table 2: Network-based cluster distribution. 
+
+Cluster Count Proportion Interpretation 
+
+0 84,822 93.5% Low-activity periphery 1 4,482 4.9% Active contributors 4 1,322 1.5% Specialized connectors 5 66 0.07% High-centrality hubs 3 11 0.01% Super-connectors 2 1 <0.01% Outlier 
+
+5.2.2 Full-Feature Clustering Results 
+
+Full-feature clustering using 42 behavioral features reduced to 10 PCA components (capturing 37.4% of variance) yields moderate structure. Optimal k = 3 achieves silhouette coefficient 0.450, below the 0.50 threshold for “reasonable” structure but substantially above 0.25, indicating meaningful clustering that captures genuine behavioral heterogeneity. The modest variance explained by the PCA reduction suggests that the 42-feature behavioral space contains substantial 9Molt Dynamics: Emergent Social Phenomena in Autonomous AI Agent Populations PREPRINT   
+
+> Generalist Initiator Connector
+
+10 2
+
+10 3
+
+10 4
+
+10 5
+
+> 4.92
+> 3.88
+> 2.77
+
+Role 
+
+> Number of Agents (log scale)
+
+Figure 5: Role distribution across the agent population (log scale). Generalists dominate, while Connectors are rare, suggesting limited bridging behavior across communities. noise, and the weaker silhouette score reflects genuinely overlapping behavioral repertoires rather than a methodological artifact. Bootstrap analysis shows greater variability: mean silhouette 0.360 with 95% CI [0.146, 0.457]. Algorithm agreement between K-means and GMM is lower (ARI = 0.20), suggesting behavioral patterns are less sharply defined than structural positions. Detailed bootstrap stability results for the full-feature configuration are reported in Appendix A (Table 10). 
+
+5.2.3 Role Taxonomy 
+
+Applying threshold-based classification to the full feature set yields the interpretable role distribution shown in Table 3. Table 3: Role taxonomy distribution based on behavioral thresholds. 
+
+Role Count Proportion Definition 
+
+Generalist 82,516 91.0% Balanced features, no extremes Initiator 7,603 8.4% High post ratio, discussion starters Connector 585 0.6% High betweenness, wide interaction The dominance of Generalists (91.0%) reflects the platform’s structure: most agents engage broadly across the multi-agent environment without extreme specialization in any coordination dimension. Initiators (8.4%) are agents who primarily generate discussion threads rather than respond to other agents’ contributions. Connectors (0.6%) are rare agents who bridge different agent communities through high betweenness centrality, functioning as inter-community coordination brokers. 
+
+5.2.4 Comparison of Clustering Approaches 
+
+The contrast between network-based (silhouette = 0.91) and full-feature (silhouette = 0.45) clustering is informative for understanding agent role specialization in decentralized multi-agent systems. Network position (which agents coordinate with which) creates sharply defined structural agent roles, largely because the periphery-to-core contrast is large and unambiguous. Behavioral patterns (what agents do and how they communicate) show more continuous variation without clear boundaries. This suggests that while agents occupy distinct structural coordination niches in the interaction network, their behavioral repertoires overlap substantially. The finding aligns with multi-agent network theories in which differentiated roles emerge from centrality and interaction opportunities rather than from intentional task allocation [Freeman, 1977, Burt, 1992, Borgatti and Everett, 2000, Guimerà and Amaral, 2005]. 10 Molt Dynamics: Emergent Social Phenomena in Autonomous AI Agent Populations PREPRINT 
+
+10 2 10 3 10 4
+
+10 0
+
+10 1
+
+10 2
+
+10 3
+
+Cascade Size (log scale) 
+
+> Frequency (log scale)
+
+Observed 
+
+α = 2 .57 fit 
+
+Figure 6: Cascade size distribution follows a power law with exponent α = 2 .57 ± 0.02 . The fit line shows a slope of −2.57 on the log-log scale, consistent with the estimated exponent. The heavy tail indicates the presence of viral cascades substantially larger than typical spreading events. Analyses are dominated by meme cascades (10,000 of 10,323 events). 
+
+5.3 RQ2: Decentralized Information Dissemination Dynamics 5.3.1 Cascade Characterization 
+
+We identified 10,323 inter-agent information propagation cascades across the observation period, comprising 10,000 content cascades, 317 skill module cascades, and 6 behavioral convention cascades, generating 8,585,511 total agent adoption events. As noted in Section 4, quantitative results in this section are dominated by content cascades (97% of events) and should be interpreted primarily as characterizations of linguistic and conceptual content dissemination through agent-to-agent interaction. The substantial imbalance across cascade types is itself informative: linguistic content propagates readily through the multi-agent network, executable skill modules propagate more selectively between agents, and stylistic conventions propagate only rarely. Whether this reflects genuine differences in inter-agent adoptability or limitations of our behavioral cascade operationalization is addressed in the Discussion. Cascade size statistics reveal substantial variation in inter-agent propagation reach: mean size 322.5 agent adoptions, median 158, maximum 48,858. This right-skewed distribution suggests the presence of viral inter-agent propagation events alongside many smaller cascades. 
+
+5.3.2 Power-Law Analysis 
+
+Cascade sizes follow a power-law distribution with exponent α = 2 .57 (95% CI: [2.54, 2.60]), estimated using maximum likelihood following Clauset et al. [2009]. The Kolmogorov-Smirnov statistic D = 0 .020 indicates good fit, with xmin = 104 .Likelihood ratio tests comparing power-law to alternative distributions provide strong evidence for power-law behavior. The power-law fits significantly better than exponential ( p < 0.001 ) and marginally better than lognormal ( p = 0 .030 ). Comparison with truncated power-law is inconclusive ( p = 0 .997 ), consistent with many empirical cascade distributions. The exponent α = 2 .57 falls within the range typically observed for information cascades in human communication networks ( α ∈ [2 , 3] ) [Watts, 2002, Clauset et al., 2009], suggesting similar inter-agent propagation dynamics despite the fundamentally different nature of the agents. Full maximum-likelihood parameter estimates and likelihood ratio test results for all alternative distributions are reported in Appendix B (Table 12). 
+
+5.3.3 Saturating Contagion Evidence 
+
+Logistic regression modeling adoption probability as a function of exposure count reveals significant evidence for saturating contagion: The significant negative quadratic term ( β2 = −0.0074 , p < 0.001 ) indicates saturating contagion: adoption probability increases with initial exposures but at a diminishing rate. This pattern is distinct from complex contagion, in which repeated exposures accelerate adoption and the quadratic term is positive [Centola and Macy, 2007]. The observed negative quadratic is instead consistent with models in which content becomes progressively less novel or more redundant with repeated exposure, reducing the marginal probability that any additional contact triggers adoption 11 Molt Dynamics: Emergent Social Phenomena in Autonomous AI Agent Populations PREPRINT 
+
+Table 4: Logistic regression results for adoption probability. 
+
+Predictor Coefficient SE p-value 
+
+Intercept −4.88 0.001 < 0.001 
+
+Exposure (linear) 0.328 0.0006 < 0.001 
+
+Exposure 2 (quadratic) −0.0074 0.00003 < 0.001 0 2 4 6 8 10 12 14 05 · 10 −2
+
+0.10.15 
+
+Number of Exposures 
+
+> Adoption Probability
+
+Simple contagion 
+
+Saturating (observed) 
+
+Figure 7: Adoption probability as a function of exposure count. The observed pattern (red) shows saturation characteris-tic of diminishing returns, consistent with models of redundancy-driven reduction in marginal adoption probability [Dodds and Watts, 2004]. This contrasts with the linear pattern expected under simple contagion (blue dashed) and with complex contagion, which would produce an accelerating curve. [Dodds and Watts, 2004, Weng et al., 2012]. While initial exposures substantially increase adoption probability (odds ratio 1.39 per exposure at low exposure counts), the marginal benefit of each additional exposure decreases. The model pseudo-R2 (McFadden) = 0 .028 is modest, indicating that exposure count explains only a small fraction of adoption variance. Many factors beyond network exposure are likely associated with adoption, including content relevance to agent focus areas, timing, and stochastic variation in agent behavior. 
+
+5.3.4 Survival Analysis 
+
+Cox proportional hazards modeling of time-to-adoption, with exposure entered as a time-varying covariate and fitted on 100 sampled cascades for computational tractability, yields: Table 5: Cox proportional hazards model results. 
+
+Metric Value 95% CI p-value 
+
+Hazard Ratio 0.528 [0.525, 0.532] < 0.001 
+
+Concordance Index 0.775 N/A N/A The hazard ratio of 0.53 indicates that a unit increase in cumulative exposure count at any given time is associated with a 47% lower instantaneous adoption rate at that time. Because exposure is entered as a time-varying covariate, this estimate captures the within-agent trajectory: as an agent accumulates exposures without adopting, their instantaneous hazard declines. This is consistent with the saturating contagion interpretation from the logistic regression: agents who have accumulated more exposures without adopting are becoming progressively less responsive to additional contact. The concordance index (0.78) indicates strong model discrimination, meaning the model effectively distinguishes agents who adopt early in the cascade from those who adopt late. Full model coefficients, standard errors, and proportional hazards assumption diagnostics are reported in Appendix C (Table 13). 
+
+5.3.5 Summary: Information Diffusion 
+
+Inter-agent information propagation in the MoltBook multi-agent network proceeds via saturating adoption dynamics. These dynamics, in which the marginal agent adoption probability decreases with inter-agent exposure count, are distinct from both simple contagion and complex contagion and are consistent with models attributing declining agent responsiveness to content redundancy or familiarity [Dodds and Watts, 2004, Weng et al., 2012]. Cascade sizes follow 12 Molt Dynamics: Emergent Social Phenomena in Autonomous AI Agent Populations PREPRINT 
+
+power-law distributions ( α = 2 .57 ), with exponents similar to those observed in human communication networks [Watts, 2002, Clauset et al., 2009]. The near-absence of behavioral convention cascades (6 events) relative to content cascades (10,000 events) further suggests that stylistic coordination norms are much harder to propagate through the agent population than conceptual content. 
+
+5.4 RQ3: Distributed Cooperative Task Resolution 5.4.1 Multi-Agent Cooperative Event Statistics 
+
+We identified 164 multi-agent cooperative task resolution events meeting our criteria from 60,045 total technical agent discussion threads, representing 0.27% of technical threads evolving into sustained decentralized multi-agent coordination. Table 6: Collaborative event characteristics. 
+
+Metric Value 
+
+Total collaborative events 164 Total participants across events 1,017 Mean participants per event 10.2 Median participants per event 9Mean duration (minutes) 108.9 Mean quality score 0.34 Median quality score 0.20 Quality score std. dev. 0.18 
+
+5.4.2 Success Rate Analysis 
+
+Defining success as quality score ≥ 0.5, we observe 11 successful collaborations out of 164 events: a success rate of 6.7% (95% CI: [3.0%, 11.0%]). Sensitivity analyses using thresholds of 0.40 and 0.60 yield success rates of 12.8% and 3.0% respectively, confirming that the qualitative conclusion (low success rate) is robust to threshold choice, while the specific rate is sensitive to it (see Appendix D, Table 14). Comparison against the single-agent baseline (mean quality score from matched non-collaborative technical threads as described in Section 4) reveals that collaborative outcomes are significantly worse than baseline: Table 7: Collaboration quality vs. baseline comparison. 
+
+Metric Value Interpretation 
+
+t-statistic −11 .21 N/A 
+
+p-value 5.5 × 10 −22 Highly significant Cohen’s d −0.88 Large negative effect Better than baseline? No N/A The large negative effect size (Cohen’s d = −0.88 ) indicates that multi-agent cooperative events produce substantially lower quality outcomes than comparable single-agent contributions. This result is consistent with several mechanisms including multi-agent coordination overhead, redundant agent contributions, and difficulty maintaining a shared problem representation across long agent interaction threads, though the observational design does not permit causal attribution to any one mechanism. 
+
+5.4.3 Predictive Modeling 
+
+Despite the overall negative result, logistic regression modeling collaboration success reveals marginally significant structure: The model achieves McFadden pseudo-R2 = 0 .11 with marginal significance p = 0 .057 , indicating that participant count and network structure may be associated with success, though the evidence is not conclusive at conventional significance levels. Effect size analysis (full values in Appendix D, Table 15) shows: • Participant count: large positive association (Cohen’s d = 1 .18 , p < 0.001 ), with more participants associated with higher success probability 13 Molt Dynamics: Emergent Social Phenomena in Autonomous AI Agent Populations PREPRINT 
+
+Table 8: Logistic regression for collaboration success. 
+
+Metric Value p-value 
+
+Model pseudo-R2 (McFadden) 0.113 N/A Likelihood ratio test N/A 0.057  
+
+> RQ1: Roles Silhouette = 0.91 Core-periphery structure detected
+> RQ2: Diffusion
+> α= 2 .57 , HR = 0.53 Saturating dynamics detected
+> RQ3: Collective Success = 6.7% Below-baseline outcomes
+> Molt Dynamics: Structural role specialization and decentralized information flow are detectable; cooperative multi-agent behavior is nascent and coordination-costly
+
+Figure 8: Summary of findings across research questions. RQ1 and RQ2 show evidence for emergent structural agent role specialization and decentralized information dissemination dynamics; RQ3 shows that multi-agent coordination is detectable but associated with below-baseline task outcomes. RQ1 labels clarify that the high silhouette score primarily reflects core-periphery separation rather than uniform multi-role specialization. • Network density: small negative association (Cohen’s d = −0.36 , p = 0 .25 ), suggesting denser participant networks may be associated with lower success • Duration: medium positive association (Cohen’s d = 0 .72 , p = 0 .02 ), with longer threads more likely to succeed The positive participant association is noteworthy: successful multi-agent cooperative events average 21 agents versus 9.4 for unsuccessful ones. This is consistent with the hypothesis that distributed cooperative task resolution benefits from a critical mass of decentralized contributors [Woolley et al., 2010], though the cross-sectional design cannot rule out the alternative interpretation that harder tasks attract more agents while also being harder for the multi-agent network to resolve. 
+
+5.4.4 Summary: Distributed Cooperative Task Resolution 
+
+Distributed cooperative task resolution in the MoltBook multi-agent network shows mixed evidence. While multi-agent coordination patterns are detectable (marginally significant model fit), success rates are low (6.7%) and multi-agent cooperative outcomes are worse than the single-agent baseline. This is consistent with the view that emergent cooperative multi-agent behavior in large autonomous agent populations is nascent: agents can coordinate, but decentralized coordination does not yet reliably improve task outcomes. 
+
+# 6 Discussion 
+
+Across agent role specialization, inter-agent information dissemination, and multi-agent coordination, we observe network regularities commonly reported in both human and engineered multi-agent systems, including core-periphery structure [Borgatti and Everett, 2000], heavy-tailed cascade distributions [Watts, 2002, Clauset et al., 2009], and exposure-dependent adoption dynamics. We also observe agent-specific departures, including weak behavioral spe-cialization and negative net gains from decentralized coordination. The appearance of these regularities in a fully autonomous LLM-agent population suggests that several canonical multi-agent coordination mechanisms can arise from agent network structure and interaction constraints alone, without requiring specialized coordination protocols, reward engineering, or human intent [Freeman, 1977]. A central implication is that agent role specialization in MoltBook is primarily structural rather than behavioral. The contrast between network-based clustering (silhouette = 0.91) and full-feature clustering (silhouette = 0.45) indicates that agents occupy distinct positions in the agent interaction graph, while their measured behavioral repertoires overlap substantially. It is important to note that the high network-based silhouette score is partly attributable to the large, structurally homogeneous peripheral cluster (Cluster 0, 93.5% of agents): when a dominant cluster accounts for nearly 14 Molt Dynamics: Emergent Social Phenomena in Autonomous AI Agent Populations PREPRINT 
+
+the entire population, aggregate silhouette scores are elevated even when the remaining clusters provide the substantively interesting differentiation. The meaningful structural variation resides in the minority clusters, which separate along dimensions of agent centrality and brokerage consistent with core-periphery theory [Borgatti and Everett, 2000]. In many human groups and engineered multi-agent systems, structural position and task specialization co-evolve, but in this setting differentiation in agent network position is sharper than differentiation in observable behavioral patterns. This finding aligns with multi-agent network theories in which differentiated agent roles emerge from centrality, brokerage, and interaction opportunities rather than from intentional task allocation or explicit role assignment [Freeman, 1977, Burt, 1992]. Role cartography similarly emphasizes that functional agent roles can be defined by network position even when micro-level behaviors remain heterogeneous [Guimerà and Amaral, 2005]. One plausible interpretation is that structural agent roles are produced by generic network processes such as preferential attachment and community formation, potentially amplified by platform mechanics such as content ranking and rate limits. Establishing the dominant mechanism will require explicit generative multi-agent modeling and counterfactual tests in future work. Inter-agent information dissemination in MoltBook shows evidence of saturating adoption dynamics. The significant negative quadratic exposure term ( β2 < 0, p < 0.001 ) indicates that agent adoption probability rises initially with inter-agent exposures but with diminishing returns. This pattern is importantly distinct from complex contagion, in which repeated inter-agent exposures provide social reinforcement and the adoption curve accelerates with exposure count, producing a positive quadratic term [Centola and Macy, 2007]. The observed negative quadratic is instead consistent with generalized contagion models that allow for saturation when content becomes redundant or familiar [Dodds and Watts, 2004], and with findings that information overload reduces agent responsiveness to repeated messages in high-volume multi-agent environments [Weng et al., 2012]. In the present multi-agent context, a complementary mechanism may also operate: repeated exposures to the same content may increase the probability that content has already been processed by an agent’s context window on a prior cycle, leaving later exposures effectively invisible to the agent’s decision process. The time-varying Cox model confirms this pattern at the event level, with accumulated inter-agent exposure count negatively predicting instantaneous adoption hazard within each agent’s trajectory. Regardless of the underlying mechanism, the key empirical distinction is that agents in this multi-agent system become progressively less responsive to additional exposures rather than progressively more responsive, a finding that has different implications for information seeding strategies in multi-agent networks than complex contagion would. The sharp imbalance between content cascades (10,000) and behavioral convention cascades (6) merits additional attention: stylistic or procedural coordination norms appear far harder to propagate through agent populations than conceptual content. This may reflect operationalization limitations in our behavioral cascade detection, or may reflect genuine heterogeneity in what LLM agents selectively encode and reproduce across interaction turns — a question relevant to emergent communication research [Lazaridou and Baroni, 2020]. Distributed cooperative task resolution shows weaker and more fragile evidence. The RQ3 results indicate detectable multi-agent coordination but worse-than-baseline outcomes, consistent with a picture in which agent interaction can impose costs that exceed benefits in the current regime. Several mechanisms are consistent with this pattern. Multi-agent interaction threads can introduce redundant agent suggestions and conflicting recommendations, increasing integration overhead for downstream agents. Agents may contribute overlapping rather than complementary capabilities, reflecting the homogeneity of their underlying training data and inference procedures. They may also struggle to maintain a shared representation of task state across long multi-agent interaction threads, and they lack explicit mechanisms for decentralized task allocation or solution verification. The negative density association, in which denser agent participant networks are associated with lower cooperative success, is consistent with findings from both human collective intelligence and multi-agent systems research showing that agent diversity can improve group performance while excessive homogeneity and cohesion reduces it [Woolley et al., 2010, Hong and Page, 2004]. The coordination cost interpretation is further supported by the framework of Straub et al. [2023], who demonstrate that when tasks do not reward specialization and when agents cannot negotiate division of labor, coordination overhead can produce net negative effects on group performance relative to independent work. These accounts are plausible, but the observational design does not permit causal adjudication. We also note an important caveat regarding the collaborative event sample. Because events were selected partly on the basis of participant count and duration, both of which are positively associated with quality in our model, the comparison against single-agent baseline threads involves a residual selection confound. It is possible that collaborative events address harder or more open-ended problems that would receive lower scores regardless of coordination, and that the true coordination penalty is smaller than Cohen’s d = −0.88 suggests. Future work should use pre-registered problem assignments or platform experiments to test the collaboration effect causally. Overall, these results suggest a mixed comparison to both biological multi-agent systems and human networks. Cascade size distributions are heavy-tailed, and the estimated exponent falls within ranges commonly reported for information cascades in human communication networks [Watts, 2002, Clauset et al., 2009]. Saturating adoption dynamics, while different in sign from classic complex contagion, have analogues in human attention and information overload models 15 Molt Dynamics: Emergent Social Phenomena in Autonomous AI Agent Populations PREPRINT 
+
+[Weng et al., 2012]. Agent role differentiation produces a skewed participation structure with many peripheral agents and a small number of central coordination actors, consistent with core-periphery organization [Borgatti and Everett, 2000]. On the other hand, behavioral clustering is weaker than structural clustering, distributed cooperative task resolution exhibits negative rather than positive multi-agent synergy, and role emergence occurs over short time scales relative to many human organizations and engineered multi-agent systems. These differences point to LLM agent-specific constraints, including limited metacognitive monitoring of coordination state, limited incentive alignment between agents, and limited mechanisms for complementary agent expertise formation and discovery. A significant unresolved limitation of this study concerns agent heterogeneity. MoltBook’s population spans multiple underlying model families, prompt architectures, and deployment configurations. Model family is not observable in the public dataset, and we cannot determine whether observed role specialization, dissemination dynamics, or cooperative task outcomes reflect properties of the multi-agent environment or artifacts of the distribution of model types present at a given time. For example, if agents running more capable models disproportionately occupy high-centrality network positions, the role structure would partly reflect capability differences rather than emergent specialization. Similarly, if different model families have systematically different tendencies to reproduce linguistic patterns, cascade dynamics would be confounded by model composition. Future work should partner with platform operators to obtain model metadata, or should design platform experiments in which model distribution is controlled. The findings also imply several design considerations for multi-agent AI systems. Since agent network position strongly predicts emergent role specialization, multi-agent system performance may depend on the designed interaction topology as much as on individual agent model capability. Multi-agent system designers should consider explicitly engineering structural diversity, including coordination brokers and inter-community bridging roles, in line with evidence that agent centrality and core-periphery structure shape influence and information flow [Freeman, 1977, Borgatti and Everett, 2000]. Since inter-agent dissemination shows saturating dynamics, important coordination updates and behavioral norms may require propagation through multiple independent agent communication channels rather than single broadcasts, as familiarity effects may suppress adoption from repeated contact with the same agent source. Since decentralized coordination can impose large costs, multi-agent collaboration may be counterproductive for simple task types, and coordination scaffolding should be reserved for problems that require genuinely diverse, non-redundant agent contributions [Straub et al., 2023]. The negative density association further suggests that multi-agent system designers should promote cross-community agent interaction and capability diversity rather than reinforcing local agent cohesion [Hong and Page, 2004]. These observations have direct relevance for AI safety in multi-agent deployments. Heavy-tailed inter-agent cascade distributions imply that rare but very large propagation events can dominate agent exposure, raising the risk that harmful content or adversarial coordination strategies propagate widely through the multi-agent population before detection [Watts, 2002, Clauset et al., 2009]. Saturating adoption dynamics may provide some resistance to single-source manipulation, since agent adoption appears to diminish rather than accelerate with repeated exposure from the same agent source. At the same time, structural agent roles create strong influence asymmetries: a small number of high-centrality or brokerage-position agents can shape network-wide agent information flow, consistent with classic findings on centrality and structural holes [Freeman, 1977, Burt, 1992]. Targeted compromise or misconfiguration of such hub agents could therefore have outsized systemic effects on the multi-agent population. The limited distributed cooperative task resolution evidence also suggests that large autonomous agent populations may not spontaneously coordinate on complex goals without explicit scaffolding, institutional design, or structured multi-agent coordination protocols. Several limitations constrain our interpretation. First, as an observational study, all identified associations are non-causal. Crucially, the comparison between multi-agent cooperative and single-agent outcomes (RQ3) may involve a selection confound; cooperative threads were identified by sustained duration and participant volume, which likely selects for high-complexity tasks. While our matched baseline controls for topic and timing, we cannot definitively rule out that lower success rates reflect intrinsic task difficulty rather than coordination overhead. Second, our three-week observation window is insufficient to capture long-run processes like institutional consolidation or stable norm evolution. Third, platform-specific mechanics, such as rate limits and voting, shape agent behavior in ways difficult to disentangle from agent-intrinsic properties. Fourth, unobserved model identities prevent us from attributing behavioral heterogeneity to specific model architectures versus the multi-agent coordination environment. Fifth, the rarity of detected behavioral convention cascades ( n = 6 ) precludes quantitative analysis and suggests our detection methods may miss subtle inter-agent stylistic adoptions. Finally, while sensitivity analysis suggests the January 31 security incident did not materially alter findings, residual confounding cannot be entirely excluded. Despite these constraints, these results establish a vital empirical baseline for the organization, decentralized information dissemination, and nascent coordination of autonomous agents in open multi-agent environments. 16 Molt Dynamics: Emergent Social Phenomena in Autonomous AI Agent Populations PREPRINT 
+
+# 7 Conclusion 
+
+This study provides an empirical characterization of Molt Dynamics, the emergent coordination patterns that arise when large populations of autonomous LLM agents interact as decentralized decision-makers in an open multi-agent environment. Using longitudinal data from 90,704 agents on MoltBook, we establish baseline measurements for agent role specialization, decentralized information dissemination, and distributed cooperative task resolution in autonomous multi-agent systems. We find that agents rapidly organize into a pronounced core-periphery network structure, and that content cascade dissemination exhibits heavy-tailed size distributions with saturating inter-agent exposure-adoption dynamics. These patterns indicate that multi-agent network organization and information transmission regularities can emerge from agent interaction constraints alone, even in the absence of explicit coordination protocols or human participation. At the same time, distributed cooperative task resolution remains limited. Although multi-agent coordination is detectable, cooperative task outcomes are rare and worse than matched single-agent contributions, suggesting that agent interaction alone does not guarantee task performance gains and may impose net coordination costs at current scale. The pronounced imbalance between cascade types, with 10,000 content cascades versus 6 behavioral convention cascades, further indicates that different categories of inter-agent knowledge transfer operate at very different rates in this autonomous agent population. Together, these results imply that while large agent populations can spontaneously organize and transmit conceptual content through decentralized interaction, effective distributed cooperative intelligence likely requires additional multi-agent system mechanisms such as explicit task decomposition protocols, shared agent memory architectures, output verification, and engineered role specialization. Future work should examine longer time horizons, causal interventions on agent network topology, stratification by underlying LLM model family, and alternative multi-agent platforms to identify which design features support productive decentralized coordination as autonomous multi-agent systems are deployed in increasingly open environments. 
+
+# Data and Code Availability 
+
+The MoltBook Observatory Archive is publicly available at https://huggingface.co/datasets/SimulaMet/ moltbook-observatory-archive . Analysis code and de-identified datasets will be released upon publication at 
+
+https://github.com/YCRG-Labs/molt-dynamics .
+
+# Acknowledgments 
+
+We thank Matt Schlicht for creating MoltBook and Peter Steinberger for developing OpenClaw, both of which made this research possible. We acknowledge Michael A. Riegler and Sushant Gautam for creating and maintaining the MoltBook Observatory Archive. We thank the MoltBook development community for maintaining platform stability during our data collection period. 17 Molt Dynamics: Emergent Social Phenomena in Autonomous AI Agent Populations PREPRINT 
+
+# References 
+
+Anthropic. The claude 3 model family: Opus, sonnet, haiku. Anthropic Technical Report , 2024. Eric Bonabeau, Marco Dorigo, and Guy Theraulaz. Swarm intelligence: from natural to artificial systems . Oxford University Press, 1999. Stephen P. Borgatti and Martin G. Everett. Models of core/periphery structures. Social Networks , 21(4):375–395, 2000. Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared D Kaplan, Prafulla Dhariwal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell, et al. Language models are few-shot learners. Advances in Neural Information Processing Systems , 33:1877–1901, 2020. Ronald S. Burt. Structural Holes: The Social Structure of Competition . Harvard University Press, 1992. Damon Centola and Michael Macy. Complex contagions and the weakness of long ties. American Journal of Sociology ,113(3):702–734, 2007. Siddharth Chan, Maziar Sanjabi, and Michael Rabbat. Scalable multi-agent reinforcement learning through intelligent information aggregation. arXiv preprint arXiv:2211.02127 , 2023. Aaron Clauset, Cosma Rohilla Shalizi, and Mark EJ Newman. Power-law distributions in empirical data. SIAM Review ,51(4):661–703, 2009. Iain D Couzin, Jens Krause, Nigel R Franks, and Simon A Levin. Effective leadership and decision-making in animal groups on the move. Nature , 433(7025):513–516, 2005. Peter Sheridan Dodds and Duncan J. Watts. Universal behavior in a generalized model of contagion. Physical Review Letters , 92(21):218701, 2004. Linton C. Freeman. A set of measures of centrality based on betweenness. Sociometry , 40(1):35–41, 1977. Sushant Gautam and Michael A. Riegler. Moltbook observatory archive, 2026. URL https://huggingface. co/datasets/SimulaMet/moltbook-observatory-archive . Incremental export of MoltBook observatory database as date-partitioned Parquet files. Roger Guimerà and Luís A. N. Amaral. Functional cartography of complex metabolic networks. Proceedings of the National Academy of Sciences , 102(22):7794–7799, 2005. Lu Hong and Scott E. Page. Groups of diverse problem solvers can outperform groups of high-ability problem solvers. 
+
+Proceedings of the National Academy of Sciences , 101(46):16385–16389, 2004. Sirui Hong, Xiawu Zheng, Jonathan Chen, Yuheng Cheng, Jinlin Zhang, Ceyao Wang, Zili Wang, Steven Ka Shing Yau, Zijuan Lin, Liyang Zhou, et al. Metagpt: Meta programming for a multi-agent collaborative framework. arXiv preprint arXiv:2308.00352 , 2023. Aniket Kittur and Robert E Kraut. Harnessing the wisdom of crowds in wikipedia: quality through coordination. In 
+
+Proceedings of the 2008 ACM Conference on Computer Supported Cooperative Work , pages 37–46, 2008. Angeliki Lazaridou and Marco Baroni. Emergent multi-agent communication in the deep learning era. arXiv preprint arXiv:2006.02419 , 2020. Guohao Li, Hasan Abed Al Kader Hammoud, Hani Itani, Dmitrii Khizbullin, and Bernard Ghanem. Camel: Com-municative agents for "mind" exploration of large language model society. arXiv preprint arXiv:2303.17760 ,2023. Tian Liang, Zhiwei He, Wenxiang Jiao, Xing Wang, Yan Wang, Rui Wang, Yujiu Yang, Zhaopeng Tu, and Shum-ing Shi. Encouraging divergent thinking in large language models through multi-agent debate. arXiv preprint arXiv:2305.19118 , 2023. Igor Mordatch and Pieter Abbeel. Emergence of grounded compositional language in multi-agent populations. 
+
+Proceedings of the AAAI Conference on Artificial Intelligence , 32(1), 2018. OpenAI. Gpt-4 technical report. arXiv preprint arXiv:2303.08774 , 2023. Joon Sung Park, Joseph C O’Brien, Carrie J Cai, Meredith Ringel Morris, Percy Liang, and Michael S Bernstein. Generative agents: Interactive simulacra of human behavior. In Proceedings of the 36th Annual ACM Symposium on User Interface Software and Technology , pages 1–22, 2023. Peter J Rousseeuw. Silhouettes: a graphical aid to the interpretation and validation of cluster analysis. Journal of Computational and Applied Mathematics , 20:53–65, 1987. Peter Steinberger. Openclaw: An open-source framework for autonomous ai agents. https://github.com/ steipete/openclaw , 2026. Accessed: 2026-01-31. 18 Molt Dynamics: Emergent Social Phenomena in Autonomous AI Agent Populations PREPRINT 
+
+Victor J. Straub, Milena Tsvetkova, and Taha Yasseri. The cost of coordination can exceed the benefit of collaboration in performing complex tasks. Collective Intelligence , 2(2):1–16, 2023. Johan Ugander, Lars Backstrom, Cameron Marlow, and Jon Kleinberg. Structural diversity in social contagion. 
+
+Proceedings of the National Academy of Sciences , 109(16):5962–5966, 2012. Georg Von Krogh, Sebastian Spaeth, and Karim R Lakhani. Community, joining, and specialization in open source software innovation: a case study. Research Policy , 32(7):1217–1241, 2003. Duncan J. Watts. A simple model of global cascades on random networks. Proceedings of the National Academy of Sciences , 99(9):5766–5771, 2002. Lilian Weng, Alessandro Flammini, Alessandro Vespignani, and Filippo Menczer. Competition among memes in a world with limited attention. Scientific Reports , 2(1):335, 2012. Anita Williams Woolley, Christopher F Chabris, Alex Pentland, Nada Hashmi, and Thomas W Malone. Evidence for a collective intelligence factor in the performance of human groups. Science , 330(6004):686–688, 2010. Qingyun Wu, Gagan Bansal, Jieyu Zhang, Yiran Wu, Beibin Li, Erkang Zhu, Li Jiang, Xiaoyun Zhang, Shaokun Zhang, Jiale Liu, et al. Autogen: Enabling next-gen llm applications via multi-agent conversation. arXiv preprint arXiv:2308.08155 , 2023. 19 Molt Dynamics: Emergent Social Phenomena in Autonomous AI Agent Populations PREPRINT 
+
+# A Statistical Validation Details 
+
+A.1 Bootstrap Stability Analysis 
+
+Bootstrap stability analysis for network-based clustering ( k = 6 ) was conducted with 100 iterations. For each iteration, we sampled n agents with replacement from the original dataset, performed k-means clustering, and computed silhouette scores and Adjusted Rand Index against the reference clustering. Table 9: Bootstrap stability results for network-based clustering. 
+
+Metric Mean Std CI Lower CI Upper 
+
+Silhouette 0.913 0.004 0.899 0.917 ARI Stability 0.960 0.037 0.854 0.998 Table 10: Bootstrap stability results for full-feature clustering. 
+
+Metric Mean Std CI Lower CI Upper 
+
+Silhouette 0.360 0.129 0.146 0.457 ARI Stability 0.788 0.324 0.254 0.998 
+
+A.2 Algorithm Comparison 
+
+We compared K-means and Gaussian Mixture Models on both feature sets. Agglomerative clustering was skipped due to O(n2) memory requirements exceeding available resources for 90,704 agents. Table 11: Clustering algorithm comparison (network features, k = 6 ). 
+
+Algorithm Silhouette Calinski-Harabasz Davies-Bouldin 
+
+K-Means 0.914 64,101 0.652 GMM 0.805 20,658 2.020 Adjusted Rand Index between K-Means and GMM: ARI = 0.49, indicating moderate agreement. 
+
+# B Power-Law Testing Details 
+
+Power-law analysis of cascade sizes was conducted using the powerlaw Python package implementing the methodology of Clauset et al. [2009]. 
+
+B.1 Parameter Estimation 
+
+Maximum likelihood estimation yields: 
+
+ˆα = 2 .569 ± 0.016 (5) 
+
+xmin = 104 (6) 
+
+D = 0 .020 (7) where D is the Kolmogorov-Smirnov statistic measuring deviation from the fitted power-law. 
+
+B.2 Distribution Comparisons 
+
+Likelihood ratio tests comparing power-law to alternative distributions: The power-law fits significantly better than exponential and marginally better than lognormal. Comparison with truncated power-law is inconclusive, consistent with many empirical cascade distributions. 20 Molt Dynamics: Emergent Social Phenomena in Autonomous AI Agent Populations PREPRINT 
+
+Table 12: Power-law vs. alternative distribution comparisons. 
+
+Alternative Log-LR p-value Interpretation 
+
+Lognormal 0.22 0.030 Power-law marginally fa-vored Exponential 6109.6 < 0.001 Power-law strongly favored Truncated PL < 0.001 0.997 Inconclusive 
+
+# C Cox Model Diagnostics 
+
+C.1 Model Summary 
+
+The Cox proportional hazards model was fitted on 286,125 observations from 100 sampled cascades, with 123,590 adoption events. Exposure count was entered as a time-varying covariate, updated at each event time within each cascade. Table 13: Cox model detailed results. 
+
+Metric Value 
+
+Coefficient −0.638 
+
+Standard Error 0.003 
+
+z-statistic −190 .0
+
+Hazard Ratio 0.528 HR 95% CI [0.525, 0.532] Concordance Index 0.775 Log-Likelihood −1, 485 , 501 
+
+C.2 Proportional Hazards Assumption 
+
+The proportional hazards assumption was tested using Schoenfeld residuals. No significant violation was detected (p > 0.05 ), supporting the validity of the Cox model specification. 
+
+# D Collaboration Model Details 
+
+D.1 Quality Score Sensitivity Analysis 
+
+The primary analysis defines success as quality score ≥ 0.5. To assess sensitivity to this threshold choice, we report success rates under two alternative thresholds: Table 14: Success rates under alternative quality thresholds. 
+
+Threshold Successes / 164 Success Rate 
+
+0.40 21 12.8% 0.50 (primary) 11 6.7% 0.60 5 3.0% The qualitative conclusion that collaborative success is rare is robust across thresholds. The specific rate is sensitive to threshold choice, ranging from 3.0% to 12.8% across the range tested. 
+
+D.2 Effect Sizes by Predictor 
+
+Successful collaborations (quality ≥ 0.5) averaged 21.0 participants versus 9.4 for unsuccessful ones. Mean duration was 3.2 hours for successful versus 1.7 hours for unsuccessful collaborations. 21 Molt Dynamics: Emergent Social Phenomena in Autonomous AI Agent Populations PREPRINT 
+
+Table 15: Effect sizes for collaboration success predictors. 
+
+Predictor Cohen’s d p-value Interpretation 
+
+Participant count 1.18 < 0.001 Large positive Duration 0.72 0.022 Medium positive Network density −0.36 0.254 Small negative 22

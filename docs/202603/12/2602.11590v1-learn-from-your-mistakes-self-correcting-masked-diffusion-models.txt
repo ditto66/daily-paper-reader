@@ -1,0 +1,1055 @@
+Title: Learn from Your Mistakes: Self-Correcting Masked Diffusion Models
+
+URL Source: https://arxiv.org/pdf/2602.11590v1
+
+Published Time: Fri, 13 Feb 2026 01:33:48 GMT
+
+Number of Pages: 22
+
+Markdown Content:
+# Learn from Your Mistakes: Self-Correcting Masked Diffusion Models 
+
+Yair Schiff 1* Omer Belhasin 2* Roy Uziel 2 Guanghan Wang 1 Marianne Arriola 1 Gilad Turok 1
+
+Michael Elad 2† Volodymyr Kuleshov 1†
+
+> 1
+
+Cornell 2NVIDIA 
+
+## Abstract 
+
+Masked diffusion models (MDMs) have emerged as a promising alternative to autoregressive mod-els, enabling parallel token generation while achieving competitive performance. Despite these advantages, MDMs face a fundamental limita-tion: once tokens are unmasked, they remain fixed, leading to error accumulation and ulti-mately degrading sample quality. We address this by proposing a framework that trains a model to perform both unmasking and correction. By reusing outputs from the MDM denoising network as inputs for corrector training, we train a model to recover from potential mistakes. During gen-eration we apply additional corrective refinement steps between unmasking ones in order to change decoded tokens and improve outputs. We name our training and sampling method Pro gressive 
+
+Se lf-Co rrection ( ProSeCo ) for its unique ability to iteratively refine an entire sequence, includ-ing already generated tokens. We conduct ex-tensive experimental validation across multiple conditional and unconditional tasks, demonstrat-ing that ProSeCo yields better quality-efficiency trade-offs (up to ∼2-3 x faster sampling) and en-ables inference-time compute scaling to further increase sample quality beyond standard MDMs (up to ∼1.3 x improvement on benchmarks). 
+
+## 1. Introduction 
+
+Masked diffusion models (MDMs) have emerged as a pow-erful paradigm for discrete data generation, offering a com-pelling alternative to standard autoregressive (AR) models (Lou et al., 2024; Ou et al., 2024; Sahoo et al., 2024a; Shi et al., 2024). By treating generation as a denoising pro-
+
+> *
+
+Equal contribution †Equal senior authorship . Correspondence to: Yair Schiff <yairschiff@cs.cornell.edu >, Omer Belhasin <obelhasin@nvidia.com >.
+
+Preprint. Under review. 
+
+cess that gradually unmasks tokens in parallel, MDMs can achieve efficiency gains and maintain sample quality across various domains, including natural language processing and molecular design (Schiff et al., 2024), and have even demon-strated competitive performance from the 8B scale (Nie et al., 2025) up to 100B parameters (Bie et al., 2025). However, a fundamental limitation persists for MDMs: once a token is unmasked, it remains fixed for the duration of the generation process. Consequently, errors made during parallel decoding inevitably accumulate, leading to distribu-tional drift and degraded sample quality. While recent work has begun to explore error correction for MDMs (Lezama et al., 2023; Zhao et al., 2024b; Wang et al., 2025a; Huang et al., 2025; Kim et al., 2025a; Liu et al., 2026), efficiently identifying which tokens require modification and altering them remains a significant challenge. In this work, we address this limitation by proposing a principled framework that equips MDMs with the inherent ability to both decode and correct. Our key insight is to treat model-generated outputs as corrupted versions of the true data, where errors represent a form of noise that can be undone through a nested corrector loop. Our method therefore trains a model to recover the clean signal from its own potentially mistaken outputs, enabling it to learn from and correct its own failure modes. We implement this training via a simple additional cross-entropy loss term added to standard MDM objectives. During inference, we leverage this capability by interleaving corrective steps in between standard unmasking steps, allowing the model to dynamically refine and “self-correct” outputs. The training and inference modifications we make to existing MDM algorithms are minimal, yet lead to marked gains. We name our approach Pro gressive Se lf-Co rrection ( ProSeCo ), since our method has the ability to iteratively refine all positions in a sequence, including ones already unmasked. On math and coding benchmarks, our method significantly improves standard fine-tuning of large MDMs, enabling ∼2-3x faster generation without quality degradation, and up to 
+
+∼1.3 x increase in benchmark accuracy. For guided genera-tion, we demonstrate that recovering from mistaken tokens improves the Pareto frontier of sample quality and prop-1
+
+> arXiv:2602.11590v1 [cs.LG] 12 Feb 2026
+
+Learn from Your Mistakes: Self-Correcting Masked Diffusion Models Latent sequence  Data sequence                  
+
+> Learn from your mistakes
+> Prior : Mask Data
+> Learn from
+> Use model to denoise
+> masking noise Learn from Learn from your mistakes
+> Re-use model to correct
+> For each : Train for Self-Correction
+> Original Process: Train for Unmasking
+> Data
+> Sampled output Data sequence 50
+> 60
+> Accuracy
+> +14.0%
+> 48.17
+> 62.20
+> HumanEval
+> 40
+> 45
+> 50
+> +7.0%
+> 43.20
+> 50.20
+> MBPP
+> 70
+> 75
+> 80
+> 85
+> Accuracy
+> +4.7%
+> 77.48 82.18
+> GSM8K
+> 30
+> 35
+> +5.4%
+> 29.74
+> 35.10
+> Minerva Math
+> LLaDA 8B +
+> Vanilla SFT ro e o (Ours) SFT
+
+Figure 1. (Left ) Overview of training ProSeCo : The original process trains the model to generate via unmasking. For every timestep in the masking process, we train the model to undo corruptions that can arise from sampling from the model’s unmasking predictions, thereby training for self-correction. (Right) Using our method to supervised fine-tune (SFT) the 8B parameter LLaDA model (Nie et al., 2025) significantly outperforms SFT with vanilla masked diffusion modeling. 
+
+erty maximization. Finally, we also demonstrate that for unconditional generation, our method improves over MDMs and other proposed correctors in terms of generating fluent text without collapsing the diversity of generated outputs. Across all experiments we demonstrate that ProSeCo bet-ter trades-off quality and speed, and can also benefit from inference-time scaling to further increase sample quality. In summary, our contributions are as follows: 1. We present a framework that jointly trains a model to decode masked tokens and correct mistakes. 2. We provide easy-to-implement training and sampling algorithms for our model that entail only minor addi-tions to standard MDM procedures. 3. We conduct a comprehensive experimental study demonstrating that ProSeCo outperforms baseline dis-crete diffusion models in terms of quality-efficiency trade-offs and enables inference-time compute scaling to further improve quality beyond standard MDMs. 
+
+## 2. Background 
+
+Discrete Diffusion Diffusion is a paradigm for generative modeling where a denoising process pθ is trained to undo a pre-defined corruption process q (Sohl-Dickstein et al., 2015; Song & Ermon, 2019; Song et al., 2020). Starting from data x ∼ qdata , the corruption process produces latent variables zt ∼ q(zt | x) for t ∈ [0 , 1] , which increasingly move further from the data and towards noise, as t increases. Adapting diffusion models to discrete data requires a cor-ruption process over the space of sequences of tokens with values in a finite vocabulary (Austin et al., 2021a). To de-note this data, we let x, zt ∈ V , where V := {0, 1}V ⊂ ∆V ,and ∆V denotes the probability simplex over V categories. We use superscripts to denote the sequence dimension; for example, x1: L ∈ V L represents a sequence of tokens 
+
+(x1, . . . , xL), where token xℓ ∈ V , for ℓ ∈ { 1, . . . , L }.
+
+Masked Diffusion Models A promising instantiation of the discrete diffusion paradigm is the recent line of masked diffusion models (MDM; Lou et al. (2024); Ou et al. (2024); Sahoo et al. (2024a); Shi et al. (2024)). In this framework, the corruption process is characterized by marginals that interpolate between data and noise: 
+
+q(zt | x) = Cat( zt; αtx + (1 − αt)m), (1) where m denotes the one-hot vector for a special [M] to-ken and αt := α(t) ∈ [0 , 1] is a noise schedule that is monotonically decreasing in t. In MDM, the corruption process is defined to be ‘absorbing,’ meaning that once a token transitions to the masked state, it remains in this state. Diffusion models are trained via a variational bound on the negative log-likelihood (NLL). This bound encourages the learned approximate posterior pθ (zs | zt) to match the true one q(zs | x, zt), for s < t (Sohl-Dickstein et al., 2015). For MDMs, the true posteriors take the following form (Austin et al., 2021a; Sahoo et al., 2024a): q(zs | x, zt) = 
+
+
+
+Cat( zs; zt) zt̸ = m,
+
+Cat zs; αs−αt 
+
+> 1−αt
+
+x + 1−αs 
+
+> 1−αt
+
+m
+
+!
+
+zt = m. (2) A common parameterization for pθ (zs | zt) replaces x in (2) with the output of a neural network: xθ (zt) ∈ ∆V .Taking the continuous-time limit of the diffusion process, the variational objective (NELBO) for MDMs simplifies to (Ou et al., 2024; Sahoo et al., 2024b; Shi et al., 2024): 
+
+LMDM 
+
+> NELBO
+
+(θ) := (3) 
+
+Eqdata 
+
+Z 10
+
+Eqt
+
+> L
+
+X
+
+> ℓ=1
+
+δzℓt ,m
+
+˙αt
+
+1 − αt
+
+log ⟨xℓθ (z1: Lt ), xℓ⟩dt, 
+
+2Learn from Your Mistakes: Self-Correcting Masked Diffusion Models Since box break 10% use,                                     
+
+> each will is $100 * 10/100
+> =100/10 0 = 10$ off.
+> Since Pete buys 2 boxes,
+> he will pay $2 * 100 = 100
+> =200$ ($10 = 100 - 10 =
+> 100 - 10 = 100 -10 = 100
+> -10 = 100 - 10 ...
+> Block 1
+> Block 2 To box break the problem
+> single use
+> 100 use use come in box
+> boxEach box is 000.
+> Let's break down the
+> problem step by step ...
+> Block 1
+> Block 1
+> Self-
+> Corrected Let's break down the problem step
+> by step... Each box is $100.00 and
+> currently 10% off... If Pete buys 2
+> boxes of contact, he will pay $2 *
+> 90 =180$... Thus, the cost of each
+> pair of contacts is $180 /90 = 2$.
+> \boxed{2}
+
+Figure 2. Demonstrating the benefits of self-correction (LLaDA baseline SFT vs. ProSeCo SFT; block AR decoding with 4 tokens generated at each step). (Left) During parallel unmasking errors occur. These mistakes accumulate, and by the 3rd block of generated text, the sample has collapsed. (Middle) ProSeCo can self-correct and recover from errors. After the first block, a short correction loop steers generation ‘back on track.’ (Right) ProSeCo ’s ability to directly alter previously decoded tokens leads to a final high quality output. (Generated sequences are trimmed for illustrative purposes; see Appendix C.1 for full details). 
+
+where ˙αt denotes the time derivative of the noise schedule, 
+
+δa,b := δ(a, b) is the Kronecker delta function that eval-uates to 1 if a = b, Eqdata refers to the expectation over drawing data samples x1: L ∼ qdata , and Eqt is the expecta-tion over drawing noisy latents from the forward marginals 
+
+z1: Lt ∼ q(z1: Lt | x1: L). We optimize this objective via stochastic gradient descent using Monte Carlo samples for the expectations and t ∼ U [0 , 1] to approximate the integral. A key drawback of this paradigm is that the denoising net-work xθ does not learn to modify unmasked inputs zt̸ = m.Without the ability to correct mistakes, during generation, errors propagate and accumulate over time, causing the sam-pling trajectory to deviate from the true data distribution. 
+
+## 3. Self-Correcting Masked Diffusion Models 
+
+In this work, we aim to equip MDMs with the ability to alter previously decoded tokens. Our approach is to have a single model that can act in two ‘modes’: when inputs contain masked tokens, the model’s role is to unmask; when inputs contain all non-mask tokens, the model operates in ‘corrector’ mode and can update already generated positions. Below, we present an augmented objective that trains mod-els to jointly unmask and correct mistaken unmasked tokens. Our key insight is that during generation, xθ produces un-masked tokens at each position, some of which align with the true data distribution and some of which potentially contain errors or distributional misalignment. A subset of these tokens are then carried into the next round of iterative refinement. We can interpret the outputs of xθ as corrupted sequences from the data distribution, where certain tokens have been replaced by incorrect ones sampled from xθ . This perspective motivates our formulation of model-generated sequences serving as inputs for a corrector model. In Section 3.1, we introduce a straightforward corrector loss that we add to the MDM objective from (3), and in Section 3.2, we detail an easy to implement training algo-rithm to efficiently and jointly train a model to unmask and correct decoding errors. Finally, in Section 4, we provide a sampling algorithm that leverages these abilities to fur-ther improve sample quality by interleaving error correction predictions and unmasking steps. Owing to this enhanced ability to iteratively refine any part of the sequence, includ-ing already decoded tokens, we dub our method Pro gressive 
+
+Self-Co rrection ( ProSeCo ). 
+
+3.1. Self-Correcting Objective 
+
+The high level idea of our approach is to train a corrector model to minimize the error between outputs from the de-noiser and clean data. By tying weights of the corrector and denoiser networks, we turn this formulation into an aug-mented MDM variational objective with an auxiliary error correction loss. More precisely, let π : ∆ V → V be a transformation that generates samples from the MDM denoiser model. Then we define the input to our corrector as y1: Lt := (π ◦ x1 
+
+> θ
+
+(z1: Lt ), . . . π ◦ xLθ (z1: Lt )) . For example, π could be the argmax function which returns the one-hot vector corre-sponding to the most likely sample at each position. We present the following objective for training a corrector model alongside the standard MDM denoiser: 
+
+LCMDM (ϕ, θ ) := Eqdata 
+
+Z 10
+
+Eqt
+
+> L
+
+X
+
+> ℓ=1
+
+"
+
+(4) 
+
+λ log ⟨xℓϕ(y1: Lt ), xℓ⟩
+
+| {z }
+
+> LC
+
++ ˙αt
+
+1 − αt
+
+δzℓt ,m log ⟨xℓθ (z1: Lt ), xℓ⟩
+
+| {z }
+
+> LMDM
+
+dt 
+
+#
+
+,
+
+where ϕ denote the parameters of a corrector model 
+
+xℓϕ(y1: Lt ) ∈ ∆V . The standard MDM loss in the second term ensures that we train a useful denoiser xθ that gener-ates meaningful candidates for xϕ to correct. In addition to the MDM objective, we add a correction loss LC to every term in the integrand. This auxiliary loss amounts to a sim-ple cross-entropy (CE) term, which encourages the model to identify and correct mistakes from the original denoising 3Learn from Your Mistakes: Self-Correcting Masked Diffusion Models 
+
+network. The hyperparameter λ < 0 lets us control the relative weight between the correction and diffusion losses. We now detail design decisions that we found to be perfor-mant when using this modified objective. 
+
+Tying Corrector and Denoiser Weights In order to have a unified model that can both decode and correct, we elect to tie the weights ϕ = θ. This decision has the added benefit of eliminating memory overhead for training a separate cor-rector model. The error correction term in (4) thus becomes a self-correcting one: LC → L SC 
+
+Selecting the Transformation π To simplify optimization and ensure a deterministic mapping from z1: Lt to y1: Lt we use arg max sampling from xθ (z1: Lt ). This decision also aligns with how state-of-the-art MDMs, such as LLaDA (Nie et al., 2025), are used in practice. Namely, during generation, at every iteration, each masked position from the output of xθ is decoded greedily. Then using some algorithm or heuristic, we determine which positions to retain for the next round and which to keep masked. 
+
+Setting Corrector Loss Weight λ We found empirically that a performant strategy was to set λ = ˙αt/(1 − αt),that is, we reuse the same factor from MDM. In addition to balancing both terms in our objective, this weighting scheme is justified intuitively. Specifically, in the MDM objective the weight ˙αt/(1 − αt) will discount samples that are more heavily noised. For example, for the commonly used linear noise schedule α(t) = 1 − t, this term amounts to dividing by the expected proportion of masked tokens in a sequence, i.e., we discount the ‘harder’, more heavily masked sequences. For training the corrector model, it is reasonable to apply a similar rationale: sequences with heavy masking which are harder to denoise will also be harder to correct and should therefore be down-weighted. Combining the above, yields our objective for effective joint training of a unified denoising and self-correcting model: 
+
+LSCMDM (θ) := Eqdata 
+
+Z 10
+
+Eqt
+
+˙αt
+
+1 − αtLX
+
+> ℓ=1
+
+"
+
+(5) 
+
+log ⟨xℓθ (y1: Lt ), xℓ⟩
+
+| {z }
+
+> LSC
+
++ δzℓt ,m log ⟨xℓθ (z1: Lt ), xℓ⟩
+
+| {z }
+
+> LMDM
+
+dt 
+
+#
+
+,
+
+3.2. Training with the SCMDM Objective 
+
+In Algorithm 1, we present training for ProSeCo , which requires only minor modification to the standard MDM training in order to implement the new LSCMDM objective. Specifically, in addition to the standard MDM forward pass used for (3), we sample from xθ , perform a second forward pass, and incorporate the corrector loss. A final modification that we make to (5) is to wrap the denoiser model’s outputs in the stop-gradient operation sg( ·) prior to forming the corrector input, which ensures training stability. 
+
+Algorithm 1 ProSeCo Training                                                                             
+
+> // Differences from standard MDM training highlighted in brown .
+> 1: Input: Training data D, model xθwith parameters θ, corrup-tion process q, noise schedule αt.2: repeat
+> 3: Sample x1: Li.i.d. from D
+> 4: Sample t∼ U [0 ,1]
+> 5: Compute αt,˙αt
+> 6: Sample z1: Lt∼q(z1: Lt|x)
+> 7: Compute xθ(z1: Lt)
+> 8: LMDM (θ)←˙αt
+> 1−αt
+> PLℓ=1 δzℓt,mlog ⟨xℓθ(z1: Lt),xℓ⟩
+> 9: yℓt←sg( one hot (arg max ixℓθ(zt)i)) ,for ℓ∈[1 , L ]
+> 10: Compute xθ(y1: Lt)
+> 11: LSC (θ)←˙αt
+> 1−αt
+> PLℓ=1 log ⟨xℓθ(y1: Lt),xℓ⟩
+> 12: Perform gradient descent step on LMDM (θ) + LSC (θ)
+> 13: until converged 14: Return θ
+
+## 4. Sampling with Progressive Self-Correction 
+
+In Algorithm 2, we present the sampling method for 
+
+ProSeCo . Having a model that can jointly decode and cor-rect allows us to interleave unmasking and correction steps. The goal of corrector iterations is two-fold: they should 1) potentially update already decoded positions in z1: Lt and 2) provide improved predictions to be used for sampling in the unmasking posterior. To control the computation budget allocated to self-correction, we allow users to specify hyper-parameters that determines how often a self-correcting loop is executed, ω, and the number of steps per loop, S.In Algorithm 3, we present the procedure for applying self-correction. When entering this loop, we take xθ (z1: Lt ) and convert it into a corrector input via arg max sampling at every position. Within each correcting iteration, we use a 
+
+sample method, e.g., greedy-max decoding, to generate the next corrector input sequence from the corrector model outputs. After the inner loop completes, unmasked positions 
+
+zℓt̸ = m are replaced with corresponding positions in the corrector sequence, which represents the remediation of already decoded tokens. When operating as a strictly ‘unmasking’ model, an it-eration of inference loop is identical to that in standard MDMs: the model’s input consists of a partially masked sequence z1: Lt , it outputs predictions xℓθ (z1: Lt ) at every posi-tion ℓ, and we decide some tokens to unmask via a call to a 
+
+sample posterior protocol, which returns a sequence with fewer masked tokens. For example, we can use ances-
+
+4Learn from Your Mistakes: Self-Correcting Masked Diffusion Models 
+
+Algorithm 2 ProSeCo Sampling                                                              
+
+> // Differences from standard MDM sampling highlighted in brown .
+> 1: Input: Model xθ, length L, unmasking steps T, schedule αt,self-correction budget (per step) S, corrector frequency ω.2: Initialize z1: Lt(T)←m1: L
+> 3: for i=Tto 1do
+> 4: logits ←xθ(z1: Lt)
+> 5: if (T−i+ 1) mod ω== 0 then
+> 6: z1: Lt,logits ←corrector (xθ, S, z1: Lt,logits )
+> 7: end if
+> 8: z1: Lt(i−1) ←sample posterior (logits ,z1: Lt, α t(i))
+> 9: end for
+> 10: Return sample (xθ(z1: Lt(0) ))
+
+tral sampling (Sahoo et al., 2024b), where we replace x with 
+
+xθ in (2) and sample accordingly, the confidence-based ap-proach proposed in Nie et al. (2025), where proposal tokens are selected greedily from xθ (z1: Lt ) and those with top-k
+
+confidence are retained for the next iteration, or one of other more recently proposed methods (Kim et al., 2025b;c; Ben-Hamu et al., 2025). If correction has been applied, instead of xθ (z1: Lt ), we use the corrector model’s last output for the sample posterior routine, as the corrector model logits represent better informed predictions. 
+
+## 5. Experiments 
+
+5.1. Math & Code Benchmarks Setup To evaluate ProSeCo on large MDMs, we perform supervised fine-tuning (SFT) of the LLaDA-Base 8B model (Nie et al., 2025) using our training Algorithm 1. Specif-ically, we SFT this model on the rStar-Coder (Liu et al., 2025) and OpenMathInstruct-2 (Toshniwal et al., 2024) datasets for ∼40 B tokens (see Appendix B.1 for full de-tails). We then evaluate on downstream benchmarks for code: HumanEval (Chen et al., 2021) and MBPP (Austin et al., 2021b), and math: GSM8K (Cobbe et al., 2021) and Minerva (Hendrycks et al., 2021). In addition to reporting metrics for open-sourced large AR and MDM models (with and without corrector mechanisms), for a direct comparison to our approach, we apply our same SFT recipe using the standard MDM objective to LLaDA-Base. Note that for all LLaDA-based models we apply the semi-AR sampling algorithm (Arriola et al., 2025) adopted by Nie et al. (2025), where the full generation sequence L is broken into blocks of size B and unmasking decoding is applied block-by-block from left-to-right (see Appendix A for an adaptation of Algorithm 2 to the block AR setting). 
+
+Main Results Table 1 represents our main results. The key finding is that for every benchmark, ProSeCo outperforms all diffusion baselines, including those coupled with other cor-rector mechanisms, and ProSeCo beats a comparably-sized 
+
+Algorithm 3 ProSeCo Inner corrector loop                                             
+
+> 1: Input: Model xθ, self-correction budget (per step) S, latent sequence z1: Lt, denoising output logits
+> 2: Initialize yℓt←one hot (arg max ilogits i),∀ℓ∈[1 , L ]
+> 3: for Ssteps do
+> 4: corrector logits ←xθ(y1: Lt)
+> 5: y1: Lt←sample (corrector logits )
+> 6: end for
+> // Correct unmasked positions in z1: Lt
+> 7: zℓt←yℓt,∀zℓt̸=m
+> 8: Return z1: Lt,corrector logits
+
+instruction fine-tuned AR model (Llama3.1; Grattafiori et al. (2024)) on three out of the four tasks. Moreover, we note that our baseline SFT model (fourth row from the bot-tom) represents a strong watermark, significantly improving over the LLaDA-Base and even surpassing / matching the LLaDA instruction fine-tuned model. Nevertheless, SFT using ProSeCo outperforms this strong baseline. Notably, even before applying the ProSeCo sampling procedure from Algorithm 2, the model trained with the ProSeCo objective outperforms one trained with the standard MDM loss. 
+
+Analyzing the Quality-Efficiency Trade-off In Figure 3, we present an analysis of the quality-efficiency trade-offs for ProSeCo . Results further to the north-west corner are desirable as they indicate better performance with a smaller number of function evaluations (NFEs). In standard MDM, the only lever for controlling this trade-off is number of inference steps used for unmasking, or in other words the number of token positions generated in parallel at each decoding step. For ProSeCo , we can also control the compute via the frequency of corrector loops and number of iterative refinement steps per loop. For each benchmark, we find that ProSeCo can outperform the highest accuracy baseline configuration, i.e., generating one token in each iteration; depicted as the gray dot. As depicted by the green star marker labeled as “Fast,” we can strictly improve baseline accuracy with reduced NFEs by increasing the decoding parallelism per unmasking step. To compensate for this, we apply corrector loops with some fre-quency (every 2-8 iterations, depending on the benchmark) and use up to 4 NFEs per corrector loop. Replacing un-masking steps with correcting ones, leads ∼2-3 x speed-ups relative to LLaDA decoding, while maintaining accuracy. 
+
+ProSeCo also enables configurations that can moderately increase compute while delivering significant accuracy im-provements, as depicted by the orange star marker labeled as “Balanced” (for best trade-off; see Appendix B.1 for de-tails on how this point was systematically selected). Finally, 
+
+ProSeCo supports even further scaling of test-time compute to attain our highest performing results depicted in the blue star markers labeled as “Max.” 5Learn from Your Mistakes: Self-Correcting Masked Diffusion Models                                                            
+
+> Table 1. Pass@1 accuracy on Code and Math benchmarks. ✗/✓symbol in the ‘Corrector Sampling’ column indicates whether a correction sampling algorithm was applied. ∗indicates values obtained via evaluation with open-sourced weights. †indicates values taken from Kim et al. (2025a). For models that we SFT, best value per column is bolded and second best is underlined.
+> Code Math
+> Corrector Sampling HumanEval
+> (0-shot)
+> MBPP
+> (3-shot)
+> GSM8K
+> (5-shot)
+> Minerva
+> (4-shot)
+> Off-the-Shelf 8B Models Baseline
+> Llama3.1-Instruct ∗(Grattafiori et al., 2024) ✗58.54 57.80 76.88 31.10 LLaDA1.5 ∗(Zhu et al., 2025) ✗43.90 27.20 81.12 35.10 LLaDA-Instruct ∗(Nie et al., 2025) ✗40.24 29.40 78.85 33.32 + ReMDM ∗(Wang et al., 2025a) ✓40.24 35.20 79.08 32.72 + PRISM †(Nie et al., 2025) ✓42.70 32.30 ––LLaDA-Base ∗(Nie et al., 2025) ✗33.54 40.40 66.72 27.88
+> Our SFT with LLaDA-Base 8B Model Baseline Vanilla SFT ✗48.17 43.20 77.48 29.74 + ReMDM (Wang et al., 2025a) ✓43.90 42.40 80.97 29.90
+> Ours
+
+ProSeCo SFT ✗ 52.44 44.00 79.45 32.42 + ProSeCo Sampling ✓ 62.20 50.20 82.18 35.10 
+
+Pareto Frontier for Parallel Decoding and Quality Ad-ditionally, in Figure 4, we demonstrate that for standard MDMs, increasing the level of parallel decoding signifi-cantly degrades sample quality. In contrast, ProSeCo models can recover from the mistakes introduced during generation and better scale the parallel decoding-quality Pareto frontier. 
+
+Ablation: Selecting Corrector Budget Finally, in Ap-pendix C.3 Figure 8, we explore the performance of various configurations of our sampling hyperparameters to provide guidance on allocating the corrector budget, as determined by frequency ( ω) of and number of steps ( S) per loop. For fast sampling regimes (sampling steps ≤ L/ 4), where mul-tiple tokens are decoded in parallel, we find that more fre-quent ( ω ≥ sampling steps /16 ) corrector loops are required to overcome the drop in quality. In this regime, we also typically improve by performing more frequent and shorter corrector loops for a fixed number of maximum total correc-tor steps. For less parallel decoding (sampling steps ≥ L/ 2), 
+
+ProSeCo outperforms the baseline with all the configurations we explored. Additionally, performance generally follows a monotonic upward trend as both frequency and number of corrector steps are increased. 
+
+5.2. Guided Molecule Design 
+
+In this context of guided generation, often when guidance strength is increased, model samples collapse. Our hy-pothesis is that ProSeCo can help recover from these errors, thereby improving the guided generation trade-off of max-imizing some property of interest while still producing a diverse set of high quality samples. 
+
+Setup We follow the experimental setup from Schiff et al. (2024) (see Appendix B.2 for more details). Specifically, we train models on string representations of molecules known as SMILES (Weininger, 1988) from the QM9 dataset (Rud-digkeit et al., 2012; Ramakrishnan et al., 2014). We then apply the discrete classifier-free-guidance (CFG) algorithm from Schiff et al. (2024) with varying unmasking budgets 
+
+T and guidance strength γ. We measure the number of generated sequences that are valid (can be parsed by RDKit library (Landrum et al., 2013)), unique, and novel (do not appear in the QM9 dataset) as the metric for diverse, high quality samples, and for the novel sequences, we compute the mean property value as the metric for property maxi-mization. We perform this experiment for two properties: ring count and drug-likeness (QED; Bickerton et al. (2012)). We compare ProSeCo to an AR model, a diffusion model trained with uniform categorical noise (UDLM; Schiff et al. (2024)) a standard masked diffusion model (MDLM; Sa-hoo et al. (2024a)) and a remasking strategy applied to the MDLM model (ReMDM; Wang et al. (2025a)). 
+
+Results In Figure 5, we present the guidance results. Points further north-east are preferable, as they represent property maximization without sacrificing sample diversity and quality. For both properties of interest, ProSeCo pushes the Pareto frontier in the desired direction. This is partic-ularly stark for experiments where we maximize the ring count property (left hand side of Figure 5). 
+
+5.3. Unconditional Text Generation Setup Following Sahoo et al. (2024a), we train 
+
+ProSeCo from scratch on the OpenWebText (OWT; Gokaslan & Cohen (2019)) dataset for 1M steps (see Ap-pendix B.3 for full details). We then unconditionally gener-ate 5000 samples consisting of L = 1024 tokens, for vary-ing sampling budgets T . We compute MAUVE (Pillutla 6Learn from Your Mistakes: Self-Correcting Masked Diffusion Models 0 200 400                                                       
+
+> Average NFEs
+> 35
+> 40
+> 45
+> 50
+> 55
+> 60
+> 65
+> Accuracy
+> HumanEval
+> Ours: Max
+> Acc: 62.2
+> NFEs: 228.4
+> Ours: Balanced
+> Acc: 54.9
+> NFEs: 60.2
+> Ours: Fast
+> Acc: 53.7
+> NFEs: 54.1
+> Baseline
+> Acc: 48.2
+> NFEs: 79.2
+> 050 100 150 200
+> Average NFEs
+> 37.5
+> 40.0
+> 42.5
+> 45.0
+> 47.5
+> 50.0
+> MBPP
+> Ours: Max
+> Acc: 50.2
+> NFEs: 94.7
+> Ours: Balanced
+> Acc: 46.6
+> NFEs: 49.9
+> Ours: Fast
+> Acc: 44.4
+> NFEs: 40.5
+> Baseline
+> Acc: 43.2
+> NFEs: 70.6
+> 0200 400 600
+> Average NFEs
+> 72
+> 74
+> 76
+> 78
+> 80
+> 82
+> GSM8K
+> Ours: Max
+> Acc: 82.2
+> NFEs: 287.9
+> Ours: Balanced
+> Acc: 81.7
+> NFEs: 63.7
+> Ours: Fast
+> Acc: 79.7
+> NFEs: 51.3
+> Baseline
+> Acc: 77.5
+> NFEs: 173.2
+> 0200 400 600
+> Average NFEs
+> 26
+> 28
+> 30
+> 32
+> 34
+> 36
+> Minerva
+> Ours: Max
+> Acc: 35.1
+> NFEs: 301.3
+> Ours: Balanced
+> Acc: 33.2
+> NFEs: 156.3
+> Ours: Fast
+> Acc: 30.8
+> NFEs: 65.7
+> Baseline
+> Acc: 29.7
+> NFEs: 212.9
+
+Max: Inference-Time Scaling Balanced: High Accuracy & Low NFEs Fast: Low NFEs with Accuracy Baseline 
+
+Figure 3. Analyzing the quality-efficiency trade-off for ProSeCo . Standard MDMs (Baseline; gray dot) attain best performance when decoding a single token in every step. ProSeCo models can vary number of corrector steps and attain comparable performance more efficiently with fewer unmasking steps (Ours: Fast; green star), achieve even better quality for modest increase in compute budget (Ours: Balanced; orange star), or maximize quality by scaling inference-time compute even further (Ours: Max; blue star). 32 64 128 256   
+
+> Number of Steps
+> 20
+> 40
+> 60
+> Accuracy (%)
+> (10.5)
+> (18.7)
+> (44.2)
+> (79.2)
+> (14.5)
+> (30.0) (59.4) (119.1)
+
+HumanEval     
+
+> 32 64 128 256
+> Number of Steps
+> 10
+> 20
+> 30
+> 40
+> 50
+> (7.7)
+> (17.5)
+> (33.3)
+> (70.6) (10.1)
+> (21.6)
+> (46.3) (88.6)
+
+MBPP        
+
+> 32 64 128 256
+> Number of Steps
+> 20
+> 40
+> 60
+> 80
+> (25.2)
+> (41.9)
+> (84.3) (173.2)
+> (28.5) (56.7) (113.4) (231.7)
+
+GSM8K       
+
+> 32 64 128 256
+> Number of Steps
+> 0
+> 10
+> 20
+> 30
+> 40
+> (28.9)
+> (53.8)
+> (105.5) (212.9)
+> (35.2)
+> (71.4) (142.4) (283.5)
+
+Minerva 
+
+LLaDA Baseline SFT LLaDA ro e o SFT + Sampling (Ours) (NFEs) 
+
+Figure 4. Pareto frontier of parallel decoding and quality. When decoding in parallel (i.e., fewer unmasking steps on x-axis), quality deteriorates. Applying a modest number of corrector steps, allows ProSeCo models to recover from these errors and extend this frontier. 
+
+et al., 2021) and report the perplexity under the GPT2-Large model (Radford et al., 2019), to also measure quality, and average sequence entropy, to reflect diversity of generated sequences (Zheng et al., 2024). We compare against an AR model and MDLM (Sahoo et al., 2024a) with and with-out corrector methods: ReMDM (Wang et al., 2025a) and PRISM (Kim et al., 2025a). For ProSeCo , we apply a short, 3 step, corrector loop after each unmasking step. To maintain parity with the com-pute budget of the other methods, we reduce the number of unmasking steps by a factor of 4 per sampling budget T .
+
+Results In Table 2, we see that across budgets, ProSeCo ei-ther significantly outperforms or matches baseline methods. Notably, even with just 256 steps, ProSeCo attains compa-rable sample quality to using PRISM with 2 x or ReMDM with 4 x the inference budget. 
+
+## 6. Related Works 
+
+Discrete Diffusion The seminal work of D3PM (Austin et al., 2021a) laid the foundation for adapting diffusion to discrete data. Some works extended this paradigm via the formalism of continuous-time Markov chains (Campbell et al., 2022; Lou et al., 2024). However, our method is more in line with the continuous-time extensions of the variational inference perspective detailed in works, such as Ou et al. (2024); Sahoo et al. (2024b); Shi et al. (2024). Previous efforts in this vein have relied on categorical uniform noise corruptions (Schiff et al., 2024; von R ¨utte et al., 2025) to alleviate the locked-in decoded tokens limitation of MDMs. In contrast, our work maintains the original masking process and introduces a self-correcting loss term to enable updating of already decoded positions. 
+
+Self-conditioning Reusing a model’s prediction of the clean data via self-conditioning was found to be effective in Chen et al. (2022); Dieleman et al. (2022). However, in these works predictions are simply provided as an auxiliary input at each denoising step, whereas we use predictions to train self-correction and refine outputs during generation. 
+
+Step Unrolling Also related to our work is the concept of training on unrolled predictions from the denoising tra-jectory (Savinov et al., 2021). In this framework the model is trained on its own outputs of less noisy latent sequences, thereby more closely simulating the distribution seen during generation. Our method instead uses predictions of clean data, not unrolled trajectories of partially masked sequences. 7Learn from Your Mistakes: Self-Correcting Masked Diffusion Models T = 128                 
+
+> T=64
+> T=32
+> =1
+> =2
+> =3
+> =4
+> =5
+> AR
+> UDLM
+> MDLM
+> ReMDM
+> (Ours) 100 200 300 400
+> 4.6
+> 4.8
+> 5.0
+> 5.2
+> 5.4
+> 5.6
+> Novel Mean Ring Count
+> Num. Novel Samples (out of 1,024 generated) 50 100 150 200 250
+> 0.56
+> 0.57
+> 0.58
+> 0.59
+> 0.60
+> 0.61
+> 0.62
+> Novel Mean QED
+> Num. Novel Samples (out of 1,024 generated)
+
+Figure 5. ProSeCo better navigates the novelty-property maximization Pareto frontier. Values correspond to number of novel samples (valid and unique molecules not present in the QM9 dataset; x-axis) and mean property value of novel samples ( y-axis) for controlled generation using discrete classifier-free guidance (Schiff et al., 2024), with varying unmasking steps T (line style) and guidance strength 
+
+γ (marker size). (Left) Maximizing the ring count property. (Right) Maximizing the drug likeness (QED) property. 
+
+Table 2. Unconditional generation sample quality for models trained on OpenWebText. † Values reported in Kim et al. (2025a). $ Values reported in Wang et al. (2025a). MAUVE ( ↑) Gen. PPL ( ↓) Entropy ( ↑)Data 1.00 14.8 5.44 AR ( T = 1024 )$ 0.760 12.1 5.22 
+
+T = 128 256 512 1024 128 256 512 1024 128 256 512 1024 
+
+MDLM † (Sahoo et al., 2024a) 0.015 0.023 0.031 0.042 61.5 55.8 53.0 51.3 5.52 5.49 5.48 5.46 ReMDM † (Wang et al., 2025a) 0.057 0.216 0.350 0.403 42.5 30.5 21.1 28.6 5.43 5.34 5.21 5.38 PRISM † (Kim et al., 2025a) 0.118 0.294 0.423 0.527 21.5 18.0 16.4 15.3 5.18 5.15 5.12 5.10 
+
+ProSeCo (Ours) 0.167 0.419 0.449 0.523 19.7 14.9 12.5 11.1 5.26 5.19 5.12 5.06 
+
+Corrector Methods Several works have used a predictor-corrector framework to improve sample quality, where, fol-lowing an unmasking predictor step, a corrector step is applied to remask decoded positions (Campbell et al., 2022; Gat et al., 2024; Peng et al., 2025; Wang et al., 2025a). In contrast to these training free methods, Lezama et al. (2023) and the concurrent works of Huang et al. (2025); Kim et al. (2025a); Liu et al. (2026) propose to train an additional head to predict incorrect positions that should be remasked. More related to our work is Zhao et al. (2024b), which predicts corrections to already decoded tokens. However the method in Zhao et al. (2024a) relies on a distinct Hollow Transformer backbone (Sun et al., 2022). This severely limits its application to fine-tuning of MDMs pre-trained with the standard Transformer backbones, such as LLaDA. 
+
+## 7. Discussion & Conclusion 
+
+In this work, we presented a framework for jointly training a diffusion model to generate sequences via unmasking and self-correction. We enable and take advantage of this new ability via minimal and straightforward modifications to standard MDM training and sampling algorithms. Evalu-ating on conditional and unconditional generation, across various model sizes, we demonstrated that our method con-sistently outperforms vanilla MDMs and alternative correc-tor methods both in terms of speed-quality tradeoffs and in the ability to further scale inference-time compute for improved generation. 
+
+Limitations The key drawback of our work is the added computational cost of the second forward pass during train-ing, especially in contrast to inference-time only schemes, e.g., Wang et al. (2025a). However, the empirical results demonstrate that this trade-off of train-time compute is well worth the gains achieved on downstream evaluations. 
+
+Future Directions In follow up work, we plan to explore the disentangling of the corrector and unmasking models via weight untying or with completely separate neural net-work backbones for each model. Additionally, while we present a performant sampling algorithm, the ability to cor-rect mistakes opens up the design space to more sophis-ticated schemes of jointly using corrector and unmasking steps, which we leave to future work to explore. 
+
+## Impact Statement 
+
+Our work falls within the domain of language modeling, and therefore, in addition to its potential benefits in accelerating 8Learn from Your Mistakes: Self-Correcting Masked Diffusion Models 
+
+generation and improving quality, it is subject to related risks of misuse that are inherent with increasingly more powerful language modeling tools. 
+
+## Acknowledgments 
+
+This work was partially funded by the National Sci-ence Foundation under award CAREER 2145577, and by the National Institute of Health under award MIRA R35GM151243. Marianne Arriola is supported by a NSF Graduate Research Fellowship under award DGE-2139899 and a Hopper-Dean/Bowers CIS Deans Excellence Fellow-ship. 
+
+## References 
+
+Arriola, M., Gokaslan, A., Chiu, J. T., Yang, Z., Qi, Z., Han, J., Sahoo, S. S., and Kuleshov, V. Block diffusion: Inter-polating between autoregressive and diffusion language models. arXiv preprint arXiv:2503.09573 , 2025. Austin, J., Johnson, D. D., Ho, J., Tarlow, D., and Van Den Berg, R. Structured denoising diffusion models in discrete state-spaces. Advances in Neural Information Processing Systems , 34:17981–17993, 2021a. Austin, J., Odena, A., Nye, M., Bosma, M., Michalewski, H., Dohan, D., Jiang, E., Cai, C., Terry, M., Le, Q., et al. Program synthesis with large language models. arXiv preprint arXiv:2108.07732 , 2021b. Ben-Hamu, H., Gat, I., Severo, D., Nolte, N., and Kar-rer, B. Accelerated sampling from masked diffusion models via entropy bounded unmasking. arXiv preprint arXiv:2505.24857 , 2025. Bickerton, G. R., Paolini, G. V., Besnard, J., Muresan, S., and Hopkins, A. L. Quantifying the chemical beauty of drugs. Nature chemistry , 4(2):90–98, 2012. Bie, T., Cao, M., Chen, K., Du, L., Gong, M., Gong, Z., Gu, Y., Hu, J., Huang, Z., Lan, Z., et al. Llada2. 0: Scaling up diffusion language models to 100b. arXiv preprint arXiv:2512.15745 , 2025. Campbell, A., Benton, J., De Bortoli, V., Rainforth, T., Deli-giannidis, G., and Doucet, A. A continuous time frame-work for discrete denoising models. Advances in Neural Information Processing Systems , 35:28266–28279, 2022. Chen, M., Tworek, J., Jun, H., Yuan, Q., Pinto, H. P. D. O., Kaplan, J., Edwards, H., Burda, Y., Joseph, N., Brockman, G., et al. Evaluating large language models trained on code. arXiv preprint arXiv:2107.03374 , 2021. Chen, T., Zhang, R., and Hinton, G. Analog bits: Gen-erating discrete data using diffusion models with self-conditioning. arXiv preprint arXiv:2208.04202 , 2022. Cobbe, K., Kosaraju, V., Bavarian, M., Chen, M., Jun, H., Kaiser, L., Plappert, M., Tworek, J., Hilton, J., Nakano, R., et al. Training verifiers to solve math word problems. 
+
+arXiv preprint arXiv:2110.14168 , 2021. Dhariwal, P. and Nichol, A. Diffusion models beat gans on image synthesis. Advances in neural information processing systems , 34:8780–8794, 2021. Dieleman, S., Sartran, L., Roshannai, A., Savinov, N., Ganin, Y., Richemond, P. H., Doucet, A., Strudel, R., Dyer, C., Durkan, C., et al. Continuous diffusion for categorical data. arXiv preprint arXiv:2211.15089 , 2022. Falcon, W. and The PyTorch Lightning team. PyTorch Light-ning, March 2019. URL https://github.com/ Lightning-AI/lightning .Gao, L., Tow, J., Abbasi, B., Biderman, S., Black, S., DiPofi, A., Foster, C., Golding, L., Hsu, J., Le Noac’h, A., Li, H., McDonell, K., Muennighoff, N., Ociepa, C., Phang, J., Reynolds, L., Schoelkopf, H., Skowron, A., Sutawika, L., Tang, E., Thite, A., Wang, B., Wang, K., and Zou, A. A framework for few-shot language model evaluation, 12 2023. URL https://zenodo.org/records/ 10256836 .Gat, I., Remez, T., Shaul, N., Kreuk, F., Chen, R. T., Syn-naeve, G., Adi, Y., and Lipman, Y. Discrete flow match-ing. arXiv preprint arXiv:2407.15595 , 2024. Gokaslan, A. and Cohen, V. Openwebtext cor-pus. http://Skylion007.github.io/ OpenWebTextCorpus , 2019. Grattafiori, A., Dubey, A., Jauhri, A., Pandey, A., Kadian, A., Al-Dahle, A., Letman, A., Mathur, A., Schelten, A., Vaughan, A., et al. The llama 3 herd of models. arXiv preprint arXiv:2407.21783 , 2024. Harris, C. R., Millman, K. J., van der Walt, S. J., Gommers, R., Virtanen, P., Cournapeau, D., Wieser, E., Taylor, J., Berg, S., Smith, N. J., Kern, R., Picus, M., Hoyer, S., van Kerkwijk, M. H., Brett, M., Haldane, A., del R ´ıo, J. F., Wiebe, M., Peterson, P., G ´erard-Marchant, P., Sheppard, K., Reddy, T., Weckesser, W., Abbasi, H., Gohlke, C., and Oliphant, T. E. Array programming with NumPy. 
+
+Nature , 585(7825):357–362, September 2020. doi: 10. 1038/s41586-020-2649-2. URL https://doi.org/ 10.1038/s41586-020-2649-2 .Hendrycks, D., Burns, C., Kadavath, S., Arora, A., Basart, S., Tang, E., Song, D., and Steinhardt, J. Measuring math-ematical problem solving with the math dataset. arXiv preprint arXiv:2103.03874 , 2021. Ho, J., Jain, A., and Abbeel, P. Denoising diffusion proba-bilistic models. Advances in neural information process-ing systems , 33:6840–6851, 2020. 9Learn from Your Mistakes: Self-Correcting Masked Diffusion Models 
+
+Huang, Z., Wang, Y., Chen, Z., and Qi, G.-J. Don’t settle too early: Self-reflective remasking for diffusion language models. arXiv preprint arXiv:2509.23653 , 2025. Hunter, J. D. Matplotlib: A 2d graphics environment. Com-puting in Science & Engineering , 9(3):90–95, 2007. doi: 10.1109/MCSE.2007.55. Kim, J., Kim, S., Lee, T., Pan, D. Z., Kim, H., Kakade, S., and Chen, S. Fine-tuning masked diffusion for provable self-correction. arXiv preprint arXiv:2510.01384 , 2025a. Kim, J., Shah, K., Kontonis, V., Kakade, S., and Chen, S. Train for the worst, plan for the best: Understand-ing token ordering in masked diffusions. arXiv preprint arXiv:2502.06768 , 2025b. Kim, S. H., Hong, S., Jung, H., Park, Y., and Yun, S.-Y. Klass: Kl-guided fast inference in masked diffusion models. arXiv preprint arXiv:2511.05664 , 2025c. Kingma, D. P. Adam: A method for stochastic optimization. 
+
+arXiv preprint arXiv:1412.6980 , 2014. Kingma, D. P. and Welling, M. Auto-encoding variational bayes. arXiv preprint arXiv:1312.6114 , 2013. Kuleshov, V. Fast algorithms for sparse principal component analysis based on rayleigh quotient iteration. In Interna-tional Conference on Machine Learning , pp. 1418–1425. PMLR, 2013. Landrum, G. et al. Rdkit: A software suite for cheminformat-ics, computational chemistry, and predictive modeling. 
+
+Greg Landrum , 8(31.10):5281, 2013. Lezama, J., Salimans, T., Jiang, L., Chang, H., Ho, J., and Essa, I. Discrete predictor-corrector diffusion models for image synthesis. In The Eleventh International Confer-ence on Learning Representations , 2023. Li, X., Thickstun, J., Gulrajani, I., Liang, P. S., and Hashimoto, T. B. Diffusion-lm improves controllable text generation. Advances in Neural Information Process-ing Systems , 35:4328–4343, 2022. Liu, L., Huang, B., Liu, X., Yin, B., and Zhao, T. Teach dif-fusion language models to learn from their own mistakes. 
+
+arXiv preprint arXiv:2601.06428 , 2026. Liu, Y., Zhang, L. L., Zhu, Y., Dong, B., Zhou, X., Shang, N., Yang, F., and Yang, M. rstar-coder: Scaling compet-itive code reasoning with a large-scale verified dataset. 
+
+arXiv preprint arXiv:2505.21297 , 2025. Lou, A., Meng, C., and Ermon, S. Discrete diffusion mod-eling by estimating the ratios of the data distribution. In 
+
+Forty-first International Conference on Machine Learn-ing , 2024. Nie, S., Zhu, F., You, Z., Zhang, X., Ou, J., Hu, J., Zhou, J., Lin, Y., Wen, J.-R., and Li, C. Large language diffusion models. arXiv preprint arXiv:2502.09992 , 2025. Ou, J., Nie, S., Xue, K., Zhu, F., Sun, J., Li, Z., and Li, C. Your absorbing discrete diffusion secretly models the conditional distributions of clean data. arXiv preprint arXiv:2406.03736 , 2024. pandas development team, T. pandas-dev/pandas: Pan-das, February 2020. URL https://doi.org/10. 5281/zenodo.3509134 .Paszke, A., Gross, S., Massa, F., Lerer, A., Bradbury, J., Chanan, G., Killeen, T., Lin, Z., Gimelshein, N., Antiga, L., Desmaison, A., Kopf, A., Yang, E., DeVito, Z., Rai-son, M., Tejani, A., Chilamkurthy, S., Steiner, B., Fang, L., Bai, J., and Chintala, S. PyTorch: An Imperative Style, High-Performance Deep Learning Library. In Wallach, H., Larochelle, H., Beygelzimer, A., d’Alch ´e Buc, F., Fox, E., and Garnett, R. (eds.), Advances in Neural Infor-mation Processing Systems 32 , pp. 8024–8035. Curran Associates, Inc., 2019. Peebles, W. and Xie, S. Scalable diffusion models with transformers. In Proceedings of the IEEE/CVF Interna-tional Conference on Computer Vision , pp. 4195–4205, 2023. Peng, F. Z., Bezemek, Z., Patel, S., Rector-Brooks, J., Yao, S., Bose, A. J., Tong, A., and Chatterjee, P. Path planning for masked diffusion model sampling. arXiv preprint arXiv:2502.03540 , 2025. Pillutla, K., Swayamdipta, S., Zellers, R., Thickstun, J., Welleck, S., Choi, Y., and Harchaoui, Z. Mauve: Mea-suring the gap between neural text and human text using divergence frontiers. Advances in Neural Information Processing Systems , 34:4816–4828, 2021. Radford, A., Wu, J., Child, R., Luan, D., Amodei, D., Sutskever, I., et al. Language models are unsupervised multitask learners. OpenAI blog , 1(8):9, 2019. Ramakrishnan, R., Dral, P. O., Rupp, M., and Von Lilienfeld, O. A. Quantum chemistry structures and properties of 134 kilo molecules. Scientific data , 1(1):1–7, 2014. Ruddigkeit, L., Van Deursen, R., Blum, L. C., and Reymond, J.-L. Enumeration of 166 billion organic small molecules in the chemical universe database gdb-17. Journal of chemical information and modeling , 52(11):2864–2875, 2012. Sahoo, S. S., Arriola, M., Gokaslan, A., Marroquin, E. M., Rush, A. M., Schiff, Y., Chiu, J. T., and Kuleshov, V. Simple and effective masked diffusion language mod-els. In The Thirty-eighth Annual Conference on Neural 
+
+10 Learn from Your Mistakes: Self-Correcting Masked Diffusion Models 
+
+Information Processing Systems , 2024a. URL https: //openreview.net/forum?id=L4uaAR4ArM .Sahoo, S. S., Gokaslan, A., Sa, C. D., and Kuleshov, V. Diffusion models with learned adaptive noise. In 
+
+The Thirty-eighth Annual Conference on Neural Infor-mation Processing Systems , 2024b. URL https:// openreview.net/forum?id=loMa99A4p8 .Savinov, N., Chung, J., Binkowski, M., Elsen, E., and Oord, A. v. d. Step-unrolled denoising autoencoders for text generation. arXiv preprint arXiv:2112.06749 , 2021. Schiff, Y., Sahoo, S. S., Phung, H., Wang, G., Boshar, S., Dalla-torre, H., de Almeida, B. P., Rush, A., Pierrot, T., and Kuleshov, V. Simple guidance mechanisms for dis-crete diffusion models. arXiv preprint arXiv:2412.10193 ,2024. Schwaller, P., Laino, T., Gaudin, T., Bolgar, P., Hunter, C. A., Bekas, C., and Lee, A. A. Molecular transformer: A model for uncertainty-calibrated chemical reaction pre-diction. ACS central science , 5(9):1572–1583, 2019. Shi, J., Han, K., Wang, Z., Doucet, A., and Titsias, M. K. Simplified and generalized masked diffusion for discrete data. arXiv preprint arXiv:2406.04329 , 2024. Sohl-Dickstein, J., Weiss, E., Maheswaranathan, N., and Ganguli, S. Deep unsupervised learning using nonequi-librium thermodynamics. In International conference on machine learning , pp. 2256–2265. PMLR, 2015. Song, Y. and Ermon, S. Generative modeling by estimating gradients of the data distribution. Advances in neural information processing systems , 32, 2019. Song, Y., Sohl-Dickstein, J., Kingma, D. P., Kumar, A., Er-mon, S., and Poole, B. Score-based generative modeling through stochastic differential equations. arXiv preprint arXiv:2011.13456 , 2020. Sun, H., Yu, L., Dai, B., Schuurmans, D., and Dai, H. Score-based continuous-time discrete diffusion models. arXiv preprint arXiv:2211.16750 , 2022. Toshniwal, S., Du, W., Moshkov, I., Kisacanin, B., Ayrapetyan, A., and Gitman, I. Openmathinstruct-2: Accelerating ai for math with massive open-source in-struction data. arXiv preprint arXiv:2410.01560 , 2024. von R ¨utte, D., Fluri, J., Ding, Y., Orvieto, A., Sch ¨olkopf, B., and Hofmann, T. Generalized interpolating discrete diffusion. arXiv preprint arXiv:2503.04482 , 2025. Wang, G., Schiff, Y., Sahoo, S. S., and Kuleshov, V. Re-masking discrete diffusion models with inference-time scaling. arXiv preprint arXiv:2503.00307 , 2025a. Wang, G., Schiff, Y., Turok, G., and Kuleshov, V. d2: Improved techniques for training reasoning diffusion lan-guage models. arXiv preprint arXiv:2509.21474 , 2025b. Wang, Y., Schiff, Y., Gokaslan, A., Pan, W., Wang, F., De Sa, C., and Kuleshov, V. InfoDiffusion: Repre-sentation learning using information maximizing diffu-sion models. In Krause, A., Brunskill, E., Cho, K., Engelhardt, B., Sabato, S., and Scarlett, J. (eds.), Pro-ceedings of the 40th International Conference on Ma-chine Learning , volume 202 of Proceedings of Machine Learning Research , pp. 36336–36354. PMLR, 23–29 Jul 2023. URL https://proceedings.mlr.press/ v202/wang23ah.html .Waskom, M. L. seaborn: statistical data visualization. Jour-nal of Open Source Software , 6(60):3021, 2021. doi: 10.21105/joss.03021. URL https://doi.org/10. 21105/joss.03021 .Weininger, D. Smiles, a chemical language and information system. 1. introduction to methodology and encoding rules. Journal of chemical information and computer sciences , 28(1):31–36, 1988. Wolf, T., Debut, L., Sanh, V., Chaumond, J., Delangue, C., Moi, A., Cistac, P., Rault, T., Louf, R., Funtowicz, M., et al. Huggingface’s transformers: State-of-the-art natural language processing. arXiv preprint arXiv:1910.03771 ,2019. Wu, C., Zhang, H., Xue, S., Liu, Z., Diao, S., Zhu, L., Luo, P., Han, S., and Xie, E. Fast-dllm: Training-free acceler-ation of diffusion llm by enabling kv cache and parallel decoding. arXiv preprint arXiv:2505.22618 , 2025. Yadan, O. Hydra - a framework for elegantly configuring complex applications. Github, 2019. URL https:// github.com/facebookresearch/hydra .Ye, J., Xie, Z., Zheng, L., Gao, J., Wu, Z., Jiang, X., Li, Z., and Kong, L. Dream 7b, 2025. URL https:// hkunlp.github.io/blog/2025/dream .Zhao, L., Ding, X., Yu, L., and Akoglu, L. Improving and unifying discrete&continuous-time discrete denoising dif-fusion. arXiv preprint arXiv:2402.03701 , 2024a. Zhao, Y., Shi, J., Mackey, L., and Linderman, S. Informed correctors for discrete diffusion models. arXiv preprint arXiv:2407.21243 , 2024b. Zheng, K., Chen, Y., Mao, H., Liu, M.-Y., Zhu, J., and Zhang, Q. Masked diffusion models are secretly time-agnostic masked models and exploit inaccurate categori-cal sampling. arXiv preprint arXiv:2409.02908 , 2024. 11 Learn from Your Mistakes: Self-Correcting Masked Diffusion Models 
+
+Zhu, F., Wang, R., Nie, S., Zhang, X., Wu, C., Hu, J., Zhou, J., Chen, J., Lin, Y., Wen, J.-R., et al. Llada 1.5: Variance-reduced preference optimization for large language diffu-sion models. arXiv preprint arXiv:2505.19223 , 2025. 12 Learn from Your Mistakes: Self-Correcting Masked Diffusion Models 
+
+## A. Sampling with ProSeCo Semi-Autoregressively 
+
+In Algorithm 4, we present a modified version of our sampling method from Algorithm 2, which accommodates the block autoregressive decoding proposed in Arriola et al. (2025) and adopted by LLaDA (Nie et al., 2025). Given that we applied block AR decoding to the LLaDA models, the implementation provided in Algorithm 4 assumes full bidirectional attention is applied across the entire sequence at every forward pass, as in LLaDA, and is not written to support key-value (KV) caching. However, this algorithm can be adapted to support the efficient KV caching proposed in Arriola et al. (2025). Notably, for ProSeCo with semi-AR decoding, at every correction iteration, clean tokens in the current block and all previously decoded blocks can be adapted. 
+
+Algorithm 4 ProSeCo Sampling Block Autoregressive                                                                                                                
+
+> // Assumes full bidirectional attention without KV-caching, as in LLaDA. // Differences to standard MDM with block AR decoding highlighted in brown .
+> 1: Input: Model xθ, length L, block size B, unmasking steps T, noise schedule αt, self-correction budget (per step) S, corrector frequency ω.2: Initialize z1: Lt(T)←m1: L
+> 3: for b= 1 to (L/B )do
+> 4: for i=Tto 1do
+> 5: logits ←xθ(z1: Lt)
+> 6: if (T−i+ 1) mod ω== 0 then
+> 7: z1: Lt,logits ←corrector (xθ,z1: Lt, S )
+> 8: end if
+> 9: logits ℓ← −∞ ,∀ℓ∈[1 ,(b−1) ·B]∪[b·B+ 1 , L ]
+> 10: z1: Lt(i−1) ←sample posterior (logits ,z1: Lt, α t(i))
+> 11: end for
+> 12: zℓt(0) ←sample (xℓθ(z1: Lt(0) )) ,∀ℓ∈[1 + ( b−1) ·B, b ·B]
+> 13: z1: Lt(T)←z1: Lt(0)
+> 14: end for
+> 15: Return z1: Lt(0)
+
+## B. Additional Experimental Details 
+
+B.1. Math & Code Benchmarks Dataset Our SFT dataset is a blend of the rStar-Coder (Liu et al., 2025) and OpenMathInstruct-2 (Toshniwal et al., 2024) datasets. Combined these datasets contain ∼1.5 M prompt-response pairs. Note that for the rStar-Coder, we remove reasoning traces from the dataset. We used the LLaDA-Instruct tokenizer and right-padded sequences up to a max length of 4096 tokens. 
+
+Training Hyperparameters We SFT the LLaDA-Base 8B model for ∼40 B tokens, which amounts to 6 epochs of training on our blended dataset. We train with a batch size of 512. For learning rate we linearly warm-up for 1000 gradient steps until a maximum learning rate of 2 e−5. After this peak, we apply cosine decay until a minimum learning rate of 2 e−7. We use the ADAM-W optimizer (Kingma, 2014) with beta parameters (0.9, 0.999). Finally, during training it is common to set a min t > 0 value which biases the sampling of timesteps away from uniform over the unit interval, by shifting all samples to be in the range [min t , 1] . For example, in works such as Sahoo et al. (2024b), this value is set to 1 e−3. For our SFT experiments, we found that biasing towards heavier masking during training led to improved performance, hence we set 
+
+min t to 1 e−1.
+
+Evaluation For evaluation, we rely on the lm-eval harness library. We evaluate all models with batch size 1. This is to mitigate varying padding lengths based on prompt size variation and to enable effective use of early-stopping whenever the 
+
+[EOS] token is generated. We evaluate 4 benchmarks: HumanEval (Chen et al., 2021) and MBPP (Austin et al., 2021b), GSM8K (Cobbe et al., 2021) and Minerva (Hendrycks et al., 2021). For HumanEval we use 0-shot, for MBPP, we use 3-shot, for GSM8K 5-shot and for Minerva 4-shot, which corresponds to the defaults used for each of the benchmarks in their respective original proposals. For LLaDA models, we use a semi-AR decoding scheme (Arriola et al., 2025), as in Nie et al. (2025), with default block 13 Learn from Your Mistakes: Self-Correcting Masked Diffusion Models 
+
+size of 32. 
+
+Sampling Hyperparameters When evaluating ProSeCo models, we explore different configurations of unmasking and corrector budgets. In Table 3, we detail the sampling hyperparameters used to generate the best performing results for 
+
+ProSeCo reported in Table 1 and Figure 3; see Appendix C.2 for more details. Note that T represents a maximum unmasking budget, since we apply early stopping on the [EOS] token. Additionally, S represents a maximum corrector budget per correction loop, because we break the loop iterations if a corrector sequence does not change between rounds. For Figure 4, we apply a corrector loop every 4 unmasking steps, with a maximum of 2 corrector iterations per loop.   
+
+> Table 3. Sampling hyperparameters for results attained with
+
+ProSeCo and reported in Figure 3. HumanEval MBPP GSM8K Minerva                                                                                     
+
+> Maximum Accuracy
+> Accuracy (%) 62.20 50.20 82.18 35.10 Average NFEs 228.4 94.7 287.9 301.3 Maximum demasking steps T256 128 128 128 Corrector frequency ω2111Maximum corrector steps per loop S16 484
+> Best Trade-off
+> Accuracy (%) 54.88 46.60 81.73 33.24 Average NFEs 60.2 49.9 63.7 156.3 Maximum demasking steps T128 128 64 128 Corrector frequency ω4444Maximum corrector steps per loop S4444
+> Fastest (Accuracy ≥Baseline)
+> Accuracy (%) 53.66 44.40 79.68 30.78 Average NFEs 54.1 40.5 51.3 65.7 Maximum demasking steps T128 128 64 64 Corrector frequency ω8888Maximum corrector steps per loop S4444
+> Baseline
+> Accuracy (%) 48.17 43.20 77.48 29.74 Average NFEs 79.2 70.6 173.2 212.9 Maximum demasking steps T256 256 256 256
+
+Baselines For all baseline results, other than PRISM (see below) we use open-source weights and evaluate using the lm-eval harness library, with batch size 1 and early stopping on the [EOS] token. For ReMDM, we follow the algorithm proposed by Wang et al. (2025a) for applying this method to LLaDA. Namely, for each block of 32 tokes, once 28 tokens have been generated, we enable a ReMDM loop, where for 32 iterations we remask 2 tokens that had the lowest confidence at the time at which they were decoded and unmask 2 tokens based on their confidence. Hence, at the end of the ReMDM loop, there are still 28 unmasked and 4 masked tokens, at which point we finish generating using the standard LLaDA confidence-based sampling. For PRISM (Kim et al., 2025a), since no open-source weights were available at the time of writing this manuscript, we use the values reported in their work. Note that the evaluation setup in PRISM is different than the one we use for the other entries in Table 1. Specifically, in PRISM the maximum generated sequence length is 1024, while we use sequence length 256. Additionally, for MBPP, PRISM reports 0-shot performance while we report 3-shot. 
+
+B.2. Guided Molecule Design 
+
+For this experiment, we follow the setup detailed in Schiff et al. (2024). 
+
+Dataset We train on the QM9 dataset (Ruddigkeit et al., 2012; Ramakrishnan et al., 2014), which consists of ∼133k molecules represented as SMILES strings (Weininger, 1988). We use the RDKit library (Landrum et al., 2013) to add the ring count and drug likeness (QED; Bickerton et al. (2012)) annotations. The dataset was tokenized using a regular expression tokenizer (Schwaller et al., 2019). We use sequence length of L = 32 , with right-padding. 14 Learn from Your Mistakes: Self-Correcting Masked Diffusion Models 
+
+For each property, we generate binary labels that indicate whether a sample is below or above the 90th percentile of training samples. For discrete classifier-free-guidance (Schiff et al., 2024), we train with this label for conditional models, and randomly ‘drop it out’ 10 percent of the time by replacing it with a ‘masked’ label to simulate unconditional modeling. 
+
+Hyperparameters Hyperparameters follow Schiff et al. (2024). Namely, we use a DiT-style (Peebles & Xie, 2023) backbone with 92.4M parameters. Models were trained with a batch size 2048 and perform 25k gradient updates. We use a maximum learning rate of 3 e−4 that we linearly warm-up to for 1000 steps. After this peak we apply cosine decay until a minimum learning rate of 3 e−6. We use the ADAM-W with beta parameters (0 .9, 0.999) .Of note, when training ProSeCo models for ring count, we found it beneficial to eliminate the ‘copy over’ parameterization of the denoising network xθ proposed in Sahoo et al. (2024a). That is, we do not enforce that xθ simply copy over any token positions zℓt̸ = m. For training models, for the QED property, we maintained this copy-over parameterization. 
+
+Evaluation We generate 1024 samples from our model using various unmasking budgets T and guidance temperature γ.Of note, when applying the corrector model forward passes, we only use the conditional model, i.e., γ = 1 .We use the RDKit library to parse generated samples. Of the valid strings (those that can be parsed) we retain unique samples that are not found in the original QM9 dataset (novel). We then use RDKit to measure the property of interest for these novel samples. 
+
+Sampling Hyperparameters For both ring count and QED maximization we use ω = T / 2 for corrector loop frequency and S = T / 16 for steps per loop. 
+
+Baselines Values for the baseline models were taken from Wang et al. (2025a). 
+
+B.3. Unconditional Text Generation 
+
+For this experiment we follow the setup described in Sahoo et al. (2024a). 
+
+Dataset We train models on the OpenWebText (OWT; Gokaslan & Cohen (2019)) dataset. We tokenized using the gpt-2 
+
+(Radford et al., 2019) tokenizer and created sequences of L = 1024 tokens by wrapping samples and separating them with an [EOS] token. We also also place an [EOS] token at the beginning and end of each sequence. 
+
+Hyperparameters As in Sahoo et al. (2024a), we use a DiT backbone with 170M parameters. We used a batch size of 512 and applied 1M gradient updates. We use a constant learning rate of 3 e−4 that we linearly warm-up to for 2500 steps. We use the ADAM-W optimizer with beta parameters (0.9, 0.999). As described in Appendix B.1, we use a min t value of 1e−1, when training ProSeCo models on OWT. 
+
+Evaluation We follow the evaluation protocol from Wang et al. (2025a). Specifically, we generate 5000 samples and compute the MAUVE metric (Pillutla et al., 2021), generative perplexity under the gpt2-large model, and entropy of generated tokens. 
+
+Sampling Hyperparameters For ProSeCo , we match the inference budget of baseline results by using number of unmasking steps equal to T / 4 per column, performing a corrector loop at every iteration, ω = 1 , and applying 3 corrector steps per loop, S = 3 .
+
+Baselines Values for the baseline models were taken from Wang et al. (2025a), except for PRISM results which were taken from Kim et al. (2025a). For PRISM, results correspond to the ‘PRISM-loop’ method presented in Table 3 of Kim et al. (2025a). 
+
+## C. Additional Experimental Results 
+
+C.1. Full Details for Figure 2 
+
+To generate the sequences presented in Figure 2, we took the prompt from the GSM8K test set corresponding to doc id: 584 in the lm-eval harness library. We generated a maximum sequence length of L = 512 with blocks of size 32 . We used 15 Learn from Your Mistakes: Self-Correcting Masked Diffusion Models 
+
+128 sampling steps, which translates to a parallel decoding factor of 4 tokens generated per step. For ProSeCo , we apply up to 8 corrector steps at the end of each block. In Table 6, we present the full prompt and generated sequences for the baseline and our models. 
+
+Prompt: 
+
+90 single use contacts come in 1 box and will last Pete 45 days. Each box is $100.00 and currently 10% off. If he buys 2 boxes of contact, how much will each pair of contacts cost? 
+
+LLaDA baseline: 
+
+Since box break 10% use, each will is $100 * 10/100 = 100/100 =10$ off. Since Pete buys 2 boxes, he will pay $2 * 100 = 100 =200$ ($10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 10 = 100 - 1 
+
+ProSeCo :
+
+Let’s break down the problem step by step. 90 single use contacts come in 1 box and will last Pete 45 days. Each box is $100.00 and currently 10% off. So the discounted price is $100 - (100 * 100 / 100) = 100 - 10 = 90$. If Pete buys 2 boxes of contact, he will pay $2 * 90 = 180$. Since each box contains 90 single use contacts, 2 boxes will contain 2 * 90 = 180 single use contacts. Each pair of contacts consists of 2 contacts, so 180 contacts will make 180 / 2 = 90 pairs of contacts. Thus, the cost of each pair of contacts is $180 / 90 = 2$. So each pair of contacts costs \boxed {2} dollars.   
+
+> Figure 6. Example of
+
+ProSeCo ’s self-correction enabling high quality generation, even with parallel decoding. Note, link breaks in the actual generated sequences were removed for clarity of presentation. 
+
+C.2. Rules of Thumb for Correction Configurations 
+
+To characterize the quality-efficiency trade-offs of our model, we analyze the interaction between two primary hyperparam-eters: the correction budget per step (S ∈ { 1, 2, 4, 8, 16 }) and the correction frequency (ω ∈ { 1, 2, 4, 8}). We define the 
+
+correction intensity as the ratio ρ = S/ω . High values of ρ enable intensive iterative refinement between unmasking steps, while low values prioritize inference speed. A comprehensive analysis of this ratio is provided in Figure 7. To navigate the Pareto frontier between quality and efficiency, we identify three configurations of practical interest, as visualized in our main results in Figure 3: • Max Accuracy Regime ( ρ > 1): By allocating a larger budget to correction loops, the model prioritizes output quality and convergence. This regime explores the benefits of inference-time scaling, where additional computation is traded for higher accuracy. Our reported “Max Accuracy” points correspond to the configurations achieving the highest performance metrics within this group. • Fast Regime ( ρ < 1): These configurations utilize sparse corrections relative to demasking. By interleaving minimal refinement steps, we effectively shift the Pareto frontier, achieving significant speedups with negligible accuracy degradation compared to the standard MDM baseline. We select these points by identifying the configuration with the lowest number of NFEs that maintains higher performance than the baseline. • Balanced Regime ( ρ = 1 ): This serves as a controlled regime where correction steps are proportional to demasking steps. This regime ensures that total iterations do not exceed twice the number of demasking steps, providing a robust 16 Learn from Your Mistakes: Self-Correcting Masked Diffusion Models 20                     
+
+> 40
+> Accuracy (%)
+> HumanEval
+> 20
+> 30
+> 40
+> MBPP
+> 60
+> 70
+> 80
+> GSM8K
+> 15
+> 20
+> 25
+> 30
+> 35
+> Steps=32
+> Minerva
+> 20
+> 30
+> 40
+> 50
+> 60
+> Accuracy (%)
+> 30
+> 40
+> 72.5
+> 75.0
+> 77.5
+> 80.0
+> 82.5
+> 25.0
+> 27.5
+> 30.0
+> 32.5
+> 35.0
+> Steps=64
+> 40
+> 45
+> 50
+> 55
+> 60
+> Accuracy (%)
+> 42.5
+> 45.0
+> 47.5
+> 50.0
+> 79
+> 80
+> 81
+> 82
+> 32
+> 33
+> 34
+> 35
+> Steps=128
+> 0100 200 300
+> Average NFEs
+> 52.5
+> 55.0
+> 57.5
+> 60.0
+> 62.5
+> Accuracy (%)
+> 0100 200
+> Average NFEs
+> 46
+> 48
+> 50
+> 0200 400 600
+> Average NFEs
+> 80.0
+> 80.5
+> 81.0
+> 81.5
+> 0200 400 600
+> Average NFEs
+> 32.5
+> 33.0
+> 33.5
+> 34.0
+> Steps=256
+> Max Points: S>(larger size)
+> Balanced Points: S=(medium size)
+> Fast Points: S<(smaller size)
+> Chosen Points
+
+Figure 7. Illustration of the accuracy of ProSeCo across various benchmarks divided by groups: Max, Balanced and Fast points, defining by the correction intensity S/ω . We evaluate our model by sweeping two primary parameters: the correction budget per step (S ∈ { 1, 2, 4, 8, 16 }) and the correction frequency ( ω ∈ { 1, 2, 4, 8}). Markers size indicates the correction intensity value. 
+
+trade-off between latency and generative performance. We select these points by identifying the configuration closest to the normalized average of the Fast regime’s NFEs and the Max Accuracy regime’s performance. 
+
+C.3. Ablation: Selecting Corrector Budget 
+
+In Figure 8, we provide results that help guide the selection of corrector budgets. In the first two rows, corresponding to ‘fast sampling’ regimes, we find that to overcome the degradation in sample quality from parallel decoding, we require correction frequency of at least ω ≥ T / 16 . Additionally, we see a general trend in this regime that, for a fixed corrector budget, more frequent but shorter correction loops are typically more effective. When unmasking sampling steps increase ( ≥ L/ 2), then we find the expected trend that scaling both frequency of correction loops and number of steps per loop leads almost uniformly leads to improved sample quality, at the cost of additional NFEs. 
+
+## D. Generated Samples 
+
+D.1. LLaDA ProSeCo SFT Samples 
+
+In Figures 9 and 10, we present sample generations for the HumanEval and GSM8K datasets, respectively, using the maximum accuracy configuration for each benchmark (see Table 3). 17 Learn from Your Mistakes: Self-Correcting Masked Diffusion Models 10 
+
+> 20
+> 30
+> 40
+> 50
+> Accuracy (%)
+
+HumanEval 
+
+> 20
+> 30
+> 40
+
+MBPP 
+
+> 40
+> 60
+> 80
+
+GSM8K 
+
+> 10
+> 20
+> 30
+> Steps=32
+
+Minerva    
+
+> 20
+> 30
+> 40
+> 50
+> 60
+> Accuracy (%)
+> 30
+> 40
+> 65
+> 70
+> 75
+> 80
+> 20
+> 25
+> 30
+> 35
+> Steps=64
+> 40
+> 50
+> 60
+> Accuracy (%)
+> 35
+> 40
+> 45
+> 50
+> 76
+> 78
+> 80
+> 82
+> 28
+> 30
+> 32
+> 34
+> Steps=128
+> 0100 200 300
+
+Average NFEs     
+
+> 50
+> 55
+> 60
+> Accuracy (%)
+> 050 100 150 200
+
+Average NFEs   
+
+> 44
+> 46
+> 48
+> 50
+> 0200 400
+
+Average NFEs    
+
+> 78
+> 79
+> 80
+> 81
+> 0200 400 600
+
+Average NFEs 
+
+> 30
+> 32
+> 34
+> Steps=256
+
+Baseline 
+
+=1 
+
+=2 
+
+=4 
+
+=8 
+
+=16 
+
+S=1 
+
+S=2 
+
+S=4 
+
+S=8 
+
+S=16 
+
+Figure 8. Ablation: Performance across various configurations of corrector steps. Frequency ω ∈ { 1, 2, 4, 8, 16 } (denoted by color) and 
+
+S ∈ { 1, 2, 4, 8, 16 } (denoted by marker size). 
+
+18 Learn from Your Mistakes: Self-Correcting Masked Diffusion Models 
+
+D.2. ProSeCo Unconditional Generation Samples 
+
+In Figure 11, we present a sample generated from the ProSeCo model trained on OWT. We use total sample budget of 
+
+T = 256 , which consists of 64 unmasking steps, a corrector loop every ω = 1 step, and S = 3 corrector steps per loop. 
+
+## E. Assets 
+
+In Table 4, we list the corresponding licenses for datasets used in this work. 
+
+Table 4. Datasets and corresponding licenses. Dataset Licence GSM8K (Cobbe et al., 2021) MIT HumanEval (Chen et al., 2021) MIT MBPP (Austin et al., 2021b) MIT MinveraMath (Hendrycks et al., 2021) MIT OpenMathInstrcut-2 (Toshniwal et al., 2024) CC BY 4.0 OpenWebText (Gokaslan & Cohen, 2019) Creative Commons CC0 license (“no rights reserved”) QM9 (Ruddigkeit et al., 2012; Ramakrishnan et al., 2014) N/A rStar-Coder (Liu et al., 2025) CC BY 4.0 
+
+In Table 5, we list the corresponding licenses for software packages used in this work. 
+
+Table 5. Software and corresponding licenses. Library License HuggingFace (Wolf et al., 2019) Apache 2.0 Hydra (Yadan, 2019) MIT Fast-DLLM (Wu et al., 2025) Apache 2.0 Language Model Evaluation Harness (Gao et al., 2023) MIT Matplotlib (Hunter, 2007) Matplotib license Mauve (Pillutla et al., 2021) GNU General Public License, Version 3 MDLM (Sahoo et al., 2024a) Apache 2.0 NumPy (Harris et al., 2020) NumPy license OmegaConf BSD 3-Clause Pandas (pandas development team, 2020) BSD 3-Clause “New” or “Revised” PyTorch (Paszke et al., 2019) BSD-3 Clause PyTorch Lightning (Falcon & The PyTorch Lightning team, 2019) Apache 2.0 RDKit (Landrum et al., 2013) BSD 3-Clause “New” or “Revised” Seaborn (Waskom, 2021) BSD 3-Clause “New” or “Revised” TorchMetrics Apache 2.0 UDLM (Schiff et al., 2024) Apache 2.0 
+
+19 Learn from Your Mistakes: Self-Correcting Masked Diffusion Models 
+
+Prompt: 
+
+from typing import List def has close elements(numbers: List[float], threshold: float) -> bool: """ Check if in given list of numbers, are any two numbers closer to each other than given threshold. >>> has close elements([1.0, 2.0, 3.0], 0.5) False >>> has close elements([1.0, 2.8, 3.0, 4.0, 5.0, 2.0], 0.3) True """ 
+
+Answer: 
+
+from typing import List def has close elements(numbers: List[float], threshold: float) -> bool: numbers.sort() for i in range(len(numbers) - 1): if numbers[i+1] - numbers[i] < threshold: return True return False 
+
+Prompt: 
+
+def truncate number(number: float) -> float: """ Given a positive floating point number, it can be decomposed into and integer part (largest integer smaller than given number) and decimals (leftover part always smaller than 1). Return the decimal part of the number. >>> truncate number(3.5) 0.5 """ 
+
+Answer: def truncate number(number: float) -> float: return number - int(number)   
+
+> Figure 9. Example of
+
+ProSeCo ’s generated response on the HumanEval dataset using the max accuracy configuration (see Table 3). 
+
+20 Learn from Your Mistakes: Self-Correcting Masked Diffusion Models 
+
+Prompt: 
+
+Josh decides to try flipping a house. He buys a house for $80,000 and then puts in $50,000 in repairs. This increased the value of the house by 150%. How much profit did he make? 
+
+Answer: 
+
+Let’s break it down step by step: 1. Josh buys the house for $80,000. 2. He puts in $50,000 in repairs, so the total cost is $80,000 + $50,000 = $130,000. 3. The value of the house increases by 150%, so the new value is $80,000 * 2.5 = $200,000. 4. The profit is the difference between the new value and the total cost: $200,000 - $130,000 = $70,000. So, Josh made a profit of \boxed {70,000 } dollars. 
+
+Prompt: James decides to run 3 sprints 3 times a week. He runs 60 meters each sprint. How many total meters does he run a week? 
+
+Answer: 
+
+Since James runs 3 sprints 3 times a week, he runs a total of $3*3 = 9$ sprints per week. Each sprint is 60 meters. Thus, he runs a total of $9*60 = 540$ meters per week. The answer is \boxed {540 }.  
+
+> Figure 10. Example of
+
+ProSeCo ’s generated response on the GSM8K dataset using the max accuracy configuration (see Table 3). 
+
+21 Learn from Your Mistakes: Self-Correcting Masked Diffusion Models 
+
+|endoftext | you need to know where you’re at if you want to make the exit.” Between The Ghetto, In Theory, Ole T, and General Electric In the fall of 2012, Andrew will open in Shazam, a venue that’s underused for musical acts and comics, ranging from Pavement to Michael Jackson. When I sat him down for an interview, Andrew talked about reading Shazam ”in ways people probably can’t hear ’em, let alone sit down.” ”Let’s find out about our dreams,” Andrew said. ”Find out about our dreams and lives, where we came from and how we all grew up. It’s crazy. I don’t want to be a hippie, but I could be anything I want, and there’s a lot of people in the world and everyone has their dreams. New York is where I grew up. I remember (2003) when there was the M.O.M.’s at the club, and I was one of the fans. It always had a mama-ish vibe. I call New York an awesome city. At first, I didn’t know how many people there, but pretty soon you’d hear the same people all day. ”It’s nice to get to sit in the humidor,” I said, introducing him to the bouncer. ”Honestly, now that you’re at the club, it’s really hard for people to relate to you (in New York). Because almost every guy will have something, but you only know the person personally, things that mean so much. It becomes something that stinks. But yeah, going to New York, being here, and being the bouncer and being [our] manager for another 10 years, you can always just move up here. You can live here, you can go to New York, and vice versa.” Andrew says he really still likes his New York feel. ”It’s not like I’ve moved up a lot, but it’s still a city. A lot of people’ve grown up in this city,” Andrew said. ”I grew up in this neighborhood. When I was 10 years old, my friends went to this little dance club on Canal Street, and that’s a little way off the block, but it’s still a city. ”There are so many different people in New York City. Me and my friends grew up in the same neighborhood, but none of my friends moved here the same way. There are so many people who were in New York at the time but now they’ve gotten to New York, learning the language, learning the beat and rap and dance, you know, how to jump, how to do chords—everything. You get to go all the way up to New York. In fact, the only place that you know what the M.O.M. is—theapping, jumping, all the crazy stuff—is here.” When you head to New York City, it feels like a work in progress. In reality, for most people in New York, it’s always been the same route: going to a dance club. Or, really, for some people at least, a dance club. And the M.O.C. is a dance club in New York. ”We’re looking at it like, ‘OK, aside from the idea, it’s not happening right now. How do we fit in?’” Andrew said. ”It’s just different to us. We’ve been here for 10 years now, and people who went to the club 15 years back know how close it was to us. It was a whole different experience for us, and maybe we thought that it would be a bit different, but we were trying to figure it out and see how we fit in. I’m pretty sure that’s exactly what happened.” ”It’s not what it is,” Andrew said. ”It’s what I feel like in New York my whole life. I put on clothes for my underwear, and you know, shtography isn’t that important, but just the clothes. A boxing ring. I go to the boxing gym every day, and I have two friends who know how to train too. We keep treating that time and trying to make sure we fit in, and it’s gonna be that time.” Like many other people who say he’s ”strung in New York,” Andrew said, ”I definitely kind of feel grounded in New York.” |endoftext |  
+
+> Figure 11. Generated sample from
+
+ProSeCo trained on OWT, with a total budget of T = 256 : 64 unmasking steps, corrector frequency      
+
+> ω= 1 and S= 3 steps per loop.
+
+22
