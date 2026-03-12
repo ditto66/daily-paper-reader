@@ -26,44 +26,26 @@ subscriptions:
     diff_threshold_pct: 15
   keyword_recall_mode: or
   intent_profiles:
-    - tag: 智能体检测
-      description: 结合自进化智能体路线进行短视频虚假信息检测、有害操纵意图推断、多模态虚假信息检测、认知操纵检测的文章
+    - tag: AI MMD
+      description: 结合智能体路线进行多模态虚假信息检测、多模态有害意图检测的文章
       enabled: true
       keywords:
-        - keyword: self-evolving agents
-          keyword_cn: 自进化智能体
-          query: self-evolving autonomous agents for information verification
-        - keyword: short video misinformation
-          keyword_cn: 短视频虚假信息
-          query: misinformation detection in short video platforms
-        - keyword: multimodal manipulation intent
-          keyword_cn: 多模态操纵意图
-          query: inferring harmful manipulation intent in social media
-        - keyword: multimodal misinformaition detection
-          keyword_cn: 多模态虚假信息检测
-          query: multimodal fake news and misinformation detection
-        - keyword: cognitive manipulation
-          keyword_cn: 认知操纵
-          query: detecting cognitive manipulation and psychological influence
+        - keyword: multimodal misinformation
+          keyword_cn: 多模态虚假信息
+          query: multimodal misinformation detection techniques
+        - keyword: harmful intent
+          keyword_cn: 有害意图
+          query: multimodal harmful intent detection in social media
+        - keyword: fact-checking agents
+          keyword_cn: 事实核查智能体
+          query: automated fact-checking using multi-agent systems
+        - keyword: malicious content
+          keyword_cn: 恶意内容
+          query: detecting malicious multimodal content with AI agents
       intent_queries:
-        - query: Self evolving agents for multimodal misinformation detection in short videos
-          query_cn: 用于短视频多模态虚假信息检测的自进化智能体
+        - query: State of the art agentic frameworks for detecting harmful multimodal content.
+          query_cn: 用于检测有害多模态内容的前沿智能体框架。
           enabled: true
           source: manual
           note: ''
-        - query: Inferring harmful manipulation intent using autonomous AI agents
-          query_cn: 利用自主AI智能体推断有害操纵意图
-          enabled: true
-          source: manual
-          note: ''
-        - query: Cognitive manipulation detection in social media via evolving agents
-          query_cn: 通过进化智能体检测社交媒体中的认知操纵
-          enabled: true
-          source: manual
-          note: ''
-        - query: Frameworks for self improving agents in multimodal fake news identification
-          query_cn: 多模态虚假新闻识别中的自改进智能体框架
-          enabled: true
-          source: manual
-          note: ''
-      updated_at: '2026-03-12T03:32:25.132Z'
+      updated_at: '2026-03-12T03:55:05.142Z'

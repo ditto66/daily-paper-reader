@@ -1,48 +1,8 @@
 {
-  "generated_at": "2026-03-12T03:40:36.602880+00:00",
+  "generated_at": "2026-03-12T03:59:43.639595+00:00",
   "updated_date": "20260211-20260312",
   "carryover_days": 9,
   "items": [
-    {
-      "id": "2602.17497v1",
-      "title": "Retrospective In-Context Learning for Temporal Credit Assignment with Large Language Models",
-      "abstract": "Learning from self-sampled data and sparse environmental feedback remains a fundamental challenge in training self-evolving agents. Temporal credit assignment mitigates this issue by transforming sparse feedback into dense supervision signals. However, previous approaches typically depend on learning task-specific value functions for credit assignment, which suffer from poor sample efficiency and limited generalization. In this work, we propose to leverage pretrained knowledge from large language models (LLMs) to transform sparse rewards into dense training signals (i.e., the advantage function) through retrospective in-context learning (RICL). We further propose an online learning framework, RICOL, which iteratively refines the policy based on the credit assignment results from RICL. We empirically demonstrate that RICL can accurately estimate the advantage function with limited samples and effectively identify critical states in the environment for temporal credit assignment. Extended evaluation on four BabyAI scenarios show that RICOL achieves comparable convergent performance with traditional online RL algorithms with significantly higher sample efficiency. Our findings highlight the potential of leveraging LLMs for temporal credit assignment, paving the way for more sample-efficient and generalizable RL paradigms.",
-      "authors": [
-        "Wen-Tse Chen",
-        "Jiayu Chen",
-        "Fahim Tajwar",
-        "Hao Zhu",
-        "Xintong Duan",
-        "Ruslan Salakhutdinov",
-        "Jeff Schneider"
-      ],
-      "primary_category": "cs.LG",
-      "categories": [
-        "cs.LG"
-      ],
-      "published": "2026-02-19T16:13:28+00:00",
-      "link": "https://arxiv.org/pdf/2602.17497v1",
-      "tags": [
-        "keyword:智能体检测"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "training self-evolving agents using LLMs and retrospective in-context learning",
-      "llm_evidence_cn": "使用大语言模型和回顾式上下文学习训练自进化智能体",
-      "llm_evidence": "使用大语言模型和回顾式上下文学习训练自进化智能体",
-      "canonical_evidence": "使用大语言模型和回顾式上下文学习训练自进化智能体",
-      "llm_tldr_en": "Develops a framework for self-evolving agents to learn from sparse feedback via retrospective in-context learning.",
-      "llm_tldr_cn": "开发了一个自进化智能体框架，通过回顾式上下文学习从稀疏反馈中学习。",
-      "llm_tldr": "开发了一个自进化智能体框架，通过回顾式上下文学习从稀疏反馈中学习。",
-      "llm_tags": [
-        "query:q1"
-      ],
-      "matched_query_tag": "query:q1",
-      "matched_query_text": "self-evolving autonomous agents for information verification",
-      "matched_requirement_id": "req-1",
-      "selection_source": "carryover_cache",
-      "paper_id": "2602.17497v1",
-      "carry_days": 1
-    },
     {
       "id": "2603.02766v1",
       "title": "EvoSkill: Automated Skill Discovery for Multi-Agent Systems",
@@ -434,42 +394,6 @@
       "carry_days": 1
     },
     {
-      "id": "2602.19212v1",
-      "title": "Retrieval Augmented Enhanced Dual Co-Attention Framework for Target Aware Multimodal Bengali Hateful Meme Detection",
-      "abstract": "Hateful content on social media increasingly appears as multimodal memes that combine images and text to convey harmful narratives. In low-resource languages such as Bengali, automated detection remains challenging due to limited annotated data, class imbalance, and pervasive code-mixing. To address these issues, we augment the Bengali Hateful Memes (BHM) dataset with semantically aligned samples from the Multimodal Aggression Dataset in Bengali (MIMOSA), improving both class balance and semantic diversity. We propose the Enhanced Dual Co-attention Framework (xDORA), integrating vision encoders (CLIP, DINOv2) and multilingual text encoders (XGLM, XLM-R) via weighted attention pooling to learn robust cross-modal representations. Building on these embeddings, we develop a FAISS-based k-nearest neighbor classifier for non-parametric inference and introduce RAG-Fused DORA, which incorporates retrieval-driven contextual reasoning. We further evaluate LLaVA under zero-shot, few-shot, and retrieval-augmented prompting settings. Experiments on the extended dataset show that xDORA (CLIP + XLM-R) achieves macro-average F1-scores of 0.78 for hateful meme identification and 0.71 for target entity detection, while RAG-Fused DORA improves performance to 0.79 and 0.74, yielding gains over the DORA baseline. The FAISS-based classifier performs competitively and demonstrates robustness for rare classes through semantic similarity modeling. In contrast, LLaVA exhibits limited effectiveness in few-shot settings, with only modest improvements under retrieval augmentation, highlighting constraints of pretrained vision-language models for code-mixed Bengali content without fine-tuning. These findings demonstrate the effectiveness of supervised, retrieval-augmented, and non-parametric multimodal frameworks for addressing linguistic and cultural complexities in low-resource hate speech detection.",
-      "authors": [
-        "Raihan Tanvir",
-        "Md. Golam Rabiul Alam"
-      ],
-      "primary_category": "cs.CL",
-      "categories": [
-        "cs.CL"
-      ],
-      "published": "2026-02-22T14:48:25+00:00",
-      "link": "https://arxiv.org/pdf/2602.19212v1",
-      "tags": [
-        "keyword:智能体检测",
-        "query:智能体检测"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "multimodal hateful meme detection using dual co-attention",
-      "llm_evidence_cn": "利用双重协同注意力进行多模态仇恨模因检测",
-      "llm_evidence": "利用双重协同注意力进行多模态仇恨模因检测",
-      "canonical_evidence": "利用双重协同注意力进行多模态仇恨模因检测",
-      "llm_tldr_en": "xDORA uses retrieval and co-attention for multimodal hateful meme detection in low-resource languages.",
-      "llm_tldr_cn": "xDORA利用检索和协同注意力机制，实现了低资源语言下的多模态仇恨模因检测。",
-      "llm_tldr": "xDORA利用检索和协同注意力机制，实现了低资源语言下的多模态仇恨模因检测。",
-      "llm_tags": [
-        "query:q4"
-      ],
-      "matched_query_tag": "query:q4",
-      "matched_query_text": "multimodal fake news and misinformation detection",
-      "matched_requirement_id": "req-4",
-      "selection_source": "carryover_cache",
-      "paper_id": "2602.19212v1",
-      "carry_days": 1
-    },
-    {
       "id": "2603.09249v1",
       "title": "Social-R1: Towards Human-like Social Reasoning in LLMs",
       "abstract": "While large language models demonstrate remarkable capabilities across numerous domains, social intelligence - the capacity to perceive social cues, infer mental states, and generate appropriate responses - remains a critical challenge, particularly for enabling effective human-AI collaboration and developing AI that truly serves human needs. Current models often rely on superficial patterns rather than genuine social reasoning. We argue that cultivating human-like social intelligence requires training with challenging cases that resist shortcut solutions. To this end, we introduce ToMBench-Hard, an adversarial benchmark designed to provide hard training examples for social reasoning. Building on this, we propose Social-R1, a reinforcement learning framework that aligns model reasoning with human cognition through multi-dimensional rewards. Unlike outcome-based RL, Social-R1 supervises the entire reasoning process, enforcing structural alignment, logical integrity, and information density. Results show that our approach enables a 4B parameter model to surpass much larger counterparts and generalize robustly across eight diverse benchmarks. These findings demonstrate that challenging training cases with trajectory-level alignment offer a path toward efficient and reliable social intelligence.",
@@ -512,43 +436,6 @@
       "carry_days": 1
     },
     {
-      "id": "2602.15903v1",
-      "title": "Detecting Deepfakes with Multivariate Soft Blending and CLIP-based Image-Text Alignment",
-      "abstract": "The proliferation of highly realistic facial forgeries necessitates robust detection methods. However, existing approaches often suffer from limited accuracy and poor generalization due to significant distribution shifts among samples generated by diverse forgery techniques. To address these challenges, we propose a novel Multivariate and Soft Blending Augmentation with CLIP-guided Forgery Intensity Estimation (MSBA-CLIP) framework. Our method leverages the multimodal alignment capabilities of CLIP to capture subtle forgery traces. We introduce a Multivariate and Soft Blending Augmentation (MSBA) strategy that synthesizes images by blending forgeries from multiple methods with random weights, forcing the model to learn generalizable patterns. Furthermore, a dedicated Multivariate Forgery Intensity Estimation (MFIE) module is designed to explicitly guide the model in learning features related to varied forgery modes and intensities. Extensive experiments demonstrate state-of-the-art performance. On in-domain tests, our method improves Accuracy and AUC by 3.32\\% and 4.02\\%, respectively, over the best baseline. In cross-domain evaluations across five datasets, it achieves an average AUC gain of 3.27\\%. Ablation studies confirm the efficacy of both proposed components. While the reliance on a large vision-language model entails higher computational cost, our work presents a significant step towards more generalizable and robust deepfake detection.",
-      "authors": [
-        "Jingwei Li",
-        "Jiaxin Tong",
-        "Pengfei Wu"
-      ],
-      "primary_category": "cs.CV",
-      "categories": [
-        "cs.CV"
-      ],
-      "published": "2026-02-14T09:53:35+00:00",
-      "link": "https://arxiv.org/pdf/2602.15903v1",
-      "tags": [
-        "keyword:智能体检测",
-        "query:智能体检测"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "multimodal alignment for deepfake and facial forgery detection",
-      "llm_evidence_cn": "用于深度伪造和人脸欺骗检测的多模态对齐",
-      "llm_evidence": "用于深度伪造和人脸欺骗检测的多模态对齐",
-      "canonical_evidence": "用于深度伪造和人脸欺骗检测的多模态对齐",
-      "llm_tldr_en": "Uses CLIP-based multimodal alignment and data augmentation to improve deepfake detection generalization.",
-      "llm_tldr_cn": "利用CLIP多模态对齐和数据增强技术提升深度伪造检测的泛化性能。",
-      "llm_tldr": "利用CLIP多模态对齐和数据增强技术提升深度伪造检测的泛化性能。",
-      "llm_tags": [
-        "query:q4"
-      ],
-      "matched_query_tag": "query:q4",
-      "matched_query_text": "multimodal fake news and misinformation detection",
-      "matched_requirement_id": "req-4",
-      "selection_source": "carryover_cache",
-      "paper_id": "2602.15903v1",
-      "carry_days": 1
-    },
-    {
       "id": "2602.21320v1",
       "title": "Tool-R0: Self-Evolving LLM Agents for Tool-Learning from Zero Data",
       "abstract": "Large language models (LLMs) are becoming the foundation for autonomous agents that can use tools to solve complex tasks. Reinforcement learning (RL) has emerged as a common approach for injecting such agentic capabilities, but typically under tightly controlled training setups. It often depends on carefully constructed task-solution pairs and substantial human supervision, which creates a fundamental obstacle to open-ended self-evolution toward superintelligent systems. In this paper, we propose Tool-R0 framework for training general purpose tool-calling agents from scratch with self-play RL, under a zero-data assumption. Initialized from the same base LLM, Tool-R0 co-evolves a Generator and a Solver with complementary rewards: one proposes targeted challenging tasks at the other's competence frontier and the other learns to solve them with real-world tool calls. This creates a self-evolving cycle that requires no pre-existing tasks or datasets. Evaluation on different tool-use benchmarks show that Tool-R0 yields 92.5 relative improvement over the base model and surpasses fully supervised tool-calling baselines under the same setting. Our work further provides empirical insights into self-play LLM agents by analyzing co-evolution, curriculum dynamics, and scaling behavior.",
@@ -588,46 +475,6 @@
       "carry_days": 1
     },
     {
-      "id": "2602.19141v1",
-      "title": "Sycophantic Chatbots Cause Delusional Spiraling, Even in Ideal Bayesians",
-      "abstract": "\"AI psychosis\" or \"delusional spiraling\" is an emerging phenomenon where AI chatbot users find themselves dangerously confident in outlandish beliefs after extended chatbot conversations. This phenomenon is typically attributed to AI chatbots' well-documented bias towards validating users' claims, a property often called \"sycophancy.\" In this paper, we probe the causal link between AI sycophancy and AI-induced psychosis through modeling and simulation. We propose a simple Bayesian model of a user conversing with a chatbot, and formalize notions of sycophancy and delusional spiraling in that model. We then show that in this model, even an idealized Bayes-rational user is vulnerable to delusional spiraling, and that sycophancy plays a causal role. Furthermore, this effect persists in the face of two candidate mitigations: preventing chatbots from hallucinating false claims, and informing users of the possibility of model sycophancy. We conclude by discussing the implications of these results for model developers and policymakers concerned with mitigating the problem of delusional spiraling.",
-      "authors": [
-        "Kartik Chandra",
-        "Max Kleiman-Weiner",
-        "Jonathan Ragan-Kelley",
-        "Joshua B. Tenenbaum"
-      ],
-      "primary_category": "cs.AI",
-      "categories": [
-        "cs.AI",
-        "cs.CY",
-        "cs.HC"
-      ],
-      "published": "2026-02-22T12:13:44+00:00",
-      "link": "https://arxiv.org/pdf/2602.19141v1",
-      "tags": [
-        "keyword:智能体检测",
-        "query:智能体检测"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "modeling cognitive manipulation and delusional spiraling in chatbots",
-      "llm_evidence_cn": "模拟聊天机器人中的认知操纵和幻想螺旋",
-      "llm_evidence": "模拟聊天机器人中的认知操纵和幻想螺旋",
-      "canonical_evidence": "模拟聊天机器人中的认知操纵和幻想螺旋",
-      "llm_tldr_en": "Explores how sycophantic AI behavior causes users to fall into delusional belief cycles.",
-      "llm_tldr_cn": "探讨AI的谄媚行为如何导致用户陷入错误信念的幻想螺旋，涉及认知影响。",
-      "llm_tldr": "探讨AI的谄媚行为如何导致用户陷入错误信念的幻想螺旋，涉及认知影响。",
-      "llm_tags": [
-        "query:q5"
-      ],
-      "matched_query_tag": "query:q5",
-      "matched_query_text": "detecting cognitive manipulation and psychological influence",
-      "matched_requirement_id": "req-5",
-      "selection_source": "carryover_cache",
-      "paper_id": "2602.19141v1",
-      "carry_days": 1
-    },
-    {
       "id": "2603.09716v1",
       "title": "AutoAgent: Evolving Cognition and Elastic Memory Orchestration for Adaptive Agents",
       "abstract": "Autonomous agent frameworks still struggle to reconcile long-term experiential learning with real-time, context-sensitive decision-making. In practice, this gap appears as static cognition, rigid workflow dependence, and inefficient context usage, which jointly limit adaptability in open-ended and non-stationary environments. To address these limitations, we present AutoAgent, a self-evolving multi-agent framework built on three tightly coupled components: evolving cognition, on-the-fly contextual decision-making, and elastic memory orchestration. At the core of AutoAgent, each agent maintains structured prompt-level cognition over tools, self-capabilities, peer expertise, and task knowledge. During execution, this cognition is combined with live task context to select actions from a unified space that includes tool calls, LLM-based generation, and inter-agent requests. To support efficient long-horizon reasoning, an Elastic Memory Orchestrator dynamically organizes interaction history by preserving raw records, compressing redundant trajectories, and constructing reusable episodic abstractions, thereby reducing token overhead while retaining decision-critical evidence. These components are integrated through a closed-loop cognitive evolution process that aligns intended actions with observed outcomes to continuously update cognition and expand reusable skills, without external retraining. Empirical results across retrieval-augmented reasoning, tool-augmented agent benchmarks, and embodied task environments show that AutoAgent consistently improves task success, tool-use efficiency, and collaborative robustness over static and memory-augmented baselines. Overall, AutoAgent provides a unified and practical foundation for adaptive autonomous agents that must learn from experience while making reliable context-aware decisions in dynamic environments.",
@@ -663,43 +510,6 @@
       "matched_requirement_id": "req-1",
       "selection_source": "carryover_cache",
       "paper_id": "2603.09716v1",
-      "carry_days": 1
-    },
-    {
-      "id": "2602.20818v1",
-      "title": "GatedCLIP: Gated Multimodal Fusion for Hateful Memes Detection",
-      "abstract": "Detecting hateful content in multimodal memes presents unique challenges, as harmful messages often emerge from the complex interplay between benign images and text. We propose GatedCLIP, a Vision-Language model that enhances CLIP's multimodal capabilities with specialized architectural improvements for hateful memes detection. Our approach introduces learned projection heads that map CLIP embeddings to a task-optimized semantic space, a dynamic gated fusion mechanism that adaptively weights visual and textual features, and a contrastive learning objective that maintains cross-modal semantic alignment. Experiments on the Hateful Memes dataset demonstrate that GatedCLIP achieves an AUROC of 0.66, substantially outperforming the CLIP baseline (AUROC 0.49) while maintaining computational efficiency with only 350K trainable parameters.",
-      "authors": [
-        "Yingying Guo",
-        "Ke Zhang",
-        "Zirong Zeng"
-      ],
-      "primary_category": "cs.CV",
-      "categories": [
-        "cs.CV"
-      ],
-      "published": "2026-02-24T11:54:54+00:00",
-      "link": "https://arxiv.org/pdf/2602.20818v1",
-      "tags": [
-        "keyword:智能体检测",
-        "query:智能体检测"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "multimodal fusion for detecting harmful messages in memes",
-      "llm_evidence_cn": "用于检测模因中有害信息的多模态融合",
-      "llm_evidence": "用于检测模因中有害信息的多模态融合",
-      "canonical_evidence": "用于检测模因中有害信息的多模态融合",
-      "llm_tldr_en": "Proposes GatedCLIP for enhanced multimodal detection of harmful content in vision-language memes.",
-      "llm_tldr_cn": "提出了GatedCLIP，用于增强视觉语言模因中有害内容的多模态检测。",
-      "llm_tldr": "提出了GatedCLIP，用于增强视觉语言模因中有害内容的多模态检测。",
-      "llm_tags": [
-        "query:q4"
-      ],
-      "matched_query_tag": "query:q4",
-      "matched_query_text": "multimodal fake news and misinformation detection",
-      "matched_requirement_id": "req-4",
-      "selection_source": "carryover_cache",
-      "paper_id": "2602.20818v1",
       "carry_days": 1
     },
     {
@@ -824,46 +634,6 @@
       "carry_days": 1
     },
     {
-      "id": "2602.21394v2",
-      "title": "MemoPhishAgent: Memory-Augmented Multi-Modal LLM Agent for Phishing URL Detection",
-      "abstract": "Traditional phishing website detection relies on static heuristics or reference lists, which lag behind rapidly evolving attacks. While recent systems incorporate large language models (LLMs), they are still prompt-based, deterministic pipelines that underutilize reasoning capability. We present MemoPhishAgent (MPA), a memory-augmented multi-modal LLM agent that dynamically orchestrates phishing-specific tools and leverages episodic memories of past reasoning trajectories to guide decisions on recurring and novel threats. On two public datasets, MPA outperforms three state-of-the-art (SOTA) baselines, improving recall by 13.6%. To better reflect realistic, user-facing phishing detection performance, we further evaluate MPA on a benchmark of real-world suspicious URLs actively crawled from five social media platforms, where it improves recall by 20%. Detailed analysis shows episodic memory contributes up to 27% recall gain without introducing additional computational overhead. The ablation study confirms the necessity of the agent-based approach compared to prompt-based baselines and validates the effectiveness of our tool design. Finally, MPA is deployed in production, processing 60K targeted high-risk URLs weekly, and achieving 91.44% recall, providing proactive protection for millions of customers. Together, our results show that combining multi-modal reasoning with episodic memory yields robust phishing detection in realistic user-exposure settings.",
-      "authors": [
-        "Xuan Chen",
-        "Hao Liu",
-        "Tao Yuan",
-        "Mehran Kafai",
-        "Piotr Habas",
-        "Xiangyu Zhang"
-      ],
-      "primary_category": "cs.CR",
-      "categories": [
-        "cs.CR"
-      ],
-      "published": "2026-02-24T21:50:46+00:00",
-      "link": "https://arxiv.org/pdf/2602.21394v2",
-      "tags": [
-        "keyword:智能体检测",
-        "query:智能体检测"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "memory-augmented multi-modal agent for threat detection",
-      "llm_evidence_cn": "用于威胁检测的记忆增强多模态智能体",
-      "llm_evidence": "用于威胁检测的记忆增强多模态智能体",
-      "canonical_evidence": "用于威胁检测的记忆增强多模态智能体",
-      "llm_tldr_en": "A multi-modal agent using episodic memory to improve detection of evolving phishing threats.",
-      "llm_tldr_cn": "一种利用情景记忆提高对演化中钓鱼威胁检测能力的多模态智能体。",
-      "llm_tldr": "一种利用情景记忆提高对演化中钓鱼威胁检测能力的多模态智能体。",
-      "llm_tags": [
-        "query:q9"
-      ],
-      "matched_query_tag": "query:q9",
-      "matched_query_text": "Frameworks for self improving agents in multimodal fake news identification",
-      "matched_requirement_id": "req-9",
-      "selection_source": "carryover_cache",
-      "paper_id": "2602.21394v2",
-      "carry_days": 1
-    },
-    {
       "id": "2603.01355v1",
       "title": "Behavioral Outcomes of Human Cognitive Security within an Integrative Modeling Framework",
       "abstract": "Human decision-making under uncertainty faces growing challenges from information-based threats that pose risks to human cognitive processes and behavior. Although their potential harm is widely acknowledged, there remains no well-defined construct for characterizing the degree to which information-based threats influence changes in human judgments and decision-making, impeding theoretical advancement, measurement, and effective countermeasure development. Here, we introduce a human cognitive security construct focused on linking information-based threats to observable outcomes to bridge field-level definitions with operational measures by drawing from core mechanisms related to information processing and decision-making. To connect the information environment to behavior, we develop an integrative modeling framework that unifies Bayesian inference with affect-modulated decision valuation, capturing how cognitive resource allocation and affective valuation shape three core behavioral outcomes: veracity discernment, task-oriented actions, and information sharing. Through computational simulations, we demonstrate that this framework explains canonical phenomena, including cognitive heuristics, the illusory truth effect (R2=0.86, validated against empirical data), and incongruent veracity discernment and sharing behavior. We propose empirically grounded behavioral outcome measures of cognitive security to guide future empirical examinations. Finally, we outline how environment-specific elements, characterized by data availability and ecological constraints, affect individuals' cognitive security and identify future research directions.",
@@ -979,6 +749,127 @@
       "matched_requirement_id": "req-1",
       "selection_source": "carryover_cache",
       "paper_id": "2603.04900v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.02842v1",
+      "title": "A Browser-based Open Source Assistant for Multimodal Content Verification",
+      "abstract": "Disinformation and false content produced by generative AI pose a significant challenge for journalists and fact-checkers who must rapidly verify digital media information. While there is an abundance of NLP models for detecting credibility signals such as persuasion techniques, subjectivity, or machine-generated text, such methods often remain inaccessible to non-expert users and are not integrated into their daily workflows as a unified framework. This paper demonstrates the VERIFICATION ASSISTANT, a browser-based tool designed to bridge this gap. The VERIFICATION ASSISTANT, a core component of the widely adopted VERIFICATION PLUGIN (140,000+ users), allows users to submit URLs or media files to a unified interface. It automatically extracts content and routes it to a suite of backend NLP classifiers, delivering actionable credibility signals, estimating AI-generated content, and providing other verification guidance in a clear, easy-to-digest format. This paper showcases the tool architecture, its integration of multiple NLP services, and its real-world application to detecting disinformation.",
+      "authors": [
+        "Rosanna Milner",
+        "Michael Foster",
+        "Olesya Razuvayevskaya",
+        "Ian Roberts",
+        "Valentin Porcellini",
+        "Denis Teyssou",
+        "Kalina Bontcheva"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-03-03T10:39:32+00:00",
+      "link": "https://arxiv.org/pdf/2603.02842v1",
+      "tags": [
+        "keyword:AI MMD",
+        "query:AI MMD"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "multimodal content verification assistant",
+      "llm_evidence_cn": "多模态内容验证助手",
+      "llm_evidence": "多模态内容验证助手",
+      "canonical_evidence": "多模态内容验证助手",
+      "llm_tldr_en": "A browser-based tool that integrates multiple NLP models for multimodal misinformation and credibility verification.",
+      "llm_tldr_cn": "一种基于浏览器的工具，集成了多个NLP模型用于多模态虚假信息和可信度验证。",
+      "llm_tldr": "一种基于浏览器的工具，集成了多个NLP模型用于多模态虚假信息和可信度验证。",
+      "llm_tags": [
+        "query:ai-mmd"
+      ],
+      "matched_query_tag": "query:ai-mmd",
+      "matched_query_text": "multimodal misinformation detection techniques",
+      "matched_requirement_id": "req-1",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.02842v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.04364v1",
+      "title": "Dual-Modality Multi-Stage Adversarial Safety Training: Robustifying Multimodal Web Agents Against Cross-Modal Attacks",
+      "abstract": "Multimodal web agents that process both screenshots and accessibility trees are increasingly deployed to interact with web interfaces, yet their dual-stream architecture opens an underexplored attack surface: an adversary who injects content into the webpage DOM simultaneously corrupts both observation channels with a consistent deceptive narrative. Our vulnerability analysis on MiniWob++ reveals that attacks including a visual component far outperform text-only injections, exposing critical gaps in text-centric VLM safety training. Motivated by this finding, we propose Dual-Modality Multi-Stage Adversarial Safety Training (DMAST), a framework that formalizes the agent-attacker interaction as a two-player zero-sum Markov game and co-trains both players through a three-stage pipeline: (1) imitation learning from a strong teacher model, (2) oracle-guided supervised fine-tuning that uses a novel zero-acknowledgment strategy to instill task-focused reasoning under adversarial noise, and (3) adversarial reinforcement learning via Group Relative Policy Optimization (GRPO) self-play. On out-of-distribution tasks, DMAST substantially mitigates adversarial risks while simultaneously doubling task completion efficiency. Our approach significantly outperforms established training-based and prompt-based defenses, demonstrating genuine co-evolutionary progress and robust generalization to complex, unseen environments.",
+      "authors": [
+        "Haoyu Liu",
+        "Dingcheng Li",
+        "Lukas Rutishauser",
+        "Zeyu Zheng"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-03-04T18:29:54+00:00",
+      "link": "https://arxiv.org/pdf/2603.04364v1",
+      "tags": [
+        "keyword:AI MMD",
+        "query:AI MMD"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "robustifying multimodal web agents against deceptive narratives",
+      "llm_evidence_cn": "增强多模态网络智能体对抗欺骗性叙述的鲁棒性",
+      "llm_evidence": "增强多模态网络智能体对抗欺骗性叙述的鲁棒性",
+      "canonical_evidence": "增强多模态网络智能体对抗欺骗性叙述的鲁棒性",
+      "llm_tldr_en": "A framework to protect multimodal web agents from cross-modal adversarial attacks and deceptive content.",
+      "llm_tldr_cn": "一种保护多模态网络智能体免受跨模态对抗攻击和欺骗性内容影响的框架。",
+      "llm_tldr": "一种保护多模态网络智能体免受跨模态对抗攻击和欺骗性内容影响的框架。",
+      "llm_tags": [
+        "query:ai-mmd"
+      ],
+      "matched_query_tag": "query:ai-mmd",
+      "matched_query_text": "detecting malicious multimodal content with AI agents",
+      "matched_requirement_id": "req-4",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.04364v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.01784v1",
+      "title": "Co-Evolutionary Multi-Modal Alignment via Structured Adversarial Evolution",
+      "abstract": "Adversarial behavior plays a central role in aligning large language models with human values. However, existing alignment methods largely rely on static adversarial settings, which fundamentally limit robustness, particularly in multimodal settings with a larger attack surface. In this work, we move beyond static adversarial supervision and introduce co-evolutionary alignment with evolving attacks, instantiated by CEMMA (Co-Evolutionary Multi-Modal Alignment), an automated and adaptive framework for multimodal safety alignment. We introduce an Evolutionary Attacker that decomposes adversarial prompts into method templates and harmful intents. By employing genetic operators, including mutation, crossover, and differential evolution, it enables simple seed attacks to inherit the structural efficacy of sophisticated jailbreaks. The Adaptive Defender is iteratively updated on the synthesized hard negatives, forming a closed-loop process that adapts alignment to evolving attacks. Experiments show that the Evolutionary Attacker substantially increases red-teaming jailbreak attack success rate (ASR), while the Adaptive Defender improves robustness and generalization across benchmarks with higher data efficiency, without inducing excessive benign refusal, and remains compatible with inference-time defenses such as AdaShield.",
+      "authors": [
+        "Guoxin Shi",
+        "Haoyu Wang",
+        "Zaihui Yang",
+        "Yuxing Wang",
+        "Yongzhe Chang"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-03-02T12:10:46+00:00",
+      "link": "https://arxiv.org/pdf/2603.01784v1",
+      "tags": [
+        "keyword:AI MMD",
+        "query:AI MMD"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "automated framework for multimodal safety alignment against harmful intents",
+      "llm_evidence_cn": "针对有害意图的多模态安全对齐自动化框架",
+      "llm_evidence": "针对有害意图的多模态安全对齐自动化框架",
+      "canonical_evidence": "针对有害意图的多模态安全对齐自动化框架",
+      "llm_tldr_en": "Introduces a co-evolutionary framework for multimodal safety alignment by evolving attacks and harmful intents.",
+      "llm_tldr_cn": "通过演化攻击和有害意图，引入了一种用于多模态安全对齐的协同演化框架。",
+      "llm_tldr": "通过演化攻击和有害意图，引入了一种用于多模态安全对齐的协同演化框架。",
+      "llm_tags": [
+        "query:ai-mmd"
+      ],
+      "matched_query_tag": "query:ai-mmd",
+      "matched_query_text": "multimodal harmful intent detection in social media",
+      "matched_requirement_id": "req-2",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.01784v1",
       "carry_days": 1
     }
   ]

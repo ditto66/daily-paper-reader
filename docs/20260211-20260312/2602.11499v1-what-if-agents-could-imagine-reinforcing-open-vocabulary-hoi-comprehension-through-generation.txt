@@ -1,0 +1,848 @@
+Title: What if Agents Could Imagine? Reinforcing Open-Vocabulary HOI Comprehension through Generation
+
+URL Source: https://arxiv.org/pdf/2602.11499v1
+
+Published Time: Fri, 13 Feb 2026 01:31:34 GMT
+
+Number of Pages: 18
+
+Markdown Content:
+# What if Agents Could Imagine? Reinforcing Open-Vocabulary HOI Comprehension through Generation 
+
+Zhenlong Yuan 1 * Xiangyan Qu 1 * Jing Tang 1 Rui Chen 1 Lei Sun 1 ‡ Ruidong Chen 1
+
+Hongwei Yu 1 Chengxuan Qian 1 Xiangxiang Chu 1 Shuo Li 2 Yuyin Zhou 3 § 
+
+> ∗
+
+Equal contribution ‡ Project Lead § Corresponding Author Viewpoint 
+
+> Transform
+> Outpaint
+> Action Explanation
+> Scene Explanation
+> Online RAG BAGEL
+> Image
+> Crop
+> Toolset
+
+Training Data Construction 
+
+> Round 1 Input
+> Perception
+> Tool Select
+> Round 2
+> Tool Augment
+> Cognition
+
+Training 
+
+Supervised 
+
+Fine-Tuning 
+
+> Vision Encoder
+
+Reinforcement 
+
+Learning 
+
+Evaluation    
+
+> Format
+> Reward
+> Person 1
+> Helmet 2Glove
+> Helmet 1
+> Baseball bat
+> Person 1 Person 2
+> Helmet 1
+> Baseball bat
+> HOI
+> Accuracy
+> Reward Tool-usage
+> Reward
+> Image
+> Genera
+> tion
+> QwenLM
+> Decoder
+
+## Abstract 
+
+Multimodal Large Language Models have shown promising capabilities in bridging visual and tex-tual reasoning, yet their reasoning capabilities in Open-Vocabulary Human-Object Interaction (OV-HOI) are limited by cross-modal hallucina-tions and occlusion-induced ambiguity. To ad-dress this, we propose ImagineAgent , an agen-tic framework that harmonizes cognitive reason-ing with generative imagination for robust visual understanding. Specifically, our method innova-tively constructs cognitive maps that explicitly model plausible relationships between detected entities and candidate actions. Subsequently, it dynamically invokes tools including retrieval aug-mentation, image cropping, and diffusion models to gather domain-specific knowledge and enriched visual evidence, thereby achieving cross-modal alignment in ambiguous scenarios. Moreover, we propose a composite reward that balances predic-tion accuracy and tool efficiency. Evaluations on SWIG-HOI and HICO-DET datasets demonstrate our SOTA performance, requiring approximately 
+
+> *
+
+Equal Contribution. Work done during the internship at AMAP, Alibaba Group. 1AMAP, Alibaba Group 2Case Western Reserve University 3UC Santa Cruz. Correspondence to: Yuyin Zhou <zhouyuyiner@gmail.com>. 
+
+Preprint. February 13, 2026. 
+
+20% of training data compared to existing meth-ods, validating our robustness and efficiency. 
+
+## 1. Introduction 
+
+Human-Object Interaction (HOI) detection (Gupta & Malik, 2015) aims to identify and localize interacting human and object pairs within an image, while also recognizing their semantic relationships as <human, object, action> triplets. This fine-grained understanding of human-centric activities is foundational for next-generation applications in areas such as robot manipulation, assistive technologies, and intel-ligent surveillance (Liu et al., 2022; Kim et al., 2023; Yang et al., 2024). To truly unlock this potential, a critical frontier is extending HOI detection beyond a predefined, closed set of categories to an open-vocabulary (OV) setting (Wang et al., 2022; Lei et al., 2024b; Hu et al., 2025). Recent breakthroughs in Multimodal Large Language Mod-els (MLLMs) (Radford et al., 2021; Hurst et al., 2024; Liu et al., 2024; Comanici et al., 2025; Wang et al., 2025) have revolutionized both visual perception and reasoning. By leveraging the vast world knowledge embedded in their underlying language models and grounding it in visual ev-idence, MLLMs can interpret nuanced visual details and their semantic implications with high fidelity. Models like Qwen-VL series (Bai et al., 2025a) have demonstrated ex-ceptional performance across a spectrum of challenging tasks, including visual dialogue, few-shot learning, and gen-1          
+
+> arXiv:2602.11499v1 [cs.CV] 12 Feb 2026 <think> Observing the image, the person is holding a long cylindrical object with both hands and swinging it forward with intense body rotation. The object seems to be a tennis racket due to the context of the swing mechanics. The background fence also suggests a tennis court enclosure. Therefore, the action is “hit” with a tennis racket. </think><answer> hit, tennis racket , [85,44,
+> 469, 566], [291,39,531,195], </answer>
+> <Question> What kind of human-object interaction is shown in image? Given HOI: ...
+> (b) Perceptual-
+> Cognitive Gap (a) Original Image
+> Person 1
+> Person 2
+> Helmet 1
+> Helmet 2
+> Glove
+> Baseball bat
+> (c) Cross-Modal Hallucination (d) Occlusion-induced Ambiguity
+> Image
+> Generation
+> Before : Person 2 Undetect !!!
+> After : Perception: Person 2 Detect !
+> Cognition: Person 2 – Helmet Connect !
+> Person 2 – Glove Connect !
+> Person
+> Detect!
+
+Figure 1. Three limitations in OV-HOI tasks. Given (a) an original image, MLLMs may suffer from (b) perceptual-cognitive gap, where they perceive individual entities but fail to form a coherent understanding, leading to flawed cognition (e.g., linking Person 1 to Helmet 2 and Glove they are not wearing). Another critical issue is (c) cross-modal hallucination, where models generate plausible-sounding but visually unsupported interactions by over-relying on textual priors (e.g., mistaking a baseball bat for a tennis racket). Finally, (d) occlusion-induced ambiguity arises when key visual information is missing, causing the model fail to detect entities and their connections. 
+
+erating coherent textual narratives from visual inputs. Despite their capabilities, MLLMs still exhibit three fun-damental limitations when applied to OV-HOI tasks: ❶
+
+Perceptual-Cognitive Gap : As illustrated in Fig. 1 (b), while MLLMs detect all persons and objects individually, they often fail to establish semantically coherent physical relationships between them. This stems from a lack of struc-tured cognitive mapping that connects visual perception to plausible interaction hypotheses, which may cause incom-plete or fragmented reasoning despite accurate detection. 
+
+❷ Cross-Modal Hallucination : As shown in Fig. 1 (c), MLLMs frequently generate plausible-sounding but visu-ally unsupported interactions, driven by textual priors rather than visual cues. This cross-modal hallucination arises from imprecise alignment between high-level semantic concepts and low-level visual features, especially under distribution shifts in open-vocabulary settings. ❸ Occlusion-induced Ambiguity : As depicted in Fig. 1 (d), real-world scenes frequently encounter partial occlusions or suboptimal view-points, which truncate critical visual features for interaction verification. Without mechanisms to recover limited visual information, MLLMs may resort to biased textual priors, causing incorrect predictions in ambiguous scenarios. To address above-mentioned challenges, we argue that an effective OV-HOI agent requires three synergistic capabil-ities: ❶ Cognitive Mapping , which adopts a structured reasoning framework that explicitly models the cognitive mapping between detected entities and possible actions. By bridging the gap from perception to cognition, this structure enables the model to construct comprehensive interaction hypotheses with physical plausibility. ❷ Tool Augmenting .The agent learns to dynamically invoke domain-specific tools for gathering targeted visual-semantic evidence dur-ing reasoning. Such an interactive workflow transforms the static foundation model into an interactive agent, effectively reinforcing cross-modal alignment while suppressing hallu-cinations. ❸ Generative World Modeling , which adopts diffusion-based autoregressive models to reconstruct plausi-ble alternative views under occlusion, effectively expanding its observational horizon. This generative prior acts as a world model that empowers the agent to "imagine" through ambiguity, moving beyond derivation from known informa-tion. It is precisely this principle of augmenting perception with imagination that motivates our framework. Therefore, we introduce ImagineAgent , a novel framework that integrates cognitive reasoning, generative imagination, and tool-augmented reinforcement learning (RL) for robust open-vocabulary HOI detection. Specifically, our method first establishes a cognitive map by structuring perceived entities into comprehensive interaction hypotheses, directly bridging the perception-to-cognition gap. Subsequently, the interactive agent learns to dynamically invoke multimodal tools to enhance both physical reasoning and spatial ground-ing capabilities. To mitigate cross-modal hallucinations, it employs both retrieval augmentation and image cropping to gather domain-specific knowledge and targeted visual evi-dence. To resolve occlusion-induced ambiguity, it utilizes a generative world model to imagine and reconstruct alter-native viewpoints. This entire workflow is guided by RL to optimize both the precision & recall of HOI predictions and the efficiency of tool utilization. Our contributions are: • Tool-Augmented Agentic RL. ImagineAgent introduces a novel framework that unifies both cognitive mapping rea-soning and generative modeling with tool-augmentation reinforcement learning, thereby enabling robust OV-HOI through dynamic, visually grounded reasoning. • Generative World Modeling. We pioneer the integration of generative imagination as a world model. This allows the agent to "imagine" alternative viewpoints or complete occluded scenes, thereby transforming the agent from a passive observer into an active reasoner. • Empirical Effectiveness. Experimental results on both SWIG-HOI and HICO-DET datasets demonstrate our SOTA performance in OV-HOI detection. 2Supervised Fine-Tuning CoT Data Construction 
+
+Supervised Fine-Tuning Image 
+
+Ques & Ans  Vision Encoder 
+
+> HOI Accuracy
+> Reward
+> Format
+> Reward
+> Tool-usage
+> Reward
+
+Evaluation 
+
+> GRPO
+
+Reasoning & Answer 
+
+Reinforcement Learning 
+
+Question & 
+
+Answer 
+
+Tools 
+
+QwenLM 
+
+Decoder                
+
+> Second Round: <think> Step 1: Entity Identification: I see two persons (P1, P2) and two horse (O1, O2) and one cow (O3) in the image. - P1 is wearing a cowboy hat, and is riding a horse. …
+> Step 2: Systematic Pairing: P1-O1 : P1 is riding the horse O1.
+> Step 3: Interaction Analysis. P1-O1:
+> - Action 'ride’ . - Evidence: P1 is seated on the horse O1, ...
+> - Action 'straddle’ : - Evidence: P1 is seated on horse with legs…
+> <answer> <answer>1: ride, horse , [247,41,337,195], … </answer>
+
+Sample 1 Online RAG BAGEL    
+
+> View Crop Outpaint Action Scene
+
+𝑇𝑇 v𝑇𝑇 o 𝑇𝑇 a 𝑇𝑇 𝑠𝑠 𝑇𝑇 𝑐𝑐 Perception 
+
+Tool Select 
+
+Round 1 
+
+Round 2 
+
+> Tool Augment
+
+Cognition 
+
+> Question: What kind of human-object interaction is shown in image? Given HOI…
+> Answer: lasso, cow, [419,26,488,170],…
+> Ride
+> Straddle
+> Run
+> Lasso
+> Lasso
+> Ride
+> Straddle
+> Run
+> Horse
+> Cow
+> Horse
+> Perception-to-Cognition Mapping
+> (All H-O Pairs + All Actions in H-O Pairs)
+> Look
+
+Image 
+
+> First Round:
+> <think> Perception (All human + object) + Tool Selection </think>
+> <action> cow, [x1, y1, x2, y2] horse …; tool-type </action>
+> Second Round:
+> <think> Tool Augmentation + Cognition (All H-O Pairs + All Actions in H-O Pairs) </think>
+> <answer> 1: ride, horse, [253,39,337,202], [186,86,401,254], …</answer>
+> Rollout 16
+> times + Select
+
+TrainingData 
+
+Question 
+
+Image 
+
+Rollout 4 
+
+times 
+
+Tools 
+
+Question 
+
+Image 
+
+Rollout 
+
+1 time 
+
+Tools                
+
+> 𝑅𝑅 𝜏𝜏 =2⋅ 𝑃𝑃 ⋅ 𝑅𝑅 𝑃𝑃 +𝑅𝑅 +𝜖𝜖 +𝐼𝐼 𝑅𝑅 ℎ𝑜𝑜𝑜𝑜 𝜏𝜏 ⋅ 𝑅𝑅 𝑡𝑡𝑡𝑡𝑡𝑡𝑡𝑡 𝜏𝜏 +𝑅𝑅 𝑓𝑓 𝑡𝑡 𝑓𝑓𝑓𝑓 𝑡𝑡 𝜏𝜏
+
+Sample 2 
+
+Sample 3 
+
+Sample 4                       
+
+> Rℎ𝑡𝑡 𝑜𝑜 = 2⋅0.5 ⋅0.6 0.5 + 0.6
+> Rℎ𝑡𝑡 𝑜𝑜 = 2⋅0.2 ⋅0.3 0.2 + 0.3
+> Rℎ𝑡𝑡 𝑜𝑜 = 2⋅1⋅0.9 1 + 0.9
+> Rℎ𝑡𝑡 𝑜𝑜 =2⋅0⋅00 + 0 + 𝜖𝜖
+> 0.1
+> 0.1
+
+Figure 2. Pipeline of ImagineAgent. Initially, we construct a high-quality dataset of structured reasoning chains by performing multiple rollouts with a powerful base model and selecting successful trajectories. Each data sample encapsulates a two-round reasoning process: (1) perception and tool selection, and (2) tool augmentation and cognition. Subsequently, this dataset is adopted for SFT to initialize the agent’s policy, teaching it the fundamental structure of reasoning. Following this, the model’s policy is further refined through RL using the GRPO algorithm, where the agent learns to make optimal decisions by performing rollouts and receiving feedback from a composite reward that balance precision & recall of predictions, structural coherence and tool efficiency, thus enabling robust and effective inference. 
+
+## 2. Methodology 
+
+Overview. We propose ImagineAgent, a novel framework that integrates cognitive reasoning with generative imagina-tion and tool-augmented RL for robust OV-HOI, as shown in Fig. 2. Section 2.1 presents the problem formulation and our workflow. Section 2.2 details the Training Data Construction , which synthesizes structured reasoning chain essential for tool invocation and interaction detection. Sec-tion 2.3 describes the Agentic Supervised Fine-tuning ,where the Qwen2.5-VL base model is pretrained to initialize the agent’s policy for tool invocation. Section 2.4 outlines the Agentic Reinforcement Learning , which employs the GRPO algorithm to optimize agent policy via a composite reward that balances prediction accuracy and tool efficiency. 
+
+2.1. Problem Formulation & Workflow Design 
+
+The goal in OV-HOI is to identify and classify comprehen-sive interactions from a vocabulary unseen during training. The input is a single image I and a query Q, while the output is a set of interaction triplets H = {⟨ hk, o k, v k⟩} Kk=1 , where 
+
+hk is a human, ok is an object, and vk is their interaction verb. We deconstruct the problem into a two-stage process: • Perception. This stage involves identifying and localizing all potential human and object instances within the image 
+
+I to produce sets of localized human instances IH =
+
+{(hi, b i)}Ni=1 and object instances IO = {(oj , b j )}Mj=1 ,where b denote the entity’s bounding box. • Cognition : This stage involves reasoning over the per-ceived instances to correctly pair entities and identify their interaction. It pairs instances (hi, o j ) from IH × I O and predicts all plausible interaction verb vk, thereby forming each valuable triplet ⟨hi, o j , v k⟩ ∈ H as final prediction. To achieve this goal, we design following two-stage work-flow that dynamically integrates domain-specific tools: 
+
+Stage 1: Perception & Tool Selection. Given an image I
+
+and query Q, our model identifies sets of localized human instances IH and object instances IO . Concurrently, it con-structs a cognitive map of potential interaction pairs (hi, o j ).For each potential interaction that exhibits ambiguity or in-sufficient evidence, our agentic framework formulates a plan by selecting an appropriate toolset from tool library 
+
+T , which comprises an image cropping tool ( Tc), retrieval-augmentation tools for scene and action explanation ( Ts and 
+
+Ta), and generative tools for viewpoint transformation and outpainting ( Tv and To). The policy network πθ determines the tool call C ∈ T based on the initial visual context and the specific interaction hypothesis being evaluated. 
+
+Stage 2: Cognition & Tool Augmentation. The second stage executes the selected tool call C and integrates its output to transition from perception to cognition. The tool outputs are not merely concatenated but are adopted to dy-3Outpaint  
+
+> Input
+> Image Action Explanation
+> They're using their hand to interact with an optical mouse
+> placed near them on a desk surface. The keyboard they’re also
+> touching appears slightly out of focus but still identifiable as part of what seems like multiple computer setups around that area. No other individuals can be seen clearly due to blurring effects affecting parts beyond where just hands and peripherals appear sharp enough for identification here.
+
+Qwen API BAGEL    
+
+> Image
+> Crop Viewpoint
+> Transform Scene Explanation
+> Hug : Embrace someone warmly with arms around them.
+> Hit : Strike with an object against another surface or person.
+> Hold : Maintain contact with an object by gripping using hands.
+> Inspect : Examine carefully with attention to detail.
+> Jump : Rise into air by extending legs while bending knees.
+> Kick: Extend leg forward with force against an object. ……
+
+Figure 3. Tool Library. To resolve visual and semantic ambiguities from the input image, our framework equips the agent with diverse tools. It leverages the BAGEL model for generative imagination via Outpaint and Viewpoint Transform, the Qwen API for Online RAG through Action Explanation and Scene Explanation, and a standard Image Crop tool to extract focused fine-grained interaction details. 
+
+namically enhancing agent’s scenario understanding. Adetailed view from the cropping tool ( Tc) allows for focused attention, while contextual knowledge from retrieval tools (Ts, Ta) enriches the agent’s semantic representation of the query. Moreover, an enhanced image I′ that resolves prior visual ambiguities from generative tools ( Tv , To) provides the agent reasons over an imagined reality . The final predic-tion for an interaction triplet ⟨h, o, v ⟩ ∈ H is then inferred by conditioning the model πθ on these augmented inputs: 
+
+p(⟨h, o, v ⟩| I′, Q ′) = πθ (I′, Q ′), (1) where I′ = I ⊕Iaug and Q′ = Q⊕Eaug , ⊕ denotes modality-specific augmentation, and Iaug and Eaug respectively repre-sent the augmented visual and textual evidence, while πθ
+
+maintains the same policy network of MLLMs parameter-ized by weights θ.
+
+Tool Library. As shown in Fig. 3, our framework inte-grates a diverse tool library to facilitate a multi-stage rea-soning process. ❶ Image Crop : to ensure detailed evidence is not overlooked, this tool allows the agent to scrutinize fine-grained interaction details within high-resolution sub-regions. ❷ Outpaint & Viewpoint Transform : to resolve occlusion-induced ambiguity, we equip the agent with gener-ative imagination via BAGEL (Deng et al., 2025), allowing it to reconstruct missing context or synthesize alternative views. ❸ Action & Scene Explanation : to mitigate cross-modal hallucination, we leverage the Qwen API for online RAG, which injects precise semantic definitions and contex-tual information, anchoring predictions in external knowl-edge. Detailed descriptions are provided in the Appendix B. 
+
+2.2. Training Data Construction 
+
+A fundamental challenge when applying existing MLLMs to OV-HOI tasks is the absence of explicit reasoning chains. Standard pipelines provide static labels but lack intermediate cognitive steps: what tool to use, which human-object pairs to link, and how plausible verbs are identified. To address this, we devise a process to synthesize a high-fidelity structured reasoning chains, thus creating explicit examples that effectively bridge the perception-to-cognition gap. 
+
+Data Collection. Our data generation process begins by leveraging the Qwen2.5-VL-72B (Bai et al., 2025a) model to explore the HICO-DET training dataset. For each im-age, we perform 16 independent policy rollouts to generate a diverse set of potential reasoning pathways. Instances that demonstrate at least one successful prediction across these rollouts are identified as solvable and selected for CoT generation. 
+
+Data Assessment. To ensure the quality and reliability of the synthesized data, we introduce a rigorous assessment stage. Specifically, we employ the Qwen-VL-Max model as an expert validator to meticulously review and score each reasoning chain. Chains containing factual errors, logical inconsistencies, or hallucinated reasoning are systematically discarded. This validation procedure yields approximately 6,000 high-fidelity reasoning chains for SFT. The remaining 8,000 trajectories, which were confirmed as successful but not selected in SFT, are then served as the training data for RL stage, providing a wider range of successful behaviors for policy exploration. Moreover, during the selection of both SFT and RL, we further ensure the dataset maintains a high degree of diversity across different interaction types. 
+
+Generating Pipeline. Our generating pipeline implements a three-step reasoning process. First, based on the initial perception stage, the agent identifies all human instances 
+
+IH and object instances IO . Second, it constructs a com-prehensive hypothesis space by performing an exhaustive pairing of all perceived entities, creating a set of candidate human-object pairs (hi, o j ) ∈ I H × I O . Finally, for each pair, the agent evaluates a constrained set of valid verbs 
+
+vk, scoring each of them based on visual evidence and 4contextual cues. Actions with high scores deemed valid and selected to constitute all validated interaction triplets 
+
+H = {⟨ hk, o k, v k⟩} Kk=1 . This structured approach ensures comprehensive consideration of all potential HOIs, effec-tively bridging the perception-to-cognition gap. 
+
+2.3. Agentic Supervised Fine-Tuning After constructing the training data , we introduce a cold-start phase that prioritizes supervised fine-tuning (SFT) be-fore applying reinforcement learning (RL). Inspiring from R1-Zero (Guo et al., 2025), we initially attempt direct RL optimization to train our method. However, preliminary experiments reveal a progressive decline in the frequency of tool invocation during policy rollouts. This behavior likely arises from a distributional discrepancy in target domain be-tween tool-enhanced visual features and model’s pretraining data. Therefore, we opt to perform SFT before RL. Specifically, We formalize each training instance as W =(X , Y, Z, O), where X denotes the input modality, Y rep-resents task instructions, Z = {z1, . . . , z T } captures rea-soning steps, and O is the target output. The objective minimizes the negative log-likelihood of reasoning process: 
+
+LSFT = −ET ∼D 
+
+[ T∑
+
+> t=1
+
+log pθ (zt | X , Y, z <t )
+
+]
+
+, (2) where pθ (·) denotes conditional probability distribution. This formulation enables reasoning chains are aligned with both task instructions and GT during pre-training. 
+
+2.4. Agentic Reinforcement Learning Group Relative Policy Optimization (GRPO). We adopt the GRPO algorithm (Shao et al., 2024) for policy optimiza-tion. GRPO innovatively employs a groupwise comparison framework to evaluate candidate responses. Specifically, for each query q paired with its ground-truth solution a from dataset D, the algorithm generates a set of rollout trajec-tories {o1, o 2, . . . , o G} based on the previous policy πθold .The policy πθ is then refined through the optimization of this objective function: 
+
+LGRP O (θ) = Eq∼P (Q),{oi}Gi=1 ∼πθold (O|q)
+
+[
+
+1
+
+G
+
+> G
+
+∑
+
+> i=1
+
+πθ (oi|q)
+
+πθold (oi|q) · Ai − βDKL (πθ || πref )
+
+]
+
+, (3) 
+
+DKL (πθ || πref ) = πref (oi|q)
+
+πθ (oi|q) − log πref (oi|q)
+
+πθ (oi|q) − 1, (4) where β is adopted to balance the trade-off between explo-ration and stability during optimization. Then the advantage estimator Ai is calculated using normalized rewards from the trajectory group formulated by: 
+
+Ai = ri − mean ({r1, r 2, . . . , r G})
+
+std ({r1, r 2, . . . , r G}) . (5) Each trajectory oi receives a binary reward ri ∈ { 0, 1}
+
+through a rule-based verification system designed to miti-gate reward manipulation risks. 
+
+Reward Design. Effective reward functions should balance precision & recall of predictions, structural coherence, and tool efficiency. To this end, we design a composite reward that integrates three components: hoi-based accuracy reward 
+
+Rhoi , format reward Rformat , and tool-usage reward Rtool .The hoi-based accuracy reward Rhoi quantifies the similarity between the predicted triplets Hp = {⟨ hpi , o pi , v pi ⟩} Np
+
+> i=1
+
+against the ground-truth triplets Hg = {⟨ hgi , o gi , v gi ⟩} Ng
+
+> i=1
+
+.This requires solving a complex set-to-set matching prob-lem, for which we first compute pairwise affinity score sij 
+
+between each predicted triplet pi and ground-truth triplet gj .A non-zero score is assigned only if the pair (pi, g j ) passes both semantic and spatial verification checks, defined by: cos (vpi , v gj ) > δ ∧ cos (opi , o gj ) > δ, 
+
+IoU (hpi , h gj ) > η ∧ IoU (opi , o gj ) > η, (6) where cos (·, ·) is the cosine similarity, with δ = 0 .8 and 
+
+η = 0 .5. Then the affinity score sij is formally defined as: 
+
+sij =
+
+{
+
+1, if Eqn. 6 satisfy 
+
+0, otherwise (7) With the Np × Ng affinity score matrix S = [ sij ], we formu-late it as a linear assignment problem and employ Hungarian algorithm to find the optimal one-to-one matching. The al-gorithm operates on a cost matrix C, where cij = 1 − sij ,and finds the assignment M ∗ that minimizes the total cost: 
+
+M ∗ = arg min   
+
+> M∈Π( Np,N g)
+
+∑
+
+> (i,j )∈M
+
+cij , (8) where Π( Np, N g ) is the set of all possible one-to-one match-ings. From this optimal matching, we identify the number of true positives (TP) as the count of matched pairs with a score greater than zero, i.e., TP = |{ (i, j ) ∈ M ∗ | sij > 0}| . The final accuracy reward is then calculated as the F1-score, which harmonizes precision ( P ) and recall ( R): 
+
+P = TP 
+
+Np
+
+, R = TP 
+
+Ng
+
+, Rhoi = 2 · P · RP + R + ϵ , (9) where ϵ is a small constant to prevent division by zero. Moreover, the formatting reward Rformat penalizes unstruc-tured or incomplete reasoning chains. And the tool-usage reward Rtool is activated only when at least one predicted is 5correct alongside valid tool invocations. By integrating all components, the final reward is formally defined as: 
+
+R(τ ) = Rhoi + Rformat (τ ) + IRhoi (τ )>0 · Rtool (τ ), (10) where IRhoi (τ )>0 is an indicator function. Such composite reward not only maximizes a balanced accuracy metric but also achieves structural coherence and tool-usage efficiency. 
+
+## 3. Experiment 
+
+Datasets . We perform our experiments on two datasets: HICO-DET (Chao et al., 2018) and SWIG-HOI (Wang et al., 2021). HICO-DET includes 600 interaction types made from 117 human actions and 80 objects. Following previous studies (Hou et al., 2020; Wang et al., 2022), we exclude 120 rare interactions to test our model in a zero-shot detection setting. SWIG-HOI provides a wide range of interactions with 400 actions and 1,000 objects. This test set naturally contains many unseen combinations. It has about 14K images and 5.5K interaction types, including 1.8K interactions that are not present during training. 
+
+Evaluation Metrics . Following prior work (Wang et al., 2022; Lei et al., 2024b; 2025), we evaluate our model using mean Average Precision (mAP). A prediction is a true posi-tive if it satisfies: (1) the Intersection over Union (IoU) for both the human and object bounding boxes is greater than 0.5. (2) the predicted interaction label is correct. 
+
+Implementation Details . We perform experiments with Qwen2.5-VL-7B as our base model. According to Sec. 2.2, we respectively select approximately 6,000 and 8,000 train-ing samples for both SFT and RL. The training was con-ducted on 8 NVIDIA H20 GPUs (96 GB VRAM) with batch size of 8. The training process took around 40 hours for 1,000 iterations (1 epoch), with 4 rollouts per sample and a learning rate of 5e-7. More details are in Appendix A.1.2. 
+
+3.1. Comparison with SOTA Methods Results on HICO-DET . We evaluate our method on the HICO-DET dataset, as shown in Tab. 1. Following INP-CC (Lei et al., 2025), we categorize existing methods into two groups for fair assessment. While zero-shot methods like HOICLIP (Ning et al., 2023) and CLIP4HOI (Mao et al., 2023) have shown strong results, they inevitably rely on de-tector backbones pre-trained on large-scale object detection datasets like COCO. This pre-training can provide an unfair advantage, as both HICO-DET and COCO datasets share a significant portion of their object categories, limiting the assessment of true generalization in an open-world settings. Open-vocabulary methods offer a more rigorous test of gen-eralization by forgoing such detection pre-training. Imag-ineAgent achieves 28.96% mAP on the Full split, a remark-able 5.84% mAP improvement over the prior state-of-the-art, 
+
+Table 1. Comparison of our model with state-of-the-art methods on HICO-DET under the simulated zero-shot setting. Note that the best and second best performances are highlighted.                                                     
+
+> Method Pretrained Detector Unseen Seen Full
+> Zero-shot Methods ----FCL (Hou et al., 2021) ✓13.16 24.23 22.01 GEN-VLKT (Liao et al., 2022) ✓21.36 32.91 30.56 HOICLIP (Ning et al., 2023) ✓23.48 34.47 32.26 CLIP4HOI (Mao et al., 2023) ✓28.47 35.48 34.08 HOIGen (Guo et al., 2024) ✓31.01 34.57 33.86
+> Open-vocabulary Methods ----THID (Wang et al., 2022) ✗15.53 24.32 22.38 CMD-SE (Lei et al., 2024b) ✗16.70 23.95 22.35 INP-CC (Lei et al., 2025) ✗17.38 24.74 23.12 Qwen2.5-VL-7B ✗16.94 13.43 14.13
+> ImagineAgent (Ours) ✗29.71 28.77 28.96
+
+Table 2. Comparison with state-of-the-art methods on SWIG-HOI.                                     
+
+> Method Non-rare Rare Unseen Full QPIC (Tamura et al., 2021) 16.95 10.84 6.21 11.12 GEN-VLKT (Liao et al., 2022) 20.91 10.41 -10.87 MP-HOI (Yang et al., 2024) 20.28 14.78 -12.61 THID (Wang et al., 2022) 17.67 12.82 10.04 13.26 CMD-SE (Lei et al., 2024b) 21.46 14.64 10.70 15.26 INP-CC (Lei et al., 2025) 22.84 16.74 11.02 16.74 Qwen2.5-VL-7B 1.00 2.28 3.75 2.31
+> ImagineAgent (Ours) 22.89 18.02 12.53 17.75
+
+INP-CC (Lei et al., 2025). This significant leap demon-strates the powerful reasoning and ambiguity-resolution capabilities of our agentic framework. 
+
+Results on SWIG-HOI . We further evaluate our method on the SWIG-HOI dataset. As shown in Tab. 2, our method consistently surpasses all previous methods, achieving a Full mAP of 17.75%, outperforming INP-CC by 1.01% mAP. The strength of our approach is further evidenced by its performance on novel and infrequent interactions, with a 12.53% mAP on the Unseen split and 18.02% on the Rare split. Such results validate our robustness, which excels at detecting interactions in open-vocabulary long-tail scenes. 
+
+3.2. Qualitative Results 
+
+As shown in Fig. 4, our method utilizes outpainting, view transformation, and cropping to respectively enrich context, resolve occlusion, and focus on critical details. This en-hanced perception directly translates to superior cognitive reasoning, as shown in Fig. 5, where our method accurately deduces a comprehensive set of correct interactions. To mitigate potential hallucinations from generative images, we append designed prompt instructions to govern the use of synthesized images (see Appendix B.3 for details). 6Image  Outpaint  Image  Viewtrans  Image  Viewtrans Image  Outpaint          
+
+> Image Outpaint Image Viewtrans
+> Image Crop Image Crop Image Crop
+> Image Outpaint
+
+Figure 4. Qualitative results of ImagineAgent’s generative imagination. Respectively, Image Outpaint is used to extend the scene’s context, providing a more holistic view of the environment that aids in understanding the overall activity. To overcome severe occlusion, the agent employs Image View Transformation to synthesize a novel perspective of the interaction. Furthermore, Image Crop is utilized for a focused analysis of fine-grained interactions, allowing the model to scrutinize details that are critical for detection. 
+
+Table 3. Ablation of training stages on HICO-DET dataset.                        
+
+> Method Training Sessions Unseen Seen Full
+> (a) Qwen2.5-VL-7B 0 steps 16.94 13.43 14.13
+> (b) w/ SFT 750 steps 22.12 21.31 21.47
+> (c) w/ GRPO 1,000 steps 19.88 19.23 19.36
+> ImagineAgent (Ours) 1,750 steps 29.71 28.77 28.96
+
+Table 4. Ablation of tool-usage on HICO-DET dataset.                           
+
+> Method Unseen Seen Full
+> (a) w/o image crop 29.63 27.78 28.15
+> (b) w/o action explanation 29.32 26.92 27.40
+> (c) w/o scene explanation 29.24 28.36 28.50
+> (d) w/o view transform 29.68 27.48 27.92
+> (e) w/o outpaint 29.53 27.68 28.05
+> ImagineAgent (Ours) 29.71 28.77 28.96
+
+3.3. Ablation Study Effect of Training Stages. We analyze each training stage’s contribution in Tab. 3. The baseline model (row a) struggles with the HOI task. SFT alone (row b) significantly boosts performance to 21.47% mAP by teaching model structured reasoning. Conversely, RL-only training (row c) shows lim-ited improvement, highlighting the challenge of exploring the vast policy space without a strong prior. Differently, combining SFT and RL (row d) achieves the highest perfor-mance at 28.96% mAP. This confirms that SFT provides a crucial cognitive foundation for subsequent RL refinement. 
+
+Table 5. Ablation of reward functions on HICO-DET dataset.                           
+
+> Method Unseen Seen Full
+> (a) w/o HOI Reward 26.45 25.52 25.71
+> (b) w/o Prec. & Reca. 27.18 26.35 26.52
+> (c) w/o Hungarian 27.95 27.18 27.33
+> (e) w/o Verb. Sim. 29.28 28.45 28.62
+> (d) w/o Tool Reward 28.76 27.98 28.14
+> ImagineAgent (Ours) 29.71 28.77 28.96
+
+Effect of Tool-Usage. We investigate each tool’s contri-bution in Tab. 4, where disabling any single tool causes clear performance degradation, confirming their comple-mentary roles. Removing generative tools like viewpoint transformation (d) and outpainting (e) hinders reasoning under occlusion, causing drops to 27.92% and 28.05% mAP. Excluding retrieval-based explanations (b, c) impairs seman-tic disambiguation. Disabling image cropping (a) leads to a significant drop to 28.15% mAP, indicating that fine-grained analysis is indispensable. The full framework’s superior performance validates our multi-tool integration strategy. 
+
+Effect of Reward Functions. Our composite reward’s de-sign is pivotal for guiding the agent’s policy. As shown in Tab. 5, removing the core HOI accuracy reward (a) causes a catastrophic drop to 25.71% mAP. Simplifying the accuracy metric by removing the Hungarian algorithm (c) or verb sim-ilarity check (e) also degrades performance, confirming that our nuanced F1-score is essential for evaluating complex scenes. Finally, excluding the tool-usage reward (d) drops mAP to 28.14%, showing its importance in encouraging 7Question:  
+
+> What kind of human-object interaction is shown in image? …
+> Qwen2.5-VL-7B: <think>The image displays a person in a dynamic pose, suspended in the air above a railing. The person's body is crouched, and their legs are bent, which is a classic form for jumping over an obstacle. The railing acts as the obstacle being cleared. The presence of a skateboard near the person's feet is noted, but the dominant human action is clearly 'jumping'. The goal of the person seems to be to get from one side of the railing to the other by jumping over it. Therefore, the action is identified as 'jump'.</think>
+> <answer>1: jump, railing, [438, 17, 648, 321], [0, 73, 674, 563]</answer>
+
+Original Image 
+
+ViewTrans Image         
+
+> ImagineAgent: <think>Step 1: Entity Identification. - I see one person (P1), the skateboarder. [13,192,423,764]. - The detected object is a skateboard (O1). [281,622,538,810].
+> Step 2: Systematic Pairing (Maximizing Recall) - P1-O1. Step 3: Interaction Analysis per Pair (Ensuring Precision) - Pair: P1 - skateboard -Action 'ride’: - Visual Evidence Check: P1's feet are on the skateboard
+> while performing a trick. This is strong evidence for 'ride’. - Conclusion: Feasible. - Action 'jump_on ’: -Visual Evidence Check: The person is airborne and on the board, which is part of a jump. This is strong evidence for 'jump_on ’. - Conclusion: Feasible. - Action 'stand_on ’: - Visual Evidence Check: The person is standing on the skateboard. This is a basic and accurate description. - Conclusion: Feasible. </think>
+> <answer>
+> 1: ride, skateboard, [13,192,423,764], [281,622,538,810] 2: jump_on, skateboard, [13,192,423,764], [281,622,538,810] 3: stand_on, skateboard, [13,192,423,764], [281,622,538,810]</answer>
+
+Figure 5. Case Study between Qwen2.5-VL-7B and our ImagineAgent. Our method can accurately identify comprehensive HOIs. 
+
+Table 6. Effect of different generative models on HICO-DET. 
+
+Editing Model Unseen Seen Full FLUX.1 Kontext (Labs et al., 2025) 30.25 29.21 29.47 Qwen-Image (Wu et al., 2025) 30.11 29.16 29.35 BAGEL (Deng et al., 2025) ( Ours ) 29.71 28.77 28.96 
+
+efficient tool invocation. Each component is thus crucial for steering the agent towards accurate and efficient behavior. 
+
+Effect of Different Editing Models. We analyze the im-pact of applying different generative models in Tab. 6. Our investigation reveals that while more advanced models such as FLUX.1 Kontext (a) and Qwen-Image (b) can yield marginal performance improvements, with the former reach-ing 29.47% mAP, they come at a greater computational cost. In contrast, our chosen model, BAGEL (c), provides a com-pelling balance between performance and processing speed, makes it a more practical choice for our agentic workflow. 
+
+## 4. Related Work (Extended Ver. in Appx. C) 
+
+Open-Vocabulary HOI Detection. Previous methods for open-vocabulary Human-Object Interaction (HOI) detection primarily leverage the cross-modal alignment capability of CLIP (Liao et al., 2022; Ning et al., 2023; Mao et al., 2023), and utilize DETR (Carion et al., 2020) as a critical com-ponent to perform object detection in the first place (Kim et al., 2025). With the advances of Large Language Mod-els (LLMs), recent literature (Lei et al., 2024a;b; 2025) proposed to improve the fine-grained understanding of di-verse HOI concepts through prompting LLMs. Furthermore, MLLMs (Bai et al., 2025a) show great potential in open-vocabulary HOI detection in an end-to-end manner with strong visual grounding ability and world knowledge. Thus, we build ImagineAgent upon MLLMs and further achieve tool-augmented RL for robust open-vocabulary inference. 
+
+Multimodal LLMs Reasoning. Recent advances in Large Language Models (LLMs) have demonstrated that RL-based post-training can significantly enhance reasoning capabil-ities, as exemplified by OpenAI-o1 (Jaech et al., 2024) and DeepSeek-R1 (Guo et al., 2025). These paradigms have been extended to Multimodal Large Language Models (MLLMs) for tasks like mathematical VQA (Peng et al., 2025), image segmentation (Liu et al., 2025), and video understanding (Feng et al., 2025). However, existing meth-ods struggle with long-sequence hallucination (Chen et al., 2025b) and limited cross-modal interaction. To address this, we propose multimodal CoT reasoning via tool-augmented RL to explicitly reduce cross-modal hallucination. 
+
+Tool-Augmented Agentic System. Recent advancements in MLLMs have shown that external tools can enhance mul-timodal reasoning. Early works like FAST (Sun et al., 2025) and MVoT (Li et al., 2025) introduce visual evidence into reasoning, forming multimodal CoT for image tasks. LLaVa-Plus (Liu et al., 2023) pioneered training strategies for tool use, while VPD (Hu et al., 2024) leveraged program-derived data to transfer tool skills. Recent methods like TACO (Ma et al., 2024) and PyVision (Zhao et al., 2025) expand tool use with RL. However, existing approaches rely on static tool pipelines, limiting their ability to complex, open-vocabulary settings. Our framework addresses this by unifying both cognitive mapping reasoning and generative modeling with tool-augmented RL for robust OV-HOI prediction. 
+
+## 5. Conclusion 
+
+In this work, we introduced ImagineAgent, a novel agentic framework that harmonizes cognitive reasoning with gen-erative imagination and tool-augmented RL for OV-HOI tasks. By constructing cognitive maps and dynamically in-voking multimodal tools, our approach effectively address the critical challenges of perceptual-cognitive gap, cross-8modal hallucination, and occlusion-induced ambiguity. The integration of a composite reward function within GRPO algorithm optimizes for both prediction accuracy and tool-usage efficiency. Extensive evaluations on the SWIG-HOI and HICO-DET datasets validate our SOTA performance, requiring only 20% of training data compared to others. Fu-ture work will focus on expanding the agent’s tool library and applying this imagination-driven reasoning paradigm to a broader range of complex visual comprehension tasks. 
+
+## Impact Statement 
+
+This paper is intended to advance fields including computer vision. It involves no unethical considerations or adverse impacts, and is used solely for research purposes. 
+
+## References 
+
+Bai, S., Chen, K., Liu, X., Wang, J., Ge, W., Song, S., Dang, K., Wang, P., Wang, S., Tang, J., et al. Qwen2. 5-vl technical report. arXiv preprint arXiv:2502.13923 ,2025a. Bai, S., Li, M., Liu, Y., Tang, J., Zhang, H., Sun, L., Chu, X., and Tang, Y. Univg-r1: Reasoning guided universal visual grounding with reinforcement learning. arXiv preprint arXiv:2505.14231 , 2025b. Carion, N., Massa, F., Synnaeve, G., Usunier, N., Kirillov, A., and Zagoruyko, S. End-to-end object detection with transformers. In European conference on computer vision ,pp. 213–229. Springer, 2020. Chao, Y.-W., Liu, Y., Liu, X., Zeng, H., and Deng, J. Learn-ing to detect human-object interactions. In 2018 ieee winter conference on applications of computer vision (wacv) , pp. 381–389. IEEE, 2018. Chen, R., Sun, L., Tang, J., Li, G., and Chu, X. Finger: Content aware fine-grained evaluation with reasoning for ai-generated videos. In Proceedings of the 33rd ACM International Conference on Multimedia , pp. 3517–3526, 2025a. Chen, Y., Huang, W., Shi, B., Hu, Q., Ye, H., Zhu, L., Liu, Z., Molchanov, P., Kautz, J., Qi, X., et al. Scaling rl to long videos. arXiv preprint arXiv:2507.07966 , 2025b. Chu, X., Huang, H., Zhang, X., Wei, F., and Wang, Y. Gpg: A simple and strong reinforcement learning baseline for model reasoning. arXiv preprint arXiv:2504.02546 , 2025. Comanici, G., Bieber, E., Schaekermann, M., Pasupat, I., Sachdeva, N., Dhillon, I., Blistein, M., Ram, O., Zhang, D., Rosen, E., et al. Gemini 2.5: Pushing the frontier with advanced reasoning, multimodality, long context, and next generation agentic capabilities. arXiv preprint arXiv:2507.06261 , 2025. Deng, C., Zhu, D., Li, K., Gou, C., Li, F., Wang, Z., Zhong, S., Yu, W., Nie, X., Song, Z., Guang, S., and Fan, H. Emerging properties in unified multimodal pretraining. 
+
+CoRR , abs/2505.14683, 2025. Feng, K., Gong, K., Li, B., Guo, Z., Wang, Y., Peng, T., Wu, J., Zhang, X., Wang, B., and Yue, X. Video-r1: Reinforcing video reasoning in mllms. arXiv preprint arXiv:2503.21776 , 2025. Guo, D., Yang, D., Zhang, H., Song, J., Zhang, R., Xu, R., Zhu, Q., Ma, S., Wang, P., and et al. Deepseek-r1: Incen-tivizing reasoning capability in llms via reinforcement learning, 2025. URL https://arxiv.org/abs/ 2501.12948 .Guo, Y., Liu, Y., Li, J., Wang, W., and Jia, Q. Unseen no more: Unlocking the potential of clip for generative zero-shot hoi detection. In Proceedings of the 32nd ACM International Conference on Multimedia , pp. 1711–1720, 2024. Gupta, S. and Malik, J. Visual semantic role labeling. arXiv preprint arXiv:1505.04474 , 2015. Hou, Z., Peng, X., Qiao, Y., and Tao, D. Visual composi-tional learning for human-object interaction detection. In 
+
+European Conference on Computer Vision , pp. 584–600. Springer, 2020. Hou, Z., Yu, B., Qiao, Y., Peng, X., and Tao, D. Detecting human-object interaction via fabricated compositional learning. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pp. 14646– 14655, 2021. Hu, Y., Stretcu, O., Lu, C.-T., Viswanathan, K., Hata, K., Luo, E., Krishna, R., and Fuxman, A. Visual program distillation: Distilling tools and programmatic reason-ing into vision-language models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pp. 9590–9601, 2024. Hu, Y., Ding, C., Sun, C., Huang, S., and Xu, X. Bilateral collaboration with large vision-language models for open vocabulary human-object interaction detection. In Pro-ceedings of the IEEE/CVF international conference on computer vision , pp. 20126–20136, 2025. Hurst, A., Lerer, A., Goucher, A. P., Perelman, A., Ramesh, A., Clark, A., Ostrow, A., Welihinda, A., Hayes, A., Radford, A., et al. Gpt-4o system card. arXiv preprint arXiv:2410.21276 , 2024. 9Jaech, A., Kalai, A., Lerer, A., Richardson, A., El-Kishky, A., Low, A., Helyar, A., Madry, A., Beutel, A., Car-ney, A., et al. Openai o1 system card. arXiv preprint arXiv:2412.16720 , 2024. Kim, S., Jung, D., and Cho, M. Relational context learning for human-object interaction detection. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pp. 2925–2934, 2023. Kim, S., Jung, D., and Cho, M. Locality-aware zero-shot human-object interaction detection. In Proceedings of the Computer Vision and Pattern Recognition Conference , pp. 20190–20200, 2025. Labs, B. F., Batifol, S., Blattmann, A., Boesel, F., Consul, S., Diagne, C., Dockhorn, T., English, J., English, Z., Esser, P., Kulal, S., Lacey, K., Levi, Y., Li, C., Lorenz, D., Müller, J., Podell, D., Rombach, R., Saini, H., Sauer, A., and Smith, L. FLUX.1 kontext: Flow matching for in-context image generation and editing in latent space. 
+
+CoRR , abs/2506.15742, 2025. Lei, Q., Wang, B., and Tan, R. Ez-hoi: Vlm adaptation via guided prompt learning for zero-shot hoi detection. 
+
+Advances in Neural Information Processing Systems , 37: 55831–55857, 2024a. Lei, T., Yin, S., and Liu, Y. Exploring the potential of large foundation models for open-vocabulary hoi detection. In 
+
+Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pp. 16657–16667, 2024b. Lei, T., Yin, S., Chen, Q., Peng, Y., and Liu, Y. Open-vocabulary HOI detection with interaction-aware prompt and concept calibration. In ICCV . IEEE, 2025. Li, C., Wu, W., Zhang, H., Xia, Y., Mao, S., Dong, L., Vuli´ c, I., and Wei, F. Imagine while reasoning in space: Multimodal visualization-of-thought. arXiv preprint arXiv:2501.07542 , 2025. Liao, Y., Zhang, A., Lu, M., Wang, Y., Li, X., and Liu, S. Gen-vlkt: Simplify association and enhance interaction understanding for hoi detection. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pp. 20123–20132, 2022. Liu, H., Li, C., Li, Y., and Lee, Y. J. Improved baselines with visual instruction tuning. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pp. 26296–26306, 2024. Liu, S., Cheng, H., Liu, H., Zhang, H., Li, F., Ren, T., Zou, X., Yang, J., Su, H., Zhu, J., Zhang, L., Gao, J., and Li, C. Llava-plus: Learning to use tools for creating mul-timodal agents, 2023. URL https://arxiv.org/ abs/2311.05437 .Liu, X., Li, Y.-L., Wu, X., Tai, Y.-W., Lu, C., and Tang, C.-K. Interactiveness field in human-object interactions. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pp. 20113–20122, 2022. Liu, Y., Peng, B., Zhong, Z., Yue, Z., Lu, F., Yu, B., and Jia, J. Seg-zero: Reasoning-chain guided seg-mentation via cognitive reinforcement. arXiv preprint arXiv:2503.06520 , 2025. Ma, Z., Zhang, J., Liu, Z., Zhang, J., Tan, J., Shu, M., Niebles, J. C., Heinecke, S., Wang, H., Xiong, C., et al. Taco: Learning multi-modal action models with synthetic chains-of-thought-and-action. arXiv preprint arXiv:2412.05479 , 2024. Mao, Y., Deng, J., Zhou, W., Li, L., Fang, Y., and Li, H. Clip4hoi: towards adapting clip for practical zero-shot hoi detection. Advances in Neural Information Processing Systems , 36:45895–45906, 2023. Ning, S., Qiu, L., Liu, Y., and He, X. Hoiclip: Efficient knowledge transfer for hoi detection with vision-language models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pp. 23507– 23517, 2023. Peng, Y., Zhang, G., Zhang, M., You, Z., Liu, J., Zhu, Q., Yang, K., Xu, X., Geng, X., and Yang, X. Lmm-r1: Em-powering 3b lmms with strong reasoning abilities through two-stage rule-based rl. arXiv preprint arXiv:2503.07536 ,2025. Radford, A., Kim, J. W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., et al. Learning transferable visual models from natural language supervision. In International conference on machine learning , pp. 8748–8763. PmLR, 2021. Shao, Z., Wang, P., Zhu, Q., Xu, R., Song, J., Bi, X., Zhang, H., Zhang, M., Li, Y., Wu, Y., et al. Deepseekmath: Push-ing the limits of mathematical reasoning in open language models. arXiv preprint arXiv:2402.03300 , 2024. Sun, G., Jin, M., Wang, Z., Wang, C.-L., Ma, S., Wang, Q., Geng, T., Wu, Y. N., Zhang, Y., and Liu, D. Visual agents as fast and slow thinkers. In The Thirteenth International Conference on Learning Representations , 2025. Tamura, M., Ohashi, H., and Yoshinaga, T. Qpic: Query-based pairwise human-object interaction detection with image-wide contextual information. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pp. 10410–10419, 2021. Wang, S., Yap, K.-H., Ding, H., Wu, J., Yuan, J., and Tan, Y.-P. Discovering human interactions with large-vocabulary 10 objects via query and multi-scale detection. In Proceed-ings of the IEEE/CVF International Conference on Com-puter Vision , pp. 13475–13484, 2021. Wang, S., Duan, Y., Ding, H., Tan, Y.-P., Yap, K.-H., and Yuan, J. Learning transferable human-object interaction detectors with natural language supervision. In CVPR ,2022. Wang, W., Gao, Z., Gu, L., Pu, H., Cui, L., Wei, X., Liu, Z., Jing, L., Ye, S., Shao, J., et al. Internvl3. 5: Advancing open-source multimodal models in versatility, reasoning, and efficiency. arXiv preprint arXiv:2508.18265 , 2025. Wu, C., Li, J., Zhou, J., Lin, J., Gao, K., Yan, K., Yin, S., Bai, S., Xu, X., Chen, Y., Chen, Y., Tang, Z., Zhang, Z., Wang, Z., Yang, A., Yu, B., Cheng, C., Liu, D., Li, D., Zhang, H., Meng, H., Wei, H., Ni, J., Chen, K., Cao, K., Peng, L., Qu, L., Wu, M., Wang, P., Yu, S., Wen, T., Feng, W., Xu, X., Wang, Y., Zhang, Y., Zhu, Y., Wu, Y., Cai, Y., and Liu, Z. Qwen-image technical report. CoRR ,abs/2508.02324, 2025. Xiong, F., Xu, H., Wang, Y., Cheng, R., Wang, Y., and Chu, X. Hs-star: Hierarchical sampling for self-taught reasoners via difficulty estimation and budget reallocation. 
+
+arXiv preprint arXiv:2505.19866 , 2025. Yang, J., Li, B., Zeng, A., Zhang, L., and Zhang, R. Open-world human-object interaction detection via multi-modal prompts. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pp. 16954– 16964, 2024. Yuan, Z., Qian, C., Tang, J., Chen, R., Song, Z., Sun, L., Chu, X., Cai, Y., Zhang, D., and Li, S. Autodrive-r2: Incentivizing reasoning and self-reflection capacity for vla model in autonomous driving. arXiv preprint arXiv:2509.01944 , 2025a. Yuan, Z., Qu, X., Qian, C., Chen, R., Tang, J., Sun, L., Chu, X., Zhang, D., Wang, Y., Cai, Y., et al. Video-star: Re-inforcing open-vocabulary action recognition with tools. 
+
+arXiv preprint arXiv:2510.08480 , 2025b. Zhao, S., Zhang, H., Lin, S., Li, M., Wu, Q., Zhang, K., and Wei, C. Pyvision: Agentic vision with dynamic tooling. 
+
+arXiv preprint arXiv:2507.07998 , 2025. 11 Supplementary Material 
+
+In this appendix, we provide more experimental details, tool library details, and prompt details of our proposed method. Specific detailed contents are as follows: 
+
+## A. Experiment 
+
+A.1. Full Experimental Setup (Reproducibility) 
+
+A.1.1. D ATASETS AND EVALUATION PROTOCOLS 
+
+HICO-DET We conduct experiments on HICO-DET, a standard benchmark for HOI detection with 600 interaction categories composed of 117 verbs and 80 object classes and use the official test set for evaluation. Following prior zero-shot HOI protocols (CMD-SE (Lei et al., 2024b) and INP-CC (Lei et al., 2025)), 120 rare interaction categories are excluded from training to simulate the zero-shot setting, where these categories are treated as Unseen, and the remaining categories are treated as Seen. Results on Unseen, Seen, and Full splits are reported. 
+
+SWIG-HOI We also evaluate on SWIG-HOI, a large-vocabulary HOI benchmark built upon the publicly available SWiG dataset to study large-vocabulary and open-vocabulary HOI detection. SWIG-HOI contains more than 400 action (verb) categories and 1,000 object categories, substantially expanding the label space compared to earlier datasets such as HICO-DET. In our setting, Unseen refers to out-of-vocabulary action types that do not appear in the training set, and we report results on the standard Non-rare, Rare, Unseen, and Full splits. 
+
+Metric. We follow prior work and evaluate using mean Average Precision (mAP) computed by the official evaluation scripts, with no additional filtering. 
+
+True positive criterion. A predicted HOI triplet is considered correct if it satisfies both: (i) IoU > 0.5 for the predicted human bounding box and its matched ground-truth human box, and IoU > 0.5 for the predicted object bounding box and its matched ground-truth object box. (ii) the predicted interaction label matches the ground truth. A.1.2. I MPLEMENTATION DETAILS AND HYPERPARAMETERS 
+
+Base Model. We choose Qwen2.5-VL-7B as our backbone and fine-tune the model using full-parameter finetuning. 
+
+Input Configuration. For each sample, the maximum image resolution is set to 401408 pixels, and the number of image tokens is capped at 512. The maximum text sequence length is 8192 tokens, and the maximum generation length during rollouts is 4096 tokens. We use resize and center crop for image preprocessing. 
+
+Optimization. We train the model with Adam optimizer using a learning rate of 1e-6 for SFT Stage, and 5e-7 for RL Stage with weight decay 0.01, and gradient clipping with max norm 5. All experiments are conducted with BF16 mixed precision, and the random seed is fixed to 1234 for reproducibility. 
+
+Batching and Training Budget. We use a per-device batch size of 1 on 8 GPUs, with gradient accumulation steps 2 for SFT and 1 for RL. The resulting global batch size is therefore 16 = 1 × 8 × 2 for SFT, and 8 = 1 × 8 × 1 for RL. 
+
+SFT Stage. In supervised fine-tuning (SFT), we train for 1 epoch and use 5999 trajectories. 
+
+RL Stage (GRPO). In agentic reinforcement learning, we optimize the policy using GRPO for 914 steps. For each training query, we sample 4 rollouts. We use KL regularization coefficient β = 0 .04 . The reference policy πref is chosen as SFT model, and the old policy πθold is updated every 1 steps. 
+
+Hardware. Training is performed on eight Nvidia H20 GPUs with 96GB memory for each GPU. The total training time is approximately 2.5 hours for SFT and 40 hours for RL. 
+
+A.2. Data Construction Details (Reasoning Chains) 
+
+This section details the reproducible pipeline used to synthesize structured reasoning chains for HOI comprehension on HICO-DET. Our construction is implemented as a two-turn agentic prompting process with optional auxiliary images and optional textual knowledge, followed by trajectory packaging into training-ready JSON. 12 A.2.1. G ENERATION PROMPTS 
+
+Prompt design (two-turn decomposition). We generate reasoning chains using a two-turn chat template with Qwen2.5-VL-72B-Instruct (served by vLLM). Turn-1 performs object set selection and tool selection , and Turn-2 performs exhaustive HOI enumeration under strict constraints and outputs HOI triplets with bounding boxes. 
+
+Turn-1 (Perception & Tool Decision). Given the input image, the model is instructed to: (i) detect all visible objects from the predefined HICO object list. (ii) decide which tools to use among { image_description , action_description ,
+
+outpaint , viewpoint_transform , image_crop }. The output format is enforced as: object_1, [ox1,oy1,ox2,oy2], object_2, [ox1,oy1,ox2,oy2], ... ; tool_1, tool_2, ... wrapped by <think> and <answer> tags. For training-data synthesis only, we additionally provide ground-truth objects extracted from the HOI annotation string inside the prompt to bias the chain toward GT-aligned decisions (used for CoT supervision rather than evaluation). 
+
+Turn-2 (Constrained HOI Chain-of-Thought). Turn-2 takes the original image (always) plus up to two optional auxiliary images (outpaint and/or viewpoint transform) depending on Turn-1 tool decisions. It also injects: (i) DETECTED OBJECTS from Turn-1. (ii) a per-object VALID ACTIONS constraint list derived from HICO interactions (i.e., allowed verbs for each object class). (iii) optional textual evidence, including an image-level description and/or action definitions if the corresponding tools were selected. Inside <think> , the model must follow a fixed structure: (1) entity listing with person/object boxes, (2) exhaustive person– object pairing, (3) per-pair verb feasibility checks restricted to valid verbs, (4) final review and compilation. Inside <answer> ,the model must emit HOIs as a comma-separated list of records: idx: action, object, [px1,py1,px2,py2], [ox1,oy1,ox2,oy2] .For synthesis, we include the ground-truth HOI string in the prompt as a reference target (the model is instructed to build a reasoning bridge that leads to the GT). 
+
+Tool library and how it is realized in our code. Unlike an online tool-execution agent, our synthesis pipeline implements tool augmentation by conditional evidence injection :• image_description : if selected in Turn-1, we load a precomputed image-level analysis from train_all_description.json 
+
+and append it into the Turn-2 prompt. • action_description : if selected, we load per-action textual definitions from hico_actions_rephase_20.json . To avoid leaking irrelevant knowledge, we only include definitions for actions appearing in the valid-action constraint set of the current sample. • outpaint / viewpoint_transform : We explicitly instruct the model that auxiliary images are only for disambiguating actions, and that all bounding box coordinates must be taken from the original image. • image_crop : if selected, we extract high-resolution sub-regions centered on specific human-object pairs from the original image and inject them as auxiliary visual evidence into the Turn-2 prompt. 
+
+Independent rollouts and decoding. In the released synthesis code, we generate one trajectory per image-query pair with stochastic decoding: temperature 0.8, and max generation length 4096 tokens for both turns. 
+
+Randomness control. The synthesis code relies on the underlying sampler randomness from vLLM at the process level and does not explicitly set per-sample random seeds. All other decoding hyperparameters are kept fixed across samples to ensure reproducibility given the same runtime environment and model weights. A.2.2. E XPERT VALIDATION AND FILTERING 
+
+Trajectory packaging (what is saved). For each HICO training instance, we store: detected_objects , selected_tools ,
+
+first_turn_output , and second_turn_output . We also store the exact textual prompt strings for both turns to enable prompt-level reproduction. 
+
+Expert validation. In our overall framework, we employ Qwen-VL-Max as an expert validator to score and filter synthesized chains. Concretely, the validator checks whether the generated chain is (i) visually grounded, (ii) logically consistent with the constrained action set and the claimed evidence, and (iii) format-compliant with the required <think>/<answer> schema. Chains that fail validation (e.g., hallucinated entities/interactions, invalid format, or ungrounded claims) are removed before forming the final SFT/RL corpora. 13 Hard constraints used in construction (rule-based). Even before expert scoring, we apply strict rule constraints embedded in the prompts and enforced by parsing: • Closed-set object constraint: all objects must come from the HICO object vocabulary. • Per-object verb constraint: verbs must come from the HICO interaction-derived mapping object_to_verbs .• Bounding box constraint: all coordinates must correspond to the original image , and auxiliary images are prohibited from providing coordinates. • Format constraint: outputs must contain parsable <answer> blocks, otherwise the sample is marked invalid. A.2.3. E XAMPLES OF SYNTHESIZED REASONING CHAINS 
+
+Each synthesized sample contains: (i) the original image (and optional auxiliary images), (ii) Turn-1 object/tool decisions, (iii) Turn-2 structured reasoning in <think> and HOI triplets in <answer> .Question: 
+
+What kind of human-object interaction is shown in image? … 
+
+Qwen2.5-VL-7B: <think>The image displays a person's hand holding a wok. Several pieces of broccoli are suspended in mid-air above the wok. The hand is blurred, indicating a fast motion. Since I can only see the hand and not the person's body or facial expression, I must infer the action from this limited information. The fast motion of the hand combined with the food being airborne suggests the person is actively propelling the food out of the pan. Therefore, the action is likely 'throwing' the broccoli.</think> 
+
+<answer>1: hold, wok, [0,134,189,215], [158,168,495,289] 
+
+2: throw, broccoli, [0,134,189,215], [158,168,495,289]</answer> 
+
+Original Image 
+
+Outpaint Image 
+
+ImagineAgent: <think>Step 1: Entity Identification. - I see one person (P1), whose arm and hand are visible, cooking. [294,138,485,274]. - The detected object is a wok (O1), being held by the person. [370,138,663,440]. - The detected object is broccoli (O2), which is being cooked in the wok. [464,197,614,439]. Step 2: Systematic Pairing (Maximizing Recall) - P1-O1, P1-O2. 
+
+Step 3: Interaction Analysis per Pair (Ensuring Precision) - Pair: P1 – wok - Action 'hold’: - Visual Evidence Check: The person's hand is visibly gripping the handle of the wok. This is strong evidence for 
+
+'hold’. - Conclusion: Feasible. - Action 'cook ’: - Visual Evidence Check: The person is tossing food in the wok over a heat source, with steam rising. This is strong evidence for 'cook ’. - Conclusion: Feasible. - Pair: P1 – broccoli - Action 'cook':- Visual Evidence Check: The person is actively tossing the broccoli in the wok to cook it. This is strong evidence for 'cook ’. - Conclusion: Feasible.</think> 
+
+<answer> 1: hold, wok, [294,138,485,274], [370,138,663,440] 2: cook, wok, [294,138,485,274], [370,138,663,440] 3: cook, broccoli, [294,138,485,274], [464,197,614,439] </answer> 
+
+Figure 6. More Case Study between Qwen2.5-VL-7B and our method. Our method can accurately identify comprehensive HOIs. Question: 
+
+What kind of human-object interaction is shown in image? … 
+
+Qwen2.5-VL-7B: <think> Observing the image, the tool being held alongside the knife, with its two parallel arms, strongly resembles a large caliper or a precision measuring device. The user is carefully pressing this 'caliper' (the tongs) flat against the side of the knife's blade. This precise alignment is not typical for cutting but is characteristic of taking a measurement, such as verifying the blade's thickness or straightness. The cutting board and the vegetable seem to serve as an impromptu workbench for this task. Therefore, the most logical action based on this visual evidence is that the user is measuring the knife. </think> <answer>1: measure, knife, [160,40,375,345],[174,65,393,440] <answer> 
+
+Original Image 
+
+Outpaint Image 
+
+ImagineAgent: <think>Step 1: Entity Identification 
+
+- I see one person (P1), whose torso and hands are visible, preparing food. [0,0,560,532]. 
+
+- The detected object is a knife (O1), which is being held by the person. [257,301,856,626]. 
+
+Step 2: Systematic Pairing (Maximizing Recall) - P1-O1. 
+
+Step 3: Interaction Analysis per Pair (Ensuring Precision) - Pair: P1 – knife - Action 'hold’: - Visual Evidence Check: The person's hand is visibly gripping the handle of the knife to perform a cut. This is 
+
+strong evidence for 'hold’. - Conclusion: Feasible. - Action 'cut_with ’: - Visual Evidence Check: The person is actively using the knife to slice a vegetable. This is strong evidence for 'cut_with ’. - Conclusion: Feasible. …… </think> 
+
+<answer> 
+
+1: hold, knife, [0,0,560,532], [257,301,856,626] 
+
+2: cut_with, knife, [0,0,560,532], [257,301,856,626]</answer> 
+
+Figure 7. More Case Study between Qwen2.5-VL-7B and our method. Our method can accurately identify comprehensive HOIs. 
+
+A.3. More Case Studies 
+
+As shown in Fig. 6 and Fig. 7, we present more case studies between Qwen2.5-VL-7B and our model on the HICO-DET dataset. These examples highlight the baseline model’s susceptibility to cross-modal hallucination, where it generates 14 plausible but incorrect interactions. In contrast, ImagineAgent employs a structured cognitive process, systematically evaluating entity pairs against visual evidence enriched by tools like Outpaint. This allows it to discard flawed hypotheses and accurately identify a comprehensive set of correct interactions, demonstrating superior grounded reasoning. 
+
+## B. Tool Library Details 
+
+This section provides a detailed specification of the multimodal tools integrated into our ImagineAgent framework. These tools are designed to resolve specific ambiguities encountered during HOI comprehension and are categorized into visual refinement, generative imagination, and online retrieval-augmentation tools. 
+
+B.1. Visual Refinement Tools 
+
+To ensure that fine-grained interaction details are not overlooked in complex scenes, our framework incorporates an Image Crop tool ( Tc). Its primary function is to allow the agent to isolate and scrutinize high-resolution sub-regions of the input image. This tool is dynamically invoked when the initial perception suggests a potential interaction, but the visual evidence is too small or subtle to be conclusively identified from a global view. By extracting a focused patch centered on a candidate human-object pair, the agent can perform a more detailed analysis of subtle cues, such as hand-object contact or the specific orientation of a tool. This capability is critical for accurately distinguishing between similar interactions and directly mitigates failures arising from the perceptual-cognitive gap, where global context is insufficient for precise grounding. 
+
+B.2. Online Retrieval-Augmentation Tools 
+
+To mitigate cross-modal hallucinations, we leverage the Qwen API as an online Retrieval-Augmented Generation (RAG) tool. This component anchors the agent’s reasoning in external, factual knowledge, preventing over-reliance on learned textual priors. It serves two key functions: Action Explanation (Ta) and Scene Explanation (Ts). When faced with semantically similar verbs, the agent can invoke Action Explanation to retrieve precise definitions and distinguishing characteristics, thus enabling a more nuanced classification. Concurrently, the Scene Explanation function provides high-level contextual descriptions of the entire image, which helps ground the agent’s understanding of the overall environment and the plausibility of certain interactions within it. By dynamically injecting this external knowledge, the framework ensures that predictions are semantically consistent with both the visual evidence and real-world knowledge. 
+
+B.3. Generative Imagination Tools 
+
+To address challenges of occlusion-induced ambiguity, our agent is endowed with generative imagination capabilities through the BAGEL model (Deng et al., 2025). This toolset operates in two distinct modes: Outpaint (To) and Viewpoint Transform (Tv ). The Outpaint function is employed when key contextual elements are cut off by the image frame, allowing the agent to reconstruct a more complete scene and better infer the overall activity. The Viewpoint Transform function is selected when an object or part of an interaction is occluded from the current perspective. By synthesizing a plausible alternative view, the agent can "see" behind obstructions, effectively filling in missing visual information. This process provides the agent with an imagined reality upon which to base its reasoning, transforming an incomplete observation into a more comprehensive one and enabling robust decision-making under visual uncertainty. Moreover, to control for potential generative artifacts and ensure the reliability of the agent’s reasoning, we embed a strict protocol within its prompt, governing the use of supplementary images. The complete instructions are detailed in Fig. 8. 2.3. SUPPLEMENTARY IMAGE DESCRIPTIONS 
+
+> - Primary Goal: Use SUPPLEMENTARY images only when the ORIGINAL image is ambiguous in identifying the action.
+> - Viewpoint Image: Use only if the original has a blocked view and the viewpoint image provides a clear, alternative angle of the same scene.
+> - Outpaint Image: Use only if the original cuts off an interaction and the outpaint image provides a valid, logical completion.
+> - NEVER use extra images for bounding boxes. All coordinates must come from the original image.
+> - IGNORE extra images if the action is already clear or if they are poor quality (distorted, irrelevant).
+> - Final Judgment: If an extra image creates more confusion than it solves, discard it. When in doubt, the original image wins.
+
+Figure 8. Detailed prompt of supplementary image descriptions. 
+
+15 C. Related Work 
+
+Open-Vocabulary HOI Detection. Previous methods for open-vocabulary Human-Object Interaction (HOI) detection primarily leverage the cross-modal alignment capability of CLIP (Liao et al., 2022; Ning et al., 2023; Mao et al., 2023), and utilize DETR (Carion et al., 2020) as a critical component to perform object detection in the first place (Kim et al., 2025). With the advances of Large Language Models (LLMs), recent literature (Lei et al., 2024a;b; 2025) proposed to improve the fine-grained understanding of diverse HOI concepts through prompting LLMs. Furthermore, MLLMs (Bai et al., 2025a) show great potential in open-vocabulary HOI detection in an end-to-end manner with strong visual grounding ability and world knowledge. UniVG-R1 (Bai et al., 2025b) further demonstrates that reasoning-guided visual grounding with reinforcement learning can improve spatial localization under open-vocabulary settings. Complementing this direction, Video-STAR (Yuan et al., 2025b) reinforces open-vocabulary action recognition via tool-augmented reasoning, highlighting the importance of external tools for disambiguating fine-grained interactions. Thus, we build ImagineAgent upon MLLMs and further achieve tool-augmented RL for robust open-vocabulary inference. 
+
+Multimodal LLMs Reasoning. Recent advances in Large Language Models (LLMs) have demonstrated that RL-based post-training can significantly enhance reasoning capabilities, as exemplified by OpenAI-o1 (Jaech et al., 2024) and DeepSeek-R1 (Guo et al., 2025). GPG (Chu et al., 2025) establishes a simple yet strong RL baseline for model reasoning, providing practical insights for reward design in complex reasoning tasks. These paradigms have been extended to Multimodal Large Language Models (MLLMs) for tasks like mathematical VQA (Peng et al., 2025), image segmentation (Liu et al., 2025), and video understanding (Feng et al., 2025; Chen et al., 2025a). To improve reasoning efficiency, HS-STAR (Xiong et al., 2025) introduces hierarchical sampling with difficulty-aware budget reallocation for self-taught reasoners. However, existing methods struggle with long-sequence hallucination (Chen et al., 2025b) and limited cross-modal interaction. To address this, we propose multimodal CoT reasoning via tool-augmented RL to explicitly reduce cross-modal hallucination. 
+
+Tool-Augmented Agentic System. Recent advancements in MLLMs have shown that external tools can enhance multimodal reasoning. Early works like FAST (Sun et al., 2025) and MVoT (Li et al., 2025) introduce visual evidence into reasoning, forming multimodal CoT for image tasks. LLaVa-Plus (Liu et al., 2023) pioneered training strategies for tool use, while VPD (Hu et al., 2024) leveraged program-derived data to transfer tool skills. Recent methods like TACO (Ma et al., 2024) and PyVision (Zhao et al., 2025) expand tool use with RL. Notably, AutoDrive-R2 (Yuan et al., 2025a) incentivizes reasoning and self-reflection capacity for VLA models through tool-augmented RL in dynamic environments. However, existing approaches rely on static tool pipelines, limiting their ability to complex, open-vocabulary settings. Our framework addresses this by unifying both cognitive mapping reasoning and generative modeling with tool-augmented RL for robust prediction. 
+
+## D. Prompts 
+
+To generate the high-quality, structured reasoning chains essential for our training pipeline, we employ a meticulously designed two-turn prompting strategy. As shown in Fig. 9, in the first turn, the model is tasked with initial perception and strategic planning. It is prompted to identify all relevant objects within the image from a predefined vocabulary and to select appropriate tools from a library including image cropping, online retrieval for scene and action explanations, and generative modeling including outpainting and viewpoint transformation. As shown in Fig. 10, the second turn focuses on detailed cognitive reasoning and evidence integration. It takes the set of detected objects and any augmented visual or textual data from the deployed tools to generate a constrained, step-by-step analysis. This involves systematically pairing all human and object instances, evaluating a predefined set of valid verbs for each pair, and grounding each potential interaction in direct visual evidence. This progressive methodology ensures that reasoning is not only comprehensive but also deeply grounded in a validated and enriched understanding of the visual world. 16 You are an expert in detecting objects in images for Human-Object Interaction analysis. 
+
+TASK: 
+
+1. Detect ALL objects from the PREDEFINED OBJECTS that are present. 
+
+2. Decide whether it is necessary to call any external tools to improve the final HOI predictions. 
+
+PREDEFINED OBJECTS: 
+
+{OBJECTS_INFO} 
+
+Available tools: 
+
+1. "image_description" - If the image is unclear, blurry, or has complex lighting conditions, request detailed image analysis to better understand the scene 
+
+2. "action_description" - Get detailed definitions of action categories to distinguish similar actions (e.g., "hold" vs "carry", "cut" vs "cut_with") 
+
+3. "outpaint" - Select this if the frame cuts off the person, showing just a part of them (e.g., hands in the kitchen, feet on a skateboard) instead of the complete scene. 
+
+4. "viewpoint_transform" - Select this if the person is occluded or indistinct from the current angle. 
+
+5. “image_crop“ – Select this if specific regions of interest need closer examination to detect fine-grained interactions. 
+
+{OBJECT_DESCRIPTIONS} 
+
+Instructions: 
+
+- For object detection: Detect ALL objects from the PREDEFINED LIST that are VISIBLE in the image, regardless of whether they are involved in interactions 
+
+- IMPORTANT: Only detect "person" as an OBJECT (not as subject) if there are clear interactions where a person is the target/recipient of an action. For example: 
+
+* CORRECT: Detect "person" if someone is hugging another person, or touching another person 
+
+* INCORRECT: Do NOT detect "person" if someone is holding an object, sitting on a chair, cooking, using a computer, etc. (person is the subject/doer, not the object/target) 
+
+- For tool selection: Carefully evaluate which tools would provide the most benefit for accurate HOI detection 
+
+- Detect ONLY objects from the predefined list 
+
+- Return results in the specified format, no extra text 
+
+Please think step by step about the image content, your detection and tool selection. 
+
+Provide your detailed reasoning between the <think> </think> tags, and then give your final results in the <answer> </answer> tags. 
+
+Output Format: 
+
+<think>step-by-step reasoning process</think> 
+
+<answer> 
+
+Format: object_1, [ox1,oy1,ox2,oy2], object_2, [ox1,oy1,ox2,oy2], object_3, [ox1,oy1,ox2,oy2], ... ; tool_1, tool_2, tool_3, ... 
+
+Examples: 
+
+boat, [299,235,385,395], car, [320,306,359,349], person, [148,345,376,414]; object_description, action_description 
+
+bench, [39,239,192,452], horse, [79,25,571,411]; object_description, outpaint 
+
+chair, [320,306,359,349], table, [148,345,376,414]; object_description, action_description, viewpoint_transform 
+
+</answer> Figure 9. Detailed prompt template in the first round. 
+
+17 You are a world-class AI expert in Human-Object Interaction (HOI) detection .
+
+Your primary goal is to achieve both maximum recall (finding every possible interaction) and perfect precision (ensuring every detected interaction is accurate and valid). 
+
+# 1. CONTEXT & DATA 
+
+{IMAGE} 
+
+## 1.1. Detected Objects 
+
+Here is the definitive list of objects you must consider. 
+
+DETECTED OBJECTS: {DETECTED_OBJECTS} 
+
+## 1.2. Valid Actions per Object 
+
+These are the only actions you are allowed to use for each object class. 
+
+VALID ACTIONS: {OBJECT_VERB_CONSTRAINTS} 
+
+## 1.3. Additional Information (Optional) 
+
+{ACTION_DESCRIPTIONS} 
+
+{IMAGE_DESCRIPTIONS} 
+
+{DETAILED_IMAGE_INSTRUCTIONS} 
+
+# 2. CORE TASK & RULES 
+
+Your mission is to exhaustively identify and list ALL valid human-object interactions present in the ORIGINAL image, following these strict rules: 
+
+1. Be Comprehensive (For Recall ): You must systematically check every person against every object from the `DETECTED OBJECTS` list. Do not miss any potential interaction pair. 
+
+2. Strictly Adhere to Lists (For Precision): 
+
+- You MUST ONLY use objects from the `DETECTED OBJECTS` list. 
+
+- You MUST ONLY use actions from the `VALID ACTIONS` list for the corresponding object. 
+
+3. Ground in Visual Evidence (For Precision): Every reported interaction must be directly supported by clear visual cues in the image (e.g., hand contact, body posture, gaze direction, spatial proximity). 
+
+4. Precise Formatting: 
+
+- Use precise pixel coordinates for all bounding boxes. 
+
+- Format each finding as: `number: action, object, [person_x1,person_y1,person_x2,person_y2], [object_x1,object_y1,object_x2,object_y2]` 
+
+- Do not add any extra text or explanations outside the designated tags. 
+
+# 3. YOUR THOUGHT PROCESS (Mandatory) 
+
+You must follow this structured reasoning process inside the <think> tags. 
+
+<think> 
+
+Step 1: Entity Identification 
+
+- I will first identify and list all persons (P1, P2, ...) and all relevant objects from the `DETECTED OBJECTS` list (O1, O2, ...) with their bounding boxes. 
+
+Step 2: Systematic Pairing (Maximizing Recall) 
+
+- I will now create a list of all possible Person-Object pairs for analysis (e.g., P1-O1, P1-O2, P2-O1, ...). This ensures an exhaustive search. 
+
+Step 3: Interaction Analysis per Pair (Ensuring Precision) 
+
+- For each pair, I will analyze all `VALID ACTIONS` for that specific object. 
+
+- For each action, I will perform a detailed visual evidence check. 
+
+- Example for a single pair (P1-O1 where O1 is a 'cup'): 
+
+- **Pair:** P1 - O1 (cup) 
+
+- **Action 'hold':** 
+
+- **Visual Evidence Check:** I see P1's hand is wrapped around the cup O1. 
+
+- **Conclusion:** Feasible. 
+
+- **Action 'drink_from':** 
+
+- **Visual Evidence Check:** The cup O1 is near P1's mouth, and P1's head is tilted back. This confirms the 'drink_from' action. 
+
+- **Conclusion:** Feasible. 
+
+- **Action 'sit_on':** 
+
+- **Visual Evidence Check:** A person cannot sit on a cup. This is physically impossible and not supported by the image. 
+
+- **Conclusion:** Not Feasible. 
+
+Step 4: Final Compilation and Review 
+
+- Based on the 'Feasible' conclusions from Step 3, I will compile the final list of interactions. 
+
+- I will do a final review to ensure I have not missed any interactions and that every reported interaction strictly follows all rules and is backed by evidence. </think> 
+
+<answer> 
+
+Format: number: action, object, [px1,py1,px2,py2], [ox1,oy1,ox2,oy2] 
+
+Example: 1: sit_on, bench, [320,306,359,349], [148,345,376,414], 2: hold, horse, [226,18,340,210], [174,65,393,440] 
+
+</answer> Figure 10. Detailed prompt template in the second round. 
+
+18

@@ -1,0 +1,1668 @@
+Title: Multi-Agent Debate: A Unified Agentic Framework for Tabular Anomaly Detection
+
+URL Source: https://arxiv.org/pdf/2602.14251v1
+
+Published Time: Tue, 17 Feb 2026 02:15:26 GMT
+
+Number of Pages: 19
+
+Markdown Content:
+# Multi-Agent Debate: A Unified Agentic Framework for Tabular Anomaly Detection 
+
+Pinqiao Wang 1 Sheng Li 1
+
+## Abstract 
+
+Tabular anomaly detection is often handled by sin-gle detectors or static ensembles, even though strong performance on tabular data typically comes from heterogeneous model families (e.g., tree ensembles, deep tabular networks, and tabular foundation models) that frequently disagree under distribution shift, missingness, and rare-anomaly regimes. We propose MAD , a Multi-Agent De-bating framework that treats this disagreement as a first-class signal and resolves it through a math-ematically grounded coordination layer. Each agent is a machine learning (ML)-based detector that produces a normalized anomaly score, confi-dence, and structured evidence, augmented by a large language model (LLM)-based critic. A coor-dinator converts these messages into bounded per-agent losses and updates agent influence via an exponentiated-gradient rule, yielding both a final debated anomaly score and an auditable debate trace. MAD is a unified agentic framework that can recover existing approaches, such as mixture-of-experts gating and learning-with-expert-advice aggregation, by restricting the message space and synthesis operator. We establish regret guaran-tees for the synthesized losses and show how con-formal calibration can wrap the debated score to control false positives under exchangeability. Experiments on diverse tabular anomaly bench-marks show improved robustness over baselines and clearer traces of model disagreement. 
+
+## 1. Introduction 
+
+Tabular anomaly detection underpins high-stakes monitor-ing in finance, healthcare, security, and operations, yet it remains fragile in practice. The challenge is not only the heterogeneity of tabular features, but also the setting itself: anomalies are rare, labels are limited or noisy, and deploy- 
+
+> 1University of Virginia, Charlottesville, USA. Correspondence to: Sheng Li <shengli@virginia.edu >.
+> Preprint. February 17, 2026.
+
+ment routinely faces missingness and distribution shift (Han et al., 2022). As a result, no single detector family is con-sistently reliable. Existing methods, such as tree ensembles, deep tabular models, and tabular foundation models, can each dominate on different datasets, and they often disagree on the same example (Chen & Guestrin, 2016; Ke et al., 2017; Prokhorenkova et al., 2018; Grinsztajn et al., 2022; Hollmann et al., 2023b; 2025b). We argue that this disagreement is not a nuisance to be aver-aged away; it is a signal about ambiguity and failure modes. Leveraging ensemble/committee disagreement as a signal has been explored in other anomaly/novelty detection set-tings (e.g., semi-supervised novelty detection and medical image anomaly detection) and in contextual anomaly de-tection via committee-based disagreement measures (Tifrea et al., 2022; Gu et al., 2024; Calikus et al., 2022). Standard practice in tabular anomaly detection, however, still largely either (i) picks one model and hopes it generalizes, or (ii) uses static ensembling that smooths away conflicts without explaining them. This is especially problematic for rare-event metrics and shift-heavy benchmarks, where the right action is often to resolve conflicts rather than suppress them. Inspired by this observation, our idea is simple: when de-tectors disagree, we should not just average their scores. Instead, we let each detector justify its score (with a cali-brated confidence and optional evidence), and a coordinator learns to trust some detectors more than others, especially in the contentious cases where disagreement is high. The result is both a single anomaly score and a transparent trace that records how disagreements were resolved; we introduce the formal agents-and-updates mechanism later. To ground this, we conduct a preliminary study across heterogeneous model families and quantify inter-model disagreement using rank-normalized anomaly scores. Disagreement patterns dif-fer substantially by family, and the benefit of dispute-aware coordination depends on the disagreement regime. These observations motivate a coordination layer that explicitly models “who disagrees with whom and why,” rather than treating disagreement as noise to be averaged away. We therefore propose MAD , a multi-agent debating frame-work for tabular anomaly detection, as shown in Figure 1. MAD contains multiple detectors, and each detector is an 1
+
+> arXiv:2602.14251v1 [cs.LG] 15 Feb 2026
+
+Multi-Agent Debate: A Unified Agentic Framework for Tabular Anomaly Detection Tabular Input        
+
+> Heterogeneous features
+> Preprocessed
+> xi, j
+> Agent 1
+> Agent 2
+> Agent 3
+> Preprocessed yi, j
+> Agent 4
+> Agent 5
+> Selection Rounds customized
+> Explainer Layer
+> •Debate Trace
+> •Final Anomaly Score for Recommendation
+> •Escalation Signal
+> Output
+> Coordinator
+> Update Signal Regulate Disagreement
+> Coordinate
+> Synthesize losses
+> Message
+> knowledge
+> Message
+> knowledge
+
+Figure 1. MAD Design Overview can be decomposed into four modular building blocks: Perception(From input to agent selection), Action(agent debate), Coordinator, and Output. It separates signal extraction, agent interaction, coordination logic, and decision reporting. 
+
+ML-based agent that emits a normalized score along with confidence and optional structured evidence (e.g., feature at-tributions or counterfactual cues). An optional LLM critic is used only to verify evidence consistency. A coordinator then compares these messages, down-weights detectors whose high-confidence claims are poorly supported, and produces both a final anomaly score and an auditable debate trace. Conceptually, MAD instantiates a broader superset view: by restricting the message space and the coordination rule, the same framework recovers standard ensembles (e.g., bag-ging/stacking) (Breiman, 1996; Wolpert, 1992), mixture-of-experts-style weighting (Jacobs et al., 1991; Shazeer et al., 2017), and learning-with-expert-advice aggregation (Freund & Schapire, 1997; Cesa-Bianchi & Lugosi, 2006; Shalev-Shwartz, 2012) as special cases. Importantly, the novelty lies in the message schema and in how disagreement and evidence are converted into actionable feedback for coordi-nation. The main contributions of this work are as follows: • A Unified Agentic Framework. Inspired by the ob-servations on structured disagreement from heteroge-neous tabular detectors, we design a unifed agentic framework for tabular anomaly detection, MAD, which leverages multiple agents and a coordinator to infer anomaly scores and provide debate trace for better interpretability. • Theoretical Justifications. We formalize debate-augmented anomaly detection as an instance of expert aggregation with disagreement, showing that standard ensembles arise as a degenerate single-round case. We further provide a unifying framework that connects classical learning-theoretic guarantees for expert ad-vice to multi-round agent interactions, clarifying when and why debate improves robustness beyond averag-ing. • Extensive Evaluations and Case Studies. We evalu-ate MAD on diverse tabular anomaly detection bench-marks and show consistent improvements over strong classical, deep, AutoML, and unsupervised baselines. We further present trace-based case studies that demon-strate how agent disagreement yields interpretable evi-dence supporting calibrated, human-in-the-loop deci-sions. 
+
+## 2. Related Work 
+
+Tabular learning and model families. Tree ensembles are commonly strong tabular baselines due to robustness and favorable bias–variance tradeoffs (Chen & Guestrin, 2016; Ke et al., 2017; Prokhorenkova et al., 2018; Grinsztajn et al., 2022). Deep tabular models narrow the gap by adding inductive bias and improved training protocols, including attentive feature selection, differentiable tree-like layers, and Transformer variants (Arik & Pfister, 2021; Popov et al., 2020; Huang et al., 2020; Gorishniy et al., 2021), with recent retrieval- and ensembling-style improvements (Gorishniy et al., 2024; 2025). In parallel, prior-data fitted networks and tabular foundation models perform amortized inference over task distributions and can be competitive in small-data regimes (Hollmann et al., 2023a; 2025a; 2023b; 2025b; Liu & Ye, 2025). Our work does not advocate a single family; 2Multi-Agent Debate: A Unified Agentic Framework for Tabular Anomaly Detection 
+
+it treats heterogeneity (and the disagreements it induces) as an input to coordination. 
+
+Tabular anomaly detection and explanation. Classic unsupervised detectors include Isolation Forest, LOF, and one-class methods (Liu et al., 2008; Breunig et al., 2000; Sch ¨olkopf et al., 2001), alongside deep objectives such as Deep SVDD and density–reconstruction hybrids (Ruff et al., 2018; Zong et al., 2018). Benchmarks highlight large cross-dataset variance and sensitivity to corruption and shift, mo-tivating standardized evaluation (Han et al., 2022). Be-cause anomaly decisions are operationally consequential, practitioners commonly attach post hoc explanations (e.g., SHAP/LIME) and counterfactual-style diagnostics (Lund-berg & Lee, 2017; Ribeiro et al., 2016; Wachter et al., 2017). MAD, by design, makes disagreement and justification part of the decision process. 
+
+From aggregation to deliberation. Model combination has a long history in bagging/boosting and in online learning with expert advice (Cesa-Bianchi & Lugosi, 2006; Shalev-Shwartz, 2012), and modern systems also use conditional weighting via mixture-of-experts (Shazeer et al., 2017). Sep-arately, LLM research explores deliberation via search, re-flection, and debate protocols (Yao et al., 2023; Shinn et al., 2023; Du et al., 2023). MAD sits between these threads: it keeps the predictive core as heterogeneous ML detec-tors, but introduces a debate-style dispute-resolution layer 
+
+with bounded feedback so that coordination is auditable and compatible with standard aggregation guarantees. 
+
+## 3. Preliminaries and Positioning 
+
+Tabular anomaly detection is rarely dominated by a single model family: tree-based detectors, deep tabular models, and tabular foundation models can each win on different datasets and can disagree sharply under distribution shift, missingness, and rare anomaly types (Han et al., 2022; Liu & Ye, 2025). Averaging scores often hides these disagree-ments rather than resolving them. Our goal is a dispute-resolution layer that (i) combines heterogeneous ML agents with clean guarantees, and (ii) exposes why a final decision was made. A consolidated list of notations and definitions used throughout this paper is provided in Appendix E. 
+
+Backbone: learning with expert advice. We adopt the prediction-with-expert-advice framework (Freund & Schapire, 1997; Cesa-Bianchi & Lugosi, 2006; Shalev-Shwartz, 2012; Hazan, 2016). At each round t we main-tain weights α(t) ∈ ∆N −1 over N experts (here: anomaly agents). Given a bounded loss vector ℓ(t) ∈ [0 , 1] N , we update the weights using exponentiated gradient (multi-plicative weights) (Kivinen & Warmuth, 1997; Arora et al., 2012): 
+
+α(t+1)  
+
+> i
+
+= α(t) 
+
+> i
+
+exp( −η ℓ (t) 
+
+> i
+
+)
+
+PNj=1 α(t) 
+
+> j
+
+exp( −η ℓ (t) 
+
+> j
+
+) . (1) This backbone is intentionally conservative: it is widely un-derstood, easy to implement, and comes with a regret bound (over the provided loss sequence). The central design ques-tion becomes: how should we define the per-agent losses 
+
+ℓ(t) 
+
+> i
+
+when agents disagree? MAD answers this by turning disagreement and evidence into bounded losses. 
+
+Theorem 3.1 (Hedge/EG regret) . Assume ℓ(t) 
+
+> i
+
+∈ [0 , 1] for all i, t and initialize α(1) uniformly. Let α(t) be updated by 
+
+(1) with η ∈ (0 , 1] . Then 
+
+> T
+
+X
+
+> t=1
+
+⟨α(t), ℓ (t)⟩ − min  
+
+> i∈[N]
+> T
+
+X
+
+> t=1
+
+ℓ(t) 
+
+> i
+
+≤ log Nη + ηT 
+
+8 . (2) The complete derivation is standard and included in Ap-pendix D. 
+
+Superset viewpoint. Many existing aggregation schemes can be described as: agents emit outputs; a coordinator combines them. Our framework makes this explicit by introducing a message space and a loss-synthesis operator .At each round, a coordinator receives messages {m(t) 
+
+> i
+
+}Ni=1 
+
+and produces a bounded loss vector bℓ(t) ∈ [0 , 1] N :
+
+(bℓ(t), k (t+1) ) = Ψ 
+
+
+
+k(t), {m(t) 
+
+> i
+
+}Ni=1 , x t
+
+
+
+. (3) This loss vector is then fed into EG (1) . When messages are restricted to scalar predictions and Ψ ignores interaction, this recovers classical one-shot ensembles and expert ag-gregation; when messages include structured evidence and 
+
+Ψ encodes dispute resolution, we obtain debate-augmented aggregation. A formal embedding of common frameworks and the full “superset tuple” are provided in Appendix C. 
+
+What is different from existing aggregation frameworks. 
+
+Most existing aggregation methods can be summarized as “combine predictions,” differing mainly in when weights are chosen and what information is used. MAD changes the interface: it does not only aggregate scalar outputs, but introduces a message m(t) 
+
+> i
+
+and a loss-synthesis step Ψ that converts disagreement and evidence into bounded feedback. This creates three differences. 
+
+(i) From prediction-only to message-based coordination. 
+
+Classical ensembles typically consume only a scalar score from each model. MAD consumes m(t) 
+
+> i
+
+= (˜ s(t) 
+
+> i
+
+, c (t) 
+
+> i
+
+, e (t) 
+
+> i
+
+),so the coordinator can penalize not only inaccurate scores but also unjustified or inconsistent evidence. 
+
+(ii) From fixed or black-box weighting to auditable dis-pute resolution. In many ensembles, the final score is 3Multi-Agent Debate: A Unified Agentic Framework for Tabular Anomaly Detection Framework Interact? Learned?            
+
+> Bagging / RF ××
+> Boosting ××
+> Mixture of Experts ××
+> LLM debate ✓×
+> MAD (ours) ✓✓
+> Table 1. Major Differences with Other Frameworks.
+
+Algorithm 1 MAD: Multi-Agent Debate with EG Aggrega-tion 
+
+Require: Agents {si, ν i}Ni=1 , rounds T , stepsize η, synthe-sis operator Ψ 
+
+> 1:
+
+Initialize weights α(1) ← (1 /N, . . . , 1/N ) 
+
+> 2:
+
+for each input x (or each round t in a stream) do  
+
+> 3:
+
+Initialize state k(1) ← α(1) (plus bookkeeping for trace)  
+
+> 4:
+
+for t = 1 to T do  
+
+> 5:
+
+for i = 1 to N do  
+
+> 6:
+
+Compute normalized score ˜s(t) 
+
+> i
+
+(x) ← νi(si(x))  
+
+> 7:
+
+Compute confidence c(t) 
+
+> i
+
+(x) and evidence 
+
+e(t) 
+
+> i
+
+(x) 
+
+> 8:
+
+Form message m(t) 
+
+> i
+
+(x) ←
+
+(˜ s(t) 
+
+> i
+
+(x), c (t) 
+
+> i
+
+(x), e (t) 
+
+> i
+
+(x))  
+
+> 9:
+
+end for  
+
+> 10:
+
+(bℓ(t), k (t+1) ) ← Ψ( k(t), {m(t) 
+
+> i
+
+(x)}Ni=1 , x ) 
+
+> 11:
+
+Update weights α(t+1) using (8)  
+
+> 12:
+
+end for  
+
+> 13:
+
+Output ˆs(x) ← P 
+
+> i
+
+α(T ) 
+
+> i
+
+˜s(T ) 
+
+> i
+
+(x) and store trace  
+
+> 14:
+
+end for 
+
+ˆs = P 
+
+> i
+
+αi ˜si with weights chosen by heuristics, training, or performance history, but the reason for a particular weight-ing is not explicit. MAD produces a bounded loss vector bℓ(t)
+
+via Ψ and updates weights with EG; the debate trace records which disagreement or evidence inconsistency caused an agent to be down-weighted. 
+
+(iii) Superset view with strict special cases. If we restrict the message space to scalar scores ( M = [0 , 1] ) and let Ψ
+
+ignore interaction, MAD reduces to standard ensembles or classical expert advice. MAD is therefore a strict superset: it contains existing methods as special cases and extends them by allowing structured communication. If false-positive control is required, conformal calibration can wrap any final score into a p-value under exchangeability (Vovk et al., 2005). We apply this to MAD as an optional post-processing step; details are in Appendix D.1. 
+
+## 4. MAD for Tabular Anomaly Detection 
+
+MAD treats each anomaly detector as an agent and turns disagreement into a structured debate. Each agent produces (i) a score, (ii) a confidence, and (iii) evidence (for example, feature attributions or counterfactual cues). A coordinator converts these messages into bounded per-agent losses and updates agent weights using exponentiated gradient (EG). The output is both a final anomaly score and an auditable trace showing which agents were trusted and why. 
+
+Agents and normalized scores. Agent i outputs a raw anomaly score si : X → R. To make scores comparable across heterogeneous families, we use a monotone map 
+
+νi : R → [0 , 1] and define 
+
+˜si(x) ≜ νi(si(x)) ∈ [0 , 1] . (4) This step removes scale effects so that aggregation and disagreement are meaningful across agents. 
+
+Debate as loss synthesis. MAD introduces a synthesis operator 
+
+(bℓ(t), k (t+1) ) = Ψ 
+
+
+
+k(t), {m(t) 
+
+> i
+
+(x)}Ni=1 , x 
+
+
+
+, bℓ(t) ∈ [0 , 1] N
+
+(5) which is where “debate” lives. The role of Ψ is to con-vert disagreement and evidence into bounded feedback that down-weights unreliable or unjustified agents while keeping the prerequisites required for EG theory. 
+
+Messages. At round t, agent i emits a message 
+
+m(t) 
+
+> i
+
+(x) ≜  ˜s(t) 
+
+> i
+
+(x), c (t) 
+
+> i
+
+(x), e (t) 
+
+> i
+
+(x) ∈ M , (6) where c(t) 
+
+> i
+
+(x) ∈ [0 , 1] is confidence and e(t) 
+
+> i
+
+(x) is structured evidence. Evidence can be produced by ML explainers (for example feature attributions) and can optionally be augmented by an LLM critic that checks consistency or highlights conflicts; MAD does not require the LLM to generate the anomaly score. 
+
+Aggregation and update. MAD maintains weights α(t) ∈
+
+∆N −1 and forms the debated aggregate score 
+
+ˆs(t)(x) ≜
+
+> N
+
+X
+
+> i=1
+
+α(t) 
+
+> i
+
+˜s(t) 
+
+> i
+
+(x). (7) Weights are updated using synthesized losses: 
+
+α(t+1)  
+
+> i
+
+= α(t) 
+
+> i
+
+exp   − η bℓ(t)
+
+> i
+
+PNj=1 α(t) 
+
+> j
+
+exp   − η bℓ(t)
+
+> j
+
+ . (8) MAD outputs the final score ˆs(x) ≜ ˆs(T )(x) and a trace of the debate history (messages, losses, and weight evolution). In practice, T = 1 is a strong default and T > 1 is evaluated as an explicit extension. 4Multi-Agent Debate: A Unified Agentic Framework for Tabular Anomaly Detection 
+
+Why confidence and evidence are necessary. Score dis-agreement alone cannot distinguish “a confident but wrong agent” from “a cautious agent with weak signal.” Confi-dence c(t) 
+
+> i
+
+and evidence e(t) 
+
+> i
+
+allow Ψ to enforce a simple principle: if an agent disagrees strongly, it should either provide consistent evidence or be penalized. This is what makes MAD a dispute-resolution mechanism rather than a reweighting heuristic. Because MAD enforces bℓ(t) 
+
+> i
+
+∈ [0 , 1] , the aggregation step in-herits the standard expert-advice regret bound (Theorem 3.1) with respect to the synthesized losses (not necessarily with respect to a downstream detection metric). 
+
+Theorem 4.1 (MAD regret) . Assume bℓ(t) 
+
+> i
+
+∈ [0 , 1] for all i, t ,where bℓ(t) is produced by (5) . If MAD updates α(t) by (8) ,then 
+
+> T
+
+X
+
+> t=1
+
+⟨α(t), bℓ(t)⟩ − min  
+
+> i∈[N]
+> T
+
+X
+
+> t=1
+
+bℓ(t) 
+
+> i
+
+≤ log Nη + ηT 
+
+8 .
+
+Full derivations and additional lemmas are in Appendix D. Algorithm 1 shows the detailed procedures of MAD with EG aggregation, which treats Ψ as a modular component. In addition, Appendix C.1 specifies one concrete instantiation of Ψ used in our experiments. 
+
+## 5. Experiments 
+
+We evaluate MAD as a debate-augmented instantiation of its math structure for tabular anomaly and rare-event detection. The experiments answer: (i) whether disagreement-aware synthesis improves detection beyond standard ensembling and strong tabular baselines, (ii) whether disagreement pre-dicts where improvements occur, and (iii) which compo-nents are responsible for accuracy, reliability, and robust-ness. More details can be found in appendix B 
+
+Datasets, baselines, and protocol. We benchmark across diverse domains and imbalance regimes; the dataset suite is summarized in Table 2. We draw datasets from OpenML and UCI (and standard intrusion/fraud benchmarks) follow-ing their canonical sources (Vanschoren et al., 2014; Dua & Graff, 2019; Tavallaee et al., 2009; Moustafa & Slay, 2015; Sharafaldin et al., 2018; Dal Pozzolo et al., 2015; Kaggle, 2019; 2011). We compare MAD against representative tabular paradigms: classical ML (logistic regression; ran-dom forests (Breiman, 2001); gradient boosting (Friedman, 2001) via XGBoost (Chen & Guestrin, 2016), LightGBM (Ke et al., 2017), CatBoost (Prokhorenkova et al., 2018)), AutoML (AutoGluon (Erickson et al., 2020), H2O AutoML (LeDell & Poirier, 2020), auto-sklearn (Feurer et al., 2015)), deep tabular models (TabNet (Arik & Pfister, 2021), FT-Transformer (Gorishniy et al., 2021), SAINT (Somepalli et al., 2021), TabTransformer (Huang et al., 2020), TabPFN (Hollmann et al., 2023a)), and unsupervised outlier detec-tion (Isolation Forest (Liu et al., 2008), One-Class SVM (Sch ¨olkopf et al., 2001), LOF (Breunig et al., 2000), robust covariance / Elliptic Envelope (Rousseeuw & Van Driessen, 1999), and PyOD methods (Zhao et al., 2019) including HBOS (Goldstein & Dengel, 2012), COPOD (Li et al., 2020), and ECOD (Li et al., 2022)). We implement standard baselines using widely used toolkits (scikit-learn (Pedregosa et al., 2011) and PyOD (Zhao et al., 2019)) with shared pre-processing, splits, and tuning budget. We report PR-AUC and Recall@1%FPR for rare-event sensitivity, ROC-AUC and macro-F1 for overall discrimination, and ECE (Guo et al., 2017) plus a slice gap statistic for reliability and ro-bustness. The complete data-preprocessing, split identifiers, and any filtering are provided in the released code/configs (Appendix B.4). 
+
+Main Results and Analysis Accuracy, calibration, and robustness. Table 3 shows that MAD is consistently competitive at the top across detection metrics while also improving reliability (ECE) and reduc-ing slice disparity (Gap), rather than trading one objective for another. The same conclusion appears in the family aggregation view in Figure 2(e): MAD yields the strongest rare-event operating behavior, especially under strict false-positive budgets where practical screening systems operate. Together with the dataset diversity in Table 2, this supports that MAD’s gains are not confined to a single domain or a single model family. 
+
+Disagreement Diagnostics. Figure 2(a,b) shows that dis-agreement is structured and differs substantially across fam-ilies, motivating a synthesis rule that reacts to conflict rather than uniformly averaging it away. Figure 2(c,d) then shows that improvements over mean ensembling concentrate in higher-disagreement regimes, while low-disagreement re-gions see little change, matching the intended “intervene only when needed” behavior of MAD. Consistently, Fig-ure 2(i) shows that the magnitude of MAD’s adjustment tracks disagreement: the debated score stays close to stan-dard aggregation under consensus and departs more when agents conflict. 
+
+Ablations Study. Figure 2(f) and Table 4 show that re-moving key debate ingredients (e.g., dropping the update or weighting mechanism, or collapsing to single-channel signals) degrades performance, indicating that MAD’s gains are not explained by ensembling alone. Table 5 further shows that both the confidence design and evidence channel matter: weakening evidence or corrupting it reduces the benefits, which aligns with MAD’s goal of using structured support to resolve disagreement rather than simply ampli-fying variance. Finally, Figures 2(g,h) indicate that MAD 5Multi-Agent Debate: A Unified Agentic Framework for Tabular Anomaly Detection 
+
+Table 2. Popular tabular datasets for anomaly and rare-event detection across domains. Pos.% denotes minority/positive (anomaly) rate after binarization. Binary datasets treat the rarer class as an anomaly; multiclass datasets use one-vs-rest (OvR). 
+
+Dataset Domain Task Rows Feat. Pos.% Finance  Credit Card Fraud Finance / Fraud Anomaly 284,807 30 ≈0.17% IEEE–CIS Fraud Finance / Fraud Anomaly 590K+ 400+ < 1% 
+
+Give Me Some Credit Consumer Risk Rare-event 150,000 10 ≈6% 
+
+> Health
+
+Mammography Healthcare / Biology Anomaly 11,183 6 ≈2–3% Arrhythmia Healthcare / Biology Anomaly (OvR) 452 279 rare Thyroid (ANN) Healthcare / Biology Anomaly 7,200 21 rare 
+
+> Eco
+
+Shuttle Ops / Physics Anomaly (OvR) 58,000 9 rare CoverType Ecology Anomaly (OvR) 581,012 54 rare 
+
+> Cyber
+
+UNSW-NB15 Cybersecurity Intrusion 2.5M 49 rare NSL-KDD Cybersecurity Intrusion 125,973 41 rare CIC-IDS2017 Cybersecurity Intrusion 2–3M 75+ rare 
+
+> Econ
+
+Bank Marketing Business / Marketing Rare-event 45,211 16 ≈11% Adult Income Socioeconomic Rare-event 48,842 14 ≈24% 
+
+> Edu
+
+Student Performance (POR) Education Rare-event 649 33 ≈15% Academic Performance Education Rare-event 4,800 37 ≈12% 
+
+Table 3. Overall performance (mean ± std across datasets). ↑ higher is better; ↓ lower is better. 
+
+Model PR ↑ R@1%FPR ↑ ROC ↑ F1 ↑ ECE ↓ Gap ↓
+
+> Classical
+
+GLM (LogReg) 0.232 ± 0.112 0.401 ± 0.147 0.861 ± 0.043 0.817 ± 0.058 8.3 ± 3.9 0.104 ± 0.061 RF 0.267 ± 0.091 0.442 ± 0.118 0.878 ± 0.036 0.834 ± 0.047 7.1 ± 2.8 0.091 ± 0.047 XGB 0.304 ± 0.082 0.486 ± 0.105 0.899 ± 0.028 0.856 ± 0.038 6.4 ± 2.2 0.079 ± 0.039 LGBM 0.296 ± 0.087 0.471 ± 0.121 0.895 ± 0.032 0.852 ± 0.044 6.8 ± 2.6 0.086 ± 0.043 CatBoost 0.289 ± 0.095 0.462 ± 0.129 0.897 ± 0.031 0.850 ± 0.043 6.0 ± 2.5 0.072 ± 0.035 HeteroStack 0.312 ± 0.076 0.498 ± 0.097 0.905 ± 0.024 0.862 ± 0.033 6.2 ± 2.1 0.073 ± 0.033 
+
+> AutoML
+
+AutoGluon 0.291 ± 0.097 0.470 ± 0.133 0.892 ± 0.041 0.848 ± 0.055 7.4 ± 3.1 0.090 ± 0.052 H2O 0.279 ± 0.103 0.458 ± 0.141 0.887 ± 0.045 0.842 ± 0.060 6.9 ± 3.4 0.083 ± 0.050 auto-skl 0.285 ± 0.090 0.463 ± 0.119 0.889 ± 0.038 0.844 ± 0.050 7.8 ± 3.0 0.098 ± 0.056 
+
+> Deep
+
+TabNet 0.261 ± 0.120 0.433 ± 0.156 0.873 ± 0.052 0.828 ± 0.070 8.6 ± 4.2 0.109 ± 0.066 FT-Trans 0.300 ± 0.089 0.480 ± 0.127 0.897 ± 0.034 0.852 ± 0.049 6.7 ± 2.7 0.081 ± 0.045 SAINT 0.307 ± 0.084 0.492 ± 0.116 0.901 ± 0.029 0.857 ± 0.041 6.1 ± 2.3 0.078 ± 0.041 TabTrans 0.282 ± 0.101 0.456 ± 0.138 0.891 ± 0.040 0.846 ± 0.058 7.3 ± 3.3 0.096 ± 0.060 TabPFN 0.295 ± 0.078 0.489 ± 0.110 0.904 ± 0.022 0.861 ± 0.031 6.9 ± 2.0 0.092 ± 0.040 
+
+> OD(sk)
+
+iForest 0.214 ± 0.141 0.354 ± 0.186 0.781 ± 0.067 – – 0.151 ± 0.094 OC-SVM 0.168 ± 0.118 0.302 ± 0.173 0.747 ± 0.074 – – 0.173 ± 0.102 LOF 0.154 ± 0.109 0.286 ± 0.161 0.734 ± 0.079 – – 0.192 ± 0.110 Ellip.Env. 0.131 ± 0.096 0.251 ± 0.148 0.711 ± 0.083 – – 0.208 ± 0.121 
+
+> OD(py)
+
+HBOS 0.176 ± 0.126 0.319 ± 0.178 0.756 ± 0.072 – – 0.181 ± 0.103 COPOD 0.201 ± 0.148 0.343 ± 0.192 0.772 ± 0.068 – – 0.164 ± 0.097 ECOD 0.208 ± 0.139 0.349 ± 0.185 0.778 ± 0.066 – – 0.158 ± 0.095 KNN 0.161 ± 0.111 0.292 ± 0.163 0.741 ± 0.076 – – 0.195 ± 0.112 PCA 0.147 ± 0.105 0.271 ± 0.156 0.729 ± 0.081 – – 0.203 ± 0.119 
+
+> MAD
+
+MAD (ours) 0.352 ± 0.071 0.647 ± 0.094 0.936 ± 0.015 0.893 ± 0.026 5.0 ± 1.5 0.050 ± 0.024 
+
+Abbrev.: XGB=XGBoost, LGBM=LightGBM, HeteroStack=Heterogeneous Stacking, FT-Trans=FT-Transformer, TabTrans=TabTransformer, iForest=Isolation Forest, OC-SVM=One-Class SVM, Ellip.Env.=Elliptic Envelope, auto-skl=auto-sklearn. 
+
+benefits from a small number of debate rounds and a mod-erate agent pool before saturating, suggesting a practical operating point that balances improvements with overhead. 
+
+Operational Implications and Trace-Based Case Study Operational implications. Real-world tabular anomaly de-tection systems operate under constraints beyond average detection accuracy, including alert budgets, analyst review capacity, and the need to justify decisions under distribu-tional shifts. MAD is designed with these constraints in mind. By producing a ranked anomaly score ˆs(x), MAD directly supports budgeted triage (e.g., reviewing the top-k
+
+most suspicious cases). Its online reweighting mechanism reallocates trust across agents when disagreement or insta-bility arises, mitigating the brittleness of static ensembles. Finally, MAD produces an explicit decision trace, exposing how agent disagreement was resolved, which is essential for human-in-the-loop workflows. 
+
+Trace-based explanation case study. We now illustrate how MAD resolves confident disagreement using a repre-sentative case study on a single input x. The complete trace is provided in Appendix B.3; here we summarize the key reasoning steps. Consider three agents participating in MAD: (i) Agent A, a tree-based detector that historically performs well on this dataset; (ii) Agent B, a neural tabular detector with moderate confidence and expressive features; (iii) Agent C, a distance-based detector that is conservative but stable. At debate round t = 1 , the agents emit the following mes-6Multi-Agent Debate: A Unified Agentic Framework for Tabular Anomaly Detection 0.00 0.05 0.10 0.15 0.20 0.25                        
+
+> Disagreement (std)
+> 0.0
+> 2.5
+> 5.0
+> 7.5
+> 10.0
+> 12.5
+> 15.0
+> Density
+> (a) Disagreement density
+> Classical ML AutoML
+> Deep Tabular
+> Unsupervised OD
+> Hybrid OD
+> MAD (ours)
+> 0.00
+> 0.05
+> 0.10
+> 0.15
+> 0.20
+> Disagreement
+> (b) Disagreement summary
+> 0.00 0.05 0.10 0.15 0.20 0.25
+> Disagreement bin center
+> −0.001
+> 0.000
+> 0.001
+> 0.002
+> 0.003
+> ΔROC (DA − mean)
+> (c) ROC gain vs disagreement
+> 0.00 0.05 0.10 0.15 0.20 0.25
+> Disagreement bin center
+> −0.01
+> 0.00
+> 0.01
+> 0.02
+> 0.03
+> ΔPR (DA − mean)
+> (d) PR gain vs disagreement
+> Classical ML AutoML
+> Deep Tabular
+> Unsupervised OD
+> Hybrid OD
+> MAD (ours)
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> Score
+> (e) Rare-event metrics (family)
+> Mean ens.
+> Max ens.
+> Dis-only
+> Deb w/o upd
+> Deb w/o wgt MAD
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> Score
+> (f) Component ablation
+> 12345
+> Rounds T
+> 0.000
+> 0.002
+> 0.004
+> 0.006
+> 0.008
+> 0.010
+> 0.012
+> 0.014
+> ΔROC (DA − mean)
+> (g) Debate rounds (T)
+> 2468
+> Agents K
+> 0.905
+> 0.910
+> 0.915
+> 0.920
+> 0.925
+> 0.930
+> 0.935
+> ROC-AUC
+> (h) #Agents (K)
+> 0.00 0.05 0.10 0.15 0.20 0.25
+> Disagreement bin center
+> 0.01
+> 0.02
+> 0.03
+> 0.04
+> 0.05
+> 0.06
+> 0.07
+> Mean |DA − mean|
+> (i) Update magnitude (MAD)
+> Classical ML
+> AutoML
+> Deep Tabular
+> Unsupervised OD
+> Hybrid OD
+> MAD (ours)
+
+Figure 2. Results and diagnostics in one view. (a) Disagreement density by family. (b) Disagreement summary (median with 90th percentile). (c) ∆ROC (dispute-aware minus mean ensemble) vs. disagreement. (d) ∆PR vs. disagreement. (e) Family-level rare-event metrics (PR-AUC, Recall@1%FPR). (f) Component ablation. (g) Effect of debate rounds T (low/mid/high disagreement). (h) Effect of agent pool size K. (i) Mean update magnitude |DA − mean | vs. disagreement (MAD). 
+
+sages: 
+
+Table 6. Agent messages at debate round t = 1 for the representa-tive case study input x.Agent ˜si(x) ci(x) Evidence consistency A 0.91 0.88 low B 0.64 0.55 high C 0.22 0.30 medium 
+
+As shown in Table 6, Agent A predicts a strong anomaly with high confidence, but its feature attribution sharply disagrees with the consensus attribution formed by the weighted agent pool. Agent B predicts a moderate anomaly with supporting evidence that aligns well with the consen-sus, while Agent C weakly predicts normal behavior with low confidence. The MAD synthesis operator Ψ assigns a larger loss to Agent A due to confident disagreement without evidential support, a smaller loss to Agent B due to evidence-aligned disagreement, and an intermediate loss to Agent C reflecting uncertainty rather than error. After the EG update, MAD shifts trust away from Agent A toward Agent B, producing a final anomaly score that reflects coordinated resolution rather than dominance by a single agent. Based on the final score ˆs(x) and the associated trace, MAD flags this input as moderately anomalous . Rather than trig-gering an automatic hard action, MAD recommends this case for human review , so the anomaly signal is interpreted in light of corroborating evidence from multiple agents in-stead of a single model’s confidence. The debate trace high-lights where agents agree and where uncertainty remains, providing reviewers with a structured summary of the under-7Multi-Agent Debate: A Unified Agentic Framework for Tabular Anomaly Detection 
+
+Table 4. Core ablations on synthesis/operator choices (mean ± std across datasets).                                                                                                                                                                        
+
+> Variant PR ↑R@1% ↑ECE ↓Gap ↓
+> νi
+> Rank/pctl (def.) 0.352 ±0.071 0.647 ±0.094 5.0 ±1.5 0.050 ±0.024 Min–max 0.331 ±0.083 0.616 ±0.116 6.1 ±2.1 0.066 ±0.034 Z→sigm. 0.317 ±0.097 0.589 ±0.132 6.8 ±2.7 0.074 ±0.040 Iso (val-fit) 0.344 ±0.076 0.635 ±0.101 4.6 ±1.4 0.048 ±0.023
+> Bound  Clip (def.) 0.352 ±0.071 0.647 ±0.094 5.0 ±1.5 0.050 ±0.024 Sigmoid link 0.346 ±0.080 0.636 ±0.108 4.8 ±1.6 0.054 ±0.028 Tanh-rescale 0.340 ±0.086 0.624 ±0.118 5.3 ±1.9 0.058 ±0.030
+> Ch.
+> Pred-only ( λd=0 , λ e=0 )0.301 ±0.110 0.563 ±0.152 7.5 ±3.6 0.102 ±0.061 Pred+disp ( λe=0 )0.332 ±0.094 0.607 ±0.132 6.3 ±2.8 0.071 ±0.045 Pred+evid ( λd=0 )0.323 ±0.101 0.596 ±0.144 5.8 ±2.4 0.079 ±0.049 Disp-only 0.255 ±0.121 0.482 ±0.171 8.7 ±4.1 0.141 ±0.083 Evid-only 0.271 ±0.118 0.507 ±0.166 8.0 ±3.7 0.126 ±0.076
+> MAD
+> Full (def.) 0.352 ±0.071 0.647 ±0.094 5.0 ±1.5 0.050 ±0.024
+> Legend: Bound=bounding/link; Ch.=channels; disp=disagreement; evid=evidence; pctl=percentile; sigm.=sigmoid; Iso=isotonic.
+
+Table 5. Ablations on confidence ci and evidence ei (mean ± std across datasets).                                                                                                                                                            
+
+> Variant PR ↑R@1% ↑ECE ↓Gap ↓
+> ci
+> BootVar (def.) 0.352 ±0.071 0.647 ±0.094 5.0 ±1.5 0.050 ±0.024 Margin/prob proxy 0.338 ±0.082 0.621 ±0.112 5.9 ±2.1 0.062 ±0.032 Temp-calibrated 0.347 ±0.078 0.636 ±0.105 4.4 ±1.3 0.049 ±0.024 Conformal proxy 0.343 ±0.086 0.628 ±0.121 4.6 ±1.5 0.052 ±0.027
+> ei
+> No evidence ( λe=0 )0.332 ±0.094 0.607 ±0.132 6.3 ±2.8 0.071 ±0.045
+> ℓ2-norm (def.) 0.352 ±0.071 0.647 ±0.094 5.0 ±1.5 0.050 ±0.024 Top-ksparse ( k=10 )0.349 ±0.077 0.641 ±0.106 5.2 ±1.8 0.053 ±0.027 Sign-only 0.333 ±0.091 0.612 ±0.129 6.0 ±2.4 0.066 ±0.039
+> Corrupt  10% shuffle 0.340 ±0.089 0.622 ±0.125 5.8 ±2.3 0.064 ±0.038 30% shuffle 0.322 ±0.103 0.591 ±0.148 6.6 ±2.9 0.079 ±0.048 50% shuffle 0.298 ±0.118 0.548 ±0.173 7.9 ±3.6 0.101 ±0.061
+> MAD
+> Full (def.) 0.352 ±0.071 0.647 ±0.094 5.0 ±1.5 0.050 ±0.024
+> Legend: BootVar=bootstrap variance; Temp=temperature; Corrupt=shuffle top-kevidence dimensions.
+
+lying reasoning. This aligns with real deployment practice, in which ambiguous cases are escalated for inspection, en-abling experts to apply domain knowledge and balance risk before taking action, while preserving automation for clearly benign or clearly anomalous instances. 
+
+## 6. Limitations and Failure Cases 
+
+MAD introduces an interaction layer atop standard detectors and thus incurs additional inference cost relative to single models or one-shot ensembles; this cost scales with the number of agents and debate rounds, though we observe diminishing returns once debate stabilizes. Its gains are largest when agents are genuinely diverse: highly corre-lated agents yield limited disagreement, reducing MAD to behavior similar to conventional ensembling. MAD also depends on the quality of message channels—while dis-agreement is robust, confidence and evidence can be noisy (e.g., unstable attributions or correlated features), and abla-tions show that weakening these channels degrades perfor-mance (Tables 4–5). Finally, debate traces are informative but not self-explanatory: summarization and judgment are still required, and persistent disagreement may reflect bias or underspecification rather than true uncertainty. 
+
+## 7. Conclusion 
+
+We study tabular anomaly and rare-event detection through the lens that disagreement is information. While disagree-ment has been explored in other novelty-detection settings, tabular methods still rely largely on single detectors or static ensembling, where averaging can obscure consis-tent weak signals and amplify overconfident errors. We introduce MAD, a debate-augmented multi-agent frame-work in which heterogeneous detectors exchange normal-ized scores, confidence, and evidence, and a coordinator performs disagreement-aware synthesis to produce both a final anomaly score and an auditable trace. MAD strictly generalizes common aggregation paradigms and empirically improves detection, calibration, and slice robustness across diverse domains, with ablations confirming that gains arise from synthesis design rather than ensembling alone. For fu-ture works, we will include making debate adaptive to cost and difficulty, automatically designing and pruning agent portfolios, and learning calibrated message channels. We also see opportunities in risk control under distribution shift and in compressing debate traces into actionable rationales for downstream workflows. 8Multi-Agent Debate: A Unified Agentic Framework for Tabular Anomaly Detection 
+
+## Impact Statement 
+
+Tabular anomaly and rare-event detection guides resource allocation in high-stakes settings (e.g., fraud, cybersecurity, healthcare, and operations). However, improved detectors can also cause harm: false positives may trigger unnecessary investigations or automated denials; performance may differ across subgroups due to historical bias or domain shift; and anomaly scoring can be misused for intrusive surveillance. These risks motivate careful thresholding, human-in-the-loop review for consequential actions, clear use-case docu-mentation, and routine audits for subgroup robustness and calibration under deployment distributions. MAD does not require sensitive attributes, but we encour-age slice evaluations when ethically appropriate and further work on risk control (e.g., conformal calibration under shift), privacy-preserving deployment, and trace-to-rationale inter-faces that are concise and actionable for operators. 
+
+## References 
+
+Arik, S. ¨O. and Pfister, T. Tabnet: Attentive interpretable tabular learning. In Proceedings of the AAAI Conference on Artificial Intelligence , pp. 6679–6687, 2021. doi: 10.1609/aaai.v35i8.16826. Arora, S., Hazan, E., and Kale, S. The multiplicative weights update method: A meta-algorithm and appli-cations. Theory of Computing , 8(1):121–164, 2012. doi: 10.4086/toc.2012.v008a006. Breiman, L. Bagging predictors. Machine Learning , 24(2): 123–140, 1996. doi: 10.1007/BF00058655. Breiman, L. Random forests. Machine Learning , 45(1): 5–32, 2001. doi: 10.1023/A:1010933404324. Breunig, M. M., Kriegel, H.-P., Ng, R. T., and Sander, J. Lof: Identifying density-based local outliers. In Proceedings of the 2000 ACM SIGMOD International Conference on Management of Data , pp. 93–104, 2000. doi: 10.1145/ 342009.335388. Calikus, E., Nowaczyk, S., Bouguelia, M.-R., and Dik-men, O. Wisdom of the contexts: active ensemble learning for contextual anomaly detection. Data Min-ing and Knowledge Discovery , 36:2410–2458, 2022. doi: 10.1007/s10618-022-00868-7. Cesa-Bianchi, N. and Lugosi, G. Prediction, Learning, and Games . Cambridge University Press, 2006. Chen, T. and Guestrin, C. Xgboost: A scalable tree boosting system. In Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Dis-covery and Data Mining , pp. 785–794, 2016. doi: 10.1145/2939672.2939785. Dal Pozzolo, A., Caelen, O., Johnson, R. A., and Bon-tempi, G. Credit card fraud detection dataset. Kaggle dataset, 2015. URL https://www.kaggle.com/ datasets/mlg-ulb/creditcardfraud .Du, Y., Li, S., Torralba, A., Tenenbaum, J. B., and Mor-datch, I. Improving factuality and reasoning in lan-guage models through multiagent debate. arXiv preprint arXiv:2305.14325 , 2023. Dua, D. and Graff, C. UCI machine learning reposi-tory. University of California, Irvine, School of In-formation and Computer Sciences, 2019. URL http: //archive.ics.uci.edu/ml .Erickson, N., Mueller, J., Shirkov, A., Zhang, H., Larroy, P., Li, M., and Smola, A. Autogluon-tabular: Robust and accurate AutoML for structured data. In Proceedings of the AutoML Workshop at ICML 2020 , 2020. doi: 10. 48550/arXiv.2003.06505. Feurer, M., Klein, A., Eggensperger, K., Springenberg, J. T., Blum, M., and Hutter, F. Efficient and robust automated machine learning. In Advances in Neural Information Processing Systems , pp. 2962–2970, 2015. Freund, Y. and Schapire, R. E. A decision-theoretic general-ization of on-line learning and an application to boosting. 
+
+Journal of Computer and System Sciences , 55(1):119– 139, 1997. doi: 10.1006/jcss.1997.1504. Friedman, J. H. Greedy function approximation: A gradient boosting machine. The Annals of Statistics , 29(5):1189– 1232, 2001. doi: 10.1214/aos/1013203451. Goldstein, M. and Dengel, A. Histogram-based Outlier Score (HBOS): A fast unsupervised anomaly detection algorithm. In KI-2012: Poster and Demo Track , 2012. Gorishniy, Y., Rubachev, I., Khrulkov, V., and Babenko, A. Revisiting deep learning models for tabular data. In 
+
+Advances in Neural Information Processing Systems , pp. 18932–18943, 2021. doi: 10.48550/arXiv.2106.11959. Gorishniy, Y., Rubachev, I., Kartashev, N., Shlenskii, D., Kotelnikov, A., and Babenko, A. Tabr: Tabular deep learning meets nearest neighbors in 2023. In International Conference on Learning Representations , 2024. Gorishniy, Y., Kotelnikov, A., and Babenko, A. Tabm: Advancing tabular deep learning with parameter-efficient ensembling. In International Conference on Learning Representations , 2025. Grinsztajn, L., Oyallon, E., and Varoquaux, G. Why do tree-based models still outperform deep learning on typical tabular data? In Advances in Neural Information Process-ing Systems , 2022. doi: 10.48550/arXiv.2207.08815. 9Multi-Agent Debate: A Unified Agentic Framework for Tabular Anomaly Detection 
+
+Gu, Y., Lin, Y., Cheng, K.-T., and Chen, H. Revisiting deep ensemble uncertainty for enhanced medical anomaly detection. In Medical Image Computing and Computer-Assisted Intervention – MICCAI 2024 . Springer Nature Switzerland, 2024. doi: 10.1007/978-3-031-72089-5 49. Guo, C., Pleiss, G., Sun, Y., and Weinberger, K. Q. On calibration of modern neural networks. In Proceedings of the 34th International Conference on Machine Learning ,volume 70 of Proceedings of Machine Learning Research ,pp. 1321–1330, 2017. Han, S., Hu, X., Huang, H., Jiang, M., and Zhao, Y. Ad-bench: Anomaly detection benchmark. In Advances in Neural Information Processing Systems , 2022. doi: 10.48550/arXiv.2206.09426. Hazan, E. Introduction to online convex optimization. 
+
+Foundations and Trends in Optimization , 2(3-4):157–325, 2016. doi: 10.1561/2400000013. Hollmann, N., M ¨uller, S., Eggensperger, K., and Hutter, F. Tabpfn: A transformer that solves small tabular classifi-cation problems in a second. In International Conference on Learning Representations , 2023a. Hollmann, N., M ¨uller, S., Eggensperger, K., and Hutter, F. Tabpfn: A transformer that solves small tabular classifi-cation problems in a second. In International Conference on Learning Representations (ICLR) , 2023b. Hollmann, N., M ¨uller, S., Purucker, L., Krishnakumar, A., K ¨orfer, M., Hoo, S. B., Schirrmeister, R. T., and Hutter, F. Accurate predictions on small data with a tabular foundation model. Nature , 637(8045):319–326, 2025a. doi: 10.1038/s41586-024-08328-6. Hollmann, N., M ¨uller, S., Purucker, L., Krishnakumar, A., K ¨orfer, M., Hoo, S. B., Schirrmeister, R. T., and Hutter, F. Accurate predictions on small data with a tabular foundation model. Nature , 637(8045):319–326, 2025b. doi: 10.1038/s41586-024-08328-6. Huang, X., Khetan, A., Cvitkovic, M., and Karnin, Z. S. Tabtransformer: Tabular data modeling using contextual embeddings. arXiv preprint arXiv:2012.06678 , 2020. doi: 10.48550/arXiv.2012.06678. Jacobs, R. A., Jordan, M. I., Nowlan, S. J., and Hinton, G. E. Adaptive mixtures of local experts. Neural Computation ,3(1):79–87, 1991. doi: 10.1162/neco.1991.3.1.79. Kaggle. Give me some credit. Kaggle competi-tion, 2011. URL https://www.kaggle.com/c/ GiveMeSomeCredit .Kaggle. IEEE-CIS fraud detection. Kaggle competi-tion, 2019. URL https://www.kaggle.com/c/ ieee-fraud-detection .Ke, G., Meng, Q., Finley, T., Wang, T., Chen, W., Ma, W., Ye, Q., and Liu, T.-Y. Lightgbm: A highly efficient gradient boosting decision tree. In Advances in Neural Information Processing Systems , pp. 3146–3154, 2017. Kivinen, J. and Warmuth, M. K. Exponentiated gradient versus gradient descent for linear predictors. Information and Computation , 132(1):1–63, 1997. doi: 10.1006/inco. 1996.2612. LeDell, E. and Poirier, S. H2O AutoML: Scalable automatic machine learning. 7th ICML Workshop on Automated Machine Learning (AutoML), 2020. Li, Z., Zhao, Y., Hu, X., Botta, N., Ionescu, C., and Chen, G. COPOD: Copula-based outlier detection. In 2020 IEEE International Conference on Data Mining (ICDM) , 2020. doi: 10.1109/ICDM50108.2020.00105. Li, Z., Zhao, Y., Hu, X., Botta, N., Ionescu, C., and Chen, G. ECOD: Unsupervised outlier detection using empirical cumulative distribution functions. IEEE Transactions on Knowledge and Data Engineering , 2022. doi: 10.1109/ TKDE.2022.3159580. Liu, F. T., Ting, K. M., and Zhou, Z.-H. Isolation forest. In 2008 Eighth IEEE International Conference on Data Mining , pp. 413–422, 2008. doi: 10.1109/ICDM.2008.17. Liu, S. and Ye, H.-J. Tabpfn unleashed: A scalable and effective solution to tabular classification problems. In 
+
+Proceedings of the 42nd International Conference on Ma-chine Learning , volume 267 of Proceedings of Machine Learning Research , pp. 40043–40068, 2025. Lundberg, S. M. and Lee, S.-I. A unified approach to in-terpreting model predictions. In Advances in Neural Information Processing Systems , 2017. doi: 10.48550/ arXiv.1705.07874. Moustafa, N. and Slay, J. UNSW-NB15: A comprehen-sive data set for network intrusion detection systems. In 
+
+2015 Military Communications and Information Systems Conference (MilCIS) , 2015. doi: 10.1109/MilCIS.2015. 7348942. Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O., Blondel, M., Prettenhofer, P., Weiss, R., Dubourg, V., Vanderplas, J., Passos, A., Cournapeau, D., Brucher, M., Perrot, M., and Duch-esnay, ´E. Scikit-learn: Machine learning in Python. 
+
+Journal of Machine Learning Research , 12:2825–2830, 2011. URL https://jmlr.org/papers/v12/ pedregosa11a.html .Popov, S., Morozov, S., and Babenko, A. Neural oblivious decision ensembles for deep learning on tabular data. In 
+
+International Conference on Learning Representations ,2020. doi: 10.48550/arXiv.1909.06312. 10 Multi-Agent Debate: A Unified Agentic Framework for Tabular Anomaly Detection 
+
+Prokhorenkova, L. O., Gusev, G., Vorobev, A., Dorogush, A. V., and Gulin, A. Catboost: Unbiased boosting with categorical features. In Advances in Neural Information Processing Systems , pp. 6639–6649, 2018. doi: 10.48550/ arXiv.1706.09516. Ribeiro, M. T., Singh, S., and Guestrin, C. “why should i trust you?”: Explaining the predictions of any classifier. In Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining ,pp. 1135–1144, 2016. doi: 10.1145/2939672.2939778. Rousseeuw, P. J. and Van Driessen, K. A fast algorithm for the minimum covariance determinant estimator. Techno-metrics , 41(3):212–223, 1999. doi: 10.1080/00401706. 1999.10485670. Ruff, L., Vandermeulen, R., G ¨ornitz, N., Deecke, L., Sid-diqui, S. A., Binder, A., M ¨uller, E., and Kloft, M. Deep one-class classification. In International Conference on Machine Learning , 2018. Sch ¨olkopf, B., Platt, J. C., Shawe-Taylor, J., Smola, A. J., and Williamson, R. C. Estimating the support of a high-dimensional distribution. Neural Computation , 13(7): 1443–1471, 2001. doi: 10.1162/089976601750264965. Shalev-Shwartz, S. Online learning and online convex opti-mization. Foundations and Trends in Machine Learning ,4(2):107–194, 2012. doi: 10.1561/2200000018. Sharafaldin, I., Lashkari, A. H., and Ghorbani, A. A. To-ward generating a new intrusion detection dataset and intrusion traffic characterization. In Proceedings of the 4th International Conference on Information Systems Se-curity and Privacy (ICISSP) , pp. 108–116, 2018. doi: 10.5220/0006639801080116. Shazeer, N., Mirhoseini, A., Maziarz, K., Davis, A., Le, Q., Hinton, G., and Dean, J. Outrageously large neural networks: The sparsely-gated mixture-of-experts layer. In International Conference on Learning Representations ,2017. doi: 10.48550/arXiv.1701.06538. Shinn, N., Cassano, F., Berman, E., Gopinath, A., Narasimhan, K., and Yao, S. Reflexion: Language agents with verbal reinforcement learning. arXiv preprint arXiv:2303.11366 , 2023. doi: 10.48550/arXiv.2303. 11366. Somepalli, G., Goldblum, M., Schwarzschild, A., Bruss, C. B., and Goldstein, T. SAINT: Improved neural net-works for tabular data via row attention and contrastive pre-training. arXiv preprint arXiv:2106.01342 , 2021. Tavallaee, M., Bagheri, E., Lu, W., and Ghorbani, A. A. A detailed analysis of the KDD Cup 99 data set. In 
+
+2009 IEEE Symposium on Computational Intelligence for Security and Defense Applications , 2009. doi: 10.1109/ CISDA.2009.5356528. Tifrea, A., Stavarache, E., and Yang, F. Semi-supervised novelty detection using ensembles with regularized dis-agreement. In Proceedings of the Thirty-Eighth Confer-ence on Uncertainty in Artificial Intelligence , volume 180 of Proceedings of Machine Learning Research , pp. 1939–1948. PMLR, 2022. Vanschoren, J., Van Rijn, J. N., Bischl, B., and Torgo, L. OpenML: Networked science in machine learning. In 
+
+Proceedings of the 2014 ACM SIGKDD International Conference on Knowledge Discovery and Data Mining ,2014. doi: 10.1145/2623330.2623346. Vovk, V., Gammerman, A., and Shafer, G. Algorithmic Learning in a Random World . Springer, 2005. doi: 10. 1007/b106715. Wachter, S., Mittelstadt, B., and Russell, C. Counterfactual explanations without opening the black box: Automated decisions and the gdpr. arXiv preprint arXiv:1711.00399 ,2017. doi: 10.48550/arXiv.1711.00399. Wolpert, D. H. Stacked generalization. Neural Networks ,5(2):241–259, 1992. doi: 10.1016/S0893-6080(05) 80023-1. Yao, S., Yu, D., Zhao, J., Shafran, I., Griffiths, T. L., Cao, Y., and Narasimhan, K. Tree of thoughts: Deliberate problem solving with large language models. arXiv preprint arXiv:2305.10601 , 2023. doi: 10.48550/arXiv. 2305.10601. Zhao, Y., Nasrullah, Z., and Li, Z. Pyod: A python tool-box for scalable outlier detection. Journal of Machine Learning Research , 20(96):1–7, 2019. Zong, B., Song, Q., Min, M. R., Cheng, W., Lumezanu, C., Cho, D., and Chen, H. Deep autoencoding gaussian mixture model for unsupervised anomaly detection. In 
+
+International Conference on Learning Representations ,2018. 11 Multi-Agent Debate: A Unified Agentic Framework for Tabular Anomaly Detection 
+
+## A. Use of LLM 
+
+We used an LLM only to polish the writing of the paper. 
+
+## B. Experiment Details 
+
+Classification-to-anomaly transformation. Binary datasets: treat the positive class as anomalies and the negative class as normals. Multi-class datasets: one-vs-rest evaluation: for each class c, treat class c as anomalies and all other classes as normals; report averages across classes. This yields a controlled “new anomaly type” shift by changing c.
+
+Splits and supervision protocols. We use dataset-level train/validation/test splits with fixed random seeds. Supervised protocol: train agents with available labels; validate hyperparameters; test on held-out data. Semi-supervised protocol: 
+
+train using normals only (anomalies withheld); validate on a mix or on synthetic anomalies; test on true anomalies. We report which protocol applies to each benchmark. 
+
+Preprocessing. We apply a shared preprocessing pipeline across all agents to ensure comparisons reflect modeling, not preprocessing. Numerical features are standardized using training statistics. Categorical features are encoded consistently (one-hot or ordinal, depending on dataset constraints) with train-only fitting. Missing values are handled by either (i) model-native missing handling (for tree models), or (ii) imputation fit on training data (median for numerical, mode for categorical) plus a missingness indicator when applicable. We avoid leakage by fitting all transforms on the training split only. 
+
+Agent pool. MAD agents are heterogeneous ML models spanning representative families. In the released implementation, each agent conforms to a minimal interface: 
+
+fit(X train, y train?) , score(X) → raw scores , explain(X) → attributions (optional) .
+
+We include a mix of: tree-based detectors, distance/density-based detectors, kernel one-class methods, and neural tabular detectors. When a model lacks an intrinsic explanation method, we wrap it with a model-agnostic explainer to produce 
+
+ai(x).
+
+Confidence definitions. Confidence ci(x) is model-dependent but normalized to [0 , 1] . Examples include: inverse score variance under bootstraps; margin-based confidence for classifiers; or calibrated probabilities when available. We provide exact confidence mappings per agent in the code/configs. 
+
+MAD hyperparameters. We tune η (EG stepsize), λ (dispute strength), γ (evidence strength), and optionally T (number of debate rounds). We treat T = 1 as a default and evaluate T > 1 as an ablation. We tune using validation sets and report the chosen values (or simple defaults) per benchmark. 
+
+Baselines. We include: best single agent; uniform averaging; stacking/linear meta-model on validation scores; mixture-of-experts gating (learned α(x) without debate); and a MAD ablation with λ = γ = 0 (prediction-only EG), which isolates the contribution of dispute resolution. 
+
+Hyperparameter search and seeds (used for all tables/figures). Unless otherwise specified, each dataset is evaluated over a fixed set of random seeds, and we report mean ± std across seeds and across datasets (Table 3, Tables 4–5, and Figure 2). Hyperparameters are tuned on the validation split with a shared budget per model family (same number of trials) to avoid favoring any baseline. For MAD we tune η ∈ { 0.25 , 0.5, 1.0}, λ ∈ { 0, 0.25 , 0.5, 1.0}, γ ∈ { 0, 0.25 , 0.5, 1.0}, and 
+
+T ∈ { 1, 2, 3} for the ablation in Figure 2(g); we select by validation PR-AUC with ECE as a tiebreaker. 
+
+How disagreement plots are computed. All disagreement statistics in Figure 2 are computed from rank/quantile-normalized scores ˜si(x) (Eq. (4) ). At the sample level, we measure disagreement as the variance of {˜si(x)}Ni=1 (or equivalently the mean squared deviation from the mean ensemble score). Dataset-level disagreement is summarized by the median and 90th percentile over test samples; these summaries correspond to panels (a,b), and are used as the x-axis in panels (c,d,i). 12 Multi-Agent Debate: A Unified Agentic Framework for Tabular Anomaly Detection 
+
+B.1. Metrics and Aggregation Across Datasets Detection and screening metrics. We report the same metrics as in Section 5 and Table 3: (i) PR-AUC (AUPRC) and (ii) ROC-AUC for ranking quality; (iii) Recall@1%FPR (true-positive rate when the false-positive rate is constrained to 1%) to reflect strict alert budgets; and (iv) macro-F1 when a decision threshold is required. 
+
+Calibration and slice robustness. ECE: expected calibration error computed on binned predicted probabilities/scores after per-model score normalization (Eq. (4) ); unless otherwise stated we use equal-width bins on [0 , 1] . Gap: a slice-disparity statistic computed by partitioning the test set into predefined slices (e.g., missingness patterns, quantiles of a key feature, or domain-specific subgroups when available) and reporting the max–min gap of the chosen detection metric across slices. (The exact slice definitions are listed in the experiment configs.) 
+
+Stability and robustness. We report mean and standard deviation across random seeds. For corruption experiments, we report performance curves versus corruption strength and summarize by area-under-degradation or by worst-case degradation in a fixed range. 
+
+Across-dataset aggregation. We report (i) mean and median performance across datasets, and (ii) win/tie/loss counts versus key baselines. When appropriate, we use paired comparisons per dataset and summarize with a sign test or Wilcoxon signed-rank test. (Exact statistical tests used are specified in the code and printed with results.) 
+
+Efficiency. We report wall-clock time per dataset and per sample (inference), and the incremental overhead of debate relative to one-shot aggregation. For the optional LLM critic, we report the additional latency and number of tokens consumed. 
+
+B.2. Shift and Corruption Suite Why these shifts. Tabular models often fail under feature noise, missingness, scaling drift, and category perturbations. We therefore evaluate robustness under a controlled corruption suite to measure stability beyond average IID performance. 
+
+Corruptions. We apply corruptions at test time only: (i) Gaussian noise on numerical columns with scale proportional to training standard deviation; (ii) missing-value injection at a specified rate per feature; (iii) scaling drift by multiplying selected numerical features by a drift factor; (iv) categorical perturbation by swapping categories to an “unknown” bucket or by random relabeling under a fixed budget. We report results across multiple severity levels. 
+
+New anomaly type shift (one-vs-rest). For multi-class datasets, we calibrate on anomalies from one target class and evaluate on a different target class, to test whether dispute resolution helps when the anomaly semantics change. 
+
+B.3. Full MAD Trace for Case Study Input Initial state. The initial agent weights are uniform: 
+
+α(1) = (0 .33 , 0.33 , 0.34) .
+
+Round t = 1 : Agent messages. 
+
+m(1)  
+
+> A
+
+= (˜ sA(x) = 0 .91 , c A(x) = 0 .88 , a A(x)) ,m(1)  
+
+> B
+
+= (˜ sB (x) = 0 .64 , c B (x) = 0 .55 , a B (x)) ,m(1)  
+
+> C
+
+= (˜ sC (x) = 0 .22 , c C (x) = 0 .30 , a C (x)) .
+
+The consensus attribution ¯a(1) (x) aligns closely with aB (x), partially with aC (x), and poorly with aA(x).
+
+Synthesized losses. Applying Ψ yields the bounded loss vector: 
+
+bℓ(1) = (0 .42 , 0.18 , 0.26) .
+
+Agent A is penalized for confident disagreement without evidential support, while Agent B is rewarded for evidence-consistent disagreement. 13 Multi-Agent Debate: A Unified Agentic Framework for Tabular Anomaly Detection 
+
+EG update. With learning rate η = 1 .0, the EG update produces: 
+
+α(2) = (0 .22 , 0.46 , 0.32) .
+
+Final anomaly score. Using the updated weights, MAD outputs: 
+
+ˆs(x) = 0 .22 · 0.91 + 0 .46 · 0.64 + 0 .32 · 0.22 = 0 .51 .
+
+Interpretation. Although a single agent predicted a strong anomaly, MAD discounted this signal due to a lack of supporting evidence. The final score reflects a consensus-driven assessment, balancing disagreement, confidence, and evidence consistency. 
+
+Decision guidance. The trace suggests that this case should be escalated for review rather than automatically blocked or ignored. In practice, such trace-level explanations allow operators to understand why an alert was raised and which agents influenced the outcome, supporting accountable and trustworthy anomaly detection decisions. 
+
+B.4. Code Pointers and Flagship Functions Design goal. The implementation is intentionally small: MAD is a coordination layer that sits on top of a pool of agent models. Experiments call a stable set of functions that mirror the math in the paper. 
+
+Flagship functions (mapping math ↔ code). The following names are the reference API used throughout experiments (exact file paths depend on your repo layout): 
+
+# Core MAD loop (Section 4 + Alg. 1 in main body) mad_forward(x, agents, alpha, state) -> messages synthesize_losses(x, messages, alpha, params) -> loss_vec, new_state # Psi eg_update(alpha, loss_vec, eta) -> alpha_next # Scoring + tracing run_mad_on_dataset(dataset, agents, params, T, seeds) -> scores, traces # Evaluation (Section 5) evaluate_detection(scores, labels, metrics) -> result_dict run_corruption_suite(dataset, corruption_spec, ...) -> curves aggregate_across_datasets(results_list) -> summary_tables # Agents build_agent_pool(config) -> agents score_agent(agent, X) -> raw_scores explain_agent(agent, X) -> attributions (optional) 
+
+How Section 5 connects to code. Datasets and splits correspond to the benchmark specification and loaders used by 
+
+run mad on dataset . Agents correspond to build agent pool and per-agent wrappers. Debate parameters 
+
+(η, λ, γ, T ) correspond to the params passed to synthesize losses and the loop length. Shifts/corruptions corre-spond to run corruption suite . Tables/figures are produced by aggregate across datasets and plotting utilities in the experiment scripts. 
+
+## C. Framework Breakdown and Embeddings 
+
+Full superset tuple. We define a multi-agent learning-and-synthesis system as the tuple 
+
+A =
+
+
+
+{H i}Ni=1 , M, {πi}Ni=1 , {Ui}Ni=1 , F, Ψ, K, g, T 
+
+
+
+. (9) 
+
+Hi is agent i’s hypothesis class (model family), M is the message space, πi maps an input (and optional context) to a message, Ui is an optional within-debate update rule for agent i, F is a shared tabular interface, k(t) ∈ K is the coordinator 14 Multi-Agent Debate: A Unified Agentic Framework for Tabular Anomaly Detection 
+
+state at debate round t, Ψ is the synthesis operator that produces bounded losses and updates the coordinator state, and g
+
+maps the final state and messages to outputs (prediction and trace). T is the number of debate rounds per input. 
+
+Unifying interface (what the coordinator “sees”). At debate round t on input x, each agent emits m(t) 
+
+> i
+
+∈ M and the coordinator applies 
+
+(bℓ(t), k (t+1) ) = Ψ 
+
+
+
+k(t), {m(t) 
+
+> i
+
+}Ni=1 , x 
+
+
+
+, bℓ(t) ∈ [0 , 1] N . (10) The coordinator then updates weights by EG using bℓ(t) (main body Eq. (1) or Eq. (8), depending on your numbering). 
+
+Embedding common frameworks as special cases. The point of (9) is not to introduce new machinery, but to make it explicit that many familiar pipelines differ only by restricting M and choosing Ψ and g.
+
+(a) Static ensembles. Let M = [0 , 1] and m(1)  
+
+> i
+
+(x) = ˜ si(x) (a scalar score). Choose fixed weights α and set g(·) to output 
+
+ˆs(x) = P 
+
+> i
+
+αi ˜si(x). This recovers uniform or weighted averaging. 
+
+(b) Classical expert advice (Hedge/EG). Let M = [0 , 1] and define Ψ to output the task loss vector bℓ(t) = ℓ(t) (for example, a supervised loss when labels exist). Then EG updates match the standard Hedge protocol. 
+
+(c) Mixture-of-experts (gating). Let M = [0 , 1] and choose a learned gating network that outputs α(x) directly; set T = 1 ,do not update α online, and output ˆs(x) = P 
+
+> i
+
+αi(x)˜ si(x). This yields an MoE-style predictor. 
+
+(d) MAD (ours). Let M include scalar score, confidence, and structured evidence. Choose Ψ to convert score disagreement and evidence consistency into bounded losses, then apply EG. This yields debate-augmented aggregation with a trace. 
+
+Why this matters for “ML vs LLM.” The superset view isolates what must be ML (base scoring agents) from what can be LLM (optional critique of evidence). LLMs appear only through the message channel (as part of e(t) 
+
+> i
+
+or as an additional critic agent), not as a mandatory scorer. This keeps the backbone in standard online learning while allowing modern agentic components. 
+
+C.1. Concrete MAD Synthesis Operator Used in Experiments Goal of Ψ. MAD needs a synthesis operator Ψ that (i) produces bounded losses bℓ(t) ∈ [0 , 1] N so that EG theory applies, and (ii) operationalizes dispute resolution by penalizing disagreement that is not supported by confidence or evidence. 
+
+Message schema. We use 
+
+m(t) 
+
+> i
+
+(x) =  ˜s(t) 
+
+> i
+
+(x), c (t) 
+
+> i
+
+(x), e (t) 
+
+> i
+
+(x),
+
+where ˜s(t) 
+
+> i
+
+(x) ∈ [0 , 1] , c(t) 
+
+> i
+
+(x) ∈ [0 , 1] , and 
+
+e(t) 
+
+> i
+
+(x) =  a(t) 
+
+> i
+
+(x), δ (t) 
+
+> i
+
+(x), r (t) 
+
+> i
+
+(x).
+
+Here a(t) 
+
+> i
+
+(x) ∈ Rd is a feature attribution vector (ML explainer), δ(t) 
+
+> i
+
+(x) ∈ Rd is an optional counterfactual direction, and 
+
+r(t) 
+
+> i
+
+(x) is an optional natural-language critique/rationale (which may be produced by an LLM critic). Only a(t) 
+
+> i
+
+(x) is used in the default quantitative evidence term below; r(t) 
+
+> i
+
+(x) is used in trace analysis. 
+
+Step 1: normalize evidence. When a(t) 
+
+> i
+
+(x)̸ = 0 , define ˜a(t) 
+
+> i
+
+(x) = a(t) 
+
+> i
+
+(x)/∥a(t) 
+
+> i
+
+(x)∥2; otherwise set ˜a(t) 
+
+> i
+
+(x) = 0 .
+
+Step 2: compute a consensus attribution. Given current weights α(t),
+
+¯a(t)(x) = 
+
+> N
+
+X
+
+> i=1
+
+α(t) 
+
+> i
+
+˜a(t) 
+
+> i
+
+(x), ˜¯a(t)(x) = 
+
+(
+
+¯a(t)(x)/∥¯a(t)(x)∥2, ¯a(t)(x)̸ = 0 ,
+
+0, ¯a(t)(x) = 0 . (11) 
+
+Step 3: prediction feedback term. When labels y ∈ { 0, 1} exist for x, we use a bounded supervised loss 
+
+ℓ(t)pred ,i (x) = −y log   max {˜s(t) 
+
+> i
+
+(x), ϵ } − (1 − y) log   max {1 − ˜s(t) 
+
+> i
+
+(x), ϵ }, (12) 15 Multi-Agent Debate: A Unified Agentic Framework for Tabular Anomaly Detection 
+
+where ϵ > 0 is a small constant to avoid log(0) when scores saturate at 0 or 1. When labels do not exist, we use a stability proxy with perturbations x′ ∼ Pert (· | x):
+
+ℓ(t)pred ,i (x) = Ex′∼Pert (·| x)
+
+h
+
+˜s(t) 
+
+> i
+
+(x) − ˜s(t) 
+
+> i
+
+(x′)
+
+i
+
+. (13) In practice we estimate the expectation by K perturbation samples. This proxy penalizes agents whose scores are highly unstable under small feature perturbations, a common failure mode in tabular settings. 
+
+Step 4: dispute term (score disagreement). Let the current aggregate score be ˆs(t)(x) = P 
+
+> i
+
+α(t) 
+
+> i
+
+˜s(t) 
+
+> i
+
+(x). Define 
+
+ℓ(t)disp ,i (x) = c(t) 
+
+> i
+
+(x) ·
+
+
+
+˜s(t) 
+
+> i
+
+(x) − ˆs(t)(x)
+
+2
+
+. (14) This penalizes confident disagreement more than low-confidence disagreement. 
+
+Step 5: evidence term (agreement with consensus). 
+
+ℓ(t)evid ,i (x) = c(t) 
+
+> i
+
+(x) ·
+
+
+
+1 − cos  ˜a(t) 
+
+> i
+
+(x), ˜¯a(t)(x)
+
+, (15) with the convention ℓ(t)evid ,i (x) = 0 if ˜a(t) 
+
+> i
+
+(x) = 0 or ˜¯a(t)(x) = 0 . This enforces that strong claims (high c(t) 
+
+> i
+
+) should come with evidence that is not arbitrarily inconsistent with the ensemble’s evidence. 
+
+Step 6: bounded total loss. 
+
+bℓ(t) 
+
+> i
+
+(x) = clip [0 ,1] 
+
+
+
+ℓ(t)pred ,i (x) + λ ℓ (t)disp ,i (x) + γ ℓ (t)evid ,i (x)
+
+
+
+. (16) Clipping ensures bℓ(t) 
+
+> i
+
+(x) ∈ [0 , 1] and therefore makes the prerequisites of Hedge/EG explicit. 
+
+Discussion: why this instantiation is reasonable. The design separates task feedback (prediction term) from dispute resolution (dispute + evidence terms). If λ = γ = 0 , MAD reduces to expert advice driven purely by task feedback. As λ, γ 
+
+increase, the coordinator becomes more conservative against agents that disagree confidently without providing consistent evidence. We report ablations over λ, γ and over the presence/absence of evidence channels. 
+
+## D. Proofs of Main Statements 
+
+Proof of Theorem 3.1. We provide a standard proof for completeness. Let α(t) ∈ ∆N −1 be updated by 
+
+α(t+1)  
+
+> i
+
+= α(t) 
+
+> i
+
+exp( −ηℓ (t) 
+
+> i
+
+)
+
+PNj=1 α(t) 
+
+> j
+
+exp( −ηℓ (t) 
+
+> j
+
+) ,
+
+where ℓ(t) 
+
+> i
+
+∈ [0 , 1] and η ∈ (0 , 1] . Define the normalizer 
+
+Zt =
+
+> N
+
+X
+
+> j=1
+
+α(t) 
+
+> j
+
+exp( −ηℓ (t) 
+
+> j
+
+).
+
+Then 
+
+log Zt = log 
+
+
+
+> N
+
+X
+
+> j=1
+
+α(t) 
+
+> j
+
+exp( −ηℓ (t) 
+
+> j
+
+)
+
+ .
+
+Using the inequality exp( −ηu ) ≤ 1 − ηu + η2u2/2 for u ∈ [0 , 1] and η ∈ (0 , 1] , we obtain 
+
+Zt ≤
+
+> N
+
+X
+
+> j=1
+
+α(t)
+
+> j
+
+
+
+1 − ηℓ (t) 
+
+> j
+
++ η2
+
+2 (ℓ(t) 
+
+> j
+
+)2
+
+
+
+= 1 − η⟨α(t), ℓ (t)⟩ + η2
+
+2
+
+> N
+
+X
+
+> j=1
+
+α(t) 
+
+> j
+
+(ℓ(t) 
+
+> j
+
+)2.
+
+Since (ℓ(t) 
+
+> j
+
+)2 ≤ ℓ(t) 
+
+> j
+
+for ℓ(t) 
+
+> j
+
+∈ [0 , 1] , we have 
+
+Zt ≤ 1 − η⟨α(t), ℓ (t)⟩ + η2
+
+2 ⟨α(t), ℓ (t)⟩ = 1 − η
+
+
+
+1 − η
+
+2
+
+
+
+⟨α(t), ℓ (t)⟩.
+
+16 Multi-Agent Debate: A Unified Agentic Framework for Tabular Anomaly Detection 
+
+Using log(1 − u) ≤ − u,
+
+log Zt ≤ − η
+
+
+
+1 − η
+
+2
+
+
+
+⟨α(t), ℓ (t)⟩.
+
+On the other hand, fix any expert i⋆. By iterating the update, 
+
+α(T +1)  
+
+> i⋆
+
+= α(1) 
+
+> i⋆
+
+exp 
+
+
+
+−η PTt=1 ℓ(t)
+
+> i⋆
+
+QTt=1 Zt
+
+.
+
+Taking logs and rearranging gives 
+
+> T
+
+X
+
+> t=1
+
+log Zt = log α(1)  
+
+> i⋆
+
+− log α(T +1)  
+
+> i⋆
+
+− η
+
+> T
+
+X
+
+> t=1
+
+ℓ(t) 
+
+> i⋆
+
+≥ log α(1)  
+
+> i⋆
+
+− η
+
+> T
+
+X
+
+> t=1
+
+ℓ(t) 
+
+> i⋆
+
+,
+
+since α(T +1)  
+
+> i⋆
+
+≤ 1. Combining with the upper bound on log Zt yields 
+
+−η
+
+
+
+1 − η
+
+2
+
+ TX
+
+> t=1
+
+⟨α(t), ℓ (t)⟩ ≥ log α(1)  
+
+> i⋆
+
+− η
+
+> T
+
+X
+
+> t=1
+
+ℓ(t) 
+
+> i⋆
+
+.
+
+Assuming uniform initialization α(1)  
+
+> i⋆
+
+= 1 /N and dividing by η(1 − η/ 2) gives 
+
+> T
+
+X
+
+> t=1
+
+⟨α(t), ℓ (t)⟩ − 
+
+> T
+
+X
+
+> t=1
+
+ℓ(t) 
+
+> i⋆
+
+≤ log Nη(1 − η/ 2) .
+
+Using 1/(1 − η/ 2) ≤ 1 + η for η ∈ (0 , 1] and simplifying yields a standard bound of the form 
+
+> T
+
+X
+
+> t=1
+
+⟨α(t), ℓ (t)⟩ − 
+
+> T
+
+X
+
+> t=1
+
+ℓ(t) 
+
+> i⋆
+
+≤ log Nη + ηT 
+
+8 ,
+
+which is Eq. (2). □
+
+Proof of Theorem 4.1. By construction of MAD, bℓ(t) 
+
+> i
+
+∈ [0 , 1] (Eq. (16) ). MAD updates weights by EG using ℓ(t) = bℓ(t).Therefore Theorem 3.1 applies directly, yielding the stated regret bound. □
+
+D.1. Conformal Calibration Details Why conformal is a wrapper (not part of MAD). MAD outputs a score ˆs(x) ∈ [0 , 1] (or a monotone transform thereof). Conformal prediction can convert any score into a p-value with finite-sample validity under exchangeability, giving a principled way to set thresholds that control false positives. 
+
+Split conformal p-values. Let Dcal = {x1, . . . , x n} be a calibration set of normal examples (exchangeable with future normal examples). Let A(x) = ˆ s(x) be the MAD score. Define 
+
+p(x) = 1 + Pnj=1 I{A(xj ) ≥ A(x)}
+
+n + 1 .
+
+The conformal decision rule is ˆy(x) = I{p(x) ≤ αcf }.
+
+Finite-sample guarantee. Under exchangeability of (x1, . . . , x n, X ) when X is a new normal example, the rank of A(X)
+
+among {A(x1), . . . , A (xn), A (X)} is uniform. Therefore P(p(X) ≤ αcf ) ≤ αcf . This yields false-positive control at level 
+
+αcf for normal examples. We report both raw MAD metrics and conformal-wrapped operating points when appropriate. 
+
+Practical note. When only a subset of normals is available (semi-supervised anomaly detection), we form Dcal from held-out normals and compute p-values at evaluation time. 17 Multi-Agent Debate: A Unified Agentic Framework for Tabular Anomaly Detection 
+
+## E. Notation and Symbols  
+
+> Table 7. Core notation used throughout the paper.
+
+Symbol Type Meaning 
+
+X set Input space of tabular examples. 
+
+x (or xt) variable A tabular example; xt is the example processed at debate round t.
+
+d integer Number of features (dimensionality of tabular input). 
+
+[N ] set {1, . . . , N }, index set of agents (experts). 
+
+N integer Number of agents in the pool. 
+
+T integer Number of debate rounds per input. 
+
+t integer Debate round index, t ∈ { 1, . . . , T }.
+
+∆N −1 set Probability simplex in RN (nonnegative entries summing to 1). 
+
+α(t) vector Agent weights at round t, α(t) ∈ ∆N −1.
+
+η scalar EG (multiplicative weights) step size. 
+
+⟨u, v ⟩ op. Standard inner product. 
+
+si(x) scalar Raw anomaly score from agent i on input x (scale may vary across agents). 
+
+νi(·) function Monotone map that normalizes si(·) into [0 , 1] (e.g., rank/quantile map). 
+
+˜si(x) scalar Normalized score: ˜si(x) = νi(si(x)) ∈ [0 , 1] .
+
+ˆs(t)(x) scalar Debated aggregate score at round t: ˆs(t)(x) = P 
+
+> i
+
+α(t) 
+
+> i
+
+˜s(t) 
+
+> i
+
+(x).
+
+ˆs(x) scalar Final MAD score after T rounds: ˆs(x) = ˆ s(T )(x).
+
+c(t) 
+
+> i
+
+(x) scalar Confidence reported by agent i at round t, normalized to [0 , 1] .18 Multi-Agent Debate: A Unified Agentic Framework for Tabular Anomaly Detection 
+
+Table 8. Evidence, synthesis instantiation, and optional conformal wrapper. 
+
+Symbol Type Meaning 
+
+a(t) 
+
+> i
+
+(x) vector Feature attribution vector for agent i at round t (e.g., from an ML explainer), a(t) 
+
+> i
+
+(x) ∈
+
+Rd.
+
+˜a(t) 
+
+> i
+
+(x) vector ℓ2-normalized attribution: ˜a(t) 
+
+> i
+
+(x) = a(t) 
+
+> i
+
+(x)/∥a(t) 
+
+> i
+
+(x)∥2 (or 0 if a(t) 
+
+> i
+
+(x) = 0 ). 
+
+δ(t) 
+
+> i
+
+(x) vector Optional counterfactual direction for agent i at round t, δ(t) 
+
+> i
+
+(x) ∈ Rd.
+
+r(t) 
+
+> i
+
+(x) text Optional natural-language critique/rationale (may be produced by an LLM critic). 
+
+¯a(t)(x) vector Weighted consensus attribution: ¯a(t)(x) = P 
+
+> i
+
+α(t) 
+
+> i
+
+˜a(t) 
+
+> i
+
+(x).
+
+˜¯a(t)(x) vector ℓ2-normalized consensus attribution (or 0 if ¯a(t)(x) = 0 ). 
+
+cos( u, v ) scalar Cosine similarity between vectors u and v.
+
+y label Ground-truth label when available (e.g., y ∈ { 0, 1} for normal/anomaly). 
+
+ℓ(t)pred ,i (x) scalar Prediction-feedback loss term (supervised cross-entropy if y exists; otherwise a stability proxy). 
+
+Pert (· | x) dist. Perturbation distribution around x used for unsupervised stability loss. 
+
+K integer Number of perturbation samples used to estimate the unsupervised stability loss. 
+
+ℓ(t)disp ,i (x) scalar Dispute (score-disagreement) loss term, typically weighted by confidence. 
+
+ℓ(t)evid ,i (x) scalar Evidence-consistency loss term (e.g., 1 − cos(˜ ai, ˜¯a)). 
+
+λ, γ scalars Weights for dispute and evidence terms in the synthesized loss: bℓ(t) 
+
+> i
+
+=clip [0 ,1] 
+
+
+
+ℓ(t)pred ,i + λℓ (t)disp ,i + γℓ (t)evid ,i 
+
+
+
+.
+
+clip [0 ,1] (·) op. Clips a scalar to [0 , 1] to ensure bounded losses. 
+
+I{·} op. Indicator function ( 1 if condition holds, else 0). 
+
+Dcal set Calibration set for conformal wrapping (typically normal examples). 
+
+n integer Size of calibration set, n = |D cal |.
+
+A(x) scalar Nonconformity score used in conformal; here A(x) = ˆ s(x).
+
+p(x) scalar Split conformal p-value: p(x) = 1+ Pnj=1 I{A(xj )≥A(x)} 
+
+> n+1
+
+.
+
+αcf scalar Conformal significance level (distinct from the weight vector α(t)). 
+
+ˆy(x) label Conformal decision rule ˆy(x) = I{p(x) ≤ αcf }.
+
+Table 9. Superset (MAD) tuple notation (Appendix C). 
+
+Symbol Type Meaning 
+
+A tuple MAD system tuple: A = ( {H i}Ni=1 , M, {πi}Ni=1 , {Ui}Ni=1 , F, Ψ, K, g, T ).
+
+Hi set Hypothesis class / model family for agent i.
+
+πi function Agent i’s messaging policy mapping (x, context ) to a message in M.
+
+Ui update Optional within-debate update rule for agent i across rounds. 
+
+F interface Shared tabular interface used by agents/coordinator (preprocessing/feature schema/access). 
+
+g function Output mapping from final state/messages to prediction and trace. 19

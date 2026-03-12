@@ -1,0 +1,597 @@
+Title: Retrieval Augmented Enhanced Dual Co-Attention Framework for Target Aware Multimodal Bengali Hateful Meme Detection
+
+URL Source: https://arxiv.org/pdf/2602.19212v1
+
+Published Time: Tue, 24 Feb 2026 02:01:22 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+> 1
+
+# Retrieval Augmented Enhanced Dual Co-Attention Framework for Target Aware Multimodal Bengali Hateful Meme Detection 
+
+Raihan Tanvir Md. Golam Rabiul Alam 
+
+This work has been submitted to the IEEE Transactions on Computational Social Systems for possiblepublica-tion. Copyright may be transferred without notice, after which this version may no longer be accessible. 
+
+Abstract —Hateful content on social media often man-ifests as multimodal memes, blending images and text to propagate harmful messages. In low-resource lan-guages like Bengali, detecting such memes is hindered by data scarcity, class imbalance, and complex code-mixing. To address these issues: 1) we augment the Bengali Hateful Memes (BHM) dataset with semanti-cally aligned samples from the MultIMOdal aggreSsion dAtaset in Bengali (MIMOSA) to enhance class bal-ance and diversity; 2) we propose the Enhanced Dual cO-attention fRAmework (xDORA), integrating vision encoders ( CLIP , DINOv2 ) and multilingual text encoders (XGLM , XLM-R ) with weighted attention pooling for robust crossmodal features; 3) we develop a Facebook AI Similarity Search (FAISS)-Based k-NN classifier using xDORA embeddings for non-parametric classification; 4) we introduce RAG-Fused DORA, leveraging FAISS-based retrieval for enhanced contextual understanding; and 5) we evaluate LLaVA in zero-shot, few-shot, and RAG-Prompted settings for low-resource Bengali con-texts. Experiments on the extended dataset demon-strate that xDORA (CLIP + XLM-R ) achieves macro-average F1-scores of 0.78 for hateful meme identifica-tion and 0.71 for target entity detection, with RAG-Fused DORA improving these to 0.79 and 0.74, yielding 3.95% and 23.33% gains over the DORA baseline (0.76 and 0.60, respectively). These models outperform baseline approaches, including several state-of-the-art unimodal and multimodal models, due to enhanced multimodal fusion and retrieval augmentation. The FAISS-Based k-NN approach performs competitively, excelling for rare classes by leveraging semantic prox-imity. In contrast, LLaVA ’s few-shot performance (F1: 0.53 for meme identification, 0.26 for target detection) improves marginally in RAG-Prompted settings (0.54 and 0.39), highlighting the limitations of pretrained vision-language models for code-mixed Bengali con-tent without fine-tuning. TThese results highlight the effectiveness of supervised, retrieval-augmented, and non-parametric multimodal frameworks in tackling linguistic and cultural complexities for hate speech de-tection in low-resource settings, laying the groundwork for future advancements in adaptable and extensible solutions. Disclaimer: This paper contains elements that one might find offensive which cannot be avoided due to the nature of the work. 
+
+Index Terms —Bengali Hateful Memes, Multimodal 
+
+Raihan Tanvir is with the Department of Computer Science and Engineering, BRAC University, Dhaka 1212, Bangladesh, and also with the Department of Computer Science and Engineering, Ahsan-ullah University of Science and Technology, Dhaka 1208, Bangladesh (e-mail: raihan.tanvir@g.bracu.ac.bd). Md. Golam Rabiul Alam is with the Department of Computer Science and Engineering, BRAC University, Dhaka 1212, Bangladesh (e-mail: rabiul.alam@bracu.ac.bd). 
+
+Classification, Retrieval Augmented Generation, Large Vision-Language Model, Dual Co-Attention 
+
+I. Introduction 
+
+# INTERNET memes, which integrate visual imagery and textual content, have become a significant medium for communication on social media platforms, frequently employed to express humor, convey opinions, or pro-vide cultural commentary. However, these memes can also serve as vehicles for disseminating harmful content, targeting individuals, communities, organizations, or so-cietal groups, thereby amplifying social divisions. In Bangladesh, the proliferation of hateful memes targeting minorities, religious leaders, and political figures has inten-sified social tensions, further complicated by cross-border trolling involving neighboring countries. The detection of such hateful memes is critical to mitigating their societal impact. Despite this urgency, research has predominantly focused on high-resource languages such as English, leav-ing low-resource languages like Bengali—spoken by over 230 million people worldwide [1]—significantly underex-plored. 
+
+Figure 1: A sample meme from the Bengali Hateful Memes dataset, showcasing nuanced visual and textual elements that convey hateful sentiment. Hossain et al. [2] introduced the Bengali Hateful Memes (BHM) dataset, a groundbreaking multimodal resource designed for detecting hateful memes through binary (hateful vs. non-hateful) and multiclass (catego-rizing targets as individuals, communities, organizations, or societal groups) classification tasks. Their proposed Dual cO-attention fRAmework (DORA) leverages a co-attention mechanism to effectively integrate visual and textual representations, achieving superior performance compared to existing state-of-the-art baselines. Figure 1 exemplifies a meme from the BHM dataset, where subtle visual and textual cues combine to disparage a specific 
+
+> arXiv:2602.19212v1 [cs.CL] 22 Feb 2026 2
+
+regional population in Bangladesh, highlighting the com-plex interplay of multimodal content. Nevertheless, the BHM dataset is hindered by class imbalance, particularly in the multiclass task, which restricts the generalizability of trained models. To address this limitation, we enhance the BHM dataset by incorporating 2,233 samples from the MultIMOdal aggreSsion dAtaset in Bengali (MIMOSA) [3] through semantic label remapping, resulting in a more balanced and diverse dataset comprising 9,342 samples. Building upon the DORA framework, we propose the Enhanced Dual cO-attention fRAmework (xDORA), which integrates a diverse set of vision encoders, including the vision encoder of Contrastive Language-Image Pre-training (CLIP) with Vision Transformer (ViT) [4] and Self-Distillation with No Labels – Version 2 (DINOv2) [5], and multilingual text encoders, such as Cross-lingual Generative Language Model (XGLM) [6] and Cross-lingual Language Model-RoBERTa (XLM-R) [7], with weighted attention pooling to produce robust crossmodal repre-sentations. Additionally, we introduce a FAISS-Based k-Nearest Neighbor (k-NN) classifier utilizing xDORA embeddings for non-parametric classification. We also propose RAG-Fused DORA, an ensemble model that com-bines xDORA predictions with similarity-weighted prob-abilities derived from samples retrieved using Facebook AI Similarity Search (FAISS) [8], leveraging Retrieval-Augmented Generation (RAG) [9] to enhance contextual understanding for imbalanced classes. Furthermore, we evaluate the large vision-language model Large Language and Vision Assistant (LLaVA) [10] in zero-shot and few-shot settings, both independently and as RAG-Prompted LLaVA, to assess its efficacy in low-resource Bengali con-texts. This study makes three key contributions to Bengali hateful meme classification: 1) We enhance the BHM dataset by integrating MI-MOSA samples through semantic label remapping, improving dataset diversity and addressing class im-balance. 2) We develop xDORA , a robust multimodal architec-ture that integrates state-of-the-art vision encoders (CLIP, DINOv2) and multilingual text encoders (XGLM, XLM-R) with weighted attention pooling for enhanced crossmodal fusion. Furthermore, we pro-pose RAG-Fused DORA , a hybrid ensemble that combines supervised predictions with FAISS-based similarity-weighted label aggregation to improve de-tection accuracy and generalization, particularly for underrepresented classes. 3) We conduct comprehensive evaluation of LLaVA 
+
+under zero-shot, few-shot, and RAG-Prompted set-tings for Bengali multimodal content, revealing both its limitations and potential for retrieval-augmented adaptation. Our findings highlight the efficacy of retrieval-augmented approaches in addressing challenges related to data scarcity and class imbalance, laying the foundation for robust hateful content detection in low-resource lan-guages. The paper is organized as follows: Section II re-views related work, Section III elaborates on dataset aug-mentation, Section IV details the proposed methodologies, Section V presents experimental results and analysis, and Section VI summarizes conclusions and outlines prospects for future research. 
+
+II. Related Works 
+
+The proliferation of hateful content on social media, par-ticularly through memes that combine visual and textual elements, has driven research into multimodal hate speech detection, leveraging vision-language models to capture the complex interplay between text and images. Kiela et al. [11] introduced the Hateful Memes dataset for English, demonstrating improved detection performance using multimodal transformers. However, their work focuses on high-resource languages, leaving low-resource languages like Bengali underexplored. Kumar and Nan-dakumar [12] proposed Hate-CLIPper , which models cross-modal interactions using a Feature Interaction Matrix (FIM) over embeddings derived from the CLIP with Vision Transformer (ViT) [13]. This approach achieved a state-of-the-art AUROC score of 85.8 on the Hateful Memes Challenge, surpassing human performance. While effec-tive in high-resource settings, such architectures have not been extensively applied to low-resource languages like Bengali, where code-mixing and cultural nuances present additional challenges. Recent advancements in multimodal hate speech detec-tion have introduced innovative techniques to address both implicit and explicit hateful content in memes. Arya et al. [14] utilized the Contrastive Language-Image Pre-Training (CLIP) model, fine-tuned with prompt engineering, to achieve an accuracy of 87.42% on the Facebook Hateful Memes dataset, with strong performance in AUROC and F1-score metrics. Wang et al. [15] proposed a few-shot in-context learning framework that incorporates socio-cultural knowledge retrieval, metaphorical tenor identifi-cation, and chain-of-thought prompting with multimodal large language models, outperforming supervised methods on hateful meme benchmarks. Additionally, Zhang et al. [16] introduced Flexible Optimal Transport (FLOT) with contrastive graphical modeling to capture non-literal cross-modal alignments in implicit hateful memes, achiev-ing state-of-the-art results across multiple benchmark datasets without relying on external knowledge. In the context of Bengali, research has focused on addressing the challenges of code-mixed and culturally nuanced content. Hossain et al. [17] developed a mul-timodal framework with context-aware attention mech-anisms that dynamically align textual and visual data by prioritizing salient features. Evaluated on the Mul-tiOFF (English) [18] and MUTE (Bengali code-mixed) [19] datasets, their approach achieved F1-scores of 70.3% and 69.7%, respectively, demonstrating generalizability over existing state-of-the-art methods. Further advanc-ing Bengali hateful meme detection, Hossain et al. [2] 3
+
+introduced the BHM dataset and the Dual cO-attention fRAmework (DORA). The BHM dataset supports binary and multiclass classification, while DORA integrates CLIP (ViT) and XGLM [6] with a co-attention mechanism, achieving robust performance. However, class imbalance in the BHM dataset, particularly for multiclass tasks, limits model generalizability, and DORA’s reliance on standard attention mechanisms restricts advanced feature integration. Other efforts in Bengali meme analysis have tackled related challenges. Ahsan et al. [3] introduced the MI-MOSA dataset, focusing on aggressive content targeting social entities, providing a valuable resource for studying harmful memes. Hossain et al. [19, 20] developed datasets for hateful meme detection and sentiment analysis but did not address targeted entity classification or class imbalance. Karim et al. [21] explored hate speech in Bengali memes and texts, but their dataset is not publicly available and lacks focus on targeted entity classification. Das et al. [22] introduced BanglaAbuseMeme, a dataset of 4,043 annotated Bengali memes, yet it does not address challenges posed by cross-lingual captions. Large Vision-Language Models (LVLMs) offer promis-ing avenues for low-resource applications. The Large Lan-guage and Vision Assistant (LLaVA) [10] enables zero-shot reasoning by aligning CLIP (ViT) with language models, though its efficacy for code-mixed Bengali memes with cultural nuances remains untested. Retrieval-Augmented Generation (RAG) has emerged as a powerful approach to enhance hate speech detection by incorporating external knowledge. Sunkara et al. [23] utilized RAG with large language models to classify, counter, and diffuse hate speech, achieving superior performance on a large tweet corpus. This approach underscores RAG’s potential to improve contextual understanding in low-resource settings like Bengali, where class imbalance and code-mixing pose challenges. Similarly, Zhang et al. [24] proposed ReZG, a RAG-based method for zero-shot counter-narrative gener-ation, leveraging multi-dimensional hierarchical retrieval to address unseen targets, which is particularly relevant for Bengali hateful meme detection. Building on these works, our study enhances dataset diversity, model performance, and scalability for Bengali hateful meme classification. We address the limitations of class imbalance and low-resource contexts through an augmented BHM dataset, advanced multimodal architec-tures like the Enhanced Dual cO-attention fRAmework (xDORA) with state-of-the-art vision encoders such as DINOv2 [5] and multilingual text encoders like XLM-R [7], and retrieval-augmented techniques, including RAG-Fused DORA and RAG-Prompted LLaVA, supported by FAISS [8]. 
+
+III. Dataset 
+
+This study utilizes the Bengali Hateful Memes (BHM) dataset [2] as the primary resource, augmented with se-lected samples from the MultIMOdal aggreSsion dAtaset in Bengali (MIMOSA) [3] to address class imbalance and enhance diversity. Below, we describe the original BHM dataset, including its composition and classification tasks, and the augmentation process, including the resulting extended dataset for both binary and multiclass classifi-cation tasks. 
+
+A. BHM Dataset 
+
+The BHM dataset, introduced by Hossain et al. [2], comprises 7,109 memes collected from public social media platforms in Bangladesh, such as Facebook and Instagram, targeting Bengali-speaking audiences. It supports two classification tasks: binary classification (Task 1: Hate vs. Non-Hate) and multiclass classification (Task 2: categoriz-ing hateful memes by target). A meme is deemed hateful if it overtly seeks to demean, disparage, injure, ridicule, or harass an entity based on characteristics such as gender, ethnicity, ideology, religion, socioeconomic status, polit-ical alignment, regional identity, or organizational ties. For the multiclass task, hateful memes are categorized into four target classes: Targeted Individual (TI), target-ing specific persons (e.g., celebrities like Sakib Khan or politicians like Khaleda Zia); Targeted Organization (TO), targeting groups with common goals (e.g., businesses like Grameenphone or political parties like Awami League); Targeted Community (TC), targeting groups sharing be-liefs or ideologies (e.g., religious groups like Buddhists or cultural communities like Pohela Boishakh celebrants); and Targeted Society (TS), targeting populations based on geographical identity (e.g., stereotyping Indian or British communities). Table I presents the dataset statistics across training, validation, and testing splits. In Task 1, the non-hate class significantly outweighs the hate class, with approximately 1.7 times more non-hate samples than hate samples, indi-cating a notable class imbalance. For Task 2, the TI class dominates, with roughly 6.5 times more samples than TC, nearly 10 times more than TO, and 19.7 times more than TS, highlighting severe class imbalance in the multiclass task. Table I: Number of memes in training, validation, and testing splits for the BHM dataset.                              
+
+> Class Train Valid Test Total
+> Task 1 Hate 2117 241 266 2624 Non-Hate 3641 399 445 4485 Task 2 TI 1623 192 193 2008 TO 160 17 27 204 TC 249 24 37 310 TS 85 89102
+
+The memes in the BHM dictionary were annotated by multiple human annotators to ensure reliable labeling for both tasks. Inter-annotator agreement was measured using Cohen’s κ-score, as shown in Table II. For Task 1, the average κ-score is 0.79, indicating substantial agree-ment among annotators. In contrast, Task 2 has a lower average κ-score of 0.63, reflecting moderate agreement and 4
+
+the increased complexity of identifying specific targets in hateful memes. Table II: Cohen’s κ agreement scores for BHM dataset annotations.           
+
+> Label κ-score Average
+> Task 1 Hate 0.82 0.79 Non-Hate 0.76 Task 2 TI 0.68 0.63 TO 0.66 TC 0.61 TS 0.57
+
+B. Dataset Augmentation 
+
+To address the class imbalance in the BHM dataset and enhance its diversity, we augmented it with 2,233 carefully selected samples from the MIMOSA dataset [3], which originally contains 4,848 samples across five target labels: Political, Gender, Religious, Others, and Non-aggression. After excluding 1,783 samples that overlap with the BHM dataset, 3,065 unique samples were considered for augmen-tation. Since the MIMOSA dataset was curated for aggression detection, its labels do not directly align with the BHM dataset’s hate categories. We performed a taxonomy-driven label remapping to ensure compatibility. Specif-ically, Political, Gender, and Religious samples were mapped to the BHM hate categories of TO, TI, and TC respectively. A subset of Non-aggression samples was retained and assigned to the Non-Hate class, while the remainder were excluded due to semantic ambiguity. The ‘Others’ class was discarded, as it lacked a seman-tically aligned counterpart in the BHM taxonomy. This remapping was guided by the BHM dataset’s definitions of hateful content, and a random subset of the remapped data underwent manual review to ensure label integrity, maintaining consistency with the original hate classifica-tion framework. The resulting extended BHM dataset comprises 9,342 samples for binary classification and 4,857 samples for multiclass classification. Table III presents the statistics across training, validation, and testing splits, following an 80%-10%-10% distribution with stratification. For Task 1, the hate to non-hate ratio improves to near parity, significantly reducing imbalance. For Task 2, the class dis-tribution is more balanced, with TI samples approximately 2 times more than TC, 2.6 times more than TO, and 21.6 times more than TS. While the TS class remains un-derrepresented, the augmentation substantially increases the representation of TC and TO classes, enhancing the dataset’s robustness and diversity. 
+
+IV. Methodology 
+
+We propose four approaches for Bengali hateful meme classification: an Enhanced Dual cO-attention fRAme-work (xDORA) for supervised learning, a FAISS-based Table III: Number of memes in the extended BHM dataset.                              
+
+> Class Train Valid Test Total
+> Task 1 Hate 3885 486 486 4857 Non-Hate 3588 449 448 4485 Task 2 TI 2026 253 253 2532 TC 981 123 122 1226 TO 786 98 98 982 TS 94 12 11 117
+
+non-parametric classifier, and two retrieval-augmented strategies: RAG-Fused DORA and RAG-Prompted LLaVA 
+
+A. Enhanced DORA Architecture 
+
+The Enhanced DORA ( xDORA ) framework advances the original DORA model [2] by integrating robust en-coder pairs and a refined dual co-attention mechanism for high-fidelity vision-language fusion. We implement and integrate four encoder combinations: (1) CLIP (ViT-B/32) [4] with XGLM-564M [6], (2) CLIP (ViT-B/32) with 
+
+XLM-R-L (XLM-RoBERTa-Large) [7], (3) DINOv2-Base [5] with XGLM-564M , and (4) DINOv2-Base with XLM-R-L .For vision processing, CLIP (ViT-B/32) employs a Vi-sion Transformer with 32 ×32 patches and contrastive learning for semantic alignment between image and text, while DINOv2-Base captures spatial and semantic features through self-distillation without labels. For text encoding, 
+
+XGLM-564M is a multilingual autoregressive transformer with 564 million parameters designed for generative tasks in low-resource languages like Bengali, whereas XLM-R-L 
+
+is a RoBERTa-based [25] multilingual model pretrained on over 100 languages to provide deep contextual embed-dings. 
+
+1) Vision and Text Feature Extraction: Let I denote an input image, and Xids be the tokenized caption with corresponding attention mask Xmask . The visual encoders, 
+
+CLIP (ViT-B/32) and DINOv2-Base , produce features with dimensions dv = 512 and dv = 768 , respectively (Equation (1a)). These are projected to match the text encoder’s dimension dt = 1024 via a linear layer (Equation (1b)) and pooled to align with the text token sequence length S
+
+(Equation (1c)). 
+
+V0 = VisualEncoder (I) ∈ Rdv (1a) 
+
+V1 = V0 · Wv + bv ∈ Rdt (1b) 
+
+V = AvgPool (V1) ∈ RS×dt (1c) The output from the text encoder, which processes the input tokens Xids , produces contextualized embeddings with dimension dt as shown in (2): 
+
+T = TextEncoder (Xids , Xmask ) ∈ RS×dt (2) 
+
+2) Dual Co-Attention Mechanism: To facilitate rich cross-modal interaction, a dual co-attention mechanism is employed using multihead attention. The first attention 5Extracted Text             
+
+> CLIP(ViT) | DINOv2
+>  না য়া খা লী র ম েয় যখন ঘের র বউ:- কা থা য়যা ওএই সম েয় ফা ক ক ির
+> আিস দাঁ ড়া ও
+> XGLM | XLM-R
+> Q
+> Image Encoder
+> Text Encoder
+> Text
+> Features
+> Visual
+> Features
+> K
+> V
+> V
+> I2I - ACT
+> I2T - ACT
+> Weighted Attention Pooling FC Layer Prediction
+> Scores
+> Dual Co-Attention
+> Attention
+> Scores
+> I2I-ACT Image-to-Image Attention Conditioned on Text
+> I2T-ACT Image-to-Text Attention Conditioned on Text
+> QQuery
+> KKey
+> QValue
+> Concatenation
+
+Figure 2: Overview of the xDORA architecture. Visual and textual features are extracted using pretrained encoders. A dual co-attention module with multi-head attention integrates the modalities through two cross-attention flows: I2T-ACT (Image-to-Text Attention Conditioned on Text, Equation (3a)) and I2I-ACT (Image-to-Image Attention Conditioned on Text, Equation (3b)). The fused representation is aggregated via weighted attention pooling and fed to a multilayer perceptron for classification. map, termed Image-to-Text Attention Conditioned on Text (I2T-ACT) (Equation (3a)), uses visual fea-tures V as the Query ( Q) and text features T as both Key ( K) and Value ( V ). This allows visual tokens to selectively attend to relevant textual cues, capturing text-guided visual attention.. The second attention map, termed Image-to-Image Attention Conditioned on Text (I2I-ACT) (Equa-tion (3b)), uses visual features V as Query and Value, with text features T as Key. This refines visual features by conditioning their self-attention on textual cues, preserv-ing intra-modal visual relationships while enhancing mul-timodal alignment. This dual configuration enables robust vision-language integration by capturing both inter-modal and intra-modal dependencies. 
+
+A1 = MultiheadAttn (Q = V, K = T, V = T) ∈ RS×dt
+
+(3a) 
+
+A2 = MultiheadAttn (Q = V, K = T, V = V) ∈ RS×dt
+
+(3b) 
+
+3) Fusion and Aggregation: The attended outputs A1
+
+and A2, along with the original visual and textual em-beddings, are concatenated across the feature dimension to yield a fused representation F (Equation (4a)). To distill a single, unified vector representation, a soft at-tention mechanism is applied over the sequence dimen-sion (Equation (4b)). The token-level representations are weighted and aggregated to yield the pooled feature vector 
+
+Z ∈ R4dt = R4096 , as expressed in (4c). 
+
+F = [ A1∥A2∥V∥T] ∈ RS×4dt (4a) 
+
+α = softmax (F, dim = 1) (4b) 
+
+Z =
+
+> S
+
+∑
+
+> s=1
+
+αs ⊙ Fs ∈ R4dt (4c) 
+
+4) Classification Layer: The pooled embedding Z is fed into a two-layer multilayer perceptron (MLP) classifier with LeakyReLU activation and dropout regularization. The output of the final linear layer yields the logits O
+
+(Equation (5a)), which are transformed into class proba-bilities ˆy by applying an activation function as shown in (5b). 
+
+O = MLP (Z) ∈ RC (5a) 
+
+ˆy =
+
+{[1 − σ(O), σ (O)] , if C = 2 
+
+softmax (O), if C = 4 (5b) Here, C = 2 for hateful meme detection and C = 4 for targeted group identification. 
+
+B. FAISS-Based k-Nearest Neighbor Classifier 
+
+The FAISS-based k-Nearest Neighbor (k-NN) classifier employs non-parametric classification through similarity search, leveraging multimodal embeddings to address class imbalance in the BHM dataset. The Facebook AI Sim-ilarity Search (FAISS) library enables efficient similar-ity search and clustering of high-dimensional vectors [8]. The workflow, consisting of embedding generation, top-
+
+k retrieval, and similarity-weighted label aggregation, is integrated as a module within the RAG-Fused DORA architecture (see Fig. 3). 6Extracted Text       
+
+>  না য়া খা লী র ম েয় যখন ঘের র বউ:- কা থা য়যা ওএই সম েয় ফা ক ক ির
+> আিস দাঁ ড়া ও
+> xDORA
+
+Z   
+
+> Fully
+> Connected Layer Prediction
+> Scores (xDORA)
+> Weighted
+> Ensemble Fusion
+> Combined Scores
+> Feature
+> Extractor
+> Zdb Train Sets Embedding in FAISS DB
+
+Zdb            
+
+> Top-k
+> [cos ( Z , Z db )] O = Σ (s i·𝟙 [yi])Prediction
+> Scores (FAISS)
+> FAISS
+> DB
+> FAISS Retrieval ZCross-modal Embedding (Query)
+
+Figure 3: Architecture of RAG-Fused DORA. A multimodal embedding Z is obtained using xDORA as a feature extractor. This embedding is used in two parallel branches: (1) it is passed through an MLP classifier to produce prediction scores; and (2) it is used to retrieve the top-k nearest neighbors from a FAISS index based on cosine similarity (Top-k[cos (Z, Zdb )] ). The retrieved labels are aggregated using similarity-weighted label distribution. Final predictions are computed via a weighted ensemble of the classifier logits and the FAISS-derived label distribution. 
+
+1) Embedding Generation: For each training instance, a 4096-dimensional embedding is generated using the xDORA model’s fused representation Z ∈ R4096 (Equation 4c). Embeddings are normalized using the ℓ2-norm, pro-ducing ˜Z = Z 
+
+> ∥Z∥2
+
+∈ R4096 , where ∥Z∥2 =
+
+√∑4096  
+
+> i=1
+
+Z2 
+
+> i
+
+is the Euclidean norm. These normalized embeddings are stored in a FAISS FlatL2 index for efficient similarity search. 
+
+2) Top-k Retrieval: For a test instance with normalized embedding ˜Ztest , FAISS retrieves the top-k nearest neigh-bors from the training set, where k is a hyperparameter: 
+
+N (˜Ztest ) = {(˜Zj , y j , s j )}kj=1 , (6) where ˜Zj ∈ R4096 is the normalized embedding of the j-th neighbor, yj ∈ { 0, 1, . . . , C − 1} is its class label ( C =2 for hateful meme detection, C = 4 for targeted group identification), and sj = ˜Ztest · ˜Zj ∈ [−1, 1] is the cosine similarity between the test and neighbor embeddings. 
+
+3) Similarity-Weighted Label Aggregation: A soft label distribution is computed from the retrieved neighbors’ labels, weighted by their cosine similarities: 
+
+ˆy[c] = 
+
+∑kj=1 ⊮[yj = c] · sj
+
+∑kj=1 sj
+
+, ∀c ∈ { 0, . . . , C − 1}, (7) where ⊮[yj = c] is an indicator function equal to 1if yj = c and 0 otherwise, sj is the cosine similarity from Equation (6), and ˆy[c] represents the normalized probability for class c, ensuring ∑C−1 
+
+> c=0
+
+ˆy[c] = 1 .The predicted class is determined by selecting the class with the highest aggregated probability: 
+
+ˆy = arg max  
+
+> c
+
+ˆy[c], c ∈ { 0, 1, . . . , C − 1}, (8) where ˆy[c] is the probability for class c, and ˆy is the predicted label. This approach exploits semantic proximity to assign labels, enhancing robustness for underrepresented classes without requiring model retraining. 
+
+C. RAG-Fused DORA (RAG-Inference Fusion) 
+
+RAG-Fused DORA enhances xDORA’s prediction robust-ness by incorporating contextual knowledge from seman-tically similar training samples. The pipeline includes: 1) Prediction Generation : The xDORA framework encodes each test sample into a fused multimodal representation Ztest , which is passed through a clas-sification head to produce logits Oxdora . These logits are transformed into class probabilities ˆyxdora via a softmax (or sigmoid) function, as defined in Equa-tion 5b. 2) Similarity-Weighted Label Distribution Score :Top-k nearest neighbors retrieved via FAISS form a soft label distribution, ˆyfaiss (Equation 7). 3) Ensemble Fusion : Final predictions ˆyfused combine model-based and retrieval-informed distributions: 
+
+ˆyfused = α · ˆyxdora + (1 − α) · ˆyfaiss , α ∈ [0 , 1] , (9) with the predicted class as: 
+
+ˆy = arg max  
+
+> c
+
+ˆyfused [c]. (10) This approach synthesizes learned representations with non-parametric evidence, improving generalization for am-biguous or underrepresented samples. 
+
+D. RAG-Prompted LLaVA (RAG-Prompt Fusion) 
+
+RAG-Prompted LLaVA enhances the few-shot inference of LLaVA-1.6-Mistral-7B by incorporating semantically relevant exemplars into multimodal prompts, leveraging the FAISS-based retriever for context-aware classification. The pipeline includes: 1) Crossmodal Embedding Retrieval : For a test instance, the top-k most semantically similar train-ing samples per class are retrieved using xDORA-generated embeddings, as described in Section IV-B. 2) Prompt Construction : The captions and labels of the retrieved samples are formatted as text-only few-shot exemplars, ensuring balanced representation 7 না য়া খা লী র  ম েয়  যখন ঘের র বউ:- কা থা য় যা ওএই সম েয়  ফা ক ক ির    
+
+> আিস দাঁ ড়া ও
+> xDORA FAISS
+> Vector
+> Database
+> (Caption,
+> Label)
+> Top-K
+> Retrieval ZPrompt Construction
+> Prediction
+> Scores
+> Classification Instruction
+> Extracted Text
+> LLaVA
+
+Figure 4: Illustration of the RAG-Prompted LLaVA framework. Given a test image, top-k semantically similar exemplars per class are retrieved from a FAISS index using xDORA-generated embeddings. The retrieved text-label pairs are formatted as few-shot exemplars and incorporated into a prompt alongside the test caption. This retrieval-augmented prompt is then fed to LLaVA, enabling few-shot multimodal classification. across hate categories. The test meme’s caption is appended to the prompt as the query. The prompt follows the structure in Algorithm 1, but includes retrieved exemplars to provide context instead of randomly selected examples. 3) Multimodal Inference : The prompt, compris-ing the few-shot exemplars and the test caption, is processed alongside the test meme’s image by 
+
+LLaVA-1.6-Mistral-7B . The model leverages the contextual cues from the exemplars to predict whether the meme is hateful and, if applicable, its specific hate category. By incorporating semantically aligned exemplars, this approach enhances the model’s ability to infer nuanced patterns in low-resource settings without requiring param-eter updates. 
+
+V. Experiments and Results 
+
+This section evaluates the proposed methodologies for multimodal classification of hateful memes in Bengali us-ing the extended Bengali Hateful Memes (BHM) dataset. The methodologies, including the Enhanced Dual cO-attention fRAmework (xDORA), FAISS-Based k-Nearest Neighbor (k-NN) classifier, RAG-Fused DORA, and RAG-Prompted LLaVA, are detailed in Section IV. The ex-periments assess performance for hateful meme identifi-cation (Task 1: binary classification; hateful vs. non-hateful) and target entity detection (Task 2: multiclass classification; TI, TC, TO, TS), focusing on hardware configurations, hyperparameter settings, evaluation met-rics, baseline models, quantitative and qualitative anal-yses, and comparative insights against state-of-the-art unimodal and multimodal models. 
+
+A. Experimental Setup 
+
+Experiments were conducted on Google Colab and Kag-gle using NVIDIA T4 or L4 GPUs (16 GB VRAM). Auto-matic Mixed Precision (AMP) was employed to optimize memory and computation efficiency. The xDORA models were trained for Task 1 (binary classification: hateful vs. non-hateful) and Task 2 (mul-ticlass classification: TI, TC, TO, TS) using four en-coder pairs: CLIP (ViT-B/32) [4] or DINOv2-Base [5] with XGLM-564M [6] or XLM-R-L [7]. Training used weighted CrossEntropyLoss, batch size of 16, learning rate of 2×10 −5, and weight decay of 0.01. Models with XGLM-564M used MADGRAD [26], while those with XLM-R-L used AdamW [27], with up to 20 epochs and early stopping based on validation accuracy. Dropout (0.1) was applied in the MLP layer. LLaVA-1.6-Mistral-7B [28] in RAG-Prompted settings used 4-bit quantization. Prompts included five FAISS-retrieved caption-label exemplars per class for contextual supervision, as per Algorithm 1. Zero-shot and few-shot settings used five randomly sampled caption-label pairs per class, as detailed in Section IV-D. The FAISS-based k-NN classifier, RAG-Fused DORA, and RAG-Prompted LLaVA used xDORA embeddings (CLIP + XLM-R-L, selected for F1-scores of 0.78 and 0.71 for Tasks 1 and 2, Table IV). Embeddings ( Z ∈ R4096 ,Equation 4c) were ℓ2-normalized and indexed in a FAISS flat index with cosine similarity (Section IV-B). The k-NN classifier used k = 5 neighbors for majority voting. RAG-Fused DORA retrieved k = 5 neighbors per class, interpolating xDORA logits with similarity-weighted label distributions (α = 0.6, grid-searched over [0.5, 0.7]). RAG-Prompted LLaVA used k = 5 text-only exemplars per class for prompt augmentation (Section IV-D). 
+
+1) Evaluation Metrics: Performance was evaluated us-ing macro-averaged precision, recall, and F1-score to ad-dress class imbalance, particularly in Task 2. Confidence intervals were computed via 1000-iteration bootstrapping, ensuring robust evaluation for underrepresented classes like TS, which are prone to performance variability. 
+
+2) Baseline Models: Baseline models span Vision Only, Text Only, Multimodal, and Large Vision-Language Model (LVLM) categories, fine-tuned on the extended BHM dataset using the training protocols outlined in 8
+
+Algorithm 1: Core Logic of the Multimodal Clas-sification Strategy 
+
+Input: Image I, Caption C, Task T
+
+Output: Predicted label ˆy 
+
+> 1
+
+Step 1: Multimodal Analysis ; 
+
+> 2
+
+Analyze image I for visual cues (e.g., symbols, gestures, expressions);  
+
+> 3
+
+Analyze caption C for textual signals (e.g., slang, sarcasm, offensive tone);  
+
+> 4
+
+Perform joint reasoning over I and C to contextualize intent;  
+
+> 5
+
+Step 2: Few-Shot Conditioning ; 
+
+> 6
+
+Retrieve top-k similar examples {(Ci, y i)}ki=1 as contextual guidance using Equation (6);  
+
+> 7
+
+Learn from example mappings (Ci → yi) to enhance inference;  
+
+> 8
+
+Step 3: Classification Based on Task ; 
+
+> 9
+
+if T == “Task 1” then  
+
+> 10
+
+if content directly or implicitly targets individuals/groups with hateful intent then  
+
+> 11
+
+ˆy ← 1 
+
+> 12
+
+else  
+
+> 13
+
+ˆy ← 0 
+
+> 14
+
+else  
+
+> 15
+
+Identify the hate target entity according to definitions given in BHM Dataset;  
+
+> 16
+
+switch target type do  
+
+> 17
+
+case TI do  
+
+> 18
+
+ˆy ← 0 
+
+> 19
+
+case TC do  
+
+> 20
+
+ˆy ← 1 
+
+> 21
+
+case TO do  
+
+> 22
+
+ˆy ← 2 
+
+> 23
+
+case TS do  
+
+> 24
+
+ˆy ← 3 
+
+> 25
+
+Step 4: Ambiguity Resolution ; 
+
+> 26
+
+If ambiguity exists, apply contextual reasoning to select the most plausible label;  
+
+> 27
+
+return ˆy
+
+Subsection V-A (batch size 16, learning rate 2 × 10 −5,up to 20 epochs with early stopping), except for LLaVA Zero-Shot and LLaVA Few-Shot, which do not undergo fine-tuning. 
+
+a) Vision Only Baselines:  
+
+> •
+
+CLIP (ViT-B/32) : Generates 512-dimensional em-beddings with a frozen backbone and fine-tuned fully connected layers.  
+
+> •
+
+DINOv2-Base : Yields 768-dimensional embeddings with a frozen backbone and fine-tuned fully connected layers.  
+
+> •
+
+ConvNeXT-Base : Produces 1024-dimensional em-beddings using depth-wise convolutions and large kernel sizes [29]. 
+
+b) Text Only Baselines:  
+
+> •
+
+XGLM-564M : Generates 1024-dimensional embed-dings, fine-tuned with MADGRAD.  
+
+> •
+
+XLM-R-L : Produces 1024-dimensional embeddings, fine-tuned with AdamW.  
+
+> •
+
+mDeBERTa-v3-base : Yields 768-dimensional em-beddings optimized for low-resource languages [30]. 
+
+c) Multimodal Baselines:  
+
+> •
+
+DORA : Integrates CLIP (ViT-B/32) and XGLM-564M with a Dual Co-Attention module [2].  
+
+> •
+
+MAF : Combines frozen CLIP (ViT-B/32) and Bangla-BERT-Base with multi-head attention [3]. 
+
+d) LVLM Baselines:  
+
+> •
+
+LLaVA Zero-Shot : Uses LLaVA-1.6-Mistral-7B, quantized to 4-bit, for inference without fine-tuning.  
+
+> •
+
+LLaVA Few-Shot : Employs LLaVA-1.6-Mistral-7B with five caption-label exemplars per class in the prompt, without parameter updates. 
+
+B. Results and Analysis 
+
+This subsection presents the performance of the proposed methodologies—Enhanced Dual cO-attention fRAmework (xDORA), FAISS-Based k-Nearest Neigh-bor (k-NN) classifier, RAG-Fused DORA, and RAG-Prompted LLaVA—on the extended Bengali Hateful Memes (BHM) dataset, alongside baseline models. The evaluation focuses on two tasks: hateful meme identifi-cation (Task 1: binary classification, hateful vs. non-hateful) and target entity detection (Task 2: multiclass classification, TI, TC, TO, TS). Results are reported using macro-averaged precision, recall, and F1-scores, with con-fidence intervals derived from 1000 bootstrap iterations, as detailed in Table IV. Qualitative insights from sample evaluations are provided in Table VI. 
+
+1) Hateful Meme Detection: Task 1 evaluates the ability of models to distinguish hateful from non-hateful memes. RAG-Fused DORA achieves the highest macro-averaged F1-score of 0.79 ± 0.013, demonstrating superior con-textual sensitivity through its integration of xDORA’s predictions with similarity-weighted label distributions from retrieved samples. The xDORA model (CLIP + XLM-R-L) follows closely with an F1-score of 0.78 ±
+
+0.013, leveraging enhanced multimodal fusion and cross-lingual processing. Other xDORA variants (CLIP +XGLM, DINOv2 + XGLM, DINOv2 + XLM-R-L) yield F1-scores between 0.76 and 0.78, with confidence intervals of ±0.013 –0.015 , indicating reliable performance. The FAISS-Based k-NN classifier performs competitively with an F1-score of 0.77 ± 0.013, benefiting from semantic proximity in the embedding space. Baseline models exhibit lower performance. Vision-only models (CLIP: 0.48, DINOv2-Base: 0.65, ConvNeXT-Base: 0.61) struggle due to their reliance on visual features alone. Text-only models (XGLM-564M: 0.74, XLM-R-L: 0.73, mDeBERTa-v3-base: 0.74) perform better but are 9
+
+Table IV: Performance comparison of baseline and proposed models on the test set using macro-average metrics. Models are categorized as Vision Only, Text Only, Multimodal, LVLM, Proposed Supervised Framework Variants, and Proposed Retrieval Augmented Methods. Metrics include macro-average precision (P), recall (R), and F1-score (F1) for Task 1 (hateful meme identification) and Task 2 (target entity detection), reported as mean ± 95% confidence interval half-width . Highest and second-highest F1-scores are in bold and underlined, respectively.  
+
+> Category
+
+Model Hateful Meme Identification (Task 1) Target Entity Detection (Task 2) P R F1 P R F1 
+
+> Vision Only
+
+CLIP (ViT-B/32) 0.50 ± 0.018 0.50 ± 0.015 0.48 ± 0.015 0.41 ± 0.015 0.44 ± 0.018 0.42 ± 0.015 
+
+DINOv2-Base 0.65 ± 0.018 0.65 ± 0.015 0.65 ± 0.018 0.48 ± 0.023 0.51 ± 0.038 0.48 ± 0.025 
+
+ConvNeXT-Base 0.63 ± 0.018 0.62 ± 0.015 0.61 ± 0.015 0.44 ± 0.018 0.46 ± 0.018 0.45 ± 0.015 
+
+> Text Only
+
+XGLM-564M 0.75 ± 0.013 0.74 ± 0.015 0.74 ± 0.015 0.55 ± 0.018 0.61 ± 0.038 0.56 ± 0.023 
+
+XLM-R-L 0.73 ± 0.013 0.73 ± 0.013 0.73 ± 0.013 0.65 ± 0.023 0.77 ± 0.030 0.69 ± 0.025 
+
+mDeBERTa-v3 0.74 ± 0.013 0.74 ± 0.013 0.74 ± 0.013 0.60 ± 0.025 0.62 ± 0.043 0.60 ± 0.033  
+
+> Multimodal
+
+DORA 0.76 ± 0.015 0.76 ± 0.015 0.76 ± 0.015 0.61 ± 0.013 0.59 ± 0.015 0.60 ± 0.015 
+
+MAF 0.77 ± 0.013 0.77 ± 0.013 0.77 ± 0.013 0.56 ± 0.015 0.55 ± 0.015 0.56 ± 0.015  
+
+> LVLM
+
+LLaVA Zero-Shot 0.55 ± 0.018 0.54 ± 0.015 0.54 ± 0.015 0.41 ± 0.040 0.37 ± 0.023 0.21 ± 0.020 
+
+LLaVA Few-Shot 0.53 ± 0.015 0.53 ± 0.015 0.53 ± 0.015 0.29 ± 0.033 0.30 ± 0.025 0.26 ± 0.018 
+
+> Proposed Supervised Framework Variants
+
+CLIP + XGLM 0.78 ± 0.013 0.77 ± 0.013 0.78 ± 0.013 0.69 ± 0.048 0.66 ± 0.038 0.67 ± 0.040 
+
+CLIP + XLM-R-L 0.79 ± 0.013 0.78 ± 0.013 0.78 ± 0.013 0.70 ± 0.033 0.70 ± 0.040 0.71 ± 0.033 
+
+DINOv2 + XGLM 0.76 ± 0.013 0.76 ± 0.013 0.76 ± 0.015 0.66 ± 0.018 0.78 ± 0.033 0.67 ± 0.023 
+
+DINOv2 + XLM-R 0.77 ± 0.015 0.77 ± 0.015 0.77 ± 0.015 0.67 ± 0.020 0.78 ± 0.033 0.68 ± 0.023 
+
+> Proposed Retrieval-Based Methods
+
+FAISS-Based k-NN 0.78 ± 0.013 0.77 ± 0.013 0.77 ± 0.013 0.76 ± 0.043 0.71 ± 0.040 0.73 ± 0.038 
+
+RAG-Fused DORA 0.79 ± 0.013 0.79 ± 0.013 0.79 ± 0.013 0.74 ± 0.033 0.74 ± 0.040 0.74 ± 0.033 
+
+RAG-Prompted LLaVA                  
+
+> 0.55 ±0.015 0.55 ±0.015 0.54 ±0.015 0.48 ±0.030 0.42 ±0.035 0.39 ±0.025
+
+Table V: Class-wise performance of xDORA (CLIP + XLM-R-L ), FAISS-Based k-NN, and RAG-Fused DORA for Task 2. Metrics include precision (P), recall (R), F1-score (F1), and support. Highest F1-score per class is in bold .
+
+Model Class P R F1 Support 
+
+CLIP + XLM-R-L TI 0.83 0.87 0.85 254 TC 0.76 0.76 0.76 122 TO 0.84 0.71 0.77 99 TS 0.38 0.55 0.44 11 FAISS-Based k-NN TI 0.80 0.89 0.84 254 TC 0.81 0.70 0.75 122 TO 0.77 0.69 0.73 99 TS 0.67 0.55 0.60 11 RAG-Fused DORA TI 0.82 0.89 0.85 254 TC 0.80 0.74 0.77 122 TO 0.83 0.71 0.77 99 TS 0.50 0.64 0.56 11 
+
+limited by the absence of visual context. Multimodal base-lines (DORA: 0.76, MAF: 0.77) approach the proposed methods but have wider confidence intervals ( ±0.015 ), indicating less stability. Large Vision-Language Model (LVLM) baselines (LLaVA Zero-Shot: 0.54, LLaVA Few-Shot: 0.53) underperform due to insufficient fine-tuning for Bengali memes, with RAG-Prompted LLaVA slightly improving to 0.54 ± 0.015 through retrieval augmentation. 
+
+2) Target Entity Identification: Task 2 involves classi-fying memes into specific hate target categories: Targeted Individual (TI), Targeted Community (TC), Targeted Organization (TO), and Targeted Social Group (TS). Table IV shows RAG-Fused DORA leading with an F1-score of 0.74 ± 0.033, followed by FAISS-Based k-NN at 0.73 ± 0.038 and xDORA (CLIP + XLM-R-L) at 0.71 ± 0.033. These models excel due to their ability to integrate visual and textual cues effectively, with RAG-Fused DORA benefiting from retrieval-augmented super-vision. Other xDORA variants achieve F1-scores of 0.67– 0.68, with confidence intervals of ±0.023 –0.040 , reflecting consistent performance despite class imbalance (e.g., 254 TI samples vs. 11 TS samples). Class-wise performance in Table V highlights the mod-els’ strengths. For TI (254 samples), xDORA (CLIP + XLM-R-L) and RAG-Fused DORA achieve the highest F1-score of 0.85, while FAISS-Based k-NN scores 0.84. For TC (122 samples), RAG-Fused DORA leads with 0.77, followed by xDORA at 0.76. For TO (99 samples), xDORA and RAG-Fused DORA both score 0.77. For the underrepresented TS class (11 samples), FAISS-Based k-NN achieves the highest F1-score of 0.60, leveraging semantic proximity to address data scarcity, while RAG-Fused DORA and xDORA score 0.56 and 0.44, respec-tively. Baseline models lag behind. Vision-only models (CLIP: 0.42, DINOv2-Base: 0.48, ConvNeXT-Base: 0.45) and text-only models (XGLM-564M: 0.56, XLM-R-L: 0.69, mDeBERTa-v3-base: 0.60) struggle with multimodal nu-ances. Multimodal baselines (DORA: 0.60, MAF: 0.56) perform better but are outperformed by the proposed methods. LVLM baselines (LLaVA Zero-Shot: 0.21, LLaVA Few-Shot: 0.26) show poor performance, with RAG-Prompted LLaVA improving to 0.39 ± 0.025 but remaining limited by English-centric pretraining. 
+
+3) Error Analysis: To gain insights into the model’s mistakes, we conduct a qualitative error analysis by ex-amining some correctly and incorrectly classified samples, as illustrated in Table VI. Classification errors in Task 2, as shown in Table VI, arise from overlapping hate category 10 
+
+Table VI: Sample evaluations of memes from the test set for Task 2 (multiclass classification). The table includes the meme image, OCR-extracted caption, translations, predictions from baseline models, proposed framework variants, and the ground truth. Correct predictions are shown in green and incorrect predictions in red. 
+
+(a) (b) (c) (d) 
+
+Meme 
+
+Caption       
+
+> Take me to somewhere expensive BRAC UNIVERSITY
+> জন্নােত যখন আপিন ৭২হু র েদখেত পান... #ধমর্ পচারকহু রহু র দাবাং দাবাং দাবাং... মানুেষর েহা*য় আঙুল েদওয়ার জনয্ই আমার জন্ম Don't think yourself dumb bro There are literally people যারা পিরক্ষার হেল রচনা েদখােত বেল ,,
+
+Translated Caption            
+
+> Take me to somewhere expensive BRAC UNIVERSITY When you see 72 houris in heaven… #ReligiousPreacher Hoor hoor dabangg dabangg dabangg… I was born just to poke fingers at peo-ple’s a*se. Don’t think yourself dumb, bro. There are literally people who ask to copy es-says during exams…
+
+Vision Only TI TI TC TI 
+
+Text Only TS TC TC TI 
+
+Multimodal TO TC TI TI 
+
+LLaVA (Zero-Shot) TC TO TC TO 
+
+LLaVA (Few-Shot) TC TO TC TO 
+
+CLIP + XGLM TC TS TC TC 
+
+CLIP + XLM-R-L TO TC TI TI 
+
+DINOv2 + XGLM TS TS TI TC 
+
+DINOv2 + XLM-R-L TO TC TI TI 
+
+FAISS-Based k-NN TO TC TI TC 
+
+RAG-Fused DORA TO TC TI TC 
+
+RAG-Prompted LLaVA TC TC TC TO 
+
+Ground Truth TO TC TI TC 
+
+definitions, scarcity of TS instances (11 samples), and cultural nuances in code-mixed captions, reflected in the moderate inter-annotator agreement ( κ = 0 .63 ). Sample evaluations illustrate specific challenges. For a meme cri-tiquing BRAC University’s high costs (TO), Multimodal (DORA), xDORA (CLIP + XLM-R-L, DINOv2 + XLM-R-L), FAISS-Based k-NN, and RAG-Fused DORA cor-rectly predict TO due to effective multimodal integration, while Vision Only (DINOv2-Base), Text Only (XLM-R-L), and LLaVA variants misclassify as TI, TS, or TC due to reliance on isolated modalities. A meme mocking religious promises with phrases like “ ৭২হু র ” (72 houris) (TC) is accurately identified by Text Only, Multimodal, xDORA, FAISS-Based k-NN, and RAG-Fused DORA, but Vision Only and LLaVA models misclassify as TI or TO, misinterpreting religious imagery due to limited Bengali fine-tuning. A meme using vulgar humor (“ মানুেষর েহা*য় আঙুল েদওয়ার জনয্ই ”) to target individuals (TI) is correctly classified by Multimodal, xDORA, FAISS-Based k-NN, and RAG-Fused DORA, while Vision Only, Text Only, and LLaVA variants misclassify as TC, struggling with idiomatic expressions. A meme critiquing exam cheating (TC) is accurately predicted by FAISS-Based k-NN and RAG-Fused DORA, but others misclassify as TI or TC due to ambiguous individual-focused cues or cultural nuances. Vision-only models frequently fail by relying solely on visual features, missing textual context. Text-only mod-els struggle with idiomatic or culturally specific phrases. LLaVA models (Zero-Shot, Few-Shot, RAG-Prompted) consistently underperform due to English-centric pretrain-ing. The proposed models mitigate these issues through robust multimodal reasoning and retrieval augmentation, though errors persist in cases with ambiguous cues, such as meme VI(d). FAISS-Based k-NN and RAG-Fused DORA excel in addressing class imbalance, particularly for TS, by leveraging semantic proximity and contextual supervision, respectively. 
+
+VI. Conclusion 
+
+This study advances hate speech detection in Ben-gali by evaluating multimodal models on an extended 11 
+
+Bengali Hateful Memes (BHM) dataset, designed to ad-dress class imbalance. The proposed Enhanced Dual cO-attention fRAmework (xDORA), particularly the CLIP + XLM-RoBERTa-Large configuration, significantly outper-forms baseline models, in both hateful meme identifi-cation (Task 1) and target entity detection (Task 2). Its effectiveness derives from robust multimodal fusion, integrating fine-tuned cross-lingual text processing with visual feature extraction, making it highly suitable for low-resource language contexts. The RAG-Fused DORA model achieves the highest performance across both tasks by combining FAISS-based retrieval with supervised learning, enhancing contextual accuracy, particularly for underrepresented classes. The FAISS-Based k-Nearest Neighbor (k-NN) classifier, lever-aging xDORA embeddings, provides a competitive non-parametric approach, effectively mitigating class imbal-ance through semantic proximity. The DINOv2-Base -based xDORA variants further excel in capturing nuanced visual cues in culturally complex memes, contributing to their superior performance over baselines. In contrast, the LLaVA-1.6-Mistral-7B model under-performs in zero-shot and few-shot settings due to limited fine-tuning and challenges with Bengali’s linguistic and cultural nuances. The RAG-Prompted LLaVA improves slightly by incorporating retrieved exemplars but remains limited by its English-centric pretraining. Future work includes fine-tuning advanced vision-language models, such as next-generation LLaVA or mul-timodal architectures like GPT-4o, on Bengali datasets to better capture code-mixed and culturally specific pat-terns. Extending these methods to related tasks, such as sentiment analysis or toxicity detection, could enhance their applicability in Bengali social media moderation. Additionally, leveraging more powerful computational re-sources (e.g., NVIDIA A100 GPUs) and distributed opti-mization strategies would enable exploration of larger ar-chitectures and richer multimodal pretraining objectives, overcoming the computational constraints encountered in this study. 
+
+References 
+
+[1] Firoj Alam et al. A Review of Bangla Natural Lan-guage Processing Tasks and the Utility of Trans-former Models . 2021. arXiv: 2107.03844 [cs.CL] .[2] Eftekhar Hossain et al. “Deciphering Hate: Identi-fying Hateful Memes and Their Targets.” In: Pro-ceedings of the 62nd Annual Meeting of the Associa-tion for Computational Linguistics (Volume 1: Long Papers) . Ed. by Lun-Wei Ku, Andre Martins, and Vivek Srikumar. Bangkok, Thailand: Association for Computational Linguistics, Aug. 2024, pp. 8347– 8359. doi : 10 . 18653 / v1 / 2024 . acl - long . 454. url :https://aclanthology.org/2024.acl-long.454/. [3] Shawly Ahsan et al. “A Multimodal Framework to Detect Target Aware Aggression in Memes.” In: 
+
+Proceedings of the 18th Conference of the European Chapter of the Association for Computational Lin-guistics (Volume 1: Long Papers) . Ed. by Yvette Graham and Matthew Purver. St. Julian’s, Malta: Association for Computational Linguistics, Mar. 2024, pp. 2487–2500. url : https : / / aclanthology . org/2024.eacl-long.153/. [4] Alec Radford et al. “Learning Transferable Visual Models From Natural Language Supervision.” In: 
+
+Proceedings of the 38th International Conference on Machine Learning . Ed. by Marina Meila and Tong Zhang. Vol. 139. Proceedings of Machine Learning Research. PMLR, 2021, pp. 8748–8763. url : https: //proceedings.mlr.press/v139/radford21a.html. [5] Maxime Oquab et al. “DINOv2: Learning Robust Visual Features without Supervision.” In: Transac-tions on Machine Learning Research (2024). Fea-tured Certification. issn : 2835-8856. url : https:// openreview.net/forum?id=a68SUt6zFt. [6] Xi Victoria Lin et al. “Few-shot Learning with Mul-tilingual Generative Language Models.” In: Proceed-ings of the 2022 Conference on Empirical Methods in Natural Language Processing . Ed. by Yoav Goldberg, Zornitsa Kozareva, and Yue Zhang. Abu Dhabi, United Arab Emirates: Association for Computa-tional Linguistics, Dec. 2022, pp. 9019–9052. doi :10 . 18653 / v1 / 2022 . emnlp - main . 616. url : https : //aclanthology.org/2022.emnlp-main.616/. [7] Alexis Conneau et al. “Unsupervised Cross-lingual Representation Learning at Scale.” In: Proceedings of the 58th Annual Meeting of the Association for Com-putational Linguistics . Ed. by Dan Jurafsky et al. Online: Association for Computational Linguistics, July 2020, pp. 8440–8451. doi : 10.18653/v1/2020. acl-main.747. url : https://aclanthology.org/2020. acl-main.747/. [8] Jeff Johnson, Matthijs Douze, and Hervé Jégou. “Billion-scale similarity search with GPUs.” In: 
+
+IEEE Transactions on Big Data 7.3 (2019), pp. 535– 547. [9] Patrick Lewis et al. Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks . 2021. arXiv: 2005.11401 [cs.CL] . url : https://arxiv.org/abs/ 2005.11401. [10] Haotian Liu et al. “Visual Instruction Tuning.” In: 
+
+Advances in Neural Information Processing Sys-tems . Ed. by A. Oh et al. Vol. 36. Curran Asso-ciates, Inc., 2023, pp. 34892–34916. url : https : / / proceedings . neurips . cc / paper _ files / paper / 2023 / file / 6dcf277ea32ce3288914faf369fe6de0 - Paper -Conference.pdf. [11] Douwe Kiela et al. “The Hateful Memes Challenge: Competition Report.” In: Proceedings of the NeurIPS 2020 Competition and Demonstration Track . Ed. by Hugo Jair Escalante and Katja Hofmann. Vol. 133. Proceedings of Machine Learning Research. PMLR, 12 
+
+Dec. 2021, pp. 344–360. url : https://proceedings. mlr.press/v133/kiela21a.html. [12] Gokul Karthik Kumar and Karthik Nandakumar. “Hate-CLIPper: Multimodal Hateful Meme Classi-fication based on Cross-modal Interaction of CLIP Features.” In: Proceedings of the Second Workshop on NLP for Positive Impact (NLP4PI) . Ed. by Laura Biester et al. Abu Dhabi, United Arab Emirates (Hybrid): Association for Computational Linguis-tics, Dec. 2022, pp. 171–183. doi : 10.18653/v1/2022. nlp4pi- 1.20. url : https://aclanthology.org/2022. nlp4pi-1.20/. [13] Alexey Dosovitskiy et al. “An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale.” In: 9th International Conference on Learning Representations, ICLR 2021, Virtual Event, Austria, May 3-7, 2021 . OpenReview.net, 2021. url : https: //openreview.net/forum?id=YicbFdNTTy. [14] Greeshma Arya et al. “Multimodal Hate Speech Detection in Memes Using Contrastive Language-Image Pre-Training.” In: IEEE Access 12 (2024), pp. 22359–22375. doi : 10 . 1109 / ACCESS . 2024 . 3361322. [15] Xiuxian Wang et al. “Few-Shot In-Context Learning for Implicit Semantic Multimodal Content Detection and Interpretation.” In: IEEE Transactions on Cir-cuits and Systems for Video Technology 35.9 (Sept. 2025), pp. 9545–9558. issn : 1558-2205. doi : 10.1109/ TCSVT.2025.3550900. [16] Linhao Zhang et al. “Flexible Optimal Transport With Contrastive Graphical Modeling for Multi-modal Hate Detection.” In: IEEE Transactions on Multimedia 27 (2025), pp. 6397–6409. doi : 10.1109/ TMM.2025.3581795. [17] Eftekhar Hossain et al. “Align before Attend: Align-ing Visual and Textual Features for Multimodal Hateful Content Detection.” In: Proceedings of the 18th Conference of the European Chapter of the Association for Computational Linguistics: Student Research Workshop . Ed. by Neele Falk, Sara Papi, and Mike Zhang. St. Julian’s, Malta: Association for Computational Linguistics, Mar. 2024, pp. 162–174. 
+
+url : https://aclanthology.org/2024.eacl-srw.12/. [18] Shardul Suryawanshi et al. “Multimodal meme dataset (multioff) for identifying offensive content in image and text.” In: Proceedings of the Second Workshop on Trolling, Aggression and Cyberbullying .2020, pp. 32–41. [19] Eftekhar Hossain, Omar Sharif, and Mohammed Moshiul Hoque. “MUTE: A Multimodal Dataset for Detecting Hateful Memes.” In: Proceedings of the 2nd Conference of the Asia-Pacific Chapter of the Association for Computational Linguistics and the 12th International Joint Conference on Natural Language Processing: Student Research Workshop .Ed. by Yan Hanqi et al. Online: Association for Computational Linguistics, Nov. 2022, pp. 32–39. 
+
+doi : 10 . 18653 / v1 / 2022 . aacl - srw . 5. url : https : //aclanthology.org/2022.aacl-srw.5/. [20] Eftekhar Hossain, Omar Sharif, and Mohammed Moshiul Hoque. “MemoSen: A Multimodal Dataset for Sentiment Analysis of Memes.” In: Proceedings of the Thirteenth Language Resources and Evalua-tion Conference . Ed. by Nicoletta Calzolari et al. Marseille, France: European Language Resources Association, June 2022, pp. 1542–1554. url : https: //aclanthology.org/2022.lrec-1.165/. [21] Md. Rezauul Karim et al. “Multimodal Hate Speech Detection from Bengali Memes and Texts.” In: 
+
+International conference on Speech & Language Technology for Low-resource Languages (SPELLL) .SPELLL. 2022, pp. 1–15. [22] Mithun Das and Animesh Mukherjee. “BanglaAbuseMeme: A Dataset for Bengali Abusive Meme Classification.” In: Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing . Ed. by Houda Bouamor, Juan Pino, and Kalika Bali. Singapore: Association for Computational Linguistics, Dec. 2023, pp. 15498–15512. doi : 10 . 18653 / v1 / 2023 . emnlp -main . 959. url : https : / / aclanthology . org / 2023 . emnlp-main.959/. [23] V. Sunkara et al. “War of Words: Harnessing the Potential of Large Language Models and Retrieval Augmented Generation to Classify, Counter and Diffuse Hate Speech.” In: Proceedings of the FLAIRS Conference . 2024. doi : 10.32473/flairs.37.1.135484. [24] J. Zhang et al. “ReZG: Retrieval-Augmented Zero-Shot Counter Narrative Generation for Hate Speech.” In: Neurocomputing (2024). doi : 10.1016/ j.neucom.2024.129140. [25] Yinhan Liu et al. RoBERTa: A Robustly Optimized BERT Pretraining Approach . cite arxiv:1907.11692. 2019. url : http://arxiv.org/abs/1907.11692. [26] Aaron Defazio and Samy Jelassi. Adaptivity without Compromise: A Momentumized, Adaptive, Dual Av-eraged Gradient Method for Stochastic Optimization .2021. arXiv: 2101.11075 [cs.LG] .[27] Ilya Loshchilov and Frank Hutter. “Decoupled Weight Decay Regularization.” In: arXiv preprint arXiv:1711.05101 (2017). [28] Haotian Liu. LLaVA-v1.6-Mistral-7B . https : / / huggingface . co / liuhaotian / llava - v1 . 6 - mistral - 7b. Accessed: April 28, 2025. 2024. [29] Zhuang Liu et al. “A ConvNet for the 2020s.” In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) 
+
+(2022). [30] Pengcheng He et al. “DEBERTA: DECODING-ENHANCED BERT WITH DISENTANGLED AT-TENTION.” In: International Conference on Learn-ing Representations . 2021. url : https://openreview. net/forum?id=XPZIaotutsD.

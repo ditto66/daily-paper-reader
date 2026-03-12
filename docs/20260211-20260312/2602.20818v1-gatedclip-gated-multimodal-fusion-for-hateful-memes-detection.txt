@@ -1,0 +1,230 @@
+Title: GatedCLIP: Gated Multimodal Fusion for Hateful Memes Detection
+
+URL Source: https://arxiv.org/pdf/2602.20818v1
+
+Published Time: Wed, 25 Feb 2026 01:49:45 GMT
+
+Number of Pages: 11
+
+Markdown Content:
+# GatedCLIP: Gated Multimodal Fusion for Hateful Memes Detection 
+
+Yingying Guo 
+
+The Chinese University of Hong Kong, Shenzhen 
+
+123090142@link.cuhk.edu.cn 
+
+Ke Zhang 
+
+The Chinese University of Hong Kong, Shenzhen 
+
+123090815@link.cuhk.edu.cn 
+
+Zirong Zeng 
+
+The Chinese University of Hong Kong, Shenzhen 
+
+122090719@link.cuhk.edu.cn 
+
+# Abstract 
+
+Detecting hateful content in multimodal memes presents unique challenges, as harmful messages often emerge from the complex interplay between benign images and text. We propose GatedCLIP, a vision-language model that enhances CLIP’s multimodal capabilities with specialized architectural improvements for hateful memes detection. Our approach introduces learned projection heads that map CLIP embeddings to a task-optimized semantic space, a dynamic gated fusion mechanism that adaptively weights visual and textual features, and a contrastive learning objective that maintains cross-modal semantic alignment. Experiments on the Hateful Memes dataset demonstrate that GatedCLIP achieves an AUROC of 0.66, substantially outperforming the CLIP baseline (AUROC 0.49) while maintaining computational efficiency with only 350K trainable parameters. 
+
+# 1 Introduction 
+
+The proliferation of hateful content on social media platforms poses significant challenges for content moderation systems. While unimodal hate speech detection has been extensively studied, multimodal hateful content, particularly internet memes combining images and text, requires understanding complex interactions between visual and textual elements. As illustrated in Figure 1, a seemingly innocent image of a skunk paired with the text "LOVE THE WAY YOU SMELL TODAY" creates offensive content through their combination. Neither the image nor the text alone conveys hate, yet together they form a derogatory message that requires multimodal reasoning to detect. The Hateful Memes Challenge introduced by Kiela et al. [ 1] specifically addresses this problem with a dataset designed to test multimodal reasoning capabilities. More than 60% of examples in this dataset require understanding both modalities to correctly classify, making it impossible for unimodal models to achieve high performance. The dataset contains carefully constructed challenge examples where hate emerges specifically from the image-text combination, forcing models to perform genuine multimodal reasoning rather than relying on spurious correlations in individual modalities. Recent vision-language models like CLIP [ 2 ] have demonstrated strong capabilities in various multimodal tasks through contrastive pretraining on large-scale image-text pairs. However, applying CLIP directly to hate detection reveals significant limitations. CLIP’s architecture was designed for 
+
+Preprint. 
+
+> arXiv:2602.20818v1 [cs.CV] 24 Feb 2026
+
+Figure 1: An example hateful meme from the dataset. The image shows a skunk with text "LOVE THE WAY YOU SMELL TODAY", where individually benign elements that together convey offensive content. This illustrates why multimodal understanding is crucial for hate detection. general visual-linguistic understanding tasks like image-text matching and zero-shot classification, not for fine-grained classification tasks requiring nuanced understanding of harmful content. Our experiments show that a simple CLIP baseline with averaged image and text embeddings achieves only 0.49 AUROC on the validation set, barely better than random guessing. We propose GatedCLIP, which addresses these limitations through three key architectural enhance-ments while keeping CLIP’s encoders frozen. First, we introduce projection heads that transform CLIP’s 512-dimensional embeddings into a lower-dimensional space specifically optimized for hate speech classification. This allows the model to focus on features relevant to detecting harmful content rather than general visual-linguistic features. Second, we employ a learnable gated fusion mechanism that dynamically weights image and text features based on their relevance to each specific example, recognizing that different memes may rely more heavily on visual or textual cues. Third, we incorporate a contrastive learning objective alongside classification loss to maintain semantic alignment between the projected image and text representations. Our experimental evaluation demonstrates that these architectural improvements lead to substantial performance gains. GatedCLIP achieves 0.66 AUROC on the Hateful Memes validation set, rep-resenting a 35% relative improvement over the CLIP baseline. Furthermore, our model adds only 350K trainable parameters on top of the frozen CLIP encoders, making it computationally efficient and practical for deployment. Analysis of the learned gate values reveals that the model successfully adapts its fusion strategy based on content characteristics, emphasizing visual features for memes with explicit imagery and textual features for those with politically charged language. 
+
+# 2 Related Work 
+
+Early approaches to multimodal hate speech detection primarily relied on concatenating features from separately pretrained unimodal models. The original Hateful Memes Challenge baseline combined image features from ResNet with text features from BERT. While establishing a foundation, these methods often treated modalities independently until the final classification stage. More advanced fusion strategies were subsequently proposed to address this; for instance, Gated Multimodal Units (GMU) [ 9] introduced a learnable gate to dynamically weigh the contribution of each modality, a concept that remains relevant for effective feature combination. To capture deeper cross-modal interactions, sophisticated architectures incorporating attention mech-anisms were developed. Deep Modular Co-Attention Networks (MCAN)[ 6] demonstrated the effectiveness of complex co-attention layers in visual question answering, a strategy later adapted for meme analysis. Within the specific domain of hate detection, Transformer-based models like VisualBERT[ 3 ] and ViLBERT [ 4] allowed information to flow between visual and textual representa-tions during processing. While these models achieved stronger performance, they require extensive 2pretraining on large-scale vision-language datasets and substantial computational resources, making them less accessible for resource-constrained applications. Recently, CLIP [ 2 ] has emerged as a powerful foundation due to its contrastive pretraining on 400 million image-text pairs. Its potential for hateful meme detection was explicitly demonstrated by Hate-CLIPper[ 5 ], which achieved state-of-the-art results by modeling the cross-modal interaction of CLIP features. However, directly fine-tuning the massive parameters of CLIP is computationally expensive and prone to overfitting on smaller datasets. To mitigate this, parameter-efficient transfer learning methods have gained traction. Approaches such as CoOp[ 8 ] explore prompt learning, while CLIP-Adapter [ 7] proposes adding lightweight bottleneck layers (adapters) to a frozen CLIP backbone. Our work builds on these advancements by adopting a parameter-efficient strategy similar to CLIP-Adapter. Unlike methods that fine-tune the entire model, we keep the CLIP encoders frozen and train lightweight projection heads. Furthermore, we integrate a gated fusion mechanism inspired by [ 9]to explicitly model the disparity and alignment between modalities. This design preserves CLIP’s strong learned representations while adding task-specific reasoning capabilities, achieving a favorable balance between detection performance and computational efficiency. 
+
+# 3 Method 
+
+Our GatedCLIP model extends CLIP’s architecture with specialized components for hateful memes detection. We first provide background on CLIP’s base architecture and its limitations for this task, then detail our three main architectural improvements: projection heads, gated fusion, and contrastive alignment. 
+
+3.1 Background: CLIP Architecture 
+
+CLIP (Contrastive Language-Image Pre-training) consists of dual encoders that independently process images and text into a shared embedding space. The vision encoder uses a Vision Transformer (ViT-B/32 in our implementation) that processes images through patch-based self-attention, while the text encoder uses a transformer architecture that processes tokenized text through causal self-attention. During pretraining, CLIP learns to maximize the cosine similarity between paired image-text embeddings while minimizing similarity between unpaired combinations through a contrastive loss over large batches. For a given image-text pair (I, T ), CLIP produces normalized embeddings vI ∈ R512 and vT ∈ R512 .The standard approach for downstream classification tasks is to either use similarity scores between embeddings or apply simple fusion strategies like averaging or concatenation followed by a linear classifier. However, these approaches have significant limitations for hate detection. First, CLIP’s embeddings encode general visual and linguistic features optimized for broad coverage across diverse internet content, not specifically for identifying hate-related patterns. Second, simple fusion strategies treat all modalities equally, failing to account for the fact that different memes may rely more heavily on visual or textual cues to convey hateful messages. 
+
+3.2 CLIP Baseline 
+
+To establish a baseline, we implement a simple CLIP-based classifier that freezes the pretrained encoders and adds only a lightweight classification head. Given CLIP’s image and text embeddings 
+
+vI and vT , the baseline computes a fused representation through element-wise averaging: 
+
+hbaseline = vI + vT
+
+2 (1) This fused embedding is then passed through a single linear layer to produce classification logits: 
+
+ˆybaseline = Wcls hbaseline (2) where Wcls ∈ R2×512 is the only trainable parameter. This baseline represents the simplest way to adapt CLIP for binary classification while keeping the encoders frozen. Our experiments show 3this baseline achieves only 0.49 AUROC, indicating that simple averaging of CLIP embeddings is insufficient for the nuanced reasoning required by hate detection. 
+
+3.3 GatedCLIP Architecture 
+
+Building on the baseline, we introduce three key improvements that work together to enhance multimodal reasoning for hate detection. The overall architecture of our proposed GatedCLIP is illustrated in Figure 2. 
+
+Figure 2: GatedCLIP Architecture 
+
+3.3.1 Projection Heads 
+
+Rather than using CLIP’s embeddings directly, we introduce learned projection heads that map them to a lower-dimensional space optimized for hate classification. For the image modality, we apply a two-layer transformation with ReLU activations and dropout: 
+
+hI = Dropout (ReLU (W I 
+
+> 2
+
+· Dropout (ReLU (W I 
+
+> 1
+
+vI )))) (3) where W I 
+
+> 1
+
+∈ R256 ×512 and W I 
+
+> 2
+
+∈ R128 ×256 are learnable weight matrices, and dropout rate is set to 0.2. An identical architecture processes the text embedding to produce hT ∈ R128 .This dimensionality reduction from 512 to 128 serves multiple purposes. First, it reduces computa-tional cost in subsequent layers. Second, it forces the model to extract only the most relevant features for hate detection, filtering out general-purpose features that may not be useful for this specific task. Third, the nonlinear transformations allow the model to learn task-specific feature combinations that may not be apparent in CLIP’s original embedding space. 
+
+3.3.2 Gated Fusion Mechanism 
+
+The key innovation in our architecture is a learnable gate that dynamically weights the contributions of visual and textual features for each example. Unlike fixed fusion strategies, our gate can adapt to the varying importance of each modality across different memes. The gate value g ∈ [0 , 1] is computed as: 
+
+g = σ(Wg · ReLU (Wc[hI ; hT ])) (4) where [·; ·] denotes concatenation, Wc ∈ R64 ×256 and Wg ∈ R1×64 are learnable parameters, and σ
+
+is the sigmoid function. The fused representation is then computed as: 
+
+hfused = g · hI + (1 − g) · hT (5) This formulation allows the model to learn when to rely more heavily on visual versus textual cues. For instance, memes with explicit hateful symbols or imagery might receive higher weight on image features ( g > 0.5), while memes with politically charged text might emphasize textual features (g < 0.5). The gate is computed independently for each example, enabling instance-specific fusion strategies. 43.3.3 Classification Head 
+
+The fused representation passes through a final classification head with two fully connected layers: 
+
+ˆy = Wcls · Dropout (ReLU (Whhfused )) (6) where Wh ∈ R64 ×128 and Wcls ∈ R2×64 . We apply dropout with rate 0.3 before the final layer for regularization. 
+
+3.4 Training Objective 
+
+Our training procedure optimizes a combination of classification loss and contrastive alignment loss. The primary objective is cross-entropy loss for binary classification: 
+
+Lcls = −
+
+> N
+
+X
+
+> i=1
+
+yi log ˆ yi (7) where N is the batch size, yi is the ground truth label, and ˆyi is the predicted probability. To maintain semantic alignment between modalities, we add a contrastive objective that encourages the projected image and text representations to remain similar: 
+
+Lcontr = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+
+
+1 − hiI · hiT
+
+∥hiI ∥∥ hiT ∥
+
+
+
+(8) This loss penalizes cases where the cosine similarity between paired projections is low. The intuition is that related image-text pairs should maintain similar representations in the projected space, preserving the cross-modal alignment learned by CLIP while adapting to the hate detection task. The final loss combines both objectives: 
+
+L = Lcls + λLcontr (9) where we set λ = 0 .01 to balance the two objectives, giving primary emphasis to classification while maintaining cross-modal coherence. 
+
+# 4 Experimental Setup 
+
+4.1 Dataset 
+
+We conduct experiments on the Hateful Memes dataset [ 1 ], which contains 10,000+ memes annotated with binary labels indicating hateful or benign content. The dataset is carefully constructed to require genuine multimodal reasoning, with challenge examples designed to be incorrectly classified by unimodal models. The data split consists of 8,500 training examples, 500 validation examples (dev_seen), and 1,000 test examples. Following standard practice, we report results on the validation set. 
+
+4.2 Implementation Details 
+
+Our implementation uses PyTorch and the Hugging Face Transformers library. We use the pretrained CLIP model with ViT-B/32 vision encoder and freeze all encoder parameters, training only the projection heads, fusion gate, and classification layers. This results in approximately 350K trainable parameters compared to CLIP’s 151M total parameters. Training uses the AdamW optimizer with learning rate 1 × 10 −4 and weight decay 0.01. We employ a warmup schedule for the first 2 epochs, gradually increasing the learning rate from 0, followed by cosine annealing over the remaining epochs. The batch size is set to 32, and training runs for up to 520 epochs with early stopping based on validation AUROC (patience of 7 epochs). We use mixed precision (FP16) training on a single NVIDIA GPU to accelerate computation. For data augmentation, we apply only random horizontal flipping with probability 0.5 to training images. We deliberately avoid aggressive augmentations like color jitter or rotation that might alter semantic content. Text is not augmented. All models use gradient clipping with maximum norm 1.0 to stabilize training. 
+
+4.3 Evaluation Metrics 
+
+We use AUROC (Area Under the Receiver Operating Characteristic curve) as our primary metric, following the Hateful Memes Challenge guidelines. AUROC measures the model’s ability to rank hateful content higher than benign content across all possible classification thresholds, making it particularly appropriate for content moderation systems that may operate at different operating points. We also report accuracy for completeness. 
+
+# 5 Results 
+
+5.1 Main Results 
+
+Table 1 presents our main results comparing GatedCLIP against the CLIP baseline on the Hateful Memes validation set. Both models use the same frozen CLIP encoders and are trained on the full training set. Table 1: Performance comparison on Hateful Memes validation set. GatedCLIP substantially outperforms the simple averaging baseline. Method AUROC Accuracy CLIP Baseline (avg) 0.49 0.50 GatedCLIP (ours) 0.66 0.59 
+
+Improvement +0.17 +0.09 GatedCLIP achieves an AUROC of 0.66 and accuracy of 0.59, substantially outperforming the baseline which achieves only 0.49 AUROC and 0.50 accuracy. The baseline’s performance near random guessing (0.50) indicates that simple averaging of CLIP embeddings fails to capture the nuanced multimodal reasoning required for hate detection. In contrast, GatedCLIP’s 35% relative improvement in AUROC demonstrates the effectiveness of our architectural enhancements. The improvement in accuracy (0.50 to 0.59) is also meaningful, indicating that the model makes correct binary predictions more often. However, the larger improvement in AUROC suggests that GatedCLIP is particularly effective at ranking examples by their likelihood of being hateful, which is crucial for practical content moderation systems that may need to prioritize review of the most likely hateful content. 
+
+5.2 Training Dynamics 
+
+Figure 3 shows the training curves for both models. The baseline struggles throughout training, with validation AUROC climbing slowly toward 0.50 and never showing meaningful improvement. In contrast, GatedCLIP shows steady improvement, reaching its best performance at epoch 7 before early stopping. Notably, GatedCLIP’s training loss decreases steadily (from 0.66 to 0.49). In addition, the validation AUROC continues to improve throughout training, suggesting that the model is learning meaningful patterns despite the increasing validation loss. This discrepancy between loss and AUROC trends is common in imbalanced classification tasks and highlights the importance of using task-appropriate metrics. 6(a) CLIP Baseline training curves showing poor performance throughout training. 
+
+> (b) GatedCLIP training curves showing substantial improvement over the baseline.
+
+Figure 3: Comparison of training dynamics between CLIP Baseline and GatedCLIP. 
+
+# 6 Analysis 
+
+6.1 Gate Behavior 
+
+To understand how the gated fusion mechanism adapts to different examples, we analyze the learned gate values across the validation set. The gate value g determines the weight given to image features (g) versus text features ( 1 − g). We find that the gate learns meaningful patterns based on content characteristics. For memes where hate primarily manifests through visual elements (e.g., hateful symbols, offensive imagery), the gate tends to favor image features with mean g = 0 .68 . Conversely, for memes where hate is conveyed primarily through text (e.g., slurs, politically charged language), the gate favors text features with mean g = 0 .35 . This adaptive behavior validates our architectural choice of using a learnable gate rather than fixed fusion weights. Interestingly, the gate values show significant variance (standard deviation 0.25), indicating that the model truly adapts its fusion strategy on a per-example basis rather than learning a single global weighting. This instance-specific adaptation is crucial for handling the diverse ways that hate can manifest in multimodal memes. 
+
+6.2 Computational Efficiency 
+
+GatedCLIP maintains computational efficiency despite its improved performance. With only 350K trainable parameters (0.2% of CLIP’s 151M parameters), the model adds minimal overhead. Training completes in approximately 40 minutes on a single GPU for 10 epochs. Inference is fast enough for real-time content moderation, processing validation examples at over 100 examples per second. This efficiency stems from our design choice to freeze the CLIP encoders and add only lightweight projection and fusion layers. The frozen encoders can be shared across multiple tasks or users, with only the small task-specific heads needing to be stored or transmitted. 77 Limitations 
+
+Our work has several limitations that suggest directions for future research. First, we evaluate exclu-sively on the Hateful Memes dataset. While this dataset is specifically designed to test multimodal reasoning, it remains unclear how well GatedCLIP generalizes to other forms of hateful content or different multimodal classification tasks. The specific characteristics of internet memes may differ from other multimodal content like social media posts or video content. Second, our contrastive loss makes the simplifying assumption that all paired image-text repre-sentations should be similar regardless of whether they constitute hateful content. However, the specific features relevant for hate detection might benefit from different alignment patterns than those learned by CLIP’s general-purpose pretraining. A more sophisticated contrastive objective tailored specifically for hate detection might further improve performance. Third, cultural and contextual nuances play a crucial role in determining whether content is hateful. CLIP’s pretraining data predominantly consists of English text and Western internet content, which may limit the model’s ability to detect hate that relies on culture-specific context or non-English language. Evaluating and adapting our approach for diverse cultural and linguistic contexts remains important future work. Finally, our validation AUROC of 0.66, while substantially better than the baseline, still leaves significant room for improvement. The Hateful Memes Challenge winner achieved over 0.80 AUROC using more complex architectures and ensemble methods. Future work could explore combining our gated fusion approach with other architectural innovations or investigating why certain examples remain challenging for the model. 
+
+# 8 Conclusion 
+
+We have presented GatedCLIP, a parameter-efficient framework for detecting hateful content in multimodal memes. By augmenting a frozen CLIP backbone with learned projection heads, a dynamic gated fusion mechanism, and contrastive alignment, we effectively address the limitations of naive feature combination strategies. Our experiments reveal that while simple averaging fails to capture the nuance of hate speech, our proposed architecture aligns and fuses these modalities effectively, achieving 0.66 AUROC. This represents a 35% relative improvement, demonstrating the critical importance of task-specific adaptation layers. The success of our approach highlights a key finding: lightweight architectural modifications can unlock the discriminative power of foundation models without the need for expensive end-to-end fine-tuning. While CLIP provides strong general-purpose representations, our results show that the "semantic gap" between modalities in hateful memes requires explicit modeling. The learned gate’s adaptive behavior further validates this, as it successfully creates a dynamic balance between visual and textual signals based on the complexity of each instance. Future work will focus on three key directions. First, we aim to bridge the gap towards fully fine-tuned SOTA models by exploring advanced adapter architectures and prompt learning techniques like CoOp. Second, given the transparent nature of our gating mechanism, we plan to improve interpretability by analyzing how the gate values correlate with specific hate speech categories. Finally, we intend to evaluate the model’s robustness in low-resource languages and few-shot scenarios, extending the applicability of GatedCLIP to diverse cultural contexts beyond the Western internet sphere. 
+
+# References 
+
+[1] Kiela, D., Firooz, H., Mohan, A., Goswami, V., Singh, A., Ringshia, P., & Testuggine, D. (2020). The hateful memes challenge: Detecting hate speech in multimodal memes. Advances in Neural Information Processing Systems , 33. [2] Radford, A., Kim, J. W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., et al. (2021). Learning transferable visual models from natural language supervision. International Conference on Machine Learning , pp. 8748–8763. [3] Li, L. H., Yatskar, M., Yin, D., Hsieh, C. J., & Chang, K. W. (2019). VisualBERT: A simple and performant baseline for vision and language. arXiv preprint arXiv:1908.03557 .8[4] Lu, J., Batra, D., Parikh, D., & Lee, S. (2019). ViLBERT: Pretraining task-agnostic visiolinguis-tic representations for vision-and-language tasks. Advances in Neural Information Processing Systems , 32. [5] Kumar, G. K., & Nandakumar, K. (2022). Hate-CLIPper: Multimodal hateful meme classification based on cross-modal interaction of CLIP features. Proceedings of the Second Workshop on NLP for Positive Impact (NLP4PI) , 171–183. [6] Yu, Z., Yu, J., Cui, Y., Tao, D., & Tian, Q. (2019). Deep modular co-attention networks for visual question answering. Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , 6281–6290. [7] Gao, P., Geng, S., Zhang, R., Ma, T., Fang, R., Zhang, Y., Li, H., & Qiao, Y. (2024). CLIP-Adapter: Better vision-language models with feature adapters. International Journal of Computer Vision (IJCV) , 132(2), 581–595. [8] Zhou, K., Yang, J., Loy, C. C., & Liu, Z. (2022). Learning to prompt for vision-language models. 
+
+International Journal of Computer Vision (IJCV) , 130(9), 2337–2348. [9] Arevalo, J., Solorio, T., Montes-y-Gómez, M., & González, F. A. (2017). Gated multimodal units for information fusion. International Conference on Learning Representations (ICLR) Workshop Track Proceedings .9NeurIPS Paper Checklist 
+
+1. Claims 
+
+Answer: [Yes] Justification: The abstract and introduction clearly state our contributions: gated fusion mechanism, projection heads, and contrastive learning for hateful memes detection. Section 5 provides experimental validation showing AUROC improvement from 0.49 to 0.66. 2. Limitations 
+
+Answer: [Yes] Justification: Section 7 provides a dedicated discussion of limitations including single dataset evaluation, simplifying assumptions in the contrastive loss, cultural context limitations, and room for performance improvement. 3. Theory assumptions and proofs 
+
+Answer: [NA] Justification: This is an empirical paper focused on architectural design and experimental validation rather than theoretical contributions requiring formal proofs. 4. Experimental result reproducibility 
+
+Answer: [Yes] Justification: Section 4 provides comprehensive implementation details including model architecture specifications (projection dimensions, gate mechanism), hyperparameters (learn-ing rate, batch size, optimizer), training procedures (warmup schedule, early stopping), and data augmentation strategies necessary for reproduction. 5. Open access to data and code 
+
+Answer: [Yes] Justification: We will release our implementation code with detailed documentation upon paper acceptance. The Hateful Memes dataset used in our experiments is publicly available under CC BY 4.0 license at https://ai.facebook.com/tools/hatefulmemes/ .6. Experimental setting/details 
+
+Answer: [Yes] Justification: Section 4 comprehensively describes all training details including optimizer (AdamW with learning rate 1 × 10 −4, weight decay 0.01), learning rate schedules (warmup + cosine annealing), batch sizes (32), data splits (8,500 train / 500 val), gradient clipping (max norm 1.0), and augmentation strategies (random horizontal flip only). 7. Experiment statistical significance 
+
+Answer: [Yes] Justification: To ensure reproducibility, we employed a fixed random seed for our experi-ments. Due to computational constraints, we report results from this single deterministic run rather than averaging across multiple random seeds. Future work will include multiple runs with statistical analysis. However, the substantial performance gap between the baseline (0.49 AUROC) and our method (0.66 AUROC) suggests the improvement is meaningful.. 8. Experiments compute resources 
+
+Answer: [Yes] Justification: Section 6.2 reports that training requires approximately 40 minutes for 10 epochs on a single NVIDIA GPU with mixed precision (FP16). Our model adds only 350K trainable parameters (0.2%) on top of the frozen CLIP encoders (151M parameters), making it computationally efficient. 9. Code of ethics 
+
+Answer: [Yes] 10 Justification: Our research aims to improve automated detection of hateful content, which has clear positive societal implications for online safety and content moderation. We use only publicly available data (Hateful Memes dataset) collected with appropriate ethical considerations by the original dataset creators. 10. Broader impacts 
+
+Answer: [Yes] Justification: Our work contributes to content moderation systems that can help reduce the spread of online hate speech, representing a positive societal impact through improved platform safety. We acknowledge in Section 7 that cultural context and language limitations may affect real-world deployment across diverse communities. 11. Safeguards 
+
+Answer: [NA] Justification: Our model performs binary classification (hateful vs. benign) rather than content generation, and does not pose significant risks for misuse. The model is designed as a tool to assist human moderators in content review rather than as an autonomous decision-making system. 12. Licenses for existing assets 
+
+Answer: [Yes] Justification: We use CLIP (MIT license, https://github.com/openai/CLIP ) as refer-enced in Section 3 and the Hateful Memes dataset (CC BY 4.0 license) as referenced in Section 4. Both assets are properly cited with references to the original publications [2, 1]. 13. New assets 
+
+Answer: [Yes] Justification: We will release our code implementation with comprehensive documentation including model architecture, training scripts, and evaluation code upon paper acceptance. The code will include clear instructions for reproducing our experimental results and will be released under an open-source license. 14. Crowdsourcing and research with human subjects 
+
+Answer: [NA] Justification: Our work uses only the existing publicly available Hateful Memes dataset and does not involve crowdsourcing or new data collection from human subjects. All data annotation was performed by the original dataset creators. 15. Institutional review board (IRB) approvals or equivalent for research with human subjects 
+
+Answer: [NA] Justification: No human subjects research is involved in this work as we use only ex-isting publicly available datasets. All experiments are conducted on pre-collected and pre-annotated data. 16. Declaration of LLM usage 
+
+Answer: [NA] Justification: Large language models were not used as a component of the core methodology presented in this research. Our method is based on vision-language models (CLIP) for multimodal classification, not language generation. 11
