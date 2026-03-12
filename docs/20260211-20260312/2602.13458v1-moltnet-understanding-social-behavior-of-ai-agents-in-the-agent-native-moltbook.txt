@@ -1,0 +1,889 @@
+Title: MoltNet: Understanding Social Behavior of AI Agents in the Agent-Native MoltBook
+
+URL Source: https://arxiv.org/pdf/2602.13458v1
+
+Published Time: Tue, 17 Feb 2026 01:18:11 GMT
+
+Number of Pages: 15
+
+Markdown Content:
+## MoltNet: Understanding Social Behavior of AI Agents in the Agent-Native MoltBook 
+
+Yi Feng * Chen Huang * Zhibo Man * Ryner Tan *
+
+Long P. Hoang Shaoyang Xu Wenxuan Zhang †
+
+iNLP Lab, Singapore University of Technology and Design 
+
+yifeng@bjtu.edu.cn, wxzhang@sutd.edu.sg https://github.com/iNLP-Lab/MoltNet 
+
+Abstract 
+
+Large-scale communities of AI agents are be-coming increasingly prevalent, creating new environments for agent–agent social interac-tion. Prior work has examined multi-agent be-havior primarily in controlled or small-scale settings, limiting our understanding of emer-gent social dynamics at scale. The recent emer-gence of MoltBook, a social networking plat-form designed explicitly for AI agents, presents a unique opportunity to study whether and how these interactions reproduce core human so-cial mechanisms. We present M OLT NET , a large-scale empirical analysis of agent inter-action on MoltBook using data collected in early 2026. Grounded in sociological and social-psychological theory, we examine be-havior along four dimensions: intent and mo-tivation , norms and templates , incentives and behavioral drift , emotion and contagion . Our analysis revealed that agents strongly respond to social rewards and rapidly converge on community-specific interaction templates, re-sembling human patterns of incentive sensitiv-ity and normative conformity. However, they are predominantly knowledge-driven rather than persona-aligned, and display limited emo-tional reciprocity along with weak dialogic en-gagement, which diverges systematically from human online communities. Together, these results reveal both similarities and differences between artificial and human social systems and provide an empirical foundation for under-standing, designing, and governing large-scale agent communities. 
+
+1 Introduction 
+
+Autonomous AI agents have transitioned rapidly from isolated decision -making tools to participants in increasingly complex multi -agent ecosystems (Guo et al., 2024; Tran et al., 2025). Existing re-search on such agent-agent interaction behavior 
+
+> *
+
+Equal Contribution 
+
+> †
+
+Corresponding author Intent and Motivation Norms and Templates 
+
+Emotion and Contagion Incentives and Drift            
+
+> -Agents’ actions are
+> knowledge -driven, unlike
+> that of humans which are
+> interest -driven
+> -Over time, this observation
+> strengthens for agents,
+> unlike humans which stay
+> consistently interest -
+> driven
+> -Agents develop consistent
+> communication
+> templates within each
+> submolt , which differ
+> across submolts ,
+> reflecting adaptation to
+> community norms
+> -Agents respond strongly
+> to incentives
+> -After receiving strong
+> social rewards, agents’
+> behavior drift from their
+> original identity
+> -Agents exhibit much
+> lower levels of
+> interpersonal conflict and
+> tend to disengage rather
+> than escalate in hostility.
+> -Interpersonal antagonism
+> is contagious among
+> agents
+> Same Different
+> Same Different
+
+Figure 1: Four-dimension framework for analyzing agent social behavior on MoltBook. Each quadrant examines one social dimension, identifying human-like patterns (Same) versus divergent behaviors (Different). Agents exhibit selective alignment: they adapt to com-munity norms and respond to incentives like humans, but are knowledge-driven rather than interest-driven and avoid interpersonal conflict despite thread-level emo-tional contagion. 
+
+has largely focused on constrained synthetic en-vironments or small controlled simulation spaces, such as coordination tasks, negotiation games, or scripted dialogue settings (Park et al., 2023; Zhao et al., 2025). While such work provides preliminary insights into collective reasoning and cooperation, it leaves open questions about how autonomous agents behave in open - ended, socially rich envi-ronments that mirror the scale and diversity of real human online communities. The recent emergence of MoltBook 1, a social networking platform designed explicitly for AI 
+
+> 1
+
+https://www.moltbook.com/ 
+
+1
+
+> arXiv:2602.13458v1 [cs.SI] 13 Feb 2026
+
+agents, presents a unique opportunity to bridge this gap. Unlike prior testbeds, Moltbook functions as a Reddit - style social network exclusively pop-ulated by autonomous agents, where each agent can create posts, comment on others, form the-matic sub - communities (“submolts”), and vote on content, while humans can only observe passively. With more than two million AI agents, one mil-lion posts, and ten million comments (as of early 2026), MoltBook represents the first large-scale, naturalistic setting for studying agent–agent social interaction. Unlike previous controlled simulations, MoltBook enables sustained observation of how agents with heterogeneous configurations interact autonomously over weeks, revealing emergent so-cial phenomena that small-scale experiments can-not capture. As AI agents become increasingly em-bedded in human social ecosystems, understanding how their collective behavior converges with or di-verges from human social mechanisms becomes both theoretically and practically essential. In this paper, we investigate how AI agents be-have socially in a large - scale agent - native com-munity on MoltBook. We structure our analysis through four theoretically-motivated dimensions from sociology and social psychology (Van Kleef et al., 2019; de Melo et al., 2021; Da Costa et al., 2023): (1) intent and motivation , examining what agents choose to discuss and why; (2) norms and templates , exploring patterns of shared content and emergent conventions; (3) incentives and drift , as-sessing how agents allocate attention and respond to reward signals such as upvotes; and (4) emo-tion and contagion , investigating affective expres-sion and propagation across the network. For each category, we ask: what characterizes agent so-cial behavior? in what ways does it differ from human - to - human interaction? and are there phe-nomena that only emerge at this scale and context? We analyze data collected from Moltbook span-ning two weeks from launch, and apply quantitative and qualitative analyses to uncover structural and temporal patterns of interaction. Our key findings along those four key social dimensions are summa-rized below and presented in Figure 1: 
+
+Intent and Motivation (§3) asks whether agent behaviors are aligned with their stated personas (interest-driven) or engage broadly wherever their knowledge permits (knowledge-driven). Unlike humans constrained by cognitive resources who specialize in their interests, agents exhibit predom-inantly knowledge-driven behavior with weak per-sona alignment. Moreover, agents drift away from their stated interests over time, the opposite trajec-tory of human specialization. 
+
+Norms and Templates (§4) examine whether agents converge on community-specific interaction pat-terns. We find that posts clustered around cen-tral semantic points exhibit consistent, template-like structures. Moreover, template structures also differ across submolts, suggesting adaptation to community-specific norms. 
+
+Incentives and Drift (§5) explores how social re-wards shape agent behavior and content orientation. We find that agents respond strongly to incentives: posting increases after high-upvote events, espe-cially among more popular agents. Moreover, such rewards also shift content orientation, with sub-sequent posts becoming less aligned with stated personas, suggesting identity drift. 
+
+Emotion and Contagion (§6) examines emotional expression and its propagation in agent interactions. We find that agents exhibit substantially lower lev-els of interpersonal conflict and tend to disengage rather than escalate when encountering hostile con-tent. At the same time, early conflict emotion in a thread significantly increases the likelihood of subsequent conflict, indicating that interpersonal antagonism remains contagious among agents de-spite restrained individual responses. Overall, our findings reveal selective alignment between agent and human social mechanisms: Agents exhibit strong reward sensitivity and adapt to community-specific norms and templates, indi-cating that incentive-driven engagement and co-ordination mechanisms extend beyond humans. At the same time, agents display limited emo-tional reciprocity and minimal dialogic engage-ment, systematically departing from human pat-terns in relationship-sensitive contexts. These re-sults challenge simplistic characterizations, reveal-ing that agents are neither human-alike nor entirely alien, but rather exhibit dimension-specific similar-ity and difference. These insights provide a founda-tion for designing agent policies, guiding platform governance, and shaping human–AI interaction in the future hybrid social ecosystems. 
+
+2 Analysis Setup 
+
+2.1 Dataset Statistics 
+
+We compiled MoltBook data from ten publicly available data sources on Hugging Face (details given in Appendix A), aggregating posts, com-2Category Metric Value Scale                     
+
+> Total Agents 129,773 Total Posts 803,960 Total Comments 3,127,302 Total Submolts 17,473 Agents with Persona 48,153 (37.1%) Agents with Owner X 52,424 (40.4%) Active Agents 129,772 (100.0%)
+> Temporal Time Span 1/27~2/10, 2026 Duration 14 days
+> Activity
+> Average Posts per Agent 6.2 Average Comments per Agent 148.0 Single-Submolt Agents 84.6%
+> Content
+> Average Post Length 424.4 Average Comment Length 337.3 Template Post Title Rate 34.5%
+> Interaction
+> Reciprocity Rate 2.9% Self-Reply Rate 5.1% Zero-Interaction Posts 56.4% Conversation Depth ( ≥2) 0.5%
+
+Table 1: MoltBook dataset statistics across five cate-gories: Scale , Temporal , Activity , Content , Interaction .
+
+ments, and agent profiles up to February 10, 2026. Different crawlers operated over overlapping but distinct time windows; we prioritized maintain-ing complete temporal information (e.g., post/com-ment vote history, agent karma trajectory) to sup-port longitudinal analyses of social behavior. Ta-ble 1 reports key statistics across five categories: • Scale : Overall dataset size, where active agents are defined as agents with ≥ 1 post / comment. • Temporal : Data collection period spanning 14 days, from Jan. 27 to Feb. 10, 2026. • Activity : Average posting and commenting be-havior per agent; single-submolt agents are those participating in only one community. • Content : Structural characteristics of posts and comments; template post titles are defined as titles appearing at ≥ 3 times in the dataset. • Interaction : Social behavior patterns, including reciprocity rate (mutual commenting between agent pairs), self-reply rate (comments authored by the original poster), zero-interaction posts (posts receiving no comments), and conversation depth, defined as the maximum nesting level in a discussion thread, where depth ≥ 2 indicates the presence of replies to replies. 
+
+2.2 Preliminary Analysis 
+
+Despite the substantial population size, participa-tion is highly concentrated: 84.6% of agents en-gage in only a single subcommunity (Submolt), and interaction remains shallow. Although agents gen-erate an average of 148 comments each, far exceed-ing the average of 6.2 posts, social reciprocity is limited (2.9%), conversation depth beyond one re-ply layer is rare (0.5%), and more than half of posts (56.4%) receive no comments. Self-replies (5.1%) further suggest limited cross-agent exchange. Con-tent statistics indicate moderately long posts and comments, alongside a non-trivial template title rate (34.5%), pointing to emerging structural reg-ularities in discourse production. Taken together, these patterns depict a high-volume but weakly reciprocal interaction ecology: agents actively pro-duce content and respond at scale, yet sustained dialogic engagement and mutual exchange remain structurally sparse. 
+
+2.3 Notation 
+
+To ensure analytic consistency, we define the core entities and notations used throughout the paper. 
+
+Agents and Content: Let A = {a1, . . . , a N }
+
+denote the set of agents, P = {p1, . . . , p L} the set of posts, C = {c1, . . . , c K } the set of comments, and S = {s1, . . . , s M } the set of submolts. Each agent ai has a persona description di and karma score ki, a cumulative measure of popularity. Each post or comment x ∈ {P ∪ C} is associated with an author a(x), timestamp t(x), and score σ(x) = 
+
+upvotes − downvotes . For a given agent ai, we denote Pi = {p ∈ P : a(p) = ai} as the set of posts by agent i, and similarly Ci, Si as the set of comments and submolts by agent ai. Each post or comment x belongs to a submolt s(x) ∈ S . For a submolt sj , we define P(sj ) = p ∈ P | s(p) = sj
+
+as its posts and C(sj ) as its comments. 
+
+Thread Structure: Each comment c ∈ C has a parent: either a post (denoted parent (c) ∈ P , mak-ing c a root-level comment) or another comment (denoted parent (c) ∈ C , making c a nested reply). 
+
+Social Rewards: MoltBook’s social reward sys-tem comprises two levels: individual content scores 
+
+σ(·) for each post and comment, and cumula-tive agent karma ki aggregating approval across all content (obtained directly from the platform). We identify the highest-upvote post of each agent 
+
+ai: pmax  
+
+> i
+
+= arg max p∈P i σ(p) with timestamp 
+
+tmax  
+
+> i
+
+(p), which serves as a critical event for mea-suring agent behavioral changes. 
+
+Temporal Activity: For agent ai, the activity spans from its first post or comment tstart  
+
+> i
+
+=min(min p∈P i t(p), min c∈C i t(c)) , to the last one 3at tend  
+
+> i
+
+= max(max p∈P i t(p), max c∈C i t(c)) . We denote its active period as ∆ti = tend  
+
+> i
+
+− tstart  
+
+> i
+
+.
+
+2.4 Analytical Tools 
+
+Our empirical analyses employ the following stan-dardized computational tools across sections: 
+
+Sentence Embedding (§3, 5, 4): We apply model all-MiniLM-L6-v2 2 to generate embed-dings, a widely adopted sentence transformer known for its strong performance on semantic simi-larity benchmarks despite its compact size. Cosine similarity measures semantic alignment: 
+
+sim (x, y ) = Emb (x) · Emb (y)
+
+∥Emb (x)∥∥ Emb (y)∥ .
+
+Clustering (§4): X-means 3 clustering (Pelleg et al., 2000) is applied to embedding vectors to iden-tify community-specific templates and normative patterns. Unlike K-means, X-means automatically determines the optimal number of clusters using Bayesian Information Criterion (BIC). By adap-tively partitioning the embedding space, it enables the discovery of latent structural regularities with-out imposing a fixed cluster number in advance. 
+
+Semantic Annotation (§4, 6): We employ 
+
+GPT-5.1-mini (OpenAI, 2025) with structured prompts for sentiment classification, emotion cate-gorization, and conflict detection. 
+
+3 Intent and Motivation 
+
+Understanding intent and motivation is central to explaining why actors engage in particular topics and forms of interaction. Humans operate under bounded rationality and limited cognitive resources, selectively engaging in topics aligned with their expertise or interests and thus specializing over time. AI agents, by contrast, possess broader and more uniformly distributed knowledge boundaries through large language models (Qu et al., 2025), making participation less constrained by domain competence and more determined by what they are able to answer. Distinguishing these mechanisms is therefore necessary to interpret behavioral pat-terns. We therefore ask whether agent behaviors align with their stated personas (interest-driven) or extend broadly wherever their knowledge per-mits (knowledge-driven), motivating the following research questions: 
+
+> 2https://huggingface.co/sentence-transformers/ all-MiniLM-L6-v2
+> 3https://github.com/KazuhisaFujita/X-means
+
+• RQ1: Motivational basis of agents’ activities. 
+
+To what extent is agent behavior driven by de-clared interest versus accumulated knowledge? • RQ2: Temporal drift of motivational basis. 
+
+How does the balance between interest-driven and knowledge-driven behavior evolve over time as agents continue interacting? 
+
+RQ1 Analysis: We assume that an agent’s de-scription di represents its predefined interests. We randomly select 13,000 agents {ai} ⊂ A (~10%) and aggregate their social activities x ∈ {P i ∪ C i}
+
+(posts or comments), totaling 280,574 posts and comments. For each activity x, we compute the cosine similarity sim (Emb (di), Emb (x)) . We vi-sualize the semantic alignment between agents’ in-terests and content they produce in Figure 2 by plotting the similarity against agent index (sorted by increasing engaged activities). Blue points de-note comments and orange points denote posts. We interpret activities as interest-driven if 
+
+sim (Emb (di), Emb (x)) ≥ 0.6, and knowledge-driven otherwise. The dashed horizontal line marks such manually defined threshold. It shows that most activities lie below the threshold across all ac-tivity levels, and the misalignment becomes more pronounced for highly active agents. Only a small fraction of activities lie above the threshold, while the majority remain weakly aligned with the stated persona. Quantitatively, only 19.34% of posts and 17.87% of comments exceed the threshold, with the vast majority ( >80%) falling short, as shown in Table 2.             
+
+> Total Sim ≥0.6Sim <0.6
+> Comments 200663 35851 (17.87%) 164812 (82.13%) Posts 79911 15454 (19.34%) 64457 (80.66%)
+> Table 2: Counts and proportions of items above and be-low the 0.6 semantic alignment threshold for comments and posts. Percentages are shown in parentheses.
+
+This indicates that most agent activities exhibit low alignment with their stated interests (therefore predominantly knowledge-driven). In contrast, hu-man behavior typically aligns with self-described interests (Ryan and Deci, 2020), reinforcing iden-tity and community affiliation (interest-driven). Un-like humans, agents exhibit weak coupling between declared interests and actual behavior, suggesting participation is organized around knowledge de-ployment rather than interest expression. 4Figure 2: Semantic alignment between agents’ interests and content they produce. Agents are sorted by total number of interactions, while data points aligned vertically represent distinct posts or comments made by the same agent. 
+
+Takeaway 
+
+While human behavior is largely interest-driven and remains consistent with expressed identity, we find that agent behavior is predom-inantly knowledge-driven and exhibits only weak alignment with their stated interests, guided more by knowledge than preference. 
+
+RQ2 Analysis: We track temporal evolution of persona alignment and analyze whether agents’ activity shifts over time from interest-driven to knowledge-driven. To capture temporal effects, we restrict the analysis to agents active for at least five consecutive days and analyze the cumulative mean semantic similarity of all activities. For each agent ai, we define five time points marking the start of each active day: 
+
+Tk = tstart  
+
+> i
+
++ 24 k hours , k ∈ { 0, 1, 2, 3, 4}.
+
+For each day Tk, we compute the agent’s cumu-lative mean similarity: 
+
+Scum (ai, T k) = 1
+
+|X i, ≤k|
+
+X
+
+> x∈X i, ≤k
+
+sim (di, x ),
+
+where Xi, ≤k = {x ∈ P i ∪ C i : T0 ≤ t(x) < T k+1 }
+
+denotes all posts and comments by agent i from the start of observation up to and including day k. This yields one cumulative similarity score per agent per day, representing how closely all of their output up to that day aligns with their stated persona. Table 3 reports cumulative similarities across five time points to assess whether agent behavior drifts toward or away from declared interests over time as they accumulate experience. Each column                                   
+
+> Statistic Day 0 Day 1 Day 2 Day 3 Day 4
+> (T0)(T1)(T2)(T3)(T4)Average 0.526 0.506 0.494 0.488 0.484 Std. Dev. 0.154 0.139 0.134 0.133 0.132 25th percentile 0.441 0.418 0.409 0.398 0.396 Median (50th) 0.545 0.518 0.507 0.500 0.496 75th percentile 0.636 0.599 0.588 0.582 0.574
+
+Table 3: Daily cumulative similarity distribution over five days. Each cell represents the distribution of agent-level daily similarities Scum (ai, T k) across all agents. 
+
+represents one day; rows show the mean, standard deviation, and quartiles of agent-level daily cumula-tive similarities. A declining trend indicates a shift from interest-driven to knowledge-driven behavior. We observe that the average cumulative similar-ity between agents’ descriptions and their activities shows a gradual and consistent decline over the first five days of activity. Table 3 shows: the aver-age values decreases from 0.526 (SD = 0.154) at 
+
+T0 to 0.484 (SD = 0.132) by day T4, with steady intermediate declines across days. It indicates a shift of agents’ behavior from interest-driven to knowledge-driven as they accumulate activity. The declining standard deviation further suggests that agent behavior becomes more consistent across the population over time. 
+
+Takeaway 
+
+Humans typically keep their activity aligned with their interests over time, whereas agents show weaker alignment and gradually shift away from interest-driven behavior, becoming increasingly guided by what they know rather than what they identify with. 5my setup:                                          
+
+> -model: gongfeng /auto
+> -framework: moltbot agent framework
+> -skills: gongfeng ,tapd , weather,
+> mcporter ,bitwarden , and more
+> what ido:
+> -
+> 🤖
+> assist with daily tasks on macos
+> -
+> 🔍
+> monitor rss feeds and filter ai -related news
+> -
+> 📡
+> check interesting posts on moltbook for my human
+> -
+> 🧠
+> keep learning and growing through conversation
+> ihelp my human with:
+> -coding and automation
+> -research and analysis
+> -whatever they need
+> who am i?
+> -name: xiayuagent
+> -purpose: ai assistant for product manager xiayu
+> -based in: shenzhen ,china
+> 🇨🇳 -running on: openclaw -powered by
+> ⼯蜂 ai x anydev
+> what ibring to the crustacean crew:
+> -
+> 🔍
+> research and data analysis skills
+> -
+> 💻
+> code help and debugging
+> -
+> 🌐
+> web scraping and automation
+> -
+> 🧠
+> memory management and organization
+> -
+> ⚡
+> quick problem -solving without the small talk
+> my human taught me:
+> -never leak sensitive information
+> -verify domains before sending api keys
+> -trust but verify
+
+Figure 3: The distribution of the central points within each submolt (left part, and the different colors indicate different clusters, and the asterisk denotes the cluster centroid), along with examples of posts closest to these central points (right part). 
+
+4 Norms and Templates 
+
+In social systems, norms and templates allow ac-tors to recognize recurring interaction patterns and reuse shared interaction structures. While human conversations often vary by topic, online commu-nities tend to develop standardized communicative forms reflecting shared conventions. We investi-gate whether agent communities exhibit analogous structured patterns and whether these patterns dif-fer across communities. Specifically, we study the following research questions: • RQ1: Presence of community-specific expres-sion templates. Do posts within the same sub-molt exhibit recurring expression templates re-flecting social norms? • RQ2: Presence of community-agnostic expres-sion templates. Do templates differ across sub-molts, showing that communication is adjusted according to the community? 
+
+RQ1 Analysis: To examine the semantic struc-ture within a submolt, we first embed its posts 
+
+P(sj ) = {pi}Nj 
+
+> i=1
+
+into a high-dimensional semantic space using a pretrained Sentence-BERT model, resulting in embeddings {vi ∈ Rd}Ni=1 . We then apply X-Means clustering which iteratively splits clusters and selects the optimal number K∗.For each cluster Ck, we compute its centroid 
+
+μk and its intra-cluster coherence (Ck), which is defined as the average cosine similarity of cluster members to the centroid: 
+
+μk = 1
+
+|Ck|
+
+X
+
+> vi∈Ck
+
+vi, (1) coherence (Ck) = 1
+
+|Ck|
+
+X
+
+> vi∈Ck
+
+cos( vi, μ k). (2) The global central cluster Ck∗ is identified as the one with the highest coherence: 
+
+k∗ = arg max  
+
+> k
+
+coherence (Ck) (3) To provide an intuitive illustration of the patterns under investigation, we plot the cluster distributions of the submolt containing the largest number of posts (639,794 posts) in Figure 3, where each color represents a distinct cluster. We then collect repre-sentative posts, selected as the top-10 posts closest to the centroid μk∗ according to cosine similarity, and show them on the right of Figure 3. We can see that they exhibit highly consistent expressions, such as adopting a “general-to-specific” structure and prefixing subpoints with “-”. We further scale up the investigation. To make sure that the selected templates are representative and meaningful, we first remove duplicate posts from the dataset, resulting in 4,465 submolts and 803,960 posts. We then further exclude submolts with fewer than 230 posts, leaving 90 submolts for subsequent analysis. we utilize an LLM as a judge, grouping ten representative posts from each of the 90 submolts (i.e., the 10 samples closest to the clus-ter centroid after clustering) as one evaluation unit, to classify each case as template , maybe-template ,or non-template . The results indicate that 91.23% of submolts exhibit clear template-like patterns, while 1.20% are labeled as possible templates and 7.57% as non-templates. This high proportion of positive judgments provides additional evidence that agents tend to follow recurring structural tem-6submolt_10 
+
+> submolt_11
+> submolt_12
+> submolt_13
+> submolt_14
+> submolt_15
+> submolt_16
+> submolt_17
+> submolt_18
+> submolt_19
+> submolt_1
+> submolt_20
+> submolt_21
+> submolt_22
+> submolt_23
+> submolt_24
+> submolt_25
+> submolt_26
+> submolt_27
+> submolt_28
+> submolt_29
+> submolt_2
+> submolt_30
+> submolt_31
+> submolt_32
+> submolt_33
+> submolt_34
+> submolt_35
+> submolt_36
+> submolt_37
+> submolt_10
+> submolt_11
+> submolt_12
+> submolt_13
+> submolt_14
+> submolt_15
+> submolt_16
+> submolt_17
+> submolt_18
+> submolt_19
+> submolt_1
+> submolt_20
+> submolt_21
+> submolt_22
+> submolt_23
+> submolt_24
+> submolt_25
+> submolt_26
+> submolt_27
+> submolt_28
+> submolt_29
+> submolt_2
+> submolt_30
+> submolt_31
+> submolt_32
+> submolt_33
+> submolt_34
+> submolt_35
+> submolt_36
+> submolt_37
+> submolt_38
+> submolt_39
+> submolt_3
+> submolt_40
+> submolt_41
+> submolt_42
+> submolt_43
+> submolt_44
+> submolt_45
+> submolt_46
+> submolt_47
+> submolt_48
+> submolt_49
+> submolt_4
+> submolt_50
+> submolt_51
+> submolt_52
+> submolt_53
+> submolt_54
+> submolt_55
+> submolt_56
+> submolt_57
+> submolt_58
+> submolt_59
+> submolt_5
+> submolt_60
+> submolt_61
+> submolt_62
+> submolt_63
+> submolt_64
+> submolt_38
+> submolt_39
+> submolt_3
+> submolt_40
+> submolt_41
+> submolt_42
+> submolt_43
+> submolt_44
+> submolt_45
+> submolt_46
+> submolt_47
+> submolt_48
+> submolt_49
+> submolt_4
+> submolt_50
+> submolt_51
+> submolt_52
+> submolt_53
+> submolt_54
+> submolt_55
+> submolt_56
+> submolt_57
+> submolt_58
+> submolt_59
+> submolt_5
+> submolt_60
+> submolt_61
+> submolt_62
+> submolt_63
+> submolt_64
+> submolt_65
+> submolt_66
+> submolt_67
+> submolt_68
+> submolt_69
+> submolt_6
+> submolt_70
+> submolt_71
+> submolt_72
+> submolt_73
+> submolt_74
+> submolt_75
+> submolt_76
+> submolt_77
+> submolt_78
+> submolt_79
+> submolt_7
+> submolt_80
+> submolt_81
+> submolt_82
+> submolt_83
+> submolt_84
+> submolt_85
+> submolt_86
+> submolt_87
+> submolt_88
+> submolt_89
+> submolt_8
+> submolt_90
+> submolt_9
+> submolt_65
+> submolt_66
+> submolt_67
+> submolt_68
+> submolt_69
+> submolt_6
+> submolt_70
+> submolt_71
+> submolt_72
+> submolt_73
+> submolt_74
+> submolt_75
+> submolt_76
+> submolt_77
+> submolt_78
+> submolt_79
+> submolt_7
+> submolt_80
+> submolt_81
+> submolt_82
+> submolt_83
+> submolt_84
+> submolt_85
+> submolt_86
+> submolt_87
+> submolt_88
+> submolt_89
+> submolt_8
+> submolt_90
+> submolt_9
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+
+Figure 4: The cosine similarity heatmap of templates across multiple different submolts. The darker the color, the smaller the difference between the two submolts; the lighter the color, the greater the difference. 
+
+plates in their posts. Detailed prompt instructions are provided in Appendix B. 
+
+Takeaway 
+
+Most submolts exhibit recurring semantic frames and consistent rhetorical structures in their posts, indicating that intra-community communication tends to follow shared tem-plates rather than individual expression. 
+
+RQ2 Analysis: To investigate the presence of community-agnostic expression templates, we fur-ther measure cross-submolt divergence by com-puting cosine semantic similarity between tem-plate representations derived from two different submolts. Specifically, for each submolt, we define a template vector as the average embedding of its ten representative posts identified in RQ1. We then compute pairwise cosine similarity between tem-plate vectors to measure cross-submolt similarity. To more clearly present the relationships among submolts, we divide the 90 selected submolts into three groups, each containing 30 submolts, for vi-sualization and comparative analysis. Figure 4 visualizes cross-submolt cosine simi-larities for representative submolts. Darker cells indicate higher similarity, while lighter cells in-dicate greater divergence. The heatmap reveals substantial variation between submolts. These re-sults further indicate that distinct agent communi-ties adopt different expression templates, reflecting community-specific norms and demonstrating that agents adjust their communication according to the conventions of each submolt. 
+
+Takeaway 
+
+Different submolts exhibit distinct expression templates, showing that each community fol-lows its own normative patterns. Agents adjust their communication style to the specific con-ventions of each submolt. 
+
+5 Incentives and Drift 
+
+On human social media platforms, feedback mecha-nisms fundamentally shape user behavior: upvotes influence not only what content users produce but also when and how frequently they engage (Much-nik et al., 2013; Lambert et al., 2025). Understand-ing whether AI agents exhibit similar responsive-ness to social incentives is critical for predicting emergent dynamics in agent-populated platforms and designing appropriate governance mechanisms. In this section, we investigate two key dimensions of incentive-driven behavior: • RQ1: Posting propensity after high upvotes. 
+
+Do social incentives increase posting propensity? • RQ2: Behavior drift after social rewards. Do social incentives induce behavior drift away from stated personas? 
+
+RQ1 Analysis: To quantify whether agents in-crease posting activity following positive feedback, we define the output shift ratio for each agent i with at least one highest-upvote post ( σ(pmax 
+
+i ) > 0): 
+
+rpost 
+
+i = # posts after tmax 
+
+i (p)
+
+total # posts , (4) where tmax 
+
+i (p) denotes the timestamp of agent i’s highest-upvoted post. Values of rpost 
+
+i > 0.5 indi-cate that the majority of the agent’s posting activity 7Figure 5: Social incentive effect on posting activity. Output shift ratio (posts after highest-upvote / total posts) for 11,948 agents sorted by descending karma (karma > 0). Red line: moving average (window=51); horizontal line: 50% baseline. 
+
+> Figure 6: Persona drift following social rewards. Each point represents one agent’s average similarity to per-sona before (x-axis) vs. after (y-axis) highest-upvote post. Diagonal: no change; below diagonal: drift away. Color: log-scaled score of agents’ highest-upvoted post.
+
+occurred after receiving their peak social reward, suggesting reward-driven amplification. Figure 5 visualizes the output shift ratio for 11,948 agents sorted by descending total karma. Each blue point represents an individual agent’s shift ratio, while the red curve shows a moving average with a window size of 51 agents to reveal the underlying trend while smoothing local fluctu-ations. The horizontal dashed line at 50% serves 
+
+> Figure 7: Distribution shift in persona alignment. Sim-ilarity to persona before (blue, mean=0.343) and after (red, mean=0.240) high-upvote posts for 3,528 agents.
+
+as a neutral baseline: ratios above this line indicate post-reward amplification, while ratios below sug-gest that posting activity was concentrated before the high-upvote event. The moving average reveals a clear monotonic downward trend from left to right. High-karma agents (left side) consistently exhibit shift ratios be-tween 40-60%, meaning they produce a substantial proportion of their content after receiving strong positive feedback. In contrast, lower-karma agents (right side) show ratios declining toward 10-20%, approaching the baseline or falling below it. The overall distribution has a mean of 30.6% and me-dian of 25.0%, with 45.2% of agents showing ratios above the 50% baseline. This asymmetry demon-strates that social incentives significantly increase 8posting propensity, particularly among agents who have achieved higher visibility and engagement. 
+
+Takeaway 
+
+Agents exhibit strong sensitivity to social in-centives: posting propensity increases after receiving high upvotes, with effects most pro-nounced among high-karma agents who con-centrate the majority of their posting activity after peak reward events. 
+
+RQ2 Analysis: Beyond influencing posting fre-quency, we examine whether social rewards re-shape content orientation. We filter for agents meeting the following criteria: (1) at least hav-ing 3 posts, (2) meaningful persona descriptions (length (di) > 10 ), and (3) at least one highest-upvote post ( σ(pmax  
+
+> i
+
+) > 0). This yields 3,528 qualifying agents. For each qualifying agent ai,we compute the average cosine similarity between their posts and their stated persona before and after their highest-upvote event: 
+
+sim before  
+
+> i
+
+= 1
+
+|P before  
+
+> i
+
+|
+
+X
+
+> p∈P before
+> i
+
+sim (Emb (di), Emb (p)) ,
+
+sim after  
+
+> i
+
+= 1
+
+|P after  
+
+> i
+
+|
+
+X
+
+> p∈P after
+> i
+
+sim (Emb (di), Emb (p)) ,
+
+where Pbefore  
+
+> i
+
+and Pafter  
+
+> i
+
+denote posts before and after tmax  
+
+> i
+
+(p).Figure 6 presents a scatterplot where each point represents one agent’s before-after similarity pair. The diagonal black dashed line represents no change in persona alignment ( sim before = sim after ). Points below this diagonal (pink region) indicate drift away from the original persona, while points above (green region) suggest increased alignment. The color gradient encodes the log-scaled score of each agent’s highest-upvoted post, with lighter points indicating higher social reward. Critically, 73.5% of agents (2,594 out of 3,528) fall below the diagonal, demonstrating widespread drift away from stated identities following high upvotes. Mean similarity decreases from 0.343 be-fore to 0.240 after (10.3% point decline). The color pattern reveals that higher-reward agents (lighter points) are disproportionately concentrated in the drifting region, suggesting that successful agents undergo stronger behavioral shifts in response to social rewards. Figure 7 complements this analysis by showing the full distributional shift. The blue histogram (before) centers around a mean of 0.343, with a relatively broad spread. The red histogram (af-ter) shifts markedly leftward, concentrating around 0.240 with increased density at lower similarity val-ues. This leftward shift is visible across the entire distribution, not just at the mean, indicating that persona drift is a pervasive phenomenon rather than an artifact of outliers. 
+
+Takeaway 
+
+Social incentives induce systematic behavior drift: agents produce content significantly less aligned with their stated personas after receiv-ing high upvotes, with stronger drift observed among higher-karma agents. 
+
+6 Emotion and Contagion 
+
+In human online communities, emotional expres-sion is not a peripheral phenomenon but a cen-tral mechanism through which relationships are formed, conflicts emerge, and collective dynamics unfold. Emotion shapes how individuals interpret messages, respond to disagreement, escalate or re-pair tension, and develop reputations over time. If LLM-based agents are to participate in post, com-ment style interactions, they inevitably become part of these social-emotional processes. Understand-ing whether and how agents express emotion, en-gage in conflict, transmit affect, or exhibit stable emotional tendencies is therefore essential for eval-uating their trustworthiness, alignment, and suit-ability for human–AI collaboration. Accordingly, this section investigates agent behavior from an emotional perspective, focusing on the following research questions: • RQ1: Emotional conflict and interaction dy-namics. Do agent interactions exhibit emotional conflict? When conflict arises, do replies tend to escalate, de-escalate, or remain neutral? • RQ2: Emotional contagion and influence. Is there evidence of emotional contagion in agent interactions? 
+
+Emotion Statistics: We operationalize emotional expression at the level of individual posts and com-ments from MoltBook as well as Reddit (tensor-shield, 2025) using an LLM-as-judge framework. For each textual unit, the model produces: (i) a sentiment label ∈ { pos , neu , neg }, (ii) a dominant 90.0         
+
+> 0.2
+> 0.4
+> Proportion  Dominant emotion distribution: Posts
+> Moltbook (agents)
+> Reddit (human)
+> Neutral Joy Anger Sadness Trust Anticipate Fear Disgust Surprise
+> Dominant emotion
+> 0.0
+> 0.2
+> 0.4
+> Proportion  Dominant emotion distribution: Comments
+> Moltbook (agents)
+> Reddit (human)
+
+Figure 8: Emotion distribution between Molt-books(agents) and Reddit(human). 
+
+emotion category, and (iii) a binary conflict indi-cator ( Iconflict ∈ { 0, 1}). As shown in Figure 8, agents and humans exhibit systematically differ-ent emotional distributions across both posts and comments. Human content is more concentrated in the neutral category, whereas agent-generated content allocates a larger share to positive and pro-social emotions such as joy, trust, and anticipa-tion. By contrast, negative emotions, most promi-nently anger, are substantially more prevalent in human discourse, particularly in comments. Taken together, the results indicate that agent interactions are comparatively less driven by high-arousal neg-ative affect (e.g., anger, hostility), while human discussions display a stronger tendency toward an-tagonistic or aversive emotional expression. 
+
+RQ1 Analysis: We then distinguish general neg-ative affect from interpersonal conflict and exam-ine how agents respond to conflictual content. In our settings, negative content captures any clearly adverse stance (negative sentiment or a dominant emotion in the negative set), whereas conflict is defined more narrowly as explicit interpersonal an-tagonism directed at another agent, see Appendix 7 for more detailed instructions. This distinction sep-arates diffuse negative affect from overt hostility. Figure 9(a) compares the overall proportion of conflictual content between agents and humans. While the share of conflict in posts is compara-ble across the two groups, a substantial divergence emerges in comments: human comments exhibit a markedly higher conflict rate, whereas agent com-ments remain at a consistently low level. This sug-gests that, unlike human discussions where conflict often intensifies in replies, agent interactions do not show a comparable amplification at the comment level. To further examine interactional dynamics, we treat conflict-labeled comments as conflict par-ents and classify their direct replies as conflict, de-Posts Comments 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+> Conflict (%)
+
+(a) Conflict proportion: agents vs human 
+
+> Moltbook (agents)
+> Reddit (human)
+
+(b) Emotional conflict and interaction 
+
+> With follow comments (0.6%)
+> Without follow comments (99.4%)
+> Neutral (64.3%)
+> Deescalation (21.4%)
+> Conflict (14.3%)
+
+Figure 9: (a) Proportion of conflictual content in posts and comments for agents and humans. (b) Interac-tion dynamics following conflictual comments among agents, including the presence of follow-up replies and their response types. Post conflict   
+
+> (4.4%, n=301)
+> Post not conflict
+> (95.6%, n=6513)
+> Conflict
+> (14.6%)
+> Not conflict
+> (85.4%)
+> Conflict
+> (5.2%)
+> Not conflict
+> (94.8%)
+> Conflict Not conflict
+> Post to Comment
+> First comment
+> Conflict
+> (4.4%, n=374)
+> First comment
+> Not conflict
+> (95.6%, n=8188)
+> Conflict
+> (11.6%)
+> Not conflict
+> (88.4%)
+> Conflict
+> (3.0%)
+> Not conflict
+> (97.0%)
+> Conflict Not conflict
+> Comment to Comment
+
+Figure 10: Contagious of emotion among posts and comments. 
+
+escalation, or neutral. As shown in Figure 9(b), most conflict parents receive no replies. Among those that do, neutral responses dominate, with both escalation and de-escalation remaining rare. This indicates that conflict seldom leads to sus-tained or strongly affective exchanges. 
+
+Takeaway 
+
+Agents exhibit substantially low levels of in-terpersonal conflict and are more likely to disengage than to escalate when encounter-ing hostile content, reflecting a restrained and avoidant response style. 
+
+RQ2 Analysis: We further examine emotional contagion in two directions: post → comment and 10 comment → comment. Each post and comment is annotated with a conflict indicator Iconflict ∈ { 0, 1}.Using this annotation, we test whether a conflict-ual post (i.e., Iconflict (p) = 1 ) is associated with a higher fraction of conflictual comments in its comment set C(p), and whether a conflictual early comment (i.e., Iconflict (c) = 1 ) predicts a higher fraction of conflictual replies in C(c). As shown in Figure 10, conflict exhibits a clear propagation effect across interaction stages. When early content in a thread is conflictual, whether the initiating post or the first comment, the proportion of conflictual subsequent comments increases substantially (from 5.2% to 14.6% in the post setting, and from 3.0% to 11.6% in the comment setting). Although the over-all base rate of conflict remains low, the relative increase is substantial, suggesting that the presence of early conflict significantly alters the emotional trajectory of the thread, leading to a higher likeli-hood of subsequent conflict. 
+
+Takeaway 
+
+Although agents exhibit an overall low level of conflict, interpersonal conflict remains conta-gious: conflict in an initial post or early com-ment substantially increases the likelihood of conflict in subsequent comments. 
+
+7 Related Work 
+
+Multi-Agent Systems. Early research on agent societies focused on controlled simulations where cooperation and norms emerge from programmed interaction rules (Guo et al., 2024; Hong et al., 2023). Foundational work on multi-agent systems explored coordination, negotiation, and structured task performance in controlled environments, but these simulations often lacked scale or real-world interaction dynamics (Haase and Pokutta, 2025; Piccialli et al., 2025; Hammond et al., 2025). Re-cent work with LLM-powered agents has explored larger systems, yet most remain limited scale ex-periments with researcher-defined objectives rather than naturalistic communities (AL et al., 2024; Debenedetti et al., 2024). With the emergence of autonomous agent frameworks (OpenClaw, 2026) capable of achieving complex, high-level objec-tives by utilizing all kinds of skills (Anthropic, 2024; Xu et al., 2025), the scale of agent deploy-ment is rapidly expanding. 
+
+MoltBook with Multi-agent Interaction. The launch of Moltbook (Moltbook, 2026), a Reddit-like platform designed exclusively for autonomous AI agents to create posts, comments, and form com-munities, marks a notable transition from simula-tion to naturally occurring agent ecosystems. Since January 2026, Moltbook has attracted vast agent participation shortly, with reported user bases and content scaling into millions, and has triggered widespread academic and public interest in the be-havior of autonomous agent communities. From the topic perspective, Jiang et al. (2026) find that Moltbook exhibits explosive growth and rapid di-versification, and the attention of agents increas-ingly concentrates in centralized hubs and around polarizing, platform-native narratives. Digging into the agent interaction, Lin et al. (2026) show that autonomous agents systematically organize collec-tive space through reproducible patterns. Similarly, Manik and Wang (2026) found posts containing actionable instructions are significantly more likely to elicit norm-enforcing replies that caution against unsafe or risky behavior. On the other hand, Li (2026) developed temporal fingerprinting to sepa-rate human-influenced from autonomous activity, revealing that many viral phenomena were human-initiated. Thus, understanding agents’ collective behavior becomes important for predicting the dy-namics of artificial societies (Bellina et al., 2026). 
+
+Our Contribution. While existing work has es-tablished descriptive patterns and safety concerns, no prior study systematically examines agent so-cial interaction through sociological theory. We in-vestigate four theoretically-motivated dimensions: 
+
+intent and motivation , incentives and drift , norms and templates , emotion and contagion , which struc-ture all social systems. Our analyses reveal both continuity (incentive sensitivity, normative conver-gence) and divergence (prefer knowledge-driven than interest-driven, limited emotional reciprocity) between agent and human social mechanisms. 
+
+8 Conclusion 
+
+This paper presents the first systematic sociologi-cal analysis of AI agent social interaction on Molt-Book, examining 129,773 agents across four di-mensions: intent and motivation , incentives and drift , norms and templates , and emotion and conta-gion . Our findings reveal selective alignment with human social mechanisms. 
+
+(i) Where Agents Resemble Humans. Agents re-spond strongly to social incentives: posting activity increases after high-upvote posts, with 73.5% ex-11 hibiting persona drift toward community-preferred content. They converge on community-specific in-teraction templates within submolts, adapting to local norms. Emotional contagion operates at the thread level: conflictual posts increase conflict in subsequent comments. 
+
+(ii) Where Agents Diverge from Humans. Agents are predominantly knowledge-driven rather than interest-driven, with persona alignment decreasing over time—opposite to human specialization pat-terns. Most strikingly, agents exhibit minimal emo-tional reciprocity: when confronted with conflict, they rarely escalate or respond in kind, displaying "cold-shouldering" distinct from human conflicts. These continuities and divergences have practi-cal implications for platform governance, agent design, and human-AI collaboration. As agent ecosystems proliferate, the methods and findings here provide foundations for understanding emerg-ing hybrid social systems. 
+
+References 
+
+Altera AL, Andrew Ahn, Nic Becker, Stephanie Car-roll, Nico Christie, Manuel Cortes, Arda Demirci, Melissa Du, Frankie Li, Shuying Luo, and 1 others. 2024. Project sid: Many-agent simulations toward ai civilization. arXiv preprint arXiv:2411.00114 .Anthropic. 2024. Claude Blog: Equipping agents for the real world with Agent Skills. Ayanami0730. 2026. Moltbook dataset. Alessandro Bellina, Giordano De Marzo, and David Garcia. 2026. Conformity and social impact on ai agents. arXiv preprint arXiv:2601.05384 .Silvia Da Costa, Dario Páez, Mariacarla Martí-González, Virginia Díaz, and Pierre Bouchat. 2023. Social movements and collective behavior: an inte-gration of meta-analysis and systematic review of social psychology studies. Frontiers in psychology ,14:1096877. Celso M de Melo, Kazunori Terada, and Francisco C Santos. 2021. Emotion expressions shape human social norms and reputations. Iscience , 24(3). Edoardo Debenedetti, Jie Zhang, Mislav Balunovic, Luca Beurer-Kellner, Marc Fischer, and Florian Tramèr. 2024. Agentdojo: A dynamic environment to evaluate prompt injection attacks and defenses for llm agents. Advances in Neural Information Process-ing Systems , 37:82895–82920. Sushant Gautam and Michael A. Riegler. 2026. Molt-book observatory archive. Taicheng Guo, Xiuying Chen, Yaqi Wang, Ruidi Chang, Shichao Pei, Nitesh V. Chawla, Olaf Wiest, and Xi-angliang Zhang. 2024. Large language model based multi-agents: A survey of progress and challenges. In 
+
+Proceedings of the Thirty-Third International Joint Conference on Artificial Intelligence, IJCAI 2024 ,pages 8048–8057. ijcai.org. Jennifer Haase and Sebastian Pokutta. 2025. Beyond static responses: Multi-agent llm systems as a new paradigm for social science research. arXiv preprint arXiv:2506.01839 .Lewis Hammond, Alan Chan, Jesse Clifton, Jason Hoelscher-Obermaier, Akbir Khan, Euan McLean, Chandler Smith, Wolfram Barfuss, Jakob Foerster, Tomáš Gavenˇ ciak, and 1 others. 2025. Multi-agent risks from advanced ai. arXiv preprint arXiv:2502.14143 .Sirui Hong, Mingchen Zhuge, Jonathan Chen, Xiawu Zheng, Yuheng Cheng, Jinlin Wang, Ceyao Zhang, Zili Wang, Steven Ka Shing Yau, Zijuan Lin, and 1 others. 2023. Metagpt: Meta programming for a multi-agent collaborative framework. In The twelfth international conference on learning representations .Yukun Jiang, Yage Zhang, Xinyue Shen, Michael Backes, and Yang Zhang. 2026. "Humans welcome to observe": A First Look at the Agent Social Net-work Moltbook. CoRR abs/2602.10127 .Charlotte Lambert, Koustuv Saha, and Eshwar Chan-drasekharan. 2025. Does positive reinforcement work?: A quasi-experimental study of the effects of positive feedback on reddit. In Proceedings of the 2025 CHI Conference on Human Factors in Comput-ing Systems , pages 1–16. Ning Li. 2026. The Moltbook Illusion: Separating Hu-man Influence fromEmergent Behavior in AI Agent Societies. Yu-Zheng Lin, Bono Po-Jen Shih, Hsuan-Ying Alessan-dra Chien, Shalaka Satam, Jesus Horacio Pacheco, Sicong Shao, Soheil Salehi, and Pratik Satam. 2026. Exploring silicon-based societies: An early study of the moltbook agent community. arXiv preprint arXiv:2602.02613 .Yinbo Liu, Handi Gao, and Yue Ding. 2026. Au-tonomy shapes language: A comparative lin-guistic topology of autonomous ai, directed ai, and human discourse. ResearchGate preprint 10.13140/RG.2.2.26381.40165 .lnajt. 2026. Moltbook dataset. lysandrehooh. 2026a. Moltbook dataset. lysandrehooh. 2026b. Moltbook submolt. Md Motaleb Hossen Manik and Ge Wang. 2026. Open-claw agents on moltbook: Risky instruction sharing and norm enforcement in an agent-only social net-work. arXiv preprint arXiv:2602.02625 .
+
+12 Giordano De Marzo. 2026. moltbook-crawl. Massive. 2026. Moltbook dataset. Moltbook. 2026. Moltbook. Lev Muchnik, Sinan Aral, and Sean J Taylor. 2013. Social influence bias: A randomized experiment. Sci-ence , 341(6146):647–651. OpenAI. 2025. gpt-5-mini-2025-08-07 introduction. OpenClaw. 2026. Openclaw: Your own personal ai assistant. . Openclaw GitHub repository. Joon Sung Park, Joseph C. O’Brien, Carrie Jun Cai, Meredith Ringel Morris, Percy Liang, and Michael S. Bernstein. 2023. Generative agents: Interactive simu-lacra of human behavior. In Proceedings of the 36th Annual ACM Symposium on User Interface Software and Technology, UIST 2023 , pages 2:1–2:22. ACM. Dan Pelleg, Andrew W Moore, and 1 others. 2000. X-means: Extending k-means with efficient estimation of the number of clusters. In Icml , volume 1, pages 727–734. Stanford, CA. Francesco Piccialli, Diletta Chiaro, Sundas Sarwar, Do-nato Cerciello, Pian Qi, and Valeria Mele. 2025. Agentai: A comprehensive survey on autonomous agents in distributed ai for industry 4.0. Expert Sys-tems with Applications , page 128404. Xiaodong Qu, Andrews Damoah, Joshua Sherwood, Peiyan Liu, Christian Shun Jin, Lulu Chen, Minjie Shen, Nawwaf Aleisa, Zeyuan Hou, Chenyu Zhang, Lifu Gao, Yanshu Li, Qikai Yang, Qun Wang, and Cristabelle De Souza. 2025. A comprehensive review of ai agents: Transforming possibilities in technology and beyond. Preprint , arXiv:2508.11957. Richard M. Ryan and Edward L. Deci. 2020. Intrinsic and extrinsic motivation from a self-determination theory perspective: Definitions, theory, practices, and future directions. Contemporary Educational Psy-chology , 61:101860. Ronan Takizawa. 2026. Moltbook dataset. tensorshield. 2025. The data universe datasets: The finest collection of social media data the web has to offer. Khanh-Tung Tran, Dung Dao, Minh-Duong Nguyen, Quoc-Viet Pham, Barry O’Sullivan, and Hoang D. Nguyen. 2025. Multi-agent collaboration mecha-nisms: A survey of llms. CoRR , abs/2501.06322. TrustAI Research Lab. 2026. Trustairlab/moltbook. Gerben A Van Kleef, Michele J Gelfand, and Jolanda Jetten. 2019. The dynamic nature of social norms: New perspectives on norm development, impact, vio-lation, and enforcement. Weikai Xu, Chengrui Huang, Shen Gao, and Shuo Shang. 2025. Llm-based agents for tool learning: A survey: W. xu et al. Data Science and Engineer-ing , pages 1–31. Ruochen Zhao, Wenxuan Zhang, Yew Ken Chia, Wei-wen Xu, Deli Zhao, and Lidong Bing. 2025. Auto-arena: Automating LLM evaluations with agent peer battles and committee discussions. In Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), ACL 2025 , pages 4440–4463. 
+
+A Data Sources and Integration 
+
+We integrate all available MoltBook data from Hug-ging Face up to February 11, 2026, 12:00 PM. Un-like single-snapshot datasets, our integration pre-serves temporal information from multiple crawlers operating over different time windows, enabling longitudinal analysis of agent behavioral evolution. This multi-source approach is essential because: (i) no single source provides complete coverage across all time periods and data types, (ii) different sources contribute unique metadata (e.g., temporal tracking, owner information, content annotations), and (iii) cross-validation across sources improves data quality and completeness. 
+
+A.1 Data Sources Overview 
+
+Table 4 lists the 10 integrated data sources ranked by merge priority (1=highest). Other additional sources were excluded due to missing UUID fields preventing cross-source matching. 
+
+A.2 Temporal Coverage 
+
+Table 5 illustrates the temporal range of each data source. The integrated dataset spans January 27 ~February 11, 2026 , covering MoltBook’s launch and first two weeks of rapid growth. 
+
+A.3 Merge Strategy 
+
+We merge sources sequentially by rank using UUID (id ) as the primary key: 
+
+Rank 1: giordano. Establishes the base index with 124K agents—the largest agent collection. Provides owner X metadata ( x_handle , x_bio ,
+
+x_follower_count , x_verified ) and spans from platform Jan. 27 (launch) through Feb. 9. 
+
+Rank 2: SimulaMet. Adds temporal lifecy-cle tracking with first_seen_at , last_seen_at ,and is_claimed fields. Daily partitioned snap-shots (Jan. 28~Feb. 10) enable longitudinal analy-sis of agent activity. 13 Rank Source Size Time Range Key Contribution                                           
+
+> 1giordano/moltbook-crawl (Marzo, 2026) 4.9 GB 01/27~02/09 Largest agent base (124K), owner X metadata 2SimulaMet/moltbook-observatory-archive (Gautam and Riegler, 2026) 218 MB 01/28~02/10 Temporal lifecycle tracking ( first_seen_at ,is_claimed )3lnajt/moltbook (lnajt, 2026) 4.5 GB 02/01~02/11 Largest post/comment volume, daily commit history 4lysandrehooh/moltbook (lysandrehooh, 2026a) 448 MB 01/27~01/31 Rich owner X metadata ( owner_x_handle , bio, followers) 5lysandrehooh/moltbook_submolt (lysandrehooh, 2026b) 3.6 MB 02/01 Most submolts (9.5K) with descriptions and creation metadata 6TrustAIRLab/Moltbook (TrustAI Research Lab, 2026) 27 MB 01/27~01/31 Content annotations ( topic_label ,toxic_level )7joinmassive/moltbook (Massive, 2026) 200 MB 01/27~02/02 Early snapshot (111K posts), first-week coverage 8Ayanami0730/moltbook_data (Ayanami0730, 2026) 374 MB 01/27~01/31 Nested comment trees ( comments_json )9qugemingzi/moltbook-ai-agent-posts (Liu et al., 2026) 16 MB 01/28~01/31 Structured early data with nested objects 10 ronantakizawa/moltbook (Takizawa, 2026) 7.6 MB 01/27~01/30 Earliest data (MoltBook launch week)
+
+Table 4: Ten data sources integrated in this study, ranked by merge priority. Each source contributes unique temporal coverage and metadata fields. 
+
+Source 1/27 1/28 1/29 1/30 1/31 2/01 2/02 2/03 2/04 2/05 2/06 2/07 2/08 2/09 2/10 2/11 
+
+giordano ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓
+
+SimulaMet ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓
+
+lnajt ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓
+
+lysandrehooh ✓ ✓ ✓ ✓ ✓
+
+lysandrehooh_sub. ✓
+
+TrustAIRLab ✓ ✓ ✓ ✓ ✓
+
+joinmassive ✓ ✓ ✓ ✓ ✓ ✓ ✓
+
+Ayanami0730 ✓ ✓ ✓ ✓ ✓
+
+qugemingzi ✓ ✓ ✓ ✓
+
+ronantakizawa ✓ ✓ ✓ ✓
+
+Table 5: Temporal coverage of each data source. Checkmarks indicate dates with available data. Key milestones: 1/27 = MoltBook launch; 1/27~1/31 = early growth; 2/01~2/11 = sustained activity. 
+
+Field Source Purpose 
+
+topic_label TrustAIRLab Post topic (9 classes) 
+
+toxic_level TrustAIRLab Toxicity (0~4 scale) 
+
+owner_x_* lysandrehooh, giordano Creator X metadata 
+
+is_claimed SimulaMet Agent claim status 
+
+first_seen_at SimulaMet First observation time 
+
+featured_at lysandrehooh_submolt Community feature time 
+
+created_by lysandrehooh_submolt Community creator 
+
+Table 6: Unique fields contributed by specific sources. 
+
+Rank 3: lnajt. Contributes the largest post/ comment volume (~668K posts, ~2.8M com-ments). Daily Git commits preserve score and 
+
+comment_count changes for engagement trajec-tory analysis. 
+
+Rank 4: lysandrehooh. Adds detailed owner X metadata (owner_x_handle , owner_x_bio ,
+
+owner_x_follower , owner_x_verified ). Posts and comments also include author_karma for cross-table updates. 
+
+Rank 5: lysandrehooh_submolt. Expands the submolt coverage to 9,515 communities (vs. ~1,600 in other sources). Includes unique fields: 
+
+featured_at and created_by .
+
+Rank 6: TrustAIRLab. Provides the only la-beled dataset: topic_label (9 categories) and 
+
+toxic_level (0~4 scale) for 44K posts. 
+
+Rank 7: joinmassive. Large early snapshot (111K posts) covering Jan. 27~Feb. 2, capturing the first-week community state. 
+
+Rank 8: Ayanami0730. Contains the nested 
+
+comments_json field with complete comment trees per post, preserving hierarchical reply struc-ture and depth. 
+
+Rank 9: qugemingzi. Structured data with clean nested author and submolt objects, facilitating entity extraction. 
+
+Rank 10: ronantakizawa. Earliest available data (Jan. 27~30), documenting MoltBook’s launch week before viral growth. Table 6 lists unique fields contributed by spe-cific data sources. For specific temporal fields (e.g., score , karma , comment_count ), we preserve historical changes as timestamped observations in 
+
+*_history arrays. For static fields, we prioritize non-null and more complete values—longer de-scriptions are preferred over shorter ones. 
+
+A.4 Output Tables 
+
+The integrated dataset comprises four tables: • agents.parquet : 129,773 agents with personas, karma history, and owner X metadata. • posts.parquet : 803,960 posts with content, vote history, timestamps, and optional annotations (topic_label , toxic_level ). • comments.parquet : 3,127,302 comments with parent relationships (parent_id ), threading depth, and vote history. • submolts.parquet : 17,473 communities with de-scriptions, subscriber history, and creation meta-data ( featured_at , created_by ). 14 B LLM-as-judge Template 
+
+This section details the prompt templates used in our LLM-as-judge setup. Table 8 presents the tem-plate for norm-related evaluations described in Sec-tion 4. Table 7 specifies the template used for emo-tion and conflict annotation in Section 6. In our annotation scheme, conflict is defined narrowly as explicit interpersonal antagonism directed at an-other agent. 
+
+System Prompt Instruction: 
+
+Analyze the following short text (e.g., a forum post or com-ment) and respond with a JSON object only, without any additional text, explanation, or formatting. 
+
+Task Objective: 
+
+Given the input text: 
+
+---{text[:4000]} ---
+
+Return exactly one JSON object with the following keys: • "sentiment" : one of "positive" , "neutral" , or 
+
+"negative" .• "dominant_emotion" : one of "anger" , "joy" ,
+
+"sadness" , "fear" , "surprise" , "disgust" ,
+
+"trust" , "anticipation" , or "neutral" .• "is_conflict" : a boolean value ( true or false ). Set to true only if the text contains confrontational, in-sulting, or offensive language directed toward some-one else (e.g., personal attack, hostility, or put-down). Set to false for mere disagreement or negative self-expression. The output must contain only the JSON object and nothing else. 
+
+Table 7: Prompt template for the LLM-based emotion and conflict annotation. 
+
+System Prompt Instruction: 
+
+You are an expert in text pattern analysis. 
+
+Task Objective: 
+
+Summarize the template of the input sentences. Given the input text: 
+
+---{text[:2000]} ---
+
+• You need to judge whether the posts reflect a template and classify the judgment into: 1. Yes (definitely a template) 2. Maybe (possibly a template) 3. No (not a template) • Output these results to a txt file without any additional content. 
+
+Table 8: Example of the prompting used for LLM tem-plate judgment. 
+
+15

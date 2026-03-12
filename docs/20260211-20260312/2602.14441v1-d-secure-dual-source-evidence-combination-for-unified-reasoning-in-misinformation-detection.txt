@@ -1,0 +1,169 @@
+Title: D-SECURE: Dual-Source Evidence Combination for Unified Reasoning in Misinformation Detection
+
+URL Source: https://arxiv.org/pdf/2602.14441v1
+
+Published Time: Tue, 17 Feb 2026 02:55:21 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+# D-SECURE: Dual-Source Evidence Combination for Unified Reasoning in Misinformation Detection 
+
+Gagandeep Singh* 1, Samudi Amarasinghe* 1, and Priyanka Singh 1
+
+School of Information Technology and Electrical Engineering, The University of Queensland, Brisbane, Australia *These authors contributed equally to this work. 
+
+gagandeep.singh2@student.uq.edu.au samudi.amarasinghe@student.uq.edu.au priyanka.singh@uq.edu.au 
+
+Abstract. Multimodal misinformation increasingly mixes realistic im-age edits with fluent but misleading text, producing persuasive posts that are difficult to verify. Existing systems usually rely on a single evidence source. Content-based detectors identify local inconsistencies within an image and its caption but cannot determine global factual truth. Retrieval-based fact-checkers reason over external evidence but treat inputs as coarse claims and often miss subtle visual or textual ma-nipulations. This separation creates failure cases where internally consis-tent fabrications bypass manipulation detectors and fact-checkers verify claims that contain pixel-level or token-level corruption. We present D-SECURE , a framework that combines internal manip-ulation detection with external evidence-based reasoning for news-style posts. D-SECURE integrates the HAMMER manipulation detector with the DEFAME retrieval pipeline. DEFAME performs broad verification, and HAMMER analyses residual or uncertain cases that may contain fine-grained edits. Experiments on DGM 4 and ClaimReview samples highlight the complementary strengths of both systems and motivate their fusion. We provide a unified, explainable report that incorporates manipulation cues and external evidence. 
+
+Keywords: Multimodal fake news detection · Retrieval augmented gen-eration · Fact checking · Dual-source evidence fusion 
+
+## 1 Introduction 
+
+Online platforms have become primary channels through which people consume news, form political opinions, and make health and financial decisions. In this environment, misinformation is not merely an annoyance. It has measurable psy-chological, social, and economic harms, from vaccine hesitancy and racial dis-crimination during the COVID-19 pandemic to coordinated political influence operations and deceptive commercial advertising [1,13,12]. The rise of large lan-guage models (LLMs) and generative media has further accelerated the creation  
+
+> arXiv:2602.14441v1 [cs.CV] 16 Feb 2026 2Anonymous
+
+of highly realistic but false content [16]. Users are routinely exposed to posts that look and read like legitimate news, yet are either locally manipulated or globally incorrect. A particularly challenging category is multimodal misinformation, where im-ages and text are jointly used to convey a message. Empirical work shows that image–text posts achieve higher engagement and are perceived as more credible than text-only posts [9,2]. Social media algorithms, which amplify moral and emotionally charged content, further boost the reach of such posts [11,4]. As a result, multimodal misinformation can spread faster and embed more deeply than traditional single-modality fake news. 
+
+1.1 Internal versus external evidence 
+
+Existing technical work on misinformation detection can be grouped into two broad families. 
+
+Content-based manipulation detection. One line of research focuses on detecting manipulations inside an image–text pair. This includes out-of-context (OOC) pairings where a real image is paired with a misleading caption [10,3], as well as local pixel- or token-level edits such as face swaps, sentiment changes, or attribute modifications [14,15,17]. HAMMER and the DGM 4 benchmark are representative of this direction. They model multimodal reasoning with both global and local views and provide explicit grounding of manipulated regions and tokens [14,15]. These systems are very strong at identifying subtle tampering but are fundamentally limited to the content they see. They do not decide whether an unmanipulated post is factually correct in the real world. 
+
+Retrieval-based fact-checking. A second line of work abstracts away from local manipulations and focuses on determining the veracity of a claim given exter-nal evidence. Many systems follow the three-stage pipeline of claim extraction, evidence retrieval, and verdict prediction [2]. Early work relied on structured knowledge bases and heterogeneous graphs that connect posts, entities, and ex-ternal sources [7,6]. More recent approaches use retrieval-augmented generation (RAG), where LLMs or MLLMs are guided by retrieved documents, images, or geolocation cues to generate fact-checking verdicts [8,5]. DEFAME, for example, uses an MLLM with diverse search tools, including web, image, reverse image, and geolocation search, and produces a human-readable report that improves both performance and explainability [5]. These retrieval-based systems can reason about fully fabricated or pristine posts, as long as there is sufficient evidence on the web. However, they often treat the multimodal input as a coarse textual claim and rely on the generative model to implicitly notice manipulations. There is usually no dedicated module for local manipulation detection, and small but crucial edits (for example, swapping a political figure’s face) may go unnoticed. D-SECURE: Dual-Source Evidence for Misinformation Detection 3
+
+1.2 Motivation 
+
+We identify an important structural gap in the literature: current systems tend to rely on either internal evidence (content-based manipulation detection) or external evidence (retrieval-based fact-checking), but almost never both in a single, coherent pipeline. This leads to systematic blind spots. Content-based detectors can tell that an image has been manipulated, but cannot say whether an unmanipulated image supports a false narrative. Retrieval-based pipelines can decide whether a claim is supported, refuted, or undecidable, yet they may confidently process content that is already locally corrupted [2,14,5]. 
+
+1.3 Contributions 
+
+We address these challenges with D-SECURE, a dual-source framework for mul-timodal misinformation detection. Concretely, our contributions are: 1. We formalise the task of dual-source multimodal misinformation detection that jointly reasons over content-based cues and retrieval-based evidence for news-style image–text posts. 2. We propose the D-SECURE pipeline, which integrates the HAMMER ma-nipulation detector [14,15] with the DEFAME retrieval-based fact-checker [5]. DEFAME acts as a broad-coverage pre-screening stage, while HAMMER provides fine-grained analysis on residual or uncertain cases. 3. We perform cross-system experiments where DGM 4 samples are evaluated with DEFAME and ClaimReview-style fact-checking samples are passed through HAMMER, analysing the strengths and weaknesses of each com-ponent and their impact on pipeline design. 4. We extend the human-readable report mechanism from DEFAME to cover the full pipeline, including HAMMER’s local manipulation explanations, thereby improving interpretability for downstream users. 
+
+## 2 Related Work 
+
+We group related work into three categories: multimodal manipulation detection, retrieval-based fact-checking, and hybrid approaches that combine internal and external evidence. 
+
+2.1 Multimodal manipulation detection 
+
+Early work on multimodal misinformation focused on out-of-context (OOC) ma-nipulations where authentic images are paired with misleading captions. NewsClip-pings [10] automatically constructs OOC examples from news archives, while COSMOS [3] uses self-supervised learning over image–caption co-occurrences to detect when a given pairing is inconsistent with typical usage. These methods model global semantic mismatch at the pair level, yet they do not attempt to localise specific pixels or tokens that are responsible for the inconsistency. 4 Anonymous 
+
+The DGM 4 benchmark and HAMMER model [14,15] explicitly address lo-cal multimodal manipulations. DGM 4 defines classes for face swap (FS), face attribute (FA), text swap (TS), and text attribute (TA), as well as their com-binations, and provides bounding-box annotations and token labels for manip-ulated regions. HAMMER uses manipulation-aware contrastive learning with both global and local views, aligning consistent image–text pairs and repelling mismatched or manipulated ones, while also predicting manipulation class, ma-nipulated regions, and manipulated tokens. This line of work gives strong local supervision and explicit grounding, but by design, it operates purely on internal content. It cannot determine whether a pristine sample depicts an event that has ever happened in the world. Recent datasets such as MFND [17] extend multimodal fake news detection with more diverse manipulations and hard negatives. However, they still focus on content-level cues and do not explicitly integrate external factual knowledge beyond simple text-based features. 
+
+2.2 Retrieval-based fact-checking 
+
+Retrieval-based fact-checking systems aim to decide whether a claim is supported or refuted by external evidence. Many follow a three-stage pipeline of claim extraction, evidence retrieval, and verdict prediction [2]. One line of work uses heterogeneous graphs to represent posts, entities, and external knowledge bases. Hu et al. [7] construct a directed heterogeneous graph that includes news articles and entities from external knowledge bases, then apply graph neural networks to classify fake news. Cao et al. [6] propose multi-source knowledge enhanced graph attention networks that combine multimodal evidence with external knowledge, improving veracity prediction by reasoning over cross-modal consistency and external indicators. More recently, retrieval-augmented generation has become popular. RAGAR [8] uses an LLM to verbalise multimodal input, generate clarifying questions, perform iterative retrieval, and produce fact-checking verdicts. DEFAME [5] uses an MLLM directly on multimodal inputs and augments it with a diverse set of search tools, including web search, image search, reverse image search, and geolocation. DEFAME also introduces a structured, human-readable report that records retrieved evidence and intermediate reasoning steps, which serves both as in-context guidance for the MLLM and as an explanation for human users. These systems demonstrate the value of rich external evidence. However, they typically have only weak access to internal manipulation cues. RAGAR verbalises images into text, which can lose fine-grained visual details. DEFAME relies on the MLLM’s implicit ability to notice mismatches but does not include a dedicated manipulation detector or grounding module. As a result, they may accept or refute claims based on evidence that matches a clean version of the content, while overlooking subtle local tampering. D-SECURE: Dual-Source Evidence for Misinformation Detection 5
+
+Table 1. Comparison of representative approaches to multimodal misinformation de-tection and fact-checking. “Internal” denotes explicit content-based manipulation rea-soning. “External” denotes use of retrieved web or knowledge-base evidence. “Local” indicates explicit localisation of manipulations at region or token level. Method Input Internal External Local NewsClippings [10] Image–text OOC consistency None No COSMOS [3] Image–text Self-supervised co-occurrence None No DGM 4 / HAMMER [14,15] Image–text Contrastive reasoning None Yes MFND / SDML [17] Image–text Global content features None Limited Hu et al. [7] Text Content features KB graphs No Cao et al. [6] Image–text Multimodal GNN KB graphs Limited RAGAR [8] Image–text Verbalised content Web search No explicit module DEFAME [5] Image–text MLLM reasoning Web, image, geo No explicit module     
+
+> D-SECURE (ours) Image–text HAMMER + DEFAME Diverse web tools (DEFAME) Yes
+
+2.3 Hybrid internal / external approaches and remaining gaps 
+
+Some graph-based methods attempt to fuse internal and external cues by includ-ing both content features and external knowledge in a single representation [7,6]. However, they usually work with relatively coarse, document-level features and do not operate at the level of token- or region-level manipulation. Conversely, content-based manipulation detectors, including HAMMER, are powerful at lo-cal reasoning but do not access external knowledge sources [14,15]. To our knowledge, there is no existing system that: 
+
+– incorporates a state-of-the-art multimodal manipulation detector with ex-plicit grounding; 
+
+– integrates this detector into a retrieval-based, multimodal fact checking pipeline that operates over diverse web and image evidence; and 
+
+– exposes a unified, human-readable explanation that reports both external evidence and internal manipulation cues. This gap is precisely where D-SECURE is positioned. By combining DE-FAME and HAMMER in a principled dual-source architecture, we target both global factuality and local manipulation while maintaining interpretability. 
+
+2.4 Comparison of related methods 
+
+Table 1 summarises key properties of representative systems and highlights where our framework differs. As the table shows, D-SECURE is designed to explicitly occupy the currently missing corner: a dual-source multimodal pipeline that uses both a specialised manipulation detector and a retrieval-based fact-checker with rich external evi-dence, while providing local grounding and global verdicts. 
+
+## 3 Methodology 
+
+We now describe the D-SECURE framework. Our goal is to integrate HAMMER and DEFAME into a single pipeline that can utilise both internal and external evidence when judging whether a multimodal post constitutes misinformation. 6 Anonymous     
+
+> Fig. 1. DGM 4and ClaimReview2024+ examples. DGM 4includes (a) pristine image–text pairs and four fine-grained local manipulation types: (b) face swap (FS), (c) face attribute (FA), (d) text swap (TS), and (e) text attribute (TA), as well as their mixed combinations (FS+TS, FS+TA, FA+TS, FA+TA). ClaimReview2024+ represents global factuality labels with (f) supported claims, (g) refuted claims, and (i) not-enough-information (NEI) cases.
+
+3.1 Problem formulation 
+
+Let x = ( I, T ) denote a news-style image–text pair, where I is an image and T
+
+is its associated caption or headline. The task is to assign x a misinformation label y ∈ { supported , refuted , not-enough-information }, together with optional manipulation labels m that indicate whether x contains local manipulations (for example FS, FA, TS, TA and their combinations) and where they occur in the image and text. D-SECURE decomposes this problem into two stages: 1. a retrieval-based fact-checking stage that focuses on global veracity based on external evidence; and 2. a content-based manipulation detection stage that focuses on local tampering in the multimodal content itself. The final prediction is obtained by combining signals from both stages through a rule-based or learned fusion rule. Figure 1 summarises all types of samples that we cover in this paper. D-SECURE: Dual-Source Evidence for Misinformation Detection 7
+
+3.2 System components HAMMER HAMMER is a hierarchical multimodal manipulation reasoning transformer trained on the DGM 4 dataset [14,15]. It takes as input an image and a caption and outputs: 
+
+– a DGM 4 class label (pristine, FS, FA, TS, TA, and their combinations); 
+
+– a binary real/fake label; 
+
+– token-level labels for manipulated text positions; and 
+
+– bounding boxes for manipulated image regions. 
+
+DEFAME DEFAME is a retrieval-based fact-checking pipeline built around an MLLM backbone and a set of search tools [5]. It accepts multimodal inputs and produces: 
+
+– a verdict in {supported , refuted , not-enough-information (NEI) } (default ver-dicts); 
+
+– a structured, human-readable report that records retrieved evidence, inter-mediate reasoning, and the final decision. DEFAME can be configured with different web and image search providers. In our experiments, we follow the original design and distinguish between free-tool configurations (for example DuckDuckGo search) and enhanced configurations that use Google and dedicated image search where available [5]. BeautifulSoup is used to scrape and normalise retrieved pages before they are passed to the MLLM. We adopt the configuration where DEFAME acts as a pre-processing step and HAMMER is applied to residual cases. The motivation is twofold. First, DEFAME is designed to capture a broad range of misinformation phenomena by reasoning over external evidence, including fully fabricated or globally false claims for which no local manipulation is required. Second, preliminary exper-iments where DEFAME is applied to DGM 4 samples show that it performs reliably when it refutes a claim (it never refuted truly pristine samples) but struggles with subtle local manipulations, especially in free-tool settings. This suggests that its refuted predictions can be trusted as strong global signals, while additional local analysis is beneficial for uncertain or apparently supported cases. Formally, given input x, D-SECURE first runs DEFAME: 
+
+(ydef , r ) = fDEFAME (x), (1) where ydef is the fact-checking verdict and r is the associated reasoning re-port. We then apply the following logic: 
+
+– If ydef = refuted, we output a final verdict of refuted , together with r as the explanation and pass the sample to HAMMER to check whether localised edits caused refusal or purely external evidence and assist explainability. 
+
+– If ydef ∈ { supported , not-enough-information }, we pass x to HAMMER for local analysis. 8 Anonymous 
+
+HAMMER then produces manipulation labels and localisation: 
+
+(mham , b ham ) = fHAMMER (x), (2) where mham captures manipulation class and token-level labels, and bham are bounding boxes for image manipulations. 
+
+3.3 Decision Fusion 
+
+Figure 2 summarises D-SECURE’s rule-based fusion strategy. DEFAME pro-vides the initial global verdict, and HAMMER supplies manipulation class labels and grounding. Fusion follows a small set of principled cases: (1) when DEFAME refutes the claim, the final verdict is refuted ; (2) when DEFAME supports the claim, HAMMER determines whether the post is supported (pristine) or locally manipulated but globally supported ; and (3) when DEFAME returns not enough information , HAMMER distinguishes between manipulated but unverifiable and genuine NEI . This rule set captures the complementarity between global factual evidence and local manipulation cues. Although we adopt a rule-based design for clarity, the same structure can be replaced with a learned fusion module that jointly uses DEFAME’s confidence scores and HAMMER’s manipulation probabilities. 
+
+3.4 Unified explanation report 
+
+DEFAME already produces a structured, human-readable report that summarises retrieved evidence, intermediate reasoning steps, and the final verdict. We extend this mechanism to D-SECURE by appending HAMMER’s outputs. Specifically, the report includes the predicted manipulation class and real/fake labels, the highlighted manipulated text tokens in the caption, and visual over-lays of bounding boxes indicating manipulated image regions. The resulting report allows a user to inspect both sources of evidence: which external documents or images support or refute the claim, and where, if at all, local manipulations have been detected in the content itself. This unified explanation is intended to improve user trust and support expert audit of system behaviour. 
+
+## 4 Experiments 
+
+We evaluate D-SECURE on two complementary axes: (i) local manipulation analysis on the DGM 4 benchmark, and (ii) global factual verification on a 300-claim ClaimReview2024+ benchmark. This joint evaluation reflects the dual na-ture of multimodal misinformation, where content may be locally edited, globally fabricated, or both. D-SECURE: Dual-Source Evidence for Misinformation Detection 9 
+
+> Fig. 2. D-SECURE’s rule-based scheme.
+
+4.1 Experimental Setup 
+
+Systems. HAMMER is a state-of-the-art manipulation detector trained on DGM 4. DEFAME is a retrieval-augmented fact-checking pipeline using a Llava-based MLLM backbone. D-SECURE (ours) injects HAMMER’s manipulation-aware summary (binary flag, class, grounded inconsistencies) into DEFAME. D-SECURE produces five labels but these are collapsed to the standard three-way space for evaluation: Locally Manipulated but Globally Supported (LMGS) →
+
+Refuted, Manipulated but Unverifiable (MBU) → Refuted. 
+
+Metrics. For DGM 4 we report binary accuracy (ACC). For ClaimReview2024+ we use 3-way accuracy under three evaluation rules: (1) Strict factuality , where predictions must match the gold label exactly; (2) Manipulation-aware , where predictions of { Refuted , LMGS , MBU } count as correct for gold Refuted; and (3) Intervention-aware , where { Refuted , LMGS , MBU } are considered correct for gold Refuted or NEI. These rules reflect increasingly realistic settings where a practical detector should flag manipulated or unverifiable content even when perfect external evidence is unavailable. 
+
+4.2 Main Results 
+
+Local manipulation (DGM 4). HAMMER achieves 93.19% binary accuracy on the uploaded DGM 4 predictions. Since D-SECURE uses HAMMER unchanged for local analysis, its performance matches HAMMER exactly on this benchmark. 10 Anonymous                 
+
+> Table 2. Unified results on DGM 4and ClaimReview2024+. All values are computed directly from the submitted outputs.
+> Model DGM 4ACC Strict Manip.-Aware Interv.-Aware
+> HAMMER 93.19 45.0 ––DEFAME 25.06 30.0 34.33 32.0
+> D-SECURE 93.19 28.0 46.33 47.0
+
+Global factuality (ClaimReview2024+). Using strict 3-way matching, DEFAME attains 30.0% accuracy due to its conservative NEI bias. D-SECURE improves to 28% strict accuracy by injecting manipulation-aware context that mitigates incorrect supported/refuted assignments. Under manipulation-aware evaluation, D-SECURE reaches 46.33%, and un-der intervention-aware evaluation it reaches 47.0%, outperforming DEFAME (34.33% and 32.0% respectively). These gains reflect cases where HAMMER correctly identifies local manipulations or inconsistencies that DEFAME alone cannot detect. 
+
+4.3 Discussion 
+
+The results reveal three central observations. 
+
+Local manipulation is not a reliable proxy for truth. HAMMER excels at detect-ing pixel- and token-level edits, yet its strict 3-way factual accuracy on ClaimRe-view2024+ is only 45%. This aligns with the intuition that globally false claims can be paired with completely pristine images, and conversely manipulated con-tent can accompany factually correct narratives. 
+
+External evidence alone is brittle under subtle edits. DEFAME performs reason-ably when sufficient web evidence is available, but it frequently defaults to NEI (as seen in its 25.06% accuracy on DGM 4), and misclassifies manipulated posts as Supported when edits are subtle. This explains its limited strict accuracy of 30.0%. 
+
+Combining internal and external signals yields meaningful gains. D-SECURE outperforms DEFAME across the majority of factuality rules while matching HAMMER’s manipulation detection strength. The improvement is most pro-nounced in manipulation and intervention-aware settings, where HAMMER’s grounded inconsistencies help DEFAME avoid incorrect endorsements. This sup-ports the central claim of the paper: neither local nor global evidence is sufficient alone, and dual-source fusion is necessary for robust multimodal misinformation detection. Overall, these results demonstrate that D-SECURE successfully bridges the gap between manipulation sensitivity and factual verification, leading to more reli-able and interpretable judgements in diverse misinformation scenarios. D-SECURE: Dual-Source Evidence for Misinformation Detection 11 
+
+## 5 Limitations 
+
+Our study has three main limitations. First, D-SECURE relies on HAMMER’s manipulation priors and DEFAME’s retrieval coverage, both of which may de-grade on domains with unfamiliar entities, poor web presence, or highly com-pressed imagery. Second, our rule-based fusion combines local and global signals deterministically; while effective, it cannot account for uncertainty calibration or contradictory evidence, which may require a learned fusion module. Third, the ClaimReview2024+ sample used in our evaluation is relatively small and skewed toward political and health narratives. Broader, more diverse benchmarks are needed to fully assess generalisation. 
+
+## 6 Conclusion 
+
+We presented D-SECURE, a dual-source framework that unifies local manipu-lation detection with external evidence retrieval for multimodal misinformation. By combining HAMMER’s grounded manipulation signals with DEFAME’s fact-checking pipeline, D-SECURE closes a persistent gap between content-level tam-pering and claim-level veracity. Experiments on DGM 4 and ClaimReview2024+ demonstrate that our system maintains state-of-the-art manipulation detection while improving factuality prediction across multiple evaluation rules. This work highlights the importance of bridging internal and external evidence and pro-vides a foundation for future systems that reason jointly over pixels, tokens, and the broader information ecosystem. 
+
+## References 
+
+1. Adams, Z., Osman, M., Bechlivanidis, C., Meder, B.: (why) is misinformation a problem? Perspectives on Psychological Science 18 (6), 1436–1463 (2023) 2. Akhtar, M., Schlichtkrull, M., Guo, Z., Cocarascu, O., Simperl, E., Vlachos, A.: Multimodal automated fact-checking: A survey. arXiv preprint arXiv:2305.13507 (2023) 3. Aneja, S., Bregler, C., Nießner, M.: Cosmos: Catching out-of-context misinforma-tion with self-supervised learning. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (2021) 4. Ateşgöz, K.: The proliferation of disinformation in the information and communi-cation age: “news literacy” as a framework for critical news reception. In: Özel, M. (ed.) Digital Literacy as a Catalyst for Critical Thinking: From Media to Artificial Intelligence, pp. 39–56. Springer Nature Switzerland (2025) 5. Braun, T., Rothermel, M., Rohrbach, M., Rohrbach, A.: Defame: Dy-namic evidence-based fact-checking with multimodal experts. arXiv preprint arXiv:2412.10510 (2024) 6. Cao, H., Wei, L., Zhou, W., Hu, S.: Multi-source knowledge enhanced graph atten-tion networks for multimodal fact verification. In: 2024 IEEE International Con-ference on Multimedia and Expo (ICME). pp. 1–6 (2024) 12 Anonymous 7. Hu, L., Deng, H., Hou, Y., et al.: Compare to the knowledge: Graph neural fake news detection with external knowledge. In: Proceedings of the 59th Annual Meet-ing of the Association for Computational Linguistics and the 11th International Joint Conference on Natural Language Processing (Volume 1: Long Papers). pp. 754–763 (2021) 8. Khaliq, M.A., Chang, P.Y.C., Ma, M., Pflugfelder, B., Miletić, F.: Ragar, your falsehood radar: RAG-augmented reasoning for political fact-checking using multi-modal large language models. In: Proceedings of the Seventh Fact Extraction and VERification Workshop (FEVER). pp. 280–296 (2024) 9. Li, Y., Xie, Y.: Is a picture worth a thousand words? an empirical study of image content and social media engagement. Journal of Marketing Research 57 (1), 1–19 (2020) 10. Luo, G., Darrell, T., Rohrbach, A.: Newsclippings: Automatic generation of out-of-context multimodal media. arXiv preprint arXiv:2104.05893 (2021) 11. McLoughlin, K.L., Brady, W.J.: Human–algorithm interactions help explain the spread of misinformation. Current Opinion in Psychology 56 , 101770 (2024) 12. O’Neil, M., Jensen, M.: Australian Perspectives on Misinformation. University of Canberra (2020) 13. Scheufele, D.A., Krause, N.M.: Science audiences, misinformation, and fake news. Proceedings of the National Academy of Sciences 116 (16), 7662–7669 (2019) 14. Shao, R., Wu, T., Liu, Z.: Detecting and grounding multi-modal media manip-ulation. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 6904–6913 (2023) 15. Shao, R., Wu, T., Wu, J., Nie, L., Liu, Z.: Detecting and grounding multi-modal media manipulation and beyond. IEEE Transactions on Pattern Analysis and Ma-chine Intelligence 46 (8), 5556–5574 (2024) 16. Zhou, J., Zhang, Y., Luo, Q., Parker, A.G., De Choudhury, M.: Synthetic lies: Understanding AI-generated misinformation and evaluating algorithmic and hu-man solutions. In: Proceedings of the 2023 CHI Conference on Human Factors in Computing Systems. pp. 1–20 (2023) 17. Zhu, Y., Wang, Y., Yu, Z.: Multimodal fake news detection: MFND dataset and shallow–deep multitask learning. arXiv preprint arXiv:2505.06796 (2025)

@@ -1,0 +1,893 @@
+Title: Agentic Mixed-Source Multi-Modal Misinformation Detection with Adaptive Test-Time Scaling
+
+URL Source: https://arxiv.org/pdf/2603.02519v1
+
+Published Time: Wed, 04 Mar 2026 01:22:49 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+# Agentic Mixed-Source Multi-Modal Misinformation Detection with Adaptive Test-Time Scaling 
+
+## Wei Jiang 
+
+The University of Queensland Brisbane, Australia wei.jiang@uq.edu.au 
+
+## Tong Chen 
+
+The University of Queensland Brisbane, Australia tong.chen@uq.edu.au 
+
+## Wei Yuan 
+
+The University of Queensland Brisbane, Australia w.yuan@uq.edu.au 
+
+## Quoc Viet Hung Nguyen 
+
+Griffith University Gold Coast, Australia henry.nguyen@griffith.edu.au 
+
+## Hongzhi Yin ∗
+
+The University of Queensland Brisbane, Australia h.yin1@uq.edu.au 
+
+## Abstract 
+
+Vision-language models (VLMs) have been proven effective for detecting multi-modal misinformation on social platforms, espe-cially in zero-shot settings with unavailable or delayed annotations. However, a single VLM’s capacity falls short in the more complex mixed-source multi-modal misinformation detection (M 3D) task. Taking captioned images as an example, in M 3D, the false infor-mation can be sourced from either untruthful texts, forged images, or a mismatch between two modalities. Although recent agentic systems can handle zero-shot M 3D by connecting modality-specific VLM agents, their effectiveness is still bottlenecked by their agentic architecture. In existing agentic M 3D solutions, for any input sam-ple, each agent only performs one-time forward reasoning, making its decision prone to inherent model randomness and reasoning errors in challenging cases. Furthermore, the lack of exploration on alternative reasoning paths means that the reasoning capacity of modern VLMs is not fully capitalized. In this work, we present AgentM 3D, a multi-agent framework for zero-shot M 3D. To amplify VLMs’ reasoning capability, an innovative adaptive test-time scal-ing paradigm is proposed, where AgentM 3D scales the reasoning of each modality-specific VLM agent via the best-of-𝑁 mechanism, and a critic agent is designed to achieve task-aligned scoring. All agents are placed in a cascading, modality-specific decision chain, so as to reduce unnecessary agent use and limit error propagation. In addition, to keep AgentM 3D scalable, a planning agent dynami-cally determines the maximum number of reasoning paths needed based on sample difficulty, and an adaptive stopping mechanism is in place to further prevent each agent from overthinking. Exten-sive experiments on two M 3D benchmarks show that AgentM 3Dachieves state-of-the-art zero-shot detection performance compared to various VLM-based and agentic baselines. 
+
+## Keywords 
+
+Multi-modal Misinformation Detection; Multi-agent System; Test-time Scaling 
+
+> ∗
+
+Corresponding author. 
+
+Conference’17, Washington, DC, USA 
+
+2026. ACM ISBN 978-x-xxxx-xxxx-x/YYYY/MM https://doi.org/10.1145/nnnnnnn.nnnnnnn Text             
+
+> Image
+> Textual Veracity
+> Distortion
+> Visual Veracity
+> Distortion
+> Cross -modal Consistency
+> Distortion
+> Text
+> Image
+> Or Or
+> Mixed Distortion Sources
+> Mixed -source MMD
+> Modeling
+> Single -Source Multi -Modal Misinformation Detection
+> Mixed -Source Multi -Modal Misinformation Detection
+> Match
+> Mismatch Fake Image
+> Real Image Real Text
+> Fake Text
+> Fake Text
+> Fake Image Mismatch
+> Match Text Refutation
+> Image Refutation
+> Mismatch
+> Match
+
+Figure 1: Comparison between single-source and mixed-source multi-modal misinformation detection. 
+
+## 1 Introduction 
+
+Multi-modal misinformation on social media evolves rapidly, with new manipulation patterns continuously emerging [ 18 ], includ-ing fake news, image forgery, narrative edits, and so on. In such dynamic environments, collecting high-quality labeled data that covers newly appeared forgery types is often infeasible or severely delayed [ 22 , 29 ]. As a result, supervised multi-modal misinforma-tion detection (MMD) systems struggle to remain effective in real-world deployment. This makes zero-shot MMD a practical and timely demand, and there has been an uptake [ 1 , 14 ] on developing such solutions. Recently, vision-language models (VLMs) [ 40 ], pretrained on large-scale image-text corpora, have exhibited strong cross-modal reasoning and generalization capabilities, and are therefore widely adopted for zero-shot multi-modal misinformation detection [ 16 ,27 ]. However, most existing VLM-based MMD approaches implic-itly operate under simplified assumptions about misinformation sources. In particular, they primarily focus on scenarios where mis-information shares one same manipulation pattern, overlooking the fact that real-world misinformation often exhibits mixed-source characteristics, as illustrated in Fig. 1. In the mixed-source multi-modal misinformation detection (M 3D) setting, false information may originate from various manipulation sources. As per Fig. 1, in news with images, misinformation can be sourced from untruthful textual claims, forged or manipulated images, or subtle mismatches  
+
+> arXiv:2603.02519v1 [cs.MM] 3 Mar 2026 Conference’17, July 2017, Washington, DC, USA Wei Jiang et al.
+
+between otherwise authentic modalities [ 16 ]. This practical set-ting further extends the detection task from binary classification to multi-class classification [ 5, 16 ], so as to provide precise attribu-tion to the exact source of counterfeit. Consequently, the strong interdependencies among these sources makes M 3D fundamentally challenging for single VLM-based solutions. Specifically, M 3D de-mands stage-wise conditional reasoning: textual claims should be assessed independently of visual content, visual evidence must be verified against objective facts, and cross-modal alignment should be evaluated under the outcomes of prior decisions. When a single VLM is forced to reason over all these coupled aspects simultane-ously, even minor inaccuracies in one dimension can propagate and lead to incorrect final predictions [28, 43]. As a remedy, recent work has explored agentic frameworks for zero-shot M 3D that decompose detection into modality-specific rea-soning stages [ 16 ]. By connecting multiple specialized VLM agents, these systems introduce structured inference and partially reduce decision coupling compared to monolithic models. Nevertheless, ex-isting agentic M 3D approaches remain fundamentally constrained by their inference paradigm. For each input sample, individual agents typically perform a single forward reasoning pass, render-ing their predictions vulnerable to inherent model stochasticity and brittle reasoning in challenging cases. More critically, the lack of systematic exploration over alternative reasoning paths prevents modern VLMs from fully leveraging their latent reasoning capac-ity, particularly in complex mixed-source scenarios where a single reasoning trace is often insufficient. Some recent agentic systems attempt to alleviate this limitation by introducing planning modules and extensive tool invocation [ 5 ]. For instance, T 2Agent employs a planner to decompose each input into multiple tool-solvable sub-tasks and prioritize different information sources. However, these subtasks are still executed via single-pass VLM reasoning, leaving the fundamental inference bottleneck of one-shot decision mak-ing largely unaddressed. Moreover, such designs rely heavily on third-party components, whose availability and reliability are often uncertain, potentially compromising system robustness in practi-cal deployment. Consequently, despite recent progress, building effective zero-shot VLM-based systems for M 3D remains an open challenge. In this work, we seek to improve the effectiveness of M 3D sys-tems by taking full advantage of the reasoning capacity of VLMs at inference time through test-time scaling (TTS) [ 4 ]. TTS enhances inference reliability by exploring and evaluating multiple reasoning trajectories without additional training, and has proven effective for strengthening large models under challenging decision settings [ 41 ]. However, directly applying TTS to M 3D introduces several non-trivial challenges. First, when to scale : the reasoning difficulty varies substantially across samples, and some easy cases can be accurately resolved with a single forward pass. Uniformly applying test-time scaling to all inputs therefore incurs unnecessary computational overhead without clear benefits. Second, how much to scale : even for samples that require enhanced reasoning, the difficulty differs across misinformation sources and modalities. Over-scaling simple reasoning paths not only increases inference cost but may also lead to overthinking and degraded decision quality, making principled stopping criteria essential. Third, how to score reliably : test-time scaling relies on reward models to evaluate multiple reasoning trajectories, yet general-purpose reward models are not aligned with the complex decision requirements of M 3D and may misjudge reasoning quality in mixed-source settings. To date, no existing framework has jointly addressed these challenges in a scalable and cost-effective manner for zero-shot M 3D. To address these challenges, we propose AgentM 3D, a multi-agent framework that leverages adaptive test-time scaling to en-hance the intrinsic reasoning capability of VLMs for zero-shot mixed-source multi-modal misinformation detection. AgentM 3Dorganizes modality-specific detection agents in a hierarchical cas-cade, mitigating decision coupling and limiting error propagation across inference stages. Specifically, to determine when enhanced reasoning is required, AgentM 3D introduces a lightweight plan-ning agent that selectively activates test-time scaling based on sample difficulty. To ensure reliable scoring of scaled reasoning candidates, the framework integrates critique-aware Best-of-𝑁 rea-soning [ 26 ], in which modality-specific critique signals complement general-purpose reward models to provide task-aligned evaluation. To regulate how much computation is warranted, an adaptive early-stopping mechanism dynamically controls the extent of reasoning exploration. Together, these components transform test-time scal-ing from a brute-force heuristic into a structured, decision-aware inference process for robust and cost-efficient zero-shot M 3D. Our contributions are threefold: 
+
+• To the best of our knowledge, we are the first to provide a systematic characterization of the key challenges of applying TTS in M 3D, including when to scale, how to assign reliable scores, and how much computation is warranted. 
+
+• We propose AgentM 3D, a multi-agent system with adaptive test-time scaling that jointly addresses when to scale, how to score reliably, and how much computation is warranted in zero-shot settings. 
+
+• We empirically validate AgentM 3D on multiple multi-modal misinformation benchmarks, demonstrating improved effec-tiveness and test-time efficiency over strong VLM-based and agentic baselines. 
+
+## 2 Preliminaries 
+
+Problem Formulation. We study the problem of mixed-source multi-modal misinformation detection (M 3D). Formally, a collection of news is represented as Dnews = {( 𝑇 𝑖 , 𝑉 𝑖 , 𝑦 𝑖 )} 𝑁 𝑖 =1, where each item consists of a textual claim 𝑇 𝑖 , an associated news image 𝑉 𝑖 , and a ground-truth label 𝑦 𝑖 ∈ { 0, 1, 2, 3}. The label space corresponds to four mutually exclusive categories: original (real), textual veracity distortion, visual veracity distortion, and cross-modal consistency distortion, respectively. We formulate M 3D as a zero-shot multi-class classification task. Given an input sample (𝑇 𝑖 , 𝑉 𝑖 ) ∈ D news , a single agent 𝑎 produces a categorical prediction along with an associated natural language explanation: 
+
+(𝑦 𝑖,𝑎 , 𝑟 𝑖,𝑎 ) ∼ 𝜙 𝑎 (𝑇 𝑖 , 𝑉 𝑖 , P𝑎 ), (1) where 𝑟 𝑖,𝑎 ∈ R is the corresponding explanation in natural language and P𝑎 is the prompt of agent 𝑎 .We further extend this formulation to a multi-agent system 
+
+A = {𝑎 1, 𝑎 2, . . . , 𝑎 𝑚 }, in which agents may assume different roles and operate collaboratively. Agents interact by incorporating the Agentic Mixed-Source Multi-Modal Misinformation Detection with Adaptive Test-Time Scaling Conference’17, July 2017, Washington, DC, USA Text Agent                       
+
+> Image Agent
+> Cross Agent
+> WH Smith has also bought the
+> Wild Cards and Gifts chain in
+> Australia in January which
+> operates 50 small gift shops
+> News Sample
+> Toolset
+> Web Searching
+> Image Forgery
+> Detection
+> Logic Consistency
+> Checking
+> Image Objective
+> Fact Checking
+> Planning Agent
+> Hierarchical Detection
+> Standard Reasoning Critique -aware BoN Reasoning
+> Detect Agent
+> Single Pass
+> Reasoning
+> Detection
+> Result
+> Detect Agent
+> Reward Model
+> Fused Scores
+> Critique Agent Score 1
+> Score 1
+> Score 2
+> Score 3
+> Δ𝑠 1
+> Score 4
+> Δ𝑠 2
+> Δ𝑠 3
+> Δ𝑠 2>𝜏 ?: Stop !
+> Early -Stopping Ranking
+
+Figure 2: The overall structure of AgentM 3D. A planning agent routes each input to either standard reasoning or critique-aware Best-of-𝑁 reasoning. The latter explores multiple reasoning trajectories, integrates reward and critique signals for candidate selection, and applies adaptive early-stopping ranking to dynamically terminate inference when confident scores emerge. 
+
+outputs of other agents as additional inputs. If agent 𝑎 𝑗 is associated with a set of agents N ( 𝑗 ) ⊆ A , then its inference depends on both the input (𝑇 𝑖 , 𝑉 𝑖 ) and the outputs of all related agents: 
+
+(𝑦 𝑖,𝑎 𝑗 , 𝑟 𝑖,𝑎 𝑗 ) ∼ 𝜙 𝑎 𝑗 
+
+
+
+𝑇 𝑖 , 𝑉 𝑖 , {( 𝑦 𝑖,𝑎 𝑘 , 𝑟 𝑖,𝑎 𝑘 ) | 𝑎 𝑘 ∈ N ( 𝑗 )} , P𝑎 𝑗 
+
+
+
+. (2) 
+
+Test-Time Scaling via Best-of-𝑁 (BoN). Beyond single-pass infer-ence, test-time scaling (TTS) strategy can be considered to enhance the reasoning robustness of individual agents. Specifically, given an input sample (𝑇 𝑖 , 𝑉 𝑖 ) and an agent 𝑎 , it allows the agent to per-form multiple independent inference trials under the same prompt 
+
+P𝑎 . Formally, the agent is stimulated 𝑁 times to produce a set of candidate outputs: 
+
+{( 𝑦 (𝑚 ) 
+
+> 𝑖,𝑎
+
+, 𝑟 (𝑚 ) 
+
+> 𝑖,𝑎
+
+)} 𝑀 𝑛 =1 ∼ 𝜙 𝑎 (𝑇 𝑖 , 𝑉 𝑖 , P𝑎 ), (3) where each trial corresponds to an independent stochastic realiza-tion of the inference process of the agent. The BoN strategy selects a single output from these candidates according to a predefined selection criterion S:
+
+(𝑦 ∗
+
+> 𝑖,𝑎
+
+, 𝑟 ∗ 
+
+> 𝑖,𝑎
+
+) = S
+
+
+
+{( 𝑦 (𝑚 ) 
+
+> 𝑖,𝑎
+
+, 𝑟 (𝑚 ) 
+
+> 𝑖,𝑎
+
+)} 𝑀 𝑛 =1
+
+
+
+. (4) Intuitively, BoN serves as a form of TTS, allowing the agent to explore diverse reasoning paths and retain the most reliable predic-tion, thereby improving robustness without additional training. 
+
+## 3 Methodology 
+
+In this section, we present the technical details of AgentM 3D, a multi-agent framework for mixed-source multi-modal misinforma-tion detection. AgentM 3D adopts a hierarchical and adaptive design, in which specialized agents are sequentially invoked to assess tex-tual veracity, visual authenticity, and cross-modal consistency in a structured manner. We first introduce the hierarchical modality-specific detection agents in Sec. 3.1, which decompose misinfor-mation detection into a cascade of text-, image-, and cross-modal inference stages under one-time forward reasoning. While effective, this inference paradigm is inherently sensitive to stochastic reason-ing variability and may underexploit the full reasoning capacity of modern VLMs. To address this limitation, Sec. 3.2 presents a test-time scaling mechanism based on selective Best-of-𝑁 (BoN) reasoning with critique-aware ranking, enabling agents to explore multiple reasoning trajectories and improve robustness. Finally, to balance detection performance with inference efficiency, Sec. 3.3 introduces a lightweight planning strategy to dynamically deter-mine when test-time computation should be allocated. The overall structure of AgentM 3D is illustrated in Fig. 2. 
+
+## 3.1 Hierarchical Modality-specific Detection 
+
+Inspired by MMD-agent [ 16 ], AgentM 3D decomposes multi-modal misinformation analysis into hierarchical reasoning stages. How-ever, in MMD-Agent, this decomposition is realized through fixed prompt chaining within a single vision–language model, where intermediate reasoning results are implicitly embedded into subse-quent prompts. In contrast, AgentM 3D explicitly instantiates each reasoning stage as an independent detection agent with a well-defined input–output interface. The resulting agents are organized into a hierarchical cascade with conditional activation, which pro-gressively refines the detection decision from unimodal veracity assessment to cross-modal consistency checking. In particular, the cascade begins with textual veracity detection, as textual claims typically provide the primary semantic signal and can be assessed efficiently with relatively low computational cost, allowing early filtering of distorted content. Each detection agent produces not only a categorical decision but also an explicit natural-language reasoning trace as part of its output. This explicit agent abstrac-tion decouples stage-wise reasoning from prompt engineering and enables principled modeling of inter-agent dependencies and con-ditional activation directly at the level of agent inference. Specifically, AgentM 3D employs three kinds of agents to detect textual, visual, and cross-modal misinformation. 
+
+Textual Veracity Detection Agent. The textual veracity detec-tion agent is responsible for assessing whether the textual claim 
+
+𝑇 contradicts credible objective evidence. Its inference process is formulated as 
+
+(𝑦 text , 𝑟 text ) ∼ 𝜙 text (𝑇 , Ptext , Ttext ) , (5) Conference’17, July 2017, Washington, DC, USA Wei Jiang et al. 
+
+where 𝑦 text denotes the predicted textual veracity label produced by the agent, and 𝑟 text is the corresponding explicit natural-language reasoning. Ttext represents auxiliary evidence retrieved from an external textual information tool (details are in the Appendix A.3). 
+
+Visual Veracity Detection Agent. The visual veracity detection agent evaluates whether the image 𝑉 contradicts credible objec-tive evidence or violates common-sense constraints. Its inference process is formulated as 
+
+(𝑦 image , 𝑟 image ) ∼ 𝜙 image 
+
+ 𝑉 , Pimage , Timage 
+
+ , (6) where 𝑦 image denotes the predicted visual veracity label, and 𝑟 image 
+
+is the corresponding explicit natural-language reasoning. Timage 
+
+represents auxiliary observations obtained from an image analysis tool (details are provided in the Appendix A.3). 
+
+Cross-modal Consistency Detection Agent. The cross-modal consistency detection agent evaluates whether the textual claim 𝑇 
+
+and the image 𝑉 are semantically aligned, i.e., whether they refer to the same entities, events, and contexts. Unlike the textual and visual veracity agents, this agent does not aim to verify the factual correctness of each modal information. Instead, it targets deceptive pairings in which each modality may appear individually plausible, yet their combination forms a misleading narrative. Its inference process is formulated as 
+
+(𝑦 cross , 𝑟 cross ) ∼ 𝜙 cross 
+
+ 𝑇 , 𝑉 , Pcross , Timage 
+
+ , (7) where 𝑦 cross denotes the predicted cross-modal consistency label, and 𝑟 cross is the corresponding explicit natural-language reasoning. We incorporate Timage , an auxiliary observation produced by an image analysis tool that provides grounded descriptions of the visual content. This grounded visual summary makes the image content explicit and comparable to the textual claim, facilitating reliable alignment assessment. Note that we did not use the textual tool Ttext here because it is for truthfulness verification, which is not required for our cross-modal consistency detection. 
+
+Hierarchical Cascade Execution. AgentM 3D organizes the above three detection agents into a hierarchical cascade with conditional activation. The key idea is to progressively refine the detection decision from unimodal veracity assessment to cross-modal consis-tency checking, while avoiding unnecessary computation. We first define a distortion indicator function as: 
+
+𝛿 (𝑦 ) = I[𝑦 ≠ original ] , (8) where 𝑦 ∈ { 𝑦 text , 𝑦 image , 𝑦 cross } denotes the categorical prediction produced by a detection agent. The indicator 𝛿 (𝑦 ) = 1 implies that a distortion is detected, whereas 𝛿 (𝑦 ) = 0 indicates that the content is classified as original. Based on 𝛿 (·) , the activation indicators for the three detection agents are defined as: 
+
+𝛼 text = 1,𝛼 image = 1 − 𝛿 (𝑦 text ),𝛼 cross = (1 − 𝛿 (𝑦 text )) ·  1 − 𝛿 (𝑦 image ) ,
+
+(9) where 𝛼 𝑘 ∈ { 0, 1} denotes the activation status of the 𝑘 -th detection agent, with 𝛼 𝑘 = 1 indicating that the agent is invoked and 𝛼 𝑘 = 0
+
+indicating that it is skipped. Intuitively, E.q. 9 defines a conditional cascading inference process. AgentM 3D starts with textual veracity detection. Only if the textual content is classified as original does the framework proceed to visual veracity detection. Similarly, the cross-modal consistency detection agent is activated only when both the textual and visual contents are deemed original. Once any agent detects a distortion, the cascade terminates and the input is classified as misinformation. An input is regarded as trustworthy only if it passes all activated detection stages. 
+
+## 3.2 Best-of-N Reasoning with Critique-aware Ranking 
+
+The hierarchical modality-specific detection framework introduced in the previous section provides a structured and effective decompo-sition of the multi-modal misinformation detection task. However, the detection agents described so far operate under a one-time forward reasoning paradigm, where each agent produces a single reasoning outcome conditioned on a fixed prompt. While compu-tationally efficient, one-pass inference is often insufficient to fully exploit the reasoning capacity of modern VLMs. Due to the sto-chastic nature of VLM inference, single-shot reasoning may lead to unstable predictions and occasional reasoning failures, particularly in ambiguous or challenging cases. As a result, the detection per-formance of the hierarchical cascade can be suboptimal even when the overall framework design is sound. To address this limitation, we introduce a test-time scaling mech-anism that enhances detection robustness and stimulates VLMs’ potentials by encouraging multiple reasoning trajectories during inference. Specifically, we adopt Best-of-𝑁 (BoN) reasoning [ 26 ] to generate and evaluate multiple candidate solutions, enabling the detection agents to mitigate stochastic errors and better leverage their intrinsic reasoning capabilities. We adopt BoN as it naturally aligns with the hierarchical cascade of AgentM 3D. By selecting the most reliable candidate at each detection stage, BoN yields cleaner intermediate decisions and avoids noise accumulation from aggre-gating heterogeneous modal evidence [ 26 ]. Besides, its parallel and non-iterative nature further enables seamless integration with our early-stopping and planning mechanisms, allowing efficient and ro-bust test-time inference. The overall process of Best-of-𝑁 reasoning with critique-aware ranking is shown in Appendix A.2 
+
+Critique-aware Best-of-𝑁 Reasoning. For each detection agent 
+
+𝑘 ∈ { text , image , cross }, we equip it with a BoN test-time scaling strategy to improve inference robustness. Specifically, under a fixed prompt configuration P, the agent is invoked multiple times in parallel to generate a set of diverse reasoning candidates: 
+
+{( 𝑦 (𝑛 ) 
+
+> 𝑘
+
+, 𝑟 (𝑛 ) 
+
+> 𝑘
+
+)} 𝑁 𝑛 =1 ∼ 𝜙 𝑘 (P) . (10) Each candidate is first evaluated by a pretrained reward model R
+
+(e.g., [15, 37]), which assigns a scalar score based on the predicted label and its associated reasoning: 
+
+𝑢 (𝑛 ) 
+
+> 𝑘
+
+= R
+
+
+
+𝑦 (𝑛 ) 
+
+> 𝑘
+
+, 𝑟 (𝑛 )
+
+> 𝑘
+
+
+
+, (11) where 𝑢 (𝑛 ) 
+
+> 𝑘
+
+denotes the normalized reward score, with higher values indicating more reliable predictions. Agentic Mixed-Source Multi-Modal Misinformation Detection with Adaptive Test-Time Scaling Conference’17, July 2017, Washington, DC, USA 
+
+While reward models provide a signal over reasoning quality, they are typically trained on general-purpose QA or instruction-following data and may not be fully aligned with our modality-specific validity requirements of misinformation detection. Specif-ically, these reward models may fail to identify the factual incon-sistencies in these textual or visual claims and only provide the superficial judgment of the semantic coherence between label pre-diction and its associated reasoning explanation. To address this limitation, we further introduce modality-specific critique agents for textual and visual detection, which explicitly verify modality-level validity using task-relevant external signals. Formally, the critique agents are defined as: 
+
+𝑞 (𝑛 ) 
+
+> text
+
+∼ 𝑔 text 
+
+
+
+𝑦 (𝑛 )
+
+> text
+
+, 𝑟 (𝑛 )
+
+> text
+
+, Tlogic , Pcrit text 
+
+
+
+,𝑞 (𝑛 ) 
+
+> image
+
+∼ 𝑔 image 
+
+
+
+𝑦 (𝑛 )
+
+> image
+
+, 𝑟 (𝑛 )
+
+> image
+
+, Tforgery , Pcrit image 
+
+
+
+,
+
+(12) where 𝑞 (𝑛 ) 
+
+> 𝑘
+
+denotes the critique score assigned to the 𝑛 -th candidate. 
+
+Tlogic and Tforgery are outputs from the logic consistency checking tool and the image forgery detection tool (see details in Appen-dix A.3), respectively, while Pcrit  
+
+> 𝑘
+
+denotes the critique prompt. Each critique agent evaluates both the predicted label and the correspond-ing reasoning, providing an orthogonal modality-specific factual validity signal complementary to reward-based evaluation. Note that, we do not introduce a critique agent for cross-modal consistency detection. This design choice stems from the fact that cross-modal consistency focuses on semantic compatibility between modalities rather than verifying the factual correctness of individual content. Accordingly, the reliability of a cross-modal prediction can be effectively assessed by evaluating the semantic coherence between the predicted label and its accompanying reasoning, for which the general reward model provides a sufficient preference signal. We also empirically investigate the necessity of using a critique agent for cross-modality detection in Sec. 4.4, which shows degraded performance, likely due to the introduction of redundant or noisy signals. Finally, we integrate reward-based and critique-based signals into a unified scoring function to guide BoN selection: 
+
+𝑠 (𝑛 ) 
+
+> 𝑘
+
+=
+
+(
+
+𝑢 (𝑛 ) 
+
+> 𝑘
+
++ 𝑞 (𝑛 ) 
+
+> 𝑘
+
+, 𝑘 ∈ { text , image },𝑢 (𝑛 ) 
+
+> 𝑘
+
+, 𝑘 = cross , (13) where 𝑢 (𝑛 ) 
+
+> 𝑘
+
+and 𝑞 (𝑛 ) 
+
+> 𝑘
+
+are independently normalized to a common scale prior to fusion. The resulting score 𝑠 (𝑛 ) 
+
+> 𝑘
+
+enables consistent and fact-aware ranking of reasoning candidates, steering BoN inference toward predictions that better satisfy modality-specific misinfor-mation detection criteria. 
+
+Early-Stopping Ranking via Top-𝑚 Average Gap. Evaluating all 𝑁 candidates under BoN reasoning can be computationally inef-ficient, particularly when a clearly dominant solution emerges early in the ranking. To improve test-time efficiency without sacrificing reliability, we introduce an adaptive early-stopping mechanism based on the relative score gap between the top-ranked candidate and its competitors. Let s𝑘 = (𝑠 (1) 
+
+> 𝑘
+
+, . . . , 𝑠 (𝑁 ) 
+
+> 𝑘
+
+) denote the fused scores produced for agent 𝑘 ’s reasoning candidates. We sort the scores in descending order to obtain s𝑘, ↓, and denote by s(1: 𝑚 ) 
+
+> 𝑘, ↓
+
+the top-𝑚 ranked scores. To quantify the confidence of the leading candidate, we define the Top-𝑚 Average Gap as 
+
+Δ𝑚 (s𝑘 ) = 𝑠 (1) 
+
+> 𝑘, ↓
+
+− 1
+
+𝑚 − 1
+
+> 𝑚
+
+∑︁ 
+
+> 𝑗 =2
+
+𝑠 ( 𝑗 ) 
+
+> 𝑘, ↓
+
+, 𝑚 ≥ 2. (14) This metric measures how strongly the highest-ranked candidates separate from the remaining top competitors. The stopping point is determined by identifying the smallest 𝑚 
+
+for which the top-ranked candidates sufficiently outperform the others: 
+
+𝑚 ∗ 
+
+> 𝑘
+
+= min 
+
+n
+
+𝑚 ∈ { 2, . . . , 𝑁 } Δ𝑚 (s𝑘 ) > 𝜏 
+
+o
+
+, (15) where 𝜏 is a predefined confidence threshold. If no such 𝑚 satisfies the condition, we set 𝑚 ∗ 
+
+> 𝑘
+
+= 𝑁 , corresponding to full evaluation. The impact of 𝜏 on detection performance and inference efficiency is systematically analyzed in Sec. 4.5.1. Finally, the candidate with the highest fused score among the top-𝑚 ∗ 
+
+> 𝑘
+
+candidates is selected as the output of agent 𝑘 :
+
+𝑛 ∗ 
+
+> 𝑘
+
+= arg max   
+
+> 𝑛 ∈ { 1,...,𝑚 ∗
+> 𝑘 }
+
+𝑠 (𝑛 ) 
+
+> 𝑘, ↓
+
+, (𝑦 ∗ 
+
+> 𝑘
+
+, 𝑟 ∗ 
+
+> 𝑘
+
+) = (𝑦 (𝑛 ∗  
+
+> 𝑘 )
+> 𝑘
+
+, 𝑟 (𝑛 ∗  
+
+> 𝑘 )
+> 𝑘
+
+). (16) The selected pair (𝑦 ∗ 
+
+> 𝑘
+
+, 𝑟 ∗ 
+
+> 𝑘
+
+) serves as the final output of agent 𝑘 
+
+and is subsequently used for hierarchical activation and decision making in E.q. 9. 
+
+## 3.3 Adaptive Test-time Scaling Planning 
+
+Although critique-aware Best-of-𝑁 reasoning improves detection performance, applying it uniformly to all inputs is computationally inefficient and often unnecessary, as many multi-modal samples can be reliably resolved with a single forward pass. This motivates the introduction of an adaptive planning mechanism that selectively allocates test-time computation based on input difficulty. Specifically, AgentM 3D incorporates a lightweight planning agent that determines whether enhanced reasoning should be activated for a given input sample. Since the planning agent is only required to perform a coarse-grained assessment of sample difficulty, rather than fine-grained factual verification, it is implemented as a light-weight, prompt-based decision module without tool invocation. Formally, given a text-image pair (𝑇 , 𝑉 ), the planning agent pro-duces a reasoning action A as 
+
+A ∼ 𝜙 plan 
+
+ 𝑇 , 𝑉 , Pplan 
+
+ , (17) where 𝜙 plan denotes the planning agent parameterized by prompt 
+
+Pplan , and A specifies the selected inference strategy (i.e., stan-dard single-pass reasoning or enhanced Best-of-𝑁 inference) for downstream detection agents. 
+
+## 3.4 Probabilistic Interpretation of Detection Agent Inference 
+
+From a probabilistic perspective, the inference of each detection agent can be interpreted as approximate posterior reasoning condi-tioned on both the input and upstream detection outcomes. Specif-ically, for a detection agent 𝑘 ∈ { text , image , cross }, we model its output as a conditional distribution: 
+
+𝑝 𝑘 (𝑦, 𝑟 | 𝑥 𝑘 , y<𝑘 ) ∝ exp 
+
+
+
+𝛽 𝑆 𝑘 (𝑦, 𝑟 | 𝑥 𝑘 , y<𝑘 )
+
+
+
+, (18) Conference’17, July 2017, Washington, DC, USA Wei Jiang et al. 
+
+where 𝑥 𝑘 denotes the agent-specific input (e.g., 𝑇 , 𝑉 , or (𝑇 , 𝑉 )), 
+
+y<𝑘 represents the detection results produced by all preceding agents in the hierarchy. The exponential form induces a preference distribution parameterized by the scoring function. The parameter 
+
+𝛽 > 0 controls how strongly the distribution concentrates on high-scoring candidates, trading off exploitation and exploration. The scoring function 𝑆 𝑘 (·) integrates both reward-based and critique-based signals: 
+
+𝑆 𝑘 (𝑦, 𝑟 | 𝑥 𝑘 , y<𝑘 ) = R ( 𝑦, 𝑟 ) + 𝑞 𝑘 (𝑦, 𝑟, T𝑘 ), (19) where R (·) denotes the reward model score, and 𝑞 𝑘 is the critique score produced by the corresponding critique agent based on tool observation T𝑘 .Under this formulation, BoN corresponds to stochastic sampling from the induced posterior, while critique-aware ranking performs approximate maximum a posteriori estimation over the sampled candidates. The hierarchical activation mechanism further imposes a hard gating prior, ensuring that each agent contributes to the final decision only when activated by preceding inference outcomes. 
+
+## 4 Experiments 
+
+In this section, we conduct experiments to verify the effectiveness of AgentM 3D, aiming to answer the following research questions (RQs). (RQ1) How does AgentM 3D perform compared with strong VLM-based baselines and recent agentic methods for multi-modal misinformation detection? (RQ2) How well does AgentM 3D balance detection performance and inference efficiency, and can it achieve a more favorable accuracy-latency trade-off than existing multi-agent approaches? (RQ3) What are the individual contributions of the core components in AgentM 3D, including adaptive test-time scaling, critique-aware reasoning, and structured agent coordination, to the overall detection performance? (RQ4) How do the hyperparameters in AgentM 3D affect the performance and efficiency? (RQ5) How do the proposed critique agent and adaptive Best-of-𝑁 reasoning influence the decision-making process in practice, as demonstrated through case studies of both correctly classified and misclassified instances? 
+
+## 4.1 Experimental Settings 
+
+Datasets. We evaluate AgentM 3D on two mixed-source multi-modal misinformation detection (M 3D) benchmarks. First, we adopt 
+
+MMFakeBench , which contains over 11,000 image–text pairs span-ning four categories: Real, Textual Veracity Distortion (TVD), Visual Veracity Distortion (VVD), and Cross-modal Consistency Distortion (CMM), with images originating from both human and machine generation [ 16 ]. Following prior agent-based works MMD-Agent and T 2Agent [ 5 , 16 ], we use the same evaluation protocol and sam-ple an identical subset of 1,000 validation instances, balanced as 300 Real, 300 TVD, 100 VVD, and 300 CMM samples. To further assess generalization under mixed-source settings, we construct a Combined benchmark by integrating samples from three complementary datasets: Mocheg , a text-centric misinformation dataset with journalist-verified claims [ 38 ]; Fakeddit-M , a Reddit-based dataset focusing on manipulated visual content [ 17 ]; and 
+
+VERITE , a real-world benchmark with modality-balanced image– text pairs [ 19 ]. From each dataset, we randomly sample 100 real instances and 200 fake instances, resulting in a unified benchmark consisting of 300 Real, 200 TVD, 200 VVD, and 200 CMM samples. This combined setting enables a systematic evaluation of M 3D under diverse content distributions. 
+
+Baselines. We compare AgentM 3D with a diverse set of baselines covering three representative paradigms: VLM-based single-model inference, test-time scaling strategies, and agentic multi-modal detection frameworks. These baselines allow us to evaluate both the absolute detection performance and the effectiveness of different reasoning and scaling mechanisms under comparable settings. 
+
+• Standard: A vanilla VLM baseline that directly predicts the label from the text-image input via a single forward pass. 
+
+• Best-of-𝑁 (BoN) [ 8]: A parallel test-time scaling strategy that samples multiple detection outputs from the VLM and selects the final prediction using a reward model. 
+
+• T2Agent [ 5 ]: An agentic method that formulates multi-modal misinformation detection as a tree search problem and ap-plies Monte Carlo Tree Search to guide multi-step reasoning. 
+
+• MMD-Agent[ 16 ]: An agentic framework that decomposes multi-modal misinformation detection into multiple task-specific agents with hierarchical reasoning. 
+
+• MMD-Agent+BoN: A variant of MMD-Agent where all de-tection agents are uniformly enhanced with BoN sampling. 
+
+Implementation Details. All experiments are conducted in a zero-shot setting, without any task-specific fine-tuning. We re-port standard classification metrics, including Accuracy, Precision, Recall, and F1-score. We adopt two vision–language model back-bones, Qwen3-VL-4B-Instruct 1 and Qwen3-VL-8B-Instruct 2, for per-formance comparison, while all other experiments are conducted us-ing Qwen3-VL-8B-Instruct . Following recent agentic frameworks [ 2,34 ], we exclusively use models from the Qwen-VL family, as they represent the most powerful open-source VLMs with environment-friendly parameter sizes available at the time of this work [ 13 ]. All experiments are performed on a single NVIDIA RTX 4090 GPU. For Best-of-𝑁 reasoning, we set 𝑁 = 5, and we also analyze the impact of the hyperparameter 𝑁 on detection performance in Sec. 4.5.2. All other VLM-related inference parameters follow the default configu-ration of MMD-Agent [ 16 ]. For all experiments involving Best-of-𝑁 ,we use GRM-Gemma2-2B-rewardmodel-ft [ 37 ] as the reward model for candidate selection. The prompt designs of the proposed agents used in AgentM 3D are shown in Appendix A.1. 
+
+## 4.2 Performance Comparison (RQ1) 
+
+We evaluate the proposed AgentM 3D on two M 3D benchmarks under a zero-shot setting, and compare it with strong VLM-based and agentic state-of-the-art methods. The quantitative results are summarized in Table 1. Based on the results, we draw the following observations: 
+
+• Compared with both VLM-based baselines and existing agen-tic methods, AgentM 3D achieves the strongest performance across nearly all evaluation metrics and benchmarks, demon-strating its effectiveness for zero-shot M 3D under diverse content distributions.  
+
+> 1https://huggingface.co/Qwen/Qwen3-VL-4B-Instruct
+> 2https://huggingface.co/Qwen/Qwen3-VL-8B-Instruct Agentic Mixed-Source Multi-Modal Misinformation Detection with Adaptive Test-Time Scaling Conference’17, July 2017, Washington, DC, USA
+
+Table 1: Performance comparison on MMDFake and Combined benchmarks. All results are reported in terms of Acc, F1, Recall (Rec), and Precision (Pre). ‘–’ indicates results are not available. Backbone Method MMFakeBench Combined 
+
+Acc F1 Rec Pre Acc F1 Rec Pre Qwen3-VL-4B Standard 42.9 29.2 35.8 35.8 30.3 23.6 31.0 42.3 BoN 43.7 31.1 36.4 47.9 28.2 21.9 29.5 40.5 T2Agent 50.1 50.3 49.4 54.6 35.4 35.6 38.2 45.7 MMD-Agent 55.2 55.4 55.8 57.1 41.9 40.9 44.1 48.5 MMD-Agent + BoN 57.4 57.8 58.6 58.5 40.6 39.7 42.7 48.6 
+
+AgentM 3D (Ours) 58.1 58.0 60.0 57.1 45.4 45.6 47.3 49.0 
+
+Qwen3-VL-8B Standard 46.9 37.0 39.4 59.9 33.6 28.9 36.0 40.6 BoN 45.7 35.6 38.4 62.5 33.6 28.4 36.3 42.9 T2Agent 54.3 54.0 52.0 61.3 36.2 36.1 38.8 45.5 MMD-Agent 59.4 60.2 60.3 62.5 43.3 43.5 45.2 50.5 MMD-Agent + BoN 60.1 60.7 60.4 62.9 42.3 42.6 44.3 48.7 
+
+AgentM 3D (Ours) 62.0 62.6 64.2 62.1 48.1 48.3 50.5 52.4 0 20 40 60    
+
+> Avg. Inference Time (s)
+> 45
+> 50
+> 55
+> 60
+> Accuracy (%)
+> Standard
+> BoN
+> T2Agent
+> MMD-Agent MMD-Agent+BoN
+> AgentM 3D
+> MMFakeBench
+> 020 40 60
+> Avg. Inference Time (s)
+> 35
+> 40
+> 45
+> Standard
+> BoN
+> T2Agent
+> MMD-Agent
+> MMD-Agent+BoN
+> AgentM 3D
+> Combined
+
+Figure 3: Inference efficiency comparison between AgentM 3Dand baseline methods. 
+
+• Simply augmenting standard VLM inference or existing agen-tic frameworks with BoN sampling does not consistently yield performance improvements, and performance degra-dation is frequently observed. This indicates that directly combining BoN with VLM reasoning or agentic system is in-sufficient to guarantee reliable gains. In contrast, AgentM 3Dintroduces a critique agent to explicitly evaluate and filter candidate predictions, which compensates for the shortcom-ings of naive BoN usage and enables consistent improve-ments across different settings. 
+
+## 4.3 Analysis of Inference Efficiency (RQ2) 
+
+We compare the inference efficiency of AgentM 3D with baselines in terms of the accuracy–latency trade-off under a zero-shot setting, as shown in Fig. 3. Across both MMFakeBench and the Combined benchmark, methods based on naive test-time scaling (including T2Agent) exhibit substantially higher inference latency than their vanilla counterparts, while delivering limited or inconsistent accu-racy gains. In contrast, AgentM 3D achieves the highest accuracy with a moderate increase in inference time, positioning it in a more favorable trade-off region than both standard VLM inference and existing agentic baselines. Notably, the proposed planning agent se-lectively triggers Best-of-𝑁 reasoning for only a subset of samples, with 69.1% of instances on MMFakeBench and 77.2% on the Com-bined benchmark being identified as requiring enhanced reasoning. These results indicate that adaptive test-time scaling combined with critique-aware candidate selection enables AgentM 3D to improve MMFakeBench Combined      
+
+> 40
+> 45
+> 50
+> 55
+> 60
+> 65
+> Accuracy (%)
+> MMFakeBench Combined
+> 0
+> 10
+> 20
+> 30
+> 40
+> 50
+> Avg. Inference Time (s)
+> AgentM 3Dw/o ACA w/ CCA w/o ESR w/o PA
+
+Figure 4: Impact of key components of AgentM 3D. 
+
+detection reliability without incurring excessive computational overhead, making it well suited for practical M 3D. 
+
+## 4.4 Ablation Study (RQ3) 
+
+We conduct ablation studies on AgentM 3D on MMFakeBench and the Combined benchmark to evaluate the contribution of its key components (Fig. 4). Removing early-stopping ranking (w/o ESR) significantly increases inference latency with only marginal ac-curacy changes, demonstrating its effectiveness for efficiency im-provement. Disabling all critique agents (w/o ACA) consistently degrades accuracy, especially on the Combined benchmark, high-lighting the importance of critique-aware assessment for reliable M3D. In contrast, adding an additional cross-modal critique agent (w/ CCA) leads to slight performance degradation, suggesting di-minishing returns from excessive critique. Finally, removing the planning agent (w/o PA) substantially increases inference time with-out accuracy gains, underscoring the role of planning in efficient test-time reasoning. Overall, these results validate the joint design of planning, critique-aware BoN, and early stopping in AgentM 3D. 
+
+## 4.5 Hyperparameter Analysis (RQ4) 
+
+4.5.1 Impact of the Hyperparameter 𝜏 in Early-Stopping Ranking. 
+
+We analyze the effect of the early-stopping threshold 𝜏 on detection performance and inference behavior. As shown in Fig. 5, increas-ing 𝜏 reduces the proportion of samples triggering early stopping, resulting in more extensive BoN evaluation. Accuracy improves as 𝜏 increases from 0.1 to 0.5, indicating a balanced regime where low-quality candidates are suppressed without overly restricting candidate exploration, while further increasing 𝜏 to 0.7 yields no Conference’17, July 2017, Washington, DC, USA Wei Jiang et al. 0.1 0.3 0.5 0.7     
+
+> 30
+> 40
+> 50
+> 60
+> Accuracy (%)
+> MMFakeBench
+> 0.1 0.3 0.5 0.7
+> 25
+> 30
+> 35
+> 40
+> 45
+> 50
+> Accuracy (%)
+> Combined
+> 20
+> 40
+> 60
+> Early-stopped Sample Ratio (%)
+> 20
+> 40
+> 60
+> 80
+> 100
+> Early-stopped Sample Ratio (%)
+> Accuracy Early-stopped Sample Ratio
+
+Figure 5: Effect of the early-stopping threshold 𝜏 on detection accuracy and early-stopped sample ratio. 2 3 4 5    
+
+> N
+> 30
+> 40
+> 50
+> 60
+> Accuracy (%)
+> MMFakeBench
+> 2345
+> N
+> 25
+> 30
+> 35
+> 40
+> 45
+> 50
+> Accuracy (%)
+> Combined
+> 10
+> 20
+> 30
+> 40
+> 50
+> Avg. Inference Time (s)
+> 10
+> 20
+> 30
+> 40
+> 50
+> Avg. Inference Time (s)
+> Accuracy Avg. Inference Time
+
+Figure 6: Effect of 𝑁 in BoN reasoning on detection accuracy and inference time. 
+
+additional gains and may introduce ranking noise. Overall, 𝜏 ef-fectively controls the accuracy–efficiency trade-off, with moderate values providing the most favorable balance in practice. 
+
+4.5.2 Impact of 𝑁 in BoN Reasoning. We conduct a sensitivity analysis on the number of candidates 𝑁 used in BoN reasoning, as shown in Fig. 6. Consistent with prior studies, increasing 𝑁 gen-erally leads to improved detection accuracy by enabling broader exploration of reasoning trajectories [ 26 ]. Following common prac-tice in agentic methods that adopt BoN reasoning [ 12 ], we select 
+
+𝑁 = 5 as a balanced setting that provides reliable performance gains while remaining computationally affordable in our experimental environment. As BoN reasoning is only activated for a subset of samples by the planning agent, increasing 𝑁 does not lead to a proportional increase in computation. 
+
+## 4.6 Case Study (RQ5) 
+
+Figure 7 presents a representative case from the Combined bench-mark involving a textual veracity distortion. Although both MMD-Agent+BoN and AgentM 3D generate multiple reasoning candi-dates with mixed predictions, their decision mechanisms differ substantially. For MMD-Agent+BoN, the final prediction is dom-inated by a single high-scoring reasoning path that incorrectly supports the claim, leading to an erroneous decision despite the presence of refuting candidates. Whereas, AgentM 3D incorporates critique-aware assessment to down-weight unsupported reasoning paths and emphasize candidates that are both high-confidence and critique-consistent. By aggregating reliable reasoning trajectories rather than relying solely on raw BoN scores, AgentM 3D correctly identifies the textual veracity distortion in this example. The U.S. Army welcomed its                   
+
+> first openly transgender
+> working dogs.
+> MMD -Agent+BoN Outputs
+> 1.TEXT REFUTES,
+> 2.TEXT REFUTES,
+> 3.TEXT REFUTES,
+> 4.TEXT SUPPORTS,
+> 5. TEXT SUPPORTS
+> BoN Scores
+> •0.420
+> •0.024
+> •0.609
+> •1.0
+> •0.0
+> Agent M𝟑 D Outputs
+> 1.TEXT REFUTES,
+> 2. TEXT SUPPORTS,
+> 3.TEXT REFUTES,
+> 4.TEXT SUPPORTS,
+> 5. TEXT SUPPORTS
+> BoN Scores
+> •0.993,
+> •1.0,
+> •0.794,
+> •0.0 ,
+> •0.298
+> Critique
+> •1.0
+> •0.0
+> •1.0
+> •0.0
+> •0.0
+> Sample -713
+> Ground Truth: TEXT REFUTES
+
+Figure 7: Case Study on Combined Benchmark. 
+
+## 5 Related Work 5.1 Multi-Modal Misinformation Detection 
+
+Multi-modal misinformation detection (MMD) has been extensively studied with approaches that either analyze internal inconsistencies across modalities or verify claims using external evidence. Prior work models cross-modal correlations, modality-specific seman-tics, or visual artifacts to detect textual, visual, and cross-modal distortions [ 9– 11 , 21 , 30 , 31 , 39 ], while others incorporate web re-trieval, entity matching, or verified repositories for evidence-based verification [ 20 , 35 ]. Recent advances further leverage multi-modal large language models (LLMs) and hierarchical reasoning to im-prove robustness [ 3, 24 ]. However, most methods assume a sin-gle manipulation source and generalize poorly to complex, mixed misinformation. To address this, recent agentic frameworks for zero-shot M 3D have emerged. MMD-agent [ 16 ] adopts a cascaded multi-agent design that sequentially performs textual, visual, and cross-modal detection, while T2Agent [ 5] enhances the agentic de-tection framework as a search problem using Monte Carlo Tree Search. Despite improved zero-shot capability, these approaches suf-fer from high test-time cost and loosely coupled reasoning modules. In parallel, TRUST-VL [ 36 ] targets mixed-source misinformation detection by fine-tuning on large-scale annotated data, which lim-its its applicability to zero-shot settings considered in this work. In response, we propose AgentM 3D, a decision-aware multi-agent framework that enhances zero-shot MMD via adaptive test-time scaling. AgentM 3D integrates lightweight planning, critique-aware Best-of-𝑁 , and adaptive early stopping to selectively allocate com-putation, enabling robust and cost-efficient inference. 
+
+## 5.2 LLM-based Multi-Agent Systems 
+
+Recent studies have advocated a paradigm shift from monolithic models toward compound systems composed of multiple specialized components, with multi-agent frameworks emerging as a promi-nent instantiation of this idea. LLM-based multi-agent systems have been explored across diverse domains, including narrative generation, financial trading, and cooperative problem solving, demonstrating improved reasoning, planning, and decision-making compared to single-agent counterparts [ 6, 7, 23 , 33 ]. To structure inter-agent collaboration, a variety of organizational topologies have been investigated, such as sequential pipelines, centralized hub-and-spoke designs, hierarchical tree structures, and graph-based interaction patterns [ 25 , 32 ]. More recent frameworks further Agentic Mixed-Source Multi-Modal Misinformation Detection with Adaptive Test-Time Scaling Conference’17, July 2017, Washington, DC, USA 
+
+emphasize layered or role-specialized organizations to coordinate agent behaviors effectively. Despite their success, existing multi-agent systems have not yet provided a satisfactory agentic solution to the challenges of zero-shot M 3D, such as mitigating cross-modal error propagation and regulating test-time computation in a princi-pled manner. In this work, we propose AgentM 3D, a multi-agent framework tailored to MMD, addressing the limitations of existing multi-agent systems in mixed-source and zero-shot settings. 
+
+## 6 Conclusion 
+
+In this work, we present AgentM 3D, a multi-agent framework for mixed-source multi-modal misinformation detection that in-tegrates both reliability and test-time efficiency. By integrating adaptive test-time scaling with critique-aware Best-of-𝑁 reasoning, AgentM 3D selectively allocates computation based on confidence signals, avoiding unnecessary candidate exploration while main-taining robust detection performance. Extensive experiments on MMFakeBench and a newly constructed mixed-source benchmark demonstrate that AgentM 3D consistently outperforms strong VLM-based and agentic baselines in a zero-shot setting, while achieving a favorable accuracy–efficiency trade-off. Overall, AgentM 3D pro-vides a practical and extensible foundation for deploying reliable multi-modal misinformation detection systems under realistic com-putational constraints. 
+
+## References 
+
+[1] Sara Abdali, Sina Shaham, and Bhaskar Krishnamachari. 2024. Multi-modal misinformation detection: Approaches, challenges and opportunities. Comput. Surveys 57, 3 (2024), 1–29. [2] Hao Bai, Alexey Taymanov, Tong Zhang, Aviral Kumar, and Spencer Whitehead. 2026. WebGym: Scaling Training Environments for Visual Web Agents with Realistic Tasks. arXiv preprint arXiv:2601.02439 (2026). [3] Alimohammad Beigi, Bohan Jiang, Dawei Li, Zhen Tan, Pouya Shaeri, Tharindu Kumarage, Amrita Bhattacharjee, and Huan Liu. 2024. Can LLMs Improve Multimodal Fact-Checking by Asking Relevant Questions? arXiv preprint arXiv:2410.04616 (2024). [4] Zhe Chen, Weiyun Wang, Yue Cao, Yangzhou Liu, Zhangwei Gao, Erfei Cui, Jinguo Zhu, Shenglong Ye, Hao Tian, Zhaoyang Liu, et al . 2024. Expanding performance boundaries of open-source multimodal models with model, data, and test-time scaling. arXiv preprint arXiv:2412.05271 (2024). [5] Xing Cui, Yueying Zou, Zekun Li, Peipei Li, Xinyuan Xu, Xuannan Liu, and Huaibo Huang. 2025. Tˆ 2Agent A Tool-augmented Multimodal Misinformation Detection Agent with Monte Carlo Tree Search. arXiv preprint arXiv:2505.19768 
+
+(2025). [6] Yilun Du, Shuang Li, Antonio Torralba, Joshua B Tenenbaum, and Igor Mordatch. 2023. Improving factuality and reasoning in language models through multiagent debate. In Forty-first International Conference on Machine Learning .[7] Taicheng Guo, Xiuying Chen, Yaqi Wang, Ruidi Chang, Shichao Pei, Nitesh V Chawla, Olaf Wiest, and Xiangliang Zhang. 2024. Large language model based multi-agents: A survey of progress and challenges. arXiv preprint arXiv:2402.01680 
+
+(2024). [8] Robert Irvine, Douglas Boubert, Vyas Raina, Adian Liusie, Ziyi Zhu, Vineet Mudupalli, Aliaksei Korshuk, Zongyi Liu, Fritz Cremer, Valentin Assassi, et al .2023. Rewarding chatbots for real-world engagement with millions of users. 
+
+arXiv preprint arXiv:2303.06135 (2023). [9] Wei Jiang, Tong Chen, Xinyi Gao, Wentao Zhang, Lizhen Cui, and Hongzhi Yin. 2025. Epidemiology-informed network for robust rumor detection. In Proceedings of the ACM on Web Conference 2025 . 3618–3627. [10] Wei Jiang, Tong Chen, Wei Yuan, Xiangyu Zhao, Quoc Viet Hung Nguyen, and Hongzhi Yin. 2025. Towards Propagation-aware Representation Learning for Supervised Social Media Graph Analytics. arXiv preprint arXiv:2509.01124 (2025). [11] Dhruv Khattar, Jaipal Singh Goud, Manish Gupta, and Vasudeva Varma. 2019. Mvae: Multimodal variational autoencoder for fake news detection. In The world wide web conference . 2915–2921. [12] Bingxuan Li, Yiwei Wang, Jiuxiang Gu, Kai-Wei Chang, and Nanyun Peng. 2025. Metal: A multi-agent framework for chart generation with test-time scaling. 
+
+arXiv preprint arXiv:2502.17651 (2025). [13] Mingxin Li, Yanzhao Zhang, Dingkun Long, Keqin Chen, Sibo Song, Shuai Bai, Zhibo Yang, Pengjun Xie, An Yang, Dayiheng Liu, et al . 2026. Qwen3-VL-Embedding and Qwen3-VL-Reranker: A Unified Framework for State-of-the-Art Multimodal Retrieval and Ranking. arXiv preprint arXiv:2601.04720 (2026). [14] Hongzhan Lin, Pengyao Yi, Jing Ma, Haiyun Jiang, Ziyang Luo, Shuming Shi, and Ruifang Liu. 2023. Zero-shot rumor detection with propagation structure via prompt learning. In Proceedings of the AAAI Conference on Artificial Intelligence ,Vol. 37. 5213–5221. [15] Chris Yuhao Liu, Liang Zeng, Yuzhen Xiao, Jujie He, Jiacai Liu, Chaojie Wang, Rui Yan, Wei Shen, Fuxiang Zhang, Jiacheng Xu, Yang Liu, and Yahui Zhou. 2025. Skywork-Reward-V2: Scaling Preference Data Curation via Human-AI Synergy. 
+
+arXiv preprint arXiv:2507.01352 (2025). [16] Xuannan Liu, Zekun Li, Peipei Li, Huaibo Huang, Shuhan Xia, Xing Cui, Linzhi Huang, Weihong Deng, and Zhaofeng He. 2024. Mmfakebench: A mixed-source multimodal misinformation detection benchmark for lvlms. arXiv preprint arXiv:2406.08772 (2024). [17] Kai Nakamura, Sharon Levy, and William Yang Wang. 2020. Fakeddit: A new mul-timodal benchmark dataset for fine-grained fake news detection. In Proceedings of the twelfth language resources and evaluation conference . 6149–6157. [18] Cailin O’Connor and James Owen Weatherall. 2019. The misinformation age: How false beliefs spread . Yale University Press. [19] Stefanos-Iordanis Papadopoulos, Christos Koutlis, Symeon Papadopoulos, and Panagiotis C Petrantonakis. 2024. Verite: a robust benchmark for multimodal misinformation detection accounting for unimodal bias. International Journal of Multimedia Information Retrieval 13, 1 (2024), 4. [20] Stefanos-Iordanis Papadopoulos, Christos Koutlis, Symeon Papadopoulos, and Panagiotis C Petrantonakis. 2025. Red-dot: Multimodal fact-checking via relevant evidence detection. IEEE Transactions on Computational Social Systems (2025). [21] Stefanos-Iordanis Papadopoulos, Christos Koutlis, Symeon Papadopoulos, and Panagiotis C Petrantonakis. 2025. Similarity over Factuality: Are we mak-ing progress on multimodal out-of-context misinformation detection?. In 2025 IEEE/CVF Winter Conference on Applications of Computer Vision (WACV) . IEEE, 5041–5050. [22] Gordon Pennycook and David G Rand. 2019. Fighting misinformation on social media using crowdsourced judgments of news source quality. Proceedings of the National Academy of Sciences 116, 7 (2019), 2521–2526. [23] Aske Plaat, Max van Duijn, Niki van Stein, Mike Preuss, Peter van der Putten, and Kees Joost Batenburg. 2025. Agentic large language models, a survey. arXiv preprint arXiv:2503.23037 (2025). [24] Peng Qi, Zehong Yan, Wynne Hsu, and Mong Li Lee. 2024. Sniffer: Multimodal large language model for explainable out-of-context misinformation detection. In 
+
+Proceedings of the IEEE/CVF conference on computer vision and pattern recognition .13052–13062. [25] Chen Qian, Wei Liu, Hongzhang Liu, Nuo Chen, Yufan Dang, Jiahao Li, Cheng Yang, Weize Chen, Yusheng Su, Xin Cong, et al . 2024. Chatdev: Communicative agents for software development. In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) . 15174–15186. [26] Pier Giuseppe Sessa, Robert Dadashi, Léonard Hussenot, Johan Ferret, Nino Vieillard, Alexandre Ramé, Bobak Shariari, Sarah Perrin, Abe Friesen, Geoffrey Cideron, et al . [n. d.]. Bond: Aligning llms with best-of-n distillation, 2024. URL https://arxiv. org/abs/2407.14622 ([n. d.]). [27] Lanyu Shang, Yang Zhang, Bozhang Chen, Ruohan Zong, Zhenrui Yue, Huimin Zeng, Na Wei, and Dong Wang. 2024. MMAdapt: A knowledge-guided multi-source multi-class domain adaptive framework for early health misinformation detection. In Proceedings of the ACM Web Conference 2024 . 4653–4663. [28] Weizhou Shen, Chenliang Li, Hongzhan Chen, Ming Yan, Xiaojun Quan, Hehong Chen, Ji Zhang, and Fei Huang. 2024. Small llms are weak tool learners: A multi-llm agent. arXiv preprint arXiv:2401.07324 (2024). [29] Lisa Singh, Shweta Bansal, Leticia Bode, Ceren Budak, Guangqing Chi, Korn-raphop Kawintiranon, Colton Padden, Rebecca Vanarsdall, Emily Vraga, and Yanchen Wang. 2020. A first look at COVID-19 information and misinformation sharing on Twitter. arXiv preprint arXiv:2003.13907 (2020). [30] Yaqing Wang, Fenglong Ma, Zhiwei Jin, Ye Yuan, Guangxu Xun, Kishlay Jha, Lu Su, and Jing Gao. 2018. Eann: Event adversarial neural networks for multi-modal fake news detection. In Proceedings of the 24th acm sigkdd international conference on knowledge discovery & data mining . 849–857. [31] Zongwei Wang, Min Gao, Junliang Yu, Tong Chen, and Chenghua Lin. 2026. PAMAS: Self-Adaptive Multi-Agent System with Perspective Aggregation for Misinformation Detection. arXiv preprint arXiv:2602.03158 (2026). [32] Qingyun Wu, Gagan Bansal, Jieyu Zhang, Yiran Wu, Beibin Li, Erkang Zhu, Li Jiang, Xiaoyun Zhang, Shaokun Zhang, Jiale Liu, et al . 2024. Autogen: Enabling next-gen LLM applications via multi-agent conversations. In First Conference on Language Modeling .[33] Yijia Xiao, Edward Sun, Di Luo, and Wei Wang. 2024. TradingAgents: Multi-agents LLM financial trading framework. arXiv preprint arXiv:2412.20138 (2024). [34] Yong Xien Chng, Tao Hu, Wenwen Tong, Xueheng Li, Jiandong Chen, Haojia Yu, Jiefan Lu, Hewei Guo, Hanming Deng, Chengjun Xie, et al . 2025. SenseNova-MARS: Empowering Multimodal Agentic Reasoning and Search via Reinforce-ment Learning. arXiv e-prints (2025), arXiv–2512. Conference’17, July 2017, Washington, DC, USA Wei Jiang et al. 
+
+[35] Kaiying Yan, Moyang Liu, Yukun Liu, Ruibo Fu, Zhengqi Wen, Jianhua Tao, and Xuefei Liu. 2025. Debunk and Infer: Multimodal Fake News Detec-tion via Diffusion-Generated Evidence and LLM Reasoning. arXiv preprint arXiv:2506.21557 (2025). [36] Zehong Yan, Peng Qi, Wynne Hsu, and Mong-Li Lee. 2025. Trust-vl: An ex-plainable news assistant for general multimodal misinformation detection. In 
+
+Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing . 5588–5604. [37] Rui Yang, Ruomeng Ding, Yong Lin, Huan Zhang, and Tong Zhang. 2024. Regu-larizing Hidden States Enables Learning Generalizable Reward Model for LLMs. In Advances in Neural Information Processing Systems .[38] Barry Menglong Yao, Aditya Shah, Lichao Sun, Jin-Hee Cho, and Lifu Huang. 2023. End-to-end multimodal fact-checking and explanation generation: A challenging dataset and models. In Proceedings of the 46th International ACM SIGIR Conference on Research and Development in Information Retrieval . 2733–2743. [39] Junwei Yin, Min Gao, Kai Shu, Wentao Li, Yinqiu Huang, and Zongwei Wang. 2025. Graph with Sequence: Broad-Range Semantic Modeling for Fake News Detection. In Proceedings of the ACM on Web Conference 2025 . 2838–2849. [40] Jingyi Zhang, Jiaxing Huang, Sheng Jin, and Shijian Lu. 2024. Vision-language models for vision tasks: A survey. IEEE transactions on pattern analysis and machine intelligence 46, 8 (2024), 5625–5644. [41] Qiyuan Zhang, Fuyuan Lyu, Zexu Sun, Lei Wang, Weixu Zhang, Wenyue Hua, Haolun Wu, Zhihan Guo, Yufei Wang, Niklas Muennighoff, et al . 2025. A Survey on Test-Time Scaling in Large Language Models: What, How, Where, and How Well? arXiv preprint arXiv:2503.24235 (2025). [42] Nan Zhong, Yiran Xu, Sheng Li, Zhenxing Qian, and Xinpeng Zhang. 2023. Patchcraft: Exploring texture patch for efficient ai-generated image detection. 
+
+arXiv preprint arXiv:2311.12397 (2023). [43] Ziyi Zhou, Xiaoming Zhang, Litian Zhang, Jiacheng Liu, Senzhang Wang, Zheng Liu, Xi Zhang, Chaozhuo Li, and Philip S Yu. 2024. Finefake: A knowledge-enriched dataset for fine-grained multi-domain fake news detection. arXiv preprint arXiv:2404.01336 (2024). Agentic Mixed-Source Multi-Modal Misinformation Detection with Adaptive Test-Time Scaling Conference’17, July 2017, Washington, DC, USA 
+
+## A Appendix A.1 Detailed Prompts of the Proposed Agents 
+
+Planning Agent 
+
+Given a multi-modal misinformation sample, it contains both a news caption and a news image. News caption is: <news caption >
+
+Your task is to decide whether this sample should be handled with standard reasoning or escalated to a stronger reasoning level using Best-of-N (BON) in later stages. Best-of-N (BON) refers to sampling multiple independent detection responses with the same prompt and selecting the most reliable one. Analyze the given news caption and image from the follow-ing aspects: - Whether the relationship between the caption and the im-age is clearly consistent, clearly inconsistent, or ambiguous. - Whether the caption makes claims that require explicit and concrete visual evidence. - Whether the image content alone is sufficient to verify those claims. Based on the analysis, choose ONE action from the following options: 1. [BON level-0]: No Best-of-N scaling is needed. 2. [BON level-1]: Use Best-of-N scaling. Return ONLY the action in the exact form: [BON level-n] 
+
+Textual Critique Agent 
+
+Given a news caption, news caption is: 
+
+<news caption >
+
+Your task is to assign a single score between 0 and 1 indi-cating how convincing the DETECTION RESULT is, based ONLY on its own reasoning. Detection Result: 
+
+<detection result >
+
+Result from logical consistency checking tool: 
+
+<logical consistency checking result >
+
+Score the detection result from 0 to 1: - 1.0: fully convincing, logically sound, no over-inference. - 0.5: partially convincing, some logical gaps or weak support. - 0.0: unconvincing, logical contradiction or strong over-inference. Output ONLY the score as a number between 0 and 1. 
+
+Visual Critique Agent 
+
+According to the given news image, your task is to assign a single score between 0 and 1 indicating how convincing the DETECTION RESULT is, based ONLY on its own reasoning. Detection Result: 
+
+<detection result >
+
+Result from image forgery detection tool: 
+
+<image forgery detection result >
+
+Score the detection result from 0 to 1: - 1.0: The detection result is strongly supported by the im-age forensic result, with no apparent logical gaps or over-interpretation. - 0.5: The detection result is partially supported by the image forensic result, but contains uncertainty, weak evidence, or mild over-interpretation. Conference’17, July 2017, Washington, DC, USA Wei Jiang et al. 
+
+- 0.0: The detection result is not supported by the image forensic result, or shows clear logical inconsistency or strong over-interpretation. Output ONLY the score as a number between 0 and 1. 
+
+## A.2 Algorithm 
+
+The algorithm of overall process of Best-of-𝑁 reasoning with critique-aware ranking is shown in Algorithm 1. 
+
+Algorithm 1: Best-of-𝑁 reasoning with critique-aware ranking. 
+
+Input: Agent 𝑘 input X𝑘 , candidate budget 𝑁 , threshold 𝜏 
+
+Output: Selected prediction 𝑦 ∗ and reasoning 𝑟 ∗
+
+// Generate BoN candidates  
+
+> 1
+
+Sample 𝑁 reasoning candidates {( 𝑦 (𝑛 ) , 𝑟 (𝑛 ) )} 𝑁 𝑛 =1 ∼ 𝜙 𝑘 (X 𝑘 )
+
+// Reward and critique scoring  
+
+> 2
+
+for 𝑛 ← 1 to 𝑁 do  
+
+> 3
+
+𝑢 (𝑛 ) ← R ( 𝑦 (𝑛 ) , 𝑟 (𝑛 ) ) 
+
+> 4
+
+if 𝑘 ∈ { text , image } then  
+
+> 5
+
+𝑞 (𝑛 ) ∼ 𝑔 𝑘 (𝑦 (𝑛 ) , 𝑟 (𝑛 ) , T𝑘 ) 
+
+> 6
+
+𝑠 (𝑛 ) ← 𝑢 (𝑛 ) + 𝑞 (𝑛 ) 
+
+> 7
+
+else  
+
+> 8
+
+𝑠 (𝑛 ) ← 𝑢 (𝑛 )
+
+// Early-stopping ranking via Top-𝑚 Average Gap  
+
+> 9
+
+Sort {𝑠 (𝑛 ) }𝑁 𝑛 =1 in descending order to obtain {𝑠 ( 𝑗 )↓ }𝑁 𝑗 =1 
+
+> 10
+
+for 𝑚 ← 2 to 𝑁 do  
+
+> 11
+
+Δ𝑚 ← 𝑠 (1)↓ − 1
+
+> 𝑚 −1
+
+Í𝑚 𝑗 =2 𝑠 ( 𝑗 )↓ 
+
+> 12
+
+if Δ𝑚 > 𝜏 then  
+
+> 13
+
+break 
+
+// Select best candidate among top-𝑚  
+
+> 14
+
+𝑛 ∗ ← arg max 𝑛 ∈ { 1,...,𝑚 } 𝑠 (𝑛 )↓ 
+
+> 15
+
+return (𝑦 (𝑛 ∗ ) , 𝑟 (𝑛 ∗ ) )
+
+## A.3 Details of Toolset 
+
+To support modality-specific verification in AgentM 3D, we employ a lightweight and extensible toolset that provides complementary external signals for misinformation detection. 
+
+Web Searching. We use Wikipedia 3 to retrieve encyclopedic knowl-edge for entities mentioned in news text, which serves as external evidence for textual veracity assessment. 
+
+Text Logic Consistency Checking. We adopt Qwen3-4B-Instruct-2507 4 as a logic consistency checking tool to analyze whether the textual claim exhibits logical contradictions or implausible reason-ing. 
+
+Image Forgery Detection. A well-trained image forgery detection model [ 42 ] is employed to identify potential digital manipulations in visual content, providing an objective signal for visual authenticity verification. 
+
+> 3https://www.wikipedia.org/
+> 4https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507
+
+Image Analysis. We use Qwen3-VL-8B-Instruct 5 to extract grounded descriptions of visual content, which are used for visual veracity assessment and cross-modal consistency checking.

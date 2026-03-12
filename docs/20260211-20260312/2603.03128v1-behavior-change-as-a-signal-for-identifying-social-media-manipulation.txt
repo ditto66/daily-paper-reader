@@ -1,0 +1,249 @@
+Title: Behavior Change as a Signal for Identifying Social Media Manipulation
+
+URL Source: https://arxiv.org/pdf/2603.03128v1
+
+Published Time: Wed, 04 Mar 2026 02:30:35 GMT
+
+Number of Pages: 10
+
+Markdown Content:
+# Behavior Change as a Signal for Identifying Social Media Manipulation 
+
+# Isuru Ariyarathne 
+
+Department of Data Science William & Mary Williamsburg, Virginia, USA iahewababarand@wm.edu 
+
+# Gangani Ariyarathne 
+
+Department of Data Science William & Mary Williamsburg, Virginia, USA gchewababarand@wm.edu 
+
+# Alessandro Flammini 
+
+Observatory on Social Media Indiana University Bloomington, Indiana, USA aflammin@iu.edu 
+
+# Filippo Menczer 
+
+Observatory on Social Media Indiana University Bloomington, Indiana, USA fil@iu.edu 
+
+# Alexander C. Nwala 
+
+Department of Data Science William & Mary Williamsburg, Virginia, USA acnwala@wm.edu 
+
+## Abstract 
+
+Social media accounts engaging in online manipulation can change their behaviors for re-purposing or to evade detection. Existing detection systems are built on features that do not exploit such be-havioral patterns. Here we investigate the degree to which change in behavior can serve as a signal for identifying automated or coor-dinated accounts. First, we use Behavioral Languages for Online Characterization (BLOC) to represent the behavior of a social media account as a sequence of symbols that represent the account’s ac-tions and content. Second, we segment an account’s BLOC strings and measure the changes between consecutive segments. Third, we represent an account as a feature vector that captures the distri-bution of behavioral change values. Finally, the resulting features are used to train and test supervised classifiers. We apply the pro-posed method to two detection tasks aimed at automated behavior (social bots) and coordinated inauthentic behavior (information operations). Our results reveal that the distributions of behavioral changes tend to be consistent across authentic accounts, while so-cial bots exhibit either very low or very high behavioral change. Coordinated inauthentic accounts exhibit highly similar distribu-tions of behavioral change within the same campaign, but diverse across campaigns. These patterns allow our classifiers to achieve good accuracy in both tasks, demonstrating the effectiveness of behavioral change as a signal for identifying online manipulation. 
+
+## Keywords 
+
+User Behavior Change, Automation detection, Coordination detec-tion, Social Media 
+
+## 1 Introduction 
+
+Abusive accounts on social media, like inauthentic automated (bot) or coordinated accounts, have received significant research atten-tion due to the threats they pose to the integrity of online platforms for spreading misinformation [2], manipulating public opinion [22, 3, 15], and perpetrating fraud [12]. Despite many advances, identi-fying these deceptive accounts remains a challenging task due to their ability to evolve and adapt [9, 14, 43]. Supervised detection systems are usually built from machine-learning models that are trained on features capturing some aspects of account behaviors. Features can be derived from the content of posts [17], user metadata [1], network structure [29, 31, 34], and so on. While useful, existing approaches trained on such features are typically designed to detect specific types of suspicious behaviors. Since malicious actors adjust their tactics to appear normal, switch purposes, and avoid detection, such approaches do not generalize well [42, 32, 14]. For example, Cresci et al. [13] demonstrated how coordinated accounts evolve their activity patterns over time to resemble legitimate users. Similarly, Elmas et al. [18] documented large scale account repurposing were accounts abruptly changed identity and intent. These findings suggest that behavioral change itself is a recurring tactic in online manipulation. However, behav-ioral change is not exclusive to malicious actors, as genuine users also naturally evolve over time. Moreover, existing methods are less adaptable in adversarial settings not because their features are incorrect, but because inauthentic accounts strategically shift behavior in ways that cause those signals to weaken or disappear. Therefore, it is important to examine whether behavioral change can be systematically used to distinguish manipulation from normal user evolution. We use the term behavioral change or behavior change to de-scribe how online user action and content patterns differ across consecutive time spans (Section 3.2 provides a more formal defi-nition). Our approach (Fig. 1) begins by representing social media accounts with Behavioral Languages for Online Characterization (BLOC) [27]. BLOC encodes the activities of a social media account as strings of symbols drawn from alphabets that represent the ac-count’s actions or the content of its posts. (BLOC could be replaced by another representation that captures actions and content be-haviors.) We segment an account’s BLOC words and measure the distance (change) between consecutive segments. We investigate multiple segmentation methods, segment selection methods, and distance measures as discussed in detail in Section 3. We train de-tectors of bot and coordinated accounts using features that capture the resulting distributions of behavioral change values. Our analysis shows that organic accounts tend to have normal behavioral change patterns, exhibiting neither very repetitive be-haviors nor very drastic changes. Conversely, some bot accounts exhibit unusually small change, suggesting automated behavior, while others display drastic or erratic changes, possibly when they 
+
+> arXiv:2603.03128v1 [cs.SI] 3 Mar 2026 Isuru Ariyarathne, Gangani Ariyarathne, Alessandro Flammini, Filippo Menczer, and Alexander C. Nwala
+
+are repurposed or to avoid detection. Coordinated inauthentic ac-counts belonging to the same campaign exhibit highly similar be-havioral changes, signaling a lack of independence. We demonstrate the usefulness of these signals by developing supervised machine learning models that leverage behavioral change features to iden-tify the two types of online manipulation. These results suggest that behavioral change could be leveraged to detect other forms of online abuse. We have published our code to encourage this: https://github.com/wm-newslab/behavior-change. 
+
+## 2 Related Studies 
+
+Social media abuse takes different forms such as cyberbullying, fraud, disinformation, impersonation using deep fakes, and so on [35, 26, 19, 44, 12, 16]. Since abusers often rely on automated or coordinated accounts to increase the effectiveness of their at-tacks, these kinds of social media abuse have received significant research attention. Predominant strategies for detecting both in-authentic automated and coordinated accounts rely on supervised and unsupervised machine-learning models to distinguish them from genuine ones [9, 29]. Automation detection approaches utilize classes of features that include metadata such as tweet frequency [6], profile descriptions [1], follower-friend ratios [21], and network structure [5], as well as content-based attributes like lexical patterns [23] and hashtag or URL usage [36]. While these methods have proven successful in detecting some classes of bots, they struggle due to the evolving sophistication of malicious bots. Bots can now use LLMs to generate natural language, mimic human behavior, build elaborate social net-works, and interact with genuine users online [40, 37]. This makes simple heuristics like follower counts and posting rates unreliable, leading to detection errors [20, 9, 14]. In coordination detection, researchers aim to uncover suspi-ciously similar behaviors among groups of accounts, such as identi-cal retweet patterns or synchronized posts. Network based models and clustering algorithms are often used for identifying coordinated activities on social media [5, 29]. Recent studies show that coordi-nated inauthentic accounts adjust their posting intervals [38] and modify their language to imitate genuine communities [4], making coordinated behavior harder to detect. This ongoing evolution re-flects an arms race with detection systems and highlights the need for more advanced approaches. Behavioral modeling is a promising approach in the latest gener-ation of detection systems. Models such as Act-M [8], MulBot [24], BotShape [39], and Temporal Network Logic [30] identify anom-alies by examining posting intervals, changes across behavioral dimensions, and transitions in user activities over time. Moreover, methods such as Digital DNA [10] and the BLOC framework [27] encode user behaviors as sequences of symbols to reveal repetitive or coordinated patterns. 
+
+## 3 Measuring Change in the Behaviors of Social Media Accounts 
+
+Building upon prior behavioral models, we focus on behavioral change as a signal for identifying suspicious behaviors rather than relying on features that capture predefined abusive behaviors. When examining whether an account behaves like known abusive bots or coordinated actors, rather than focusing on features about the behavior itself, we inspect how such behavior changes over time. For example, an account that suddenly becomes highly active af-ter a long dormant period, or an account that shifts from sharing personal content to spreading links to external websites, may flag suspicious behavioral anomalies even if they do not match any previously-identified abuse pattern. Before explaining our approach for measuring change in the behaviors of social media accounts, let us first explain the BLOC model we used for representing behaviors. As discussed in the introduction, one could use a different model to represent behaviors. 
+
+## 3.1 BLOC Framework 
+
+The BLOC (Behavioral Languages for Online Characterization) framework [27] provides formal languages that can be used to rep-resent the behaviors of social media accounts, irrespective of spe-cific social media platforms, account types (human or bot), or intent (malicious or benign). BLOC strings consist of symbols drawn from distinct alphabets representing an account’s actions and content .The BLOC action/pause alphabet encodes user actions such as post-ing/tweeting ( 𝑇 ), resharing/retweeting ( 𝑟 ), and replying ( 𝑝 ). Fig. 2 illustrates a possible representation of a sequence of tweets by three different Twitter 1 accounts, @NASA , @Alice , and @Bob . The @NASA 
+
+account replied to a tweet, posted a tweet, and then retweeted a tweet, resulting in the BLOC action sequence: 𝑝.𝑇 .𝑟 . Dots represent long pauses (e.g., more than one minute) between consecutive ac-tions. In Fig. 2, the same dot symbol ( .) is used to represent different long pauses. However, BLOC enables the use of different symbols to distinguish different long pauses (hour, day, week, month, year). The content alphabet encodes different kinds of post content, such as text ( 𝑡 ), links ( 𝑈 ), hashtags ( 𝐻 ), media ( 𝐸 ), and mentions ( 𝑀 ), as also illustrated in Fig. 2. 
+
+## 3.2 Measuring Change in Behavior 
+
+The BLOC strings in Fig 3 illustrate the behavioral patterns exhib-ited by different accounts. By analyzing these patterns and how they change over time, we can differentiate between authentic, and inauthentic behaviors. To capture such behavioral change patterns, we can segment BLOC strings into smaller partitions and compare the segments. We explored three segmentation methods as shown in Fig. 4. In segmentation by pauses , a new segment starts after any period of inactivity longer than a predefined threshold (e.g., one hour). Each segment then represents a session of user activity. In segmentation by week , each segment represents activities that occurred in the same week. These two approaches could result in BLOC segments of different lengths. Alternatively, segmentation by sets-of-k partitions the string into sets of equal length 𝑘 . While segmentation is based on action strings, for each action segment, we also create a content segment that includes the corresponding content symbols. After a user’s behavior is partitioned into sequential segments, we must select different segments to be compared for measuring 
+
+> 1While the platform is now called X, in this paper we use Twitter because our training and evaluation data predates the name change. Behavior Change as a Signal for Identifying Social Media Manipulation
+
+Figure 1: Overview of our Behavior Change methodology to identify social media manipulation. The feature vectors are used to train a model for a specific task, such as detecting automated or coordinated accounts. 
+
+Figure 2: BLOC representation of the behaviors of three users, 
+
+@NASA , @Alice , and @Bob using action/pause and content al-phabets. For the action/pause alphabet, the sequence of three tweets (a reply, an original tweet, and a retweet) by @NASA can be represented by three letters 𝑝.𝑇 .𝑟 separated by dots (long pauses). Using the content alphabet, it can be represented by three sets of strings (𝐸𝑚𝑡 )( 𝑚𝑚𝑡 )( 𝑚𝑚𝑚𝑚𝑚𝑈 𝑡 ) enclosed in parentheses. 
+
+how behavior evolves over time. We explored two selection meth-ods. Consider a sequence of four segments 𝑠 1, 𝑠 2, 𝑠 3, and 𝑠 4 for illus-tration. In adjacent selection, we compare consecutive segments, e.g., ( 𝑠 1 vs. 𝑠 2), ( 𝑠 2 vs. 𝑠 3), and ( 𝑠 3 vs. 𝑠 4). This method is sensitive to short-term fluctuations in behaviors. In cumulative selection, we compare each segment with the concatenation of all prior segments, e.g., ( 𝑠 1 vs. 𝑠 2), ( 𝑠 1𝑠 2 vs. 𝑠 3), and ( 𝑠 1𝑠 2𝑠 3 vs. 𝑠 4). This method captures how present behavior diverges from historical ones. We measure how an account’s behavior evolves over time by computing the differences between selected pairs of segments. We propose two methods to measure these differences. For co-sine distance, we convert two selected segments into term fre-quency vectors 𝑣 1, 𝑣 2 [27] and then compute their cosine distance (1−cos (𝑣 1, 𝑣 2)). For compression distance, we employ the Normalized Compression Distance (NCD) [7]. Let 𝐶 (·) denote the compressed length (in bytes) of a string under a given compressor (e.g., zlib). The NCD between 𝑠 1 and 𝑠 2 is defined as NCD (𝑠 1, 𝑠 2) = 𝐶 (𝑠 1𝑠 2) − min {𝐶 (𝑠 1), 𝐶 (𝑠 2)} 
+
+max {𝐶 (𝑠 1), 𝐶 (𝑠 2)} ,
+
+where 𝐶 (𝑠 1𝑠 2) denotes the compressed length of the concatenation of 𝑠 1 and 𝑠 2. Intuitively, NCD measures the degree to which the two segments share compressible patterns. Both distance measures are defined in the unit interval. We summarize the key design choices through a triple that we call change setting : (i) the segmentation method ( pauses , weeks , or 
+
+sets of k ), (ii) the segment selection method ( adjacent , cumulative ), and (iii) the distance measure ( cosine or compression distance). The set of distance values computed across all selected segment pairs represents the behavioral change of an account. We con-struct two histograms: the distribution of action behavioral distances 
+
+and the distribution of content behavioral distances , to represent a user’s action and content behavioral changes, respectively. Each histogram is built using 10 bins. We use the value of each bin as a feature, resulting in a total of 20 features that together characterize both aspects of a user’s behavioral change (Fig 1). In Section 5, these 20 features are used to identify inauthentic automation and coordination. 
+
+## 4 Discriminative Power of Behavioral Change 
+
+Here we examine the distributions of behavioral distances for dif-ferent classes of accounts across different datasets. Our goal is to show that accounts in the same class tend to exhibit similar distribu-tions of behavioral distances, but different from those of accounts in another class. In the next two subsections we compare auto-mated vs. human accounts and coordinated vs. control accounts, respectively. Note that we use the same features (distributions of behavioral distances) for automation and coordination detection. This highlights an important benefit — the ability of using our proposed method for multiple detection tasks. In this section, we measure the behavioral change of all accounts using the following settings: sets of 4 segmentation, cumulative segment selection, and 
+
+cosine distance. Then, we compare the distributions of action and content behavioral distances for the two classes of accounts. 
+
+## 4.1 Automation Behaviors 
+
+We studied automation by investigating the distributions of be-havioral change of human and bot accounts labeled by multiple researchers (Table 1). The automated accounts feature a wide variety of suspicious behaviors such as political bots, spam bots, follower bots, and so on. The distributions of action (Fig. 5a) and content (Fig. 5b) be-havioral distances for human accounts across various datasets are similar, with peaks between 0.1 and 0.3, indicating stable behavioral Isuru Ariyarathne, Gangani Ariyarathne, Alessandro Flammini, Filippo Menczer, and Alexander C. Nwala      
+
+> (a) @FoxNews (b) @elonmusk (c) @TEN_GOP
+
+Figure 3: Color-coding of BLOC action symbols of Twitter accounts to illustrate how their behaviors change (color switches). Each square represents an action. Color legend (non-exhaustive): Green - post , Red - retweet , Cyan - reply , Gray - pauses (Darker gray - longer pauses). (a) @FoxNews exhibits repetitive patterns, reflecting automated activity. (b) @elonmusk exhibits a mix of diverse actions (replies and posts) without repetitive patterns. (c) @TEN_GOP , a Russian troll account, exhibits sudden shifts between organic-looking and repetitive patterns. 
+
+Figure 4: Three ways of segmenting a user’s BLOC string. This example includes pauses less than an hour ( Δℎ ), between an hour and a day ( Δ𝑑 ), and between a day and a month (Δ𝑚 ). (a) pauses (longer than one hour). (b) weeks . (c) sets-of-k 
+
+(𝑘 = 4). 
+
+patterns over time. In contrast, the distributions of action (Fig. 5c) and content (Fig. 5d) behavioral distances are more varied across datasets of automated accounts. For example, the peaks for the distributions of content behavioral distances for bot accounts is located at low cosine distance values for some datasets (e.g., botwiki-19 , cresci-17 , gilani-17 ) and high cosine distance values for others (e.g., political-bots-19 , cresci-rtbust-19 , cresci-stock-18 ). 
+
+## 4.2 Coordination Behaviors 
+
+Similar to automation detection, behavioral change can also help reveal coordinated inauthentic accounts. We studied inauthentic coordinated behaviors using the AIBot_fox8 [40] and Information Operations (IO) [33, 27] datasets. The AIBot_fox8 dataset [40] includes 1,140 coordinated bots and 1,140 genuine human accounts. The bot accounts are from a botnet that spread harmful content such as cryptocurrency scams using ChatGPT for content generation. The bots formed dense reciprocal follow networks and frequently amplified each other’s posts. While 
+
+Table 1: Datasets used for automation analysis, from the Bot Repository (botometer.osome.iu.edu/bot-repository).                                 
+
+> Dataset # Bots # Humans
+> astroturf-20 [32] 505 0botometer-feedback-19 [41] 123 364 botwiki-19 [42] 695 0celebrity-19 [41] 020,911 cresci-17 [11] 5,812 2,744 cresci-rtbust-19 [25] 352 340 cresci-stock-18 [12] 6,926 6,155 gilani-17 [21] 1,058 1,381 midterm-18[42] 07,409 political-bots-19 [41] 62 0pronbots-19 [41] 14,867 0varol-17 [36] 728 1,483 vendor-purchased-19 [41] 928 0verified-19 [42] 01,986 Total 32,056 42,773
+
+these accounts may appear normal when examined individually, the key observation is that they exhibit highly similar behavioral patterns, particularly in how they post and interact with content, suggesting inauthentic coordination. To study their behaviors, we compared them to an equal number of genuine human-controlled accounts from the same dataset. These human accounts were sam-pled evenly from four datasets: botometer-feedback-19 , gilani-17 ,
+
+midterm-18 , and varol-17 (Table 1). The IO dataset contains IO accounts engaged in information operations ( campaigns ) targeting 32 countries, as well as normal (control ) accounts that discussed similar topics in the same time periods. According to Twitter, an information operation is a form of platform abuse that involves artificial amplification or suppression of information or behavior that manipulates or disrupts the user experience. They often deploy different tactics including automa-tion and coordination. We provide additional information about the IO dataset in Section 5.2. Behavior Change as a Signal for Identifying Social Media Manipulation   
+
+> (a) Human – Action (b) Human – Content
+> (c) Bot – Action (d) Bot – Content
+
+Figure 5: Comparison of the distributions of (a) action and (b) content behavioral distances for human accounts, and (c) action and (d) content behavioral distances for bot accounts. Colors denote account classes (human in blue and bots in yellow) and patterns denote behavior types (solid for actions and hatched for content). 
+
+Fig. 6 shows that human and coordinated bot accounts in the 
+
+AIBot_fox8 dataset have similar distributions of action behavioral distances, with peaks concentrated at low cosine distance values (0.1–0.3). In contrast, their distributions of content behavioral dis-tances reveal stronger differences: while the distances of human accounts clusters more heavily around lower values (0.1–0.3), coor-dinated bot accounts exhibit a more dispersed distribution extend-ing toward higher distance values, suggesting that these accounts frequently change the content they post. Fig. 7 compares the distributions of behavioral distances for IO 
+
+and control accounts in the four campaigns with the largest numbers of IO accounts. In some cases, such as the distributions of action 
+
+Figure 6: Distributions of action (left) and content (right) behavioral distances for human (blue) and coordinated bot (yellow, hatched) accounts from the AIBot_fox8 dataset. Isuru Ariyarathne, Gangani Ariyarathne, Alessandro Flammini, Filippo Menczer, and Alexander C. Nwala 
+
+> (a) China_4
+> (b) Venezuela_4
+> (c) Spain
+> (d) Uganda_2
+
+Figure 7: Distributions of action (left) and content (right) behavioral distance for control (blue) and IO (yellow, hatched) accounts from four IOs: (a) China_4 , (b) Venezuela_4 , (c) Spain ,and (d) Uganda_2 .
+
+behavioral distances for the China_4 campaign and the distribu-tions of content behavioral distances for the Venezuela_4 and Spain 
+
+campaigns, we observe marked differences between human and control accounts. In other cases, such as action behavioral distances for the Venezuela_4 and Uganda_2 campaigns, the differences be-tween human and control distributions are smaller, highlighting the difficulty of detecting coordinated accounts — especially when some campaigns employ actual humans [28]. 
+
+## 5 Evaluation 
+
+Let us evaluate the performance of our behavioral change models on two tasks — identifying automated and coordinated accounts on Twitter. We approach these tasks as supervised machine learning problems and train two separate Behavior Change models for each task. As we summarized in Fig. 1 and explained in Section 3, for a given task (automation or coordination detection) and a given dataset, we model the behaviors of accounts using BLOC and then measure change through the distribution of action behavioral dis-tances and the distribution of content behavioral distances . Each distribution is constructed using 10 bins, producing a total of 20 features that jointly characterize the action and content behav-ioral changes of users. Finally, we used the 20 features to train and evaluate a machine learning model for the task. 
+
+## 5.1 Automation Detection 
+
+5.1.1 Dataset. We utilized a diverse collection of publicly available labeled Twitter datasets from the bot repository (Table 1), which has been extensively used by other researchers. These datasets contain accounts labeled as either bot (positive class) or human 
+
+(negative class). The following datasets contain the accounts labeled as humans: verified-19 , midterm-18 , and celebrity-19 . The remaining datasets described next cover a diverse range of automation behav-iors. The botwiki-19 , vendor-purchased-19 , and botometer-feedback-19 datasets contain bot accounts that self-identify, were purchased, and manually labeled through feedback, respectively. Event-specific datasets includes bot accounts that were active around elections (political-bots-19 and astroturf-20 ) or stock manipulation ( cresci-stock-18 ) events. The cresci-17 and cresci-rtbust-19 datasets contain spambots and botnets with similar temporal behaviors. To main-tain data quality, we only included accounts that posted at least 20 tweets. For each selected account, we used up to a maximum of 300 of their most recent tweets. The resulting automation detection evaluation dataset includes a total of 32,056 bot accounts and 42,773 human accounts. 
+
+5.1.2 Method. We systematically explored multiple change set-tings to build our Behavior Change bot detection model, as de-scribed in Section 3.2. We only included users with at least three segments (two distance values). The 20 features from the distri-butions of action and content behavioral distances were used to train a K-nearest neighbors ( 𝐾 -NN) classifier with cosine similarity as the classifier distance metric. We employed five-fold stratified cross-validation. We varied the number of neighbors from 𝐾 = 1
+
+to 𝐾 = 10 , and the performance of each was assessed using the macro-averaged 𝐹 1 score. We then selected the best-performing classifier as the one with the highest macro-𝐹 1. We compared our Behavior Change model to Botometer-v4, which was trained and evaluated on the same datasets. Botometer-v4 is one of the most popular state-of-the-art bot detection methods that extracts over 1,000 features from a Twitter account’s profile, content, sentiment, social network, and temporal activity [32]. 
+
+5.1.3 Results. Table 2 reports the classification performance of our Behavior Change models built using different change settings. The combination of the cumulative segment selection method and the compression distance measure consistently produced the strongest results across all segmentation strategies. We discuss these results in Section 6. Table 3 compares the bot detection classification re-sults of Botometer-v4 with our best-performing Behavior Change model (change setting: sets-of-4 segmentation, cumulative segment selection, and compression distance measure). Botometer-v4 slightly outperforms Behavior Change ( 𝐹 1: 0.92 vs. 0.86). Behavior Change as a Signal for Identifying Social Media Manipulation 
+
+Table 2: 𝐹 1 scores of Behavior Change models built using different change settings in the automation detection task. For each segmentation method, the best-performing setting is shown in bold. Segmentation Cosine Compression 
+
+Sets of four (Adjacent) 0.81 0.81 Sets of four (Cumulative) 0.80 0.86 
+
+Pauses (Adjacent) 0.83 0.84 Pauses (Cumulative) 0.79 0.86 
+
+Weeks (Adjacent) 0.77 0.76 Weeks (Cumulative) 0.76 0.80 Table 3: Precision, recall, and 𝐹 1 of best-performing Behav-ior Change bot detection model (change setting: sets-of-4 
+
+segmentation, cumulative segment selection, and compres-sion distance measure) and Botometer-v4 using 5-fold cross-validation. Model Precision Recall 𝑭 1
+
+Behavior Change 0.86 0.86 0.86 Botometer-v4 0.93 0.91 0.92 
+
+## 5.2 Coordination Detection 
+
+5.2.1 Dataset. We conducted the coordination analysis using the IO dataset [33, 27] and AIBot_fox8 dataset [40], which were in-troduced in Section 4.2. We used all accounts in the AIBot_fox8 
+
+dataset for our evaluation. Since the IO dataset includes influence campaigns that spanned months or even years, we focused on the periods when IO accounts were active [27]. More specifically, for each campaign in the IO dataset, we added tweets posted by IO ac-counts in two-week intervals, skipping intervals without IO account activity. Once a total of 10 IO accounts were found, the procedure stopped at the end of the year. To ensure a fair comparison, we ran-domly selected the same number of control accounts as IO accounts. This procedure resulted in 32 campaigns suitable for coordination analysis. 
+
+5.2.2 Method. Similarly to automation detection, we selected users with at least two distance values and evaluated multiple Behavior Change models, built using different change settings. Since our automation and coordination detection models use the same un-derlying Behavior Change system, we used the same 20 features from the distributions of action/content behavioral distances, in-troduced in Section 3.2. We again employed a 𝐾 -NN classifier with 
+
+𝐾 = 1 . . . 10 and cosine distance as the classifier distance metric. Here we used leave-one-out cross-validation (LOOCV) to evaluate each model, where each account is held out once as a test instance while the remaining accounts form the training set. Predictions across all LOOCV folds are then aggregated to compute macro-averaged 𝐹 1 scores, and then we report on the highest 𝐹 1 across 𝐾 
+
+values. We compared our Behavior Change models to three state-of-the-art coordination detection methods [29] on the same datasets. The Co-RT (co-retweet) method identifies coordination by detecting accounts that retweet the same or highly similar sets of posts. The 
+
+Hash (hashtag) method identifies coordinated accounts by using the 
+
+Table 4: 𝐹 1 scores of Behavior Change models built using different change settings in the coordination detection task, for evaluation conducted on the AIBot_fox8 dataset. For each segmentation method, the best-performing setting is shown in bold. Segmentation Cosine Compression 
+
+Sets of four (Adjacent) 0.87 0.86 Sets of four (Cumulative) 0.89 0.86 Pauses (Adjacent) 0.94 0.93 Pauses (Cumulative) 0.90 0.88 Weeks (Adjacent) 0.83 0.82 Weeks (Cumulative) 0.86 0.85 
+
+Table 5: Mean 𝐹 1 scores across all IO campaigns of Behavior Change models built using different change settings in the coordination detection task, for the evaluation conducted on the IO datasets. For each segmentation method, the best-performing setting is shown in bold. Segmentation Cosine Compression 
+
+Sets of four (Adjacent) 0.80 0.79 Sets of four (Cumulative) 0.73 0.84 
+
+Pauses (Adjacent) 0.79 0.88 
+
+Pauses (Cumulative) 0.73 0.86 co-occurrence of hashtags across users, capturing suspicious topical alignment. The Activity method relies on temporal synchronization in posting behavior to detect coordination. 
+
+5.2.3 Results. Table 4 presents the 𝐹 1 scores of our Behavior Change coordination detection models built using different change set-tings, for the evaluation conducted on the AIBot_fox8 dataset. Sim-ilarly, Table 5 reports mean 𝐹 1 scores across all campaigns in the IO datasets. The control users in the IO dataset have sparse data since a majority of them did not post consistently across the weeks when the IO accounts posted. Consequently, we did not use the segmentation method by weeks in our evaluation. Table 6 compares 
+
+𝐹 1 scores of our best-performing Behavior Change coordination de-tection models to the three baselines on both datasets. All baselines were evaluated on the same IO datasets to ensure fairness. Table 7 breaks down the IO results by individual campaigns. We discuss these results in the next section. 
+
+## 6 Discussion 
+
+We address two major problems of existing social media manipula-tion detection systems. First, most current methods are designed for specific tasks, such as detecting spam bots, identifying coordinated accounts, or finding hacked accounts. Consequently, they do not generalize well to other tasks. Second, suspicious users often change their behaviors over time to evade detection, which makes these systems less reliable in the long run. To overcome these challenges, we introduced a new approach that uses behavioral change itself as a signal for detecting suspicious activity. This idea can be applied Isuru Ariyarathne, Gangani Ariyarathne, Alessandro Flammini, Filippo Menczer, and Alexander C. Nwala 
+
+Table 6: Precision, recall, and 𝐹 1 of the best performing Be-havior Change coordination detection model and baselines. For the AIBot_fox8 dataset we use the following change set-ting: pauses segmentation, adjacent segment selection, and 
+
+cosine distance measure. For the IO datasets we use pauses 
+
+segmentation, adjacent segment selection, and compression 
+
+distance measure, and report mean 𝐹 1 across IO campaigns. Dataset Model Precision Recall 𝑭 1
+
+AIBot_fox8 Behavior Change 0.94 0.94 0.94 Co-RT 0.99 1.00 0.99 
+
+Hashtag 1.00 0.21 0.34 Activity 0.99 1.00 0.99 
+
+IO Behavior Change 0.89 0.88 0.88 
+
+Co-RT 0.43 0.71 0.53 Hashtag 0.46 0.81 0.56 Activity 0.64 0.95 0.76 to detect multiple suspicious behaviors. In our work, we focused on two examples: detecting automation and detecting inauthentic coordination. In addition to its generality, our proposed method is also flexible. Specifically, one can replace BLOC, which we used to represent user behaviors, with another representation that captures actions and/or content behaviors and then apply a suitable technique to measure distances between behavioral representations. Once distance values are obtained, they can be used to create features to train a detec-tion model. Even though our investigations used Twitter data, our framework can be applied to other social media platforms, provided that user behavior can be represented in a similar way. We found that genuine human accounts exhibit neither very repetitive behaviors nor very drastic changes, while the behavioral changes of bot accounts deviate from those of genuine humans (Fig. 5). Some exhibit unusually small change, suggesting auto-mated behavior, while others display large changes, possibly when they are repurposed or to avoid detection. We evaluated Behavior Change models for bot detection with different change settings (Ta-ble 2). The compression distance measure may perform well because it preserves the sequential order of user actions when comparing segments, whereas cosine distance discards temporal information. The cumulative segmentation method, capturing both short-term and long-term changes in behavior, also performed effectively. Seg-menting by either sets-of-4 or pauses consistently outperformed segmenting by weeks. The latter could result in comparing pairs of segments with significantly different lengths, which could happen if a user actively posted content in one week but not in the following week. Although Botometer-V4 achieved higher overall 𝐹 1 (Table 3) than our Behavior Change model, it relies on multiple classes of fea-tures extracted from a user’s profile, content, sentiment, network, and temporal attributes to accomplish this result. In contrast, our Behavior Change model only uses features extracted from a user’s action and content behaviors. These results show that behavioral change alone provides valuable insight for identifying automated accounts. We observed that coordinated accounts tend to display patterns of behavioral change that are similar to each other and different 
+
+Table 7: 𝐹 1 scores of the best-performing Behavior Change coordination detection model compared to three baselines, for each IO campaign. The Behavior Change model was built using the following change setting: pauses segmentation, ad-jacent segment selection method, and compression distance measure. The best result for each row is shown in bold. Dataset Behav. Change Hashtag Co-RT Activity 
+
+Qatar 0.71 0.67 0.73 0.81 
+
+Iran_5 0.74 0.64 0.69 0.79 
+
+Egypt_UAE 0.74 0.00 0.00 0.76 
+
+Russia_1 0.74 0.62 0.71 0.50 Russia_3 0.78 0.67 0.69 0.80 
+
+Iran_3 0.78 0.33 0.00 0.64 Spain 0.81 0.92 0.98 0.96 Ecuador 0.82 0.00 0.64 0.71 Armenia 0.83 0.67 0.69 0.78 China_5 0.85 0.66 0.67 0.83 Iran_1 0.86 0.63 0.00 0.76 Uganda_2 0.87 0.76 0.99 0.75 Venezuela_4 0.87 0.95 0.95 0.84 Venezuela_1 0.87 0.61 0.78 0.66 Iran_4 0.89 0.67 0.71 0.77 Russia_4 0.90 0.00 0.00 0.77 Iran_2 0.91 0.58 0.67 0.74 Uganda_1 0.91 0.67 0.69 0.67 Catalonia 0.92 0.67 0.67 0.79 UAE 0.92 0.00 0.00 0.72 Mexico_1 0.92 0.66 0.63 0.67 China_2 0.92 0.63 0.00 0.69 Ghana_Nigeria 0.92 0.67 0.66 0.75 Bangladesh 0.93 0.56 0.00 0.80 Venezuela_5 0.93 0.66 0.65 0.65 China_4 0.93 0.97 0.99 0.98 Iran_7 0.93 0.64 0.61 0.91 Thailand 0.94 0.67 0.79 0.72 Venezuela_3 0.96 0.00 0.56 0.72 Iran_6 0.97 0.67 0.69 0.75 China_1 1.00 0.59 0.00 0.65 Venezuela_2 1.00 0.58 0.00 0.84 
+
+Average 0.88 0.56 0.53 0.76 from those of control accounts (Fig. 6 and 7). Our Behavior Change models performed consistently well at detecting coordination across different change settings (Tables 4 and 5) and in both evaluation datasets (Table 6). In particular, Behavior Change outperformed the baselines on average across IO campaigns and in most individual campaigns (Ta-ble 7). Pause-based segmentation, which captures how user behav-ior evolves across discrete activity sessions, produced the strongest results for both evaluation datasets. The adjacent segmentation method worked better here, while different similarity measures yielded higher 𝐹 1 in different datasets. Among the baselines, Co-RT and Activity performed best on the AIBot_fox8 dataset. These coordinated bots share similar content, making them easier for Behavior Change as a Signal for Identifying Social Media Manipulation 
+
+the Co-RT method to detect. Additionally, these bots post on time-lines that differ noticeably from human accounts in the dataset, enabling the Activity method to differentiate them more clearly. However, the performance of both baselines did not translate to the IO datasets, which involves accounts employing a wider range of tactics. We focused exclusively on user actions and content, but we rec-ognize that there are other important aspects of user behavior that could be explored in future work. This includes capturing changes in topics and patterns of interactions (e.g., following accounts or reacting to posts). Considering these additional aspects of behaviors could provide a fuller picture of behavioral change and help detect an even wider range of suspicious behaviors. 
+
+## 7 Acknowledgments 
+
+The authors acknowledge William & Mary Research Computing for providing computational resources and technical support that have contributed to the results reported within this paper. 
+
+## References 
+
+[1] Adnan Ali, Jinlong Li, Huanhuan Chen, Uzair Aslam Bhatti, and Asad Khan. 2023. Real-time spammers detection based on metadata features with machine learning. Intelligent Automation & Soft Computing , 38, 3. [2] Sahar Baribi-Bartov, Briony Swire-Thompson, and Nir Grinberg. 2024. Super-sharers of fake news on twitter. Science , 384, 6699, 979–982. [3] Alessandro Bessi and Emilio Ferrara. 2016. Social bots distort the 2016 us presidential election online discussion. First monday , 21, 11-7. [4] Keith Burghardt, Ashwin Rao, Georgios Chochlakis, Baruah Sabyasachee, Siyi Guo, Zihao He, Andrew Rojecki, Shrikanth Narayanan, and Kristina Lerman. 2024. Socio-linguistic characteristics of coordinated inauthentic accounts. Pro-ceedings of the International AAAI Conference on Web and Social Media , 18, 1, (May 2024), 164–176. [5] Qiang Cao, Xiaowei Yang, Jieqi Yu, and Christopher Palow. 2014. Uncovering large groups of active malicious accounts in online social networks. In Proceed-ings of the 2014 ACM SIGSAC Conference on Computer and Communications Security (CCS ’14), 477–488. [6] Zi Chu, Steven Gianvecchio, Haining Wang, and Sushil Jajodia. 2012. Detect-ing automation of twitter accounts: are you a human, bot, or cyborg? IEEE Transactions on dependable and secure computing , 9, 6, 811–824. [7] R. Cilibrasi and P.M.B. Vitanyi. 2005. Clustering by compression. IEEE Transac-tions on Information Theory , 51, 4, 1523–1545. [8] Alceu Ferraz Costa, Yuto Yamaguchi, Agma Juci Machado Traina, Caetano Traina Jr., and Christos Faloutsos. 2017. Modeling temporal activity to detect anomalous behavior in social media. ACM Trans. Knowl. Discov. Data , 11, 4, Article 49. [9] Stefano Cresci. 2020. A decade of social bot detection. Commun. ACM , 63, 10, (Sept. 2020), 72–83. [10] Stefano Cresci, Roberto Di Pietro, Marinella Petrocchi, Angelo Spognardi, and Maurizio Tesconi. 2016. Dna-inspired online behavioral modeling and its application to spambot detection. IEEE Intelligent Systems , 31, 5, 58–64. [11] Stefano Cresci, Roberto Di Pietro, Marinella Petrocchi, Angelo Spognardi, and Maurizio Tesconi. 2017. The paradigm-shift of social spambots: evidence, theories, and tools for the arms race. In Proceedings of the 26th International Conference on WWW Companion , 963–972. [12] Stefano Cresci, Fabrizio Lillo, Daniele Regoli, Serena Tardelli, and Maurizio Tesconi. 2019. Cashtag piggybacking: uncovering spam and bot activity in stock microblogs on twitter. ACM Trans. Web , 13, 2, Article 11, (Apr. 2019), 27 pages. [13] Stefano Cresci, Marinella Petrocchi, Angelo Spognardi, and Stefano Tognazzi. 2021. The coming age of adversarial social bot detection. First Monday , 26, 7, (May 2021). [14] Stefano Cresci, Kai-Cheng Yang, Angelo Spognardi, Roberto Di Pietro, Filippo Menczer, and Marinella Petrocchi. 2025. Demystifying misconceptions in social bots research. Social Science Computer Review , 0, 0, 08944393251376707. [15] Matthew R DeVerna, Francesco Pierri, Yong-Yeol Ahn, Santo Fortunato, Alessan-dro Flammini, and Filippo Menczer. 2025. Modeling the amplification of epi-demic spread by individuals exposed to misinformation on social media. npj Complexity , 2, 11. https://doi.org/10.1038/s44260-025-00038-y. [16] Jose A Diaz-Garcia and Joao Paulo Carvalho. 2025. A survey of textual cyber abuse detection using cutting-edge language models and large language models. 
+
+arXiv preprint arXiv:2501.05443 .[17] John P. Dickerson, Vadim Kagan, and V.S. Subrahmanian. 2014. Using sentiment to detect bots on twitter: are humans more opinionated than bots? In 2014 IEEE/ACM International Conference on Advances in Social Networks Analysis and Mining (ASONAM) , 620–627. [18] Tuğrulcan Elmas, Rebekah Overdorf, and Karl Aberer. 2022. Misleading repur-posing on twitter. (2022). https://arxiv.org/abs/2010.10600. [19] Forough Farazmanesh, Fateme Foroutan, and Amir Jalaly Bidgoly. 2022. Com-promised account detection using authorship verification: a novel approach. (2022). https://arxiv.org/abs/2206.03581. [20] Emilio Ferrara, Onur Varol, Clayton Davis, Filippo Menczer, and Alessandro Flammini. 2016. The rise of social bots. Commun. ACM , 59, 7, (June 2016), 96– 104. [21] Zafar Gilani, Reza Farahbakhsh, Gareth Tyson, Liang Wang, and Jon Crowcroft. 2017. An in-depth characterisation of bots and humans on twitter. (2017). https://arxiv.org/abs/1704.01508. [22] Nir Grinberg, Kenneth Joseph, Lisa Friedland, Briony Swire-Thompson, and David Lazer. 2019. Fake news on twitter during the 2016 u.s. presidential election. Science , 363, 6425, 374–378. [23] Isa Inuwa-Dutse, Bello Shehu Bello, and Ioannis Korkontzelos. 2018. Lexical analysis of automated accounts on twitter. (2018). https://arxiv.org/abs/1812.0 7947. [24] Lorenzo Mannocci, Stefano Cresci, Anna Monreale, Athina Vakali, and Maurizio Tesconi. 2022. Mulbot: unsupervised bot detection based on multivariate time series. In 2022 IEEE International Conference on Big Data (Big Data) , 1485–1494. [25] Michele Mazza, Stefano Cresci, Marco Avvenuti, Walter Quattrociocchi, and Maurizio Tesconi. 2019. Rtbust: exploiting temporal patterns for botnet de-tection on twitter. In Proceedings of the 10th ACM Conference on Web Science 
+
+(WebSci ’19), 183–192. [26] Meike Nauta, Mena Badieh Habib, and Maurice van Keulen. 2017. Detecting hacked twitter accounts based on behavioural change. In 13th International Conference on Web Information Systems and Technologies (WEBIST) , 19–31. [27] Alexander C Nwala, Alessandro Flammini, and Filippo Menczer. 2023. A lan-guage framework for modeling social media account behavior. EPJ Data Science ,12, 1, 33. [28] Jonathan Corpus Ong and Jason Vincent Cabañes. 2018. Architects of net-worked disinformation: behind the scenes of troll accounts and fake news production in the philippines. Newton Tech4Dev Network. (2018). https://doi .org//10.7275/2cq4-5396. [29] Diogo Pacheco, Pik-Mai Hui, Christopher Torres-Lugo, Bao Tran Truong, Alessandro Flammini, and Filippo Menczer. 2021. Uncovering coordinated networks on social media: methods and case studies. Proceedings of the Inter-national AAAI Conference on Web and Social Media , 15, 1, (May 2021), 455– 466. [30] Mina Young Pedersen, Marija Slavkovik, and Sonja Smets. 2023. Detecting bots with temporal logic. Synthese , 202, 3, 79. [31] Jorge Rodríguez-Ruiz, Javier Israel Mata-Sánchez, Raúl Monroy, Octavio Loyola-González, and Armando López-Cuevas. 2020. A one-class classification ap-proach for bot detection on twitter. Computers & Security , 91, 101715. [32] Mohsen Sayyadiharikandeh, Onur Varol, Kai-Cheng Yang, Alessandro Flam-mini, and Filippo Menczer. 2020. Detection of novel social bots by ensembles of specialized classifiers. In Proceedings of the 29th ACM International Conference on Information & Knowledge Management (CIKM), 2725–2732. [33] Ozgur Can Seckin, Manita Pote, Alexander C Nwala, Lake Yin, Luca Luceri, Alessandro Flammini, and Filippo Menczer. 2025. Labeled datasets for research on information operations. Proceedings of the International AAAI Conference on Web and Social Media , 19, 1, (June 2025), 2567–2574. [34] D Hudson Smith, Carl Ehrett, and Patrick Warren. 2025. Unsupervised detection of coordinated information operations in the wild. EPJ Data Science , 14, 1, 26. [35] Kurt Thomas, Damon McCoy, Chris Grier, Alek Kolcz, and Vern Paxson. 2013. Trafficking fraudulent accounts: the role of the underground market in twitter spam and abuse. In 22nd USENIX Security Symposium , 195–210. https://www.u senix.org/conference/usenixsecurity13/technical-sessions/paper/thomas. [36] Onur Varol, Emilio Ferrara, Clayton Davis, Filippo Menczer, and Alessandro Flammini. 2017. Online human-bot interactions: detection, estimation, and characterization. Proceedings of the International AAAI Conference on Web and Social Media , 11, 1, 280–289. [37] Morgan Wack, Carl Ehrett, Darren Linvill, and Patrick Warren. 2025. Genera-tive propaganda: evidence of ai’s impact from a state-backed disinformation campaign. PNAS nexus , 4, 4, pgaf083. [38] Derek Weber and Lucia Falzon. 2022. Temporal nuances of coordination net-work semantics. (2022). https://arxiv.org/abs/2107.02588. [39] Jun Wu, Xuesong Ye, and Chengjie Mou. 2023. Botshape: a novel social bots de-tection approach via behavioral patterns. In Advanced Information Technologies and Applications (ICAITA 2023). Academy and Industry Research Collaboration Center (AIRCC), (Mar. 2023), 45–60. Isuru Ariyarathne, Gangani Ariyarathne, Alessandro Flammini, Filippo Menczer, and Alexander C. Nwala 
+
+[40] Kai-Cheng Yang and Filippo Menczer. 2024. Anatomy of an ai-powered mali-cious social botnet. Journal of Quantitative Description: Digital Media , 4. [41] Kai-Cheng Yang, Onur Varol, Clayton A. Davis, Emilio Ferrara, Alessandro Flammini, and Filippo Menczer. 2019. Arming the public with artificial intelli-gence to counter social bots. Human Behavior and Emerging Technologies , 1, 1, 48–61. [42] Kai-Cheng Yang, Onur Varol, Pik-Mai Hui, and Filippo Menczer. 2020. Scalable and generalizable social bot detection through data selection. Proceedings of the AAAI Conference on Artificial Intelligence , 34, 01, (Apr. 2020), 1096–1103. [43] Kai-Cheng Yang, Onur Varol, Alexander C. Nwala, Mohsen Sayyadiharikandeh, Emilio Ferrara, Alessandro Flammini, and Filippo Menczer. 2023. Social bots: detection and challenges. (2023). https://arxiv.org/abs/2312.17423. [44] Steven Yen, Melody Moh, and Teng-Sheng Moh. 2021. Detecting compromised social network accounts using deep learning for behavior and text analyses. 
+
+International Journal of Cloud Applications and Computing , 11, 2, 1–13.

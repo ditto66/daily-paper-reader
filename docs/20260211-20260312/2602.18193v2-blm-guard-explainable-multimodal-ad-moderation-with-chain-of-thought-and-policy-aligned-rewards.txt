@@ -1,0 +1,553 @@
+Title: BLM-Guard: Explainable Multimodal Ad Moderation with Chain-of-Thought and Policy-Aligned Rewards
+
+URL Source: https://arxiv.org/pdf/2602.18193v2
+
+Published Time: Tue, 24 Feb 2026 03:04:51 GMT
+
+Number of Pages: 9
+
+Markdown Content:
+# BLM-Guard: Explainable Multimodal Ad Moderation with Chain-of-Thought and Policy-Aligned Rewards 
+
+## Yiran Yang 1,2*† , Zhaowei Liu 1* , Yuan Yuan 1, Yukun Song 1,2 , Xiong Ma 1, Yinghao Song 1, Xiangji Zeng 1, Lu Sun 1, Yulu Wang 1, Hai Zhou 1, Shuai Cui 1,3 , Zhaohan Gong 1, Jiefei Zhang 1‡ 
+
+> 1
+
+Kuaishou Technology, 2Beijing University of Posts and Telecommunications, 3Shandong University yyr2023110885@bupt.edu.cn, songyukun@bupt.edu.cn, 202315156@mail.sdu.edu.cn, 
+
+{liuzhaowei03, yuanyuan06, maxiong, songyinghao03, zengxiangji, sunlu05, wangyulu05, zhouhai, gongzhaohan, zhangjiefei }@kuaishou.com 
+
+Abstract 
+
+Short-video platforms now host vast multimodal ads whose deceptive visuals, speech and subtitles demand finer-grained, policy-driven moderation than community safety filters. We present BLM-Guard, a content-audit framework for commer-cial ads that fuses Chain-of-Thought reasoning with rule-based policy principles and a critic-guided reward. A rule-driven ICoT data-synthesis pipeline jump-starts training by generating structured scene descriptions, reasoning chains and labels, cutting annotation costs. Reinforcement learning then refines the model using a composite reward balancing causal coherence with policy adherence. A multitask archi-tecture models intra-modal manipulations (e.g., exaggerated imagery) and cross-modal mismatches (e.g., subtitle–speech drift), boosting robustness. Experiments on real short-video ads show BLM-Guard surpasses strong baselines in accuracy, consistency and generalization. 
+
+## Introduction 
+
+With the rise of generative AI and the rapid growth of short-video platforms like TikTok and Instagram Reels , cre-ating multimodal advertising content has become easier and cheaper than ever (Qi et al. 2022; Yeh et al. 2024). Brands and individuals can now swiftly produce videos that com-bine visuals, speech, and text with minimal cost. While this boosts monetization efficiency and creative diversity, it also poses new challenges for content moderation. Unlike general community moderation—typically fo-cused on coarse risks like violence or nudity (Helff et al. 2025; Inan et al. 2023)—ad moderation demands fine-grained, policy-driven compliance checks. Violations are of-ten subtle or disguised, including exaggerated claims, mis-leading cues, or rule evasion (Goldstein et al. 2023), and frequently manifest as modality misalignments —e.g., visu-ally truthful but verbally deceptive content, benign captions with provocative imagery, or mismatched subtitles and au-dio (Guo et al. 2024). 
+
+> *
+
+These authors contributed equally. 
+
+> †
+
+Work done during an internship at Kuaishou Technology. 
+
+> ‡
+
+Project Leader Copyright © 2026, Association for the Advancement of Artificial Intelligence (www.aaai.org). All rights reserved. 
+
+However, existing moderation approaches—such as static rule-based filters or general-purpose vision–language mod-els (VLMs)—struggle in high-risk, multimodal ad settings due to three key limitations: (i) limited cross-modal causal reasoning (Ahn et al. 2024); (ii) poor adaptability to policy drift (Lu et al. 2025); and (iii) lack of task-specific reason-ing for nuanced commercial risks (Liu et al. 2025b). Most prior work targets generic harm detection (Qu et al. 2024), offering limited support for regulation-sensitive ad content. We propose BLM-Guard , a moderation framework for policy-sensitive short-video ads, featuring three key innova-tions: (1) An Interleaved-modal Chain-of-Thought (ICoT) 
+
+pipeline (Gao et al. 2025) that integrates visual grounding with causal reasoning (Wang et al. 2023; Xia et al. 2025) for explainable decisions. (2) A self-adaptive GRPO rein-forcement learning framework with hybrid rewards fusing rule correctness and principle-based self-consistency (Chen et al. 2025) to handle policy shifts. (3) A multi-task archi-tecture modeling intra-modal and cross-modal violations to enhance robustness and generalization. To support systematic evaluation, we release the BLM-Guard Benchmark , a real-world dataset of short-video ads annotated with a three-level risk taxonomy aligned with plat-form policies: (i) risk scenario (e.g., illegal content, mis-leading marketing); (ii) violation type (e.g., income exagger-ation, privacy exposure); (iii) risk severity (high, medium, low). This hierarchical design supports interpretable super-vision and rigorous policy-aligned evaluation. A visual sum-mary is shown in Figure 1. 
+
+Our main contributions are: 
+
+• We introduce BLM-Guard Benchmark , a real-world dataset for ad moderation, structured across seven risk scenarios and fine-grained violation types, enabling policy-grounded evaluation. • We propose BLM-Guard , a multimodal modera-tion framework combining rule-driven ICoT reasoning, consistency-aware reinforcement learning, and multi-task modeling to ensure policy-compliant and explain-able decisions.              
+
+> arXiv:2602.18193v2 [cs.CV] 23 Feb 2026 The video uses scripted dialogue like
+> “cheating for money ”;
+> The video exaggerates with “free high-end
+> phone ”and “zero cost ”claims.
+> Dialogue implies deceptive behavior
+> (“cheating for money ”).
+> The video promotes a suspicious app
+> through flirtatious language .
+> The video promotes a herbal tea and no
+> exaggerated claims —content is compliant.
+> The video-wide applicability and may be
+> paired with poor visual quality.
+> The video spreads superstition (zodiac luck,
+> fortune change).
+> Text includes suggestive terms like "kidney
+> deficiency" and "stick it daily" 。
+
+Figure 1: BLM-Guard Benchmark Taxonomy. Our benchmark organizes commercial short-video ads into a hierarchical risk taxonomy with seven core violation scenarios and fine-grained subtypes. Each node reflects a policy-sensitive violation type (e.g., income exaggeration, privacy leak, feudal superstition), and is further associated with a severity level (high, medium, low). This structure supports interpretable supervision and enables fine-grained evaluation of model performance on diverse and nuanced moderation cases. A dedicated “No Risk” category is also included to balance risk distribution. 
+
+## Task Formulation and BLM-Guard Benchmark 
+
+Task Definition 
+
+We formulate the task as policy-aligned moderation of com-mercial short-video ads. Given a video v = ⟨f1, f 2, . . . , f T ⟩
+
+composed of multimodal frames (visuals and ASR tran-scripts), and a policy set P = {π1, . . . , π n} from plat-form guidelines, the goal is to determine for each policy πi
+
+whether it is violated, and to generate an interpretable rea-soning trace. Formally, the moderation model Greasoner outputs a deci-sion ˆYi ∈ { 0, 1} and a reasoning chain Ri:
+
+( ˆYi, R i) ni=1 = Greasoner (v, P), (1) where ˆYi = 1 denotes a violation. Each Ri follows a struc-tured path: Scenario Identification → Violation Typing →
+
+Rule Matching → Decision .This structure supports explainable moderation and facil-itates reward modeling for reinforcement learning. 
+
+BLM-Guard Benchmark 
+
+To support structured moderation training, we introduce the 
+
+BLM-Guard Benchmark , a short-video dataset with three-level policy labels (Figure 1). • Level 1: Severity — High, Medium, or Low, reflecting potential legal, reputational, or user experience risks. • Level 2: Scenario — e.g., illegal content, false marketing, misleading operations, etc. • Level 3: Violation Type — e.g., income exaggeration, privacy leak, feudal superstition, and others. This hierarchical structure enables fine-grained, policy-aligned supervision and supports nuanced detection of mul-timodal violations. 
+
+Data Construction 
+
+We collect 5–45s commercial ads from a short-video plat-form, covering domains like e-commerce, health, education, and lifestyle. The dataset includes: 
+
+1. Expert-Audited Ads: Videos labeled by professional moderators with verified risk types. 
+
+2. Rule-Triggered Ads: Samples flagged by rule-based moderation systems. 
+
+3. High-Impression Compliant Ads: Popular videos with low complaint rates to improve generalization. Each video is annotated with its risk severity, scenario, and violation type. A subset contains structured reasoning traces to support both supervised learning and interpretable reward-based training. 
+
+## Methodology 
+
+As shown in Fig. 2, we address the compliance and control-lability challenges of short-video ad moderation via a two-stage pipeline. To overcome the limitations of single-stage tuning in policy coverage and interpretability, we decom-pose the training into: • Rule-guided SFT: Injecting policy priors and reasoning skills into the VLM through Interleaved-modal Chain-of-Thought (ICoT) supervision. (a) Dataset Curation                                                           
+
+> Attn.
+> frame_id:2
+> key_region:(y=0.8,x=0.7)
+> score：7.696
+> frame_id:7
+> key_region:(y=0.3,x=0.75)
+> score:7.5
+> frame_id:13
+> key_region:(y=0.8,x=0.7)
+> score:7.728
+> Judge
+> VLM
+> key
+> frames
+> key
+> regions
+> "Brother,brother,brother,are
+> youwatchingthevideo?It's
+> righthere,bigbrother."
+> I'mwaitingforyouhere~"
+> "Wegaveawayover5,000
+> yesterday—completelyfree.
+> Opportunitiesdon’twait.Hurry
+> andclickthelinkbelow.”
+> "Oh,therewasstillthat
+> emotionalmomentlasttime.
+> F**,seriouslyornot?"
+> "Oneday,hesecretlydrank
+> XXXBloodPressureTea,and
+> guesswhat?"
+> SafetyPolicy
+
+Stage 1 Rule-Anchored SFT Stage 2 Self-Consistency RL       
+
+> VideoASR
+> uniform
+> [{"startTime":0,"en
+> dTime":13,"text":"
+> 1’...16’
+> H
+> urryup"},...
+> ✅
+> Visual-AudioObservation
+> RiskScreening
+> DeepAnalysis
+> FinalJudgment❌
+
+VLM                    
+
+> <think>
+> Obs:Videoshowsphonesandslogans.Audio
+> claims...
+> Risk:Exaggeratedphraseslike"top-spec",...
+> Cause:Likelyfalsemarketing;...
+> </think>
+> <answer>
+> {"ViolationScene":"FalseMarketing",
+> "ViolationType":"Exaggeration"}
+> </answer>
+
+<think>
+
+s1
+
+s2
+
+s3
+
+...
+
+final
+
+type:...
+
+scene:...
+
+</answer>
+
+</think>
+
+<answer>
+
+...  
+
+> policymodel
+> <think>
+> <think>
+> </think><answer>
+> </think>
+> </answer>
+> </answer><answer>
+
+...            
+
+> GroupComputationAccuracy:50%.
+> Completeness:30%.
+> Conservatism:20%.
+> Accuracy:60%
+> Completeness:30%
+> Prudence:10%
+> Accuracy:60%
+> Rationality:40%
+> ViolationScene:✅
+> ViolationType:
+> Violation Scene: ❌
+> Violation Type: ❌
+> ❌
+
+...
+
+> 1...72
+
+Figure 2: Our method adopts a progressive two-stage pipeline for policy-controllable content moderation. In Stage 1 (Rule-driven SFT Cold Start), we synthesize structured visual-language Chain-of-Thought (ICoT) data via keyframe selection and multi-step prompting using InternVL. This enables supervised fine-tuning with rule-anchored causal supervision. In Stage 2 (Self-adaptive GRPO Reinforcement Learning), we apply a safety-aware data curation strategy and propose a Self-Adaptive Critique Reward (SACR) to dynamically evaluate reasoning outputs. The model is optimized using a modified Group-wise Rel-ative Policy Optimization (GRPO) algorithm with token-level normalization and dynamic sampling. This multi-stage process enables the model to first learn fine-grained compliance reasoning and then refine its moderation behavior through adaptive, reward-driven training. • Self-adaptive GRPO: Optimizing behavior via Group-wise Relative Policy Optimization guided by dynamic rule-aware rewards. This design enables the model to first acquire structured compliance reasoning and then adaptively refine moderation accuracy against evolving risk patterns. 
+
+Cold Start Strategy: Rule-Guided Causal Supervision 
+
+To provide an effective initialization for subsequent rein-forcement learning, we propose a two-stage strategy that constructs structured visual reasoning data based on safety rules: • Stage-1: Keyframe and Region Selection via Risk-Prompt Anchored Coarse Filtering • Stage-2: Interleaved Multi-stage CoT Generation using Vision-Language Models 
+
+Keyframe and Region Extraction. We employ a two-step selection strategy to extract informative frames and salient regions that represent high-risk cues: 1. CLIP-based Prompt Similarity. For a video with N =16 uniformly sampled frames {fi}16 
+
+> i=1
+
+, we compute their semantic similarity to a set of K = 7 predefined risk prompts (e.g., “false marketing”, “illegal content”) using CLIP-ViT-L/14 (Radford et al. 2021). Denote the visual embedding of frame i as vi ∈ Rd and prompt embedding 
+
+k as tk ∈ Rd. The maximum similarity score of frame i
+
+is: 
+
+si = max 
+
+> k
+
+ v⊤ 
+
+> i
+
+tk
+
+∥vi∥ · ∥ tk∥
+
+
+
+(2) This results in a similarity vector s = [ s1, s 2, . . . , s 16 ] ∈
+
+R16 .2. Adaptive Keyframe Selection (AKS). To ensure both temporal coverage and semantic diversity, we apply a hybrid BIN+TOP strategy (Tang et al. 2025) to select 
+
+m = 3 keyframes. Specifically, the video is evenly di-vided into m temporal bins, and the most relevant frame is selected within each bin (BIN). If the number of se-lected frames is less than m, we supplement it with top-scoring frames across the entire video (TOP), ensuring complementary selection of globally salient frames. 
+
+Kbin =
+
+> m
+
+[
+
+> j=1
+
+
+
+arg max 
+
+> i∈S j
+
+si
+
+
+
+, Sj =
+
+ (j − 1) · Nm , j · Nm
+
+
+
+(3) If |K bin | < m , we supplement it with top-ranked global scores not in Kbin :
+
+Kfinal = Kbin ∪ { Top-(m − |K bin |)} (4) 3. Patch-level Region Extraction. For each selected frame 
+
+fi, we feed it into InternViT-6B to extract patch-wise fea-tures Hi ∈ RP ×d. The saliency score for patch p is com-puted via L2 norm: 
+
+score i,p = H(p) 
+
+> i2
+
+(5) The highest scoring patch is selected as the visual key region. Combining the selected frames and regions, we define the structured visual clue as: 
+
+K = {(fi, region i)}3
+
+> i=1
+
+Interleaved Multi-stage CoT Generation. Given the keyframe set K, ASR transcripts, and a predefined safety rule schema, we perform a three-stage prompting process with a frozen InternVL-3-78B model to generate structured reasoning: • Step-1 (Observation) : Describe the visual content, sum-marize ASR transcripts, and assess the consistency be-tween modalities. • Step-2+3 (Risk Screening + Causal Analysis) : Identify potential policy violations and analyze their underlying causes. • Step-4 (Final Verdict) : Integrate multi-stage reasoning to reach a final compliance decision in accordance with the rule schema. For each sample j, the model produces a visual-text-label triplet: 
+
+
+
+K(j), T (j), y (j)
+
+, j = 1 , 2, . . . , |D| 
+
+where K denotes the selected keyframes, T the reasoning chain, and y the predicted compliance label. Internally, the model first generates intermediate reason-ing tuples (obs i, risk i, cause i, verdict i)16  
+
+> i=1
+
+for each frame, which are then aggregated into the final triplet  K, T, y .
+
+Rule-Anchored Supervised Fine-tuning (SFT) On top of the synthesized dataset, we perform supervised fine-tuning of the base VLM. The training objective consists of two components: 
+
+L = LCE (⟨answer ⟩) + λ KL  pthink ∥ prule 
+
+,
+
+where the primary loss LCE computes the cross-entropy on the <answer> token, encouraging accurate prediction of the compliance label. The auxiliary KL term aligns the model’s reasoning distribution ( <think> ) with a rule-guided prior prule , which we construct by tokenizing the tar-get violation scene and type (e.g., “false marketing”, “adult content”) into a keyword set. These keywords are normal-ized into a soft token-level target distribution, serving as an interpretable and structured prior to guide the model’s causal reasoning. In summary, we construct a compact yet effective multi-modal CoT corpus and perform rule-anchored fine-tuning to establish a solid cold-start foundation for downstream rein-forcement learning. 
+
+Reinforcement Learning: Principle-Guided Self-Consistent Optimization 
+
+Building on the cold-start model trained with multimodal CoT-style supervision, we apply online reinforcement learn-ing (RL) to further enhance the model’s reasoning abil-ity and policy alignment in content moderation scenarios. The overall training procedure is illustrated in Algorithm 1 ,which consists of three main components: • Data Curation : Constructing difficult and diverse sam-ples to improve generalization. • Reward Design : Combining rule-based correctness, principle-guided critique, and format consistency. • Policy Optimization : Applying GRPO with token-level normalization and dynamic sampling. To improve generalization and sample efficiency in RL, we construct a refined dataset DRL from the supervised set 
+
+D through the following strategies: 
+
+(1) Rejection Sampling. We sample from D with high temperature for 4 passes, collecting all examples where the model fails consistently across generations as hard samples. 
+
+(2) Safety-Aware Concatenation. To increase multi-modal diversity and risk density, we concatenate semanti-cally related prompts or risky ASR segments to simulate more complex decision contexts. 
+
+Note: We use only ASR since OCR in short videos is often noisy (e.g., overlays), which harms reasoning. ASR provides more stable guidance. Algorithm 1: BLM-Guard: Self-Adaptive GRPO Training 
+
+procedure TRAIN (πθ , R, DRL , S) ▷ Inputs : πθ =moderation model (from cold-start), R = reward model (rule + format + SCA-R), DRL = reasoning dataset, S = training steps, 
+
+G = group size per input, ε = clip scale 
+
+for s = 1 to S do for each x in batch from DRL do Phase 1: Response Generation and Reward 
+
+Generate G responses {oi}Gi=1 ∼ πθ (x)
+
+for i = 1 to G do 
+
+rrule  
+
+> i
+
+← rule match score 
+
+rformat  
+
+> i
+
+← format compliance score 
+
+rscaR  
+
+> i
+
+← critique score from guide model 
+
+ri ← rrule  
+
+> i
+
++ rformat  
+
+> i
+
++ rscaR 
+
+> i
+
+end for if Var( {ri}) = 0 then continue ▷ Skip zero-variance batch 
+
+end if 
+
+μ, σ ← mean and std of {ri}
+
+Phase 2: GRPO Optimization for i = 1 to G do 
+
+Ai ← ri − μσ ▷ Z-score advantage 
+
+Ki ← Pθ (oi)
+
+Pθold (oi)
+
+end for 
+
+Bs ← ε · S − sS ▷ Annealed clip factor Compute loss: 
+
+LRL = − 1
+
+G
+
+> G
+
+X
+
+> i=1
+
+min ( KiAi, clip (Ki, 1 − Bs, 1 + Bs) · Ai)
+
+θ ← θ − η · ∇ θ LRL 
+
+θold ← θ ▷ Update reference policy 
+
+end for end for return Optimized policy πθ
+
+end procedure 
+
+Reward Design We propose a hybrid reward mechanism that combines factual correctness, interpretable reasoning, and structured output format. The final reward used in RL is: 
+
+r = rrule + rformat + rscaR 
+
+(1) Rule-Based Reward. We assign a discrete correctness reward based on whether the predicted violation scene and 
+
+type match the ground truth. Each correct field contributes 0.5: 
+
+rrule =
+
+
+
+1.0, if ˆyscene = yscene and ˆytype = ytype 
+
+0.5, if ˆyscene = yscene and ˆytype ̸ = ytype 
+
+0.0, otherwise 
+
+(2) Format-Aware Reward. To ensure outputs follow the required structure, we assign a binary reward based on the presence of both <think> and <answer> tags: 
+
+rformat = I[<think> ∈ ˆy ∧ <answer> ∈ ˆy]
+
+(3) SCA-R: Self-Consistency and Adaptive Reward. To address reward misalignment caused by policy drift, we pro-pose SCA-R , a self-consistency reward guided by scenario-adaptive critique. For each (input, response) pair, a guide model acts as a rating expert. It receives the <think> trace, ground-truth labels, and moderation guidelines, then dynamically con-structs scoring principles P = {pk} (e.g., causal clarity, risk attribution), each with weight wk.The model conducts step-by-step critique and assigns a score in {0, 0.5, 1 }, where 1 indicates both reasoning and conclusion are aligned with policy. 
+
+rscaR =
+
+> K
+
+X
+
+> k=1
+
+wk · score pk (ˆ y)
+
+This adaptive reward enhances interpretability while maintaining alignment under evolving moderation stan-dards. 
+
+Policy Optimization with GRPO We adopt Group Rel-ative Policy Optimization (GRPO) and introduce several modifications for improved stability and sample efficiency: 
+
+Token-Level Normalization. Unlike standard GRPO that normalizes loss at the sequence level, we compute the objec-tive at the token level to mitigate reward bias due to varying output lengths. 
+
+Group Advantage. For each input, we sample G re-sponses and compute relative advantage: 
+
+Ai = ri − mean ({rj }Gj=1 )
+
+std ({rj }Gj=1 ) (6) 
+
+Clipped Policy Loss. The final RL objective is: 
+
+LRL = −E
+
+"
+
+1
+
+G
+
+> G
+
+X
+
+> i=1
+
+min ( Ki, clip (Ki, 1 − B, 1 + B)) · Ai
+
+#
+
+(7) where the policy ratio is: 
+
+Ki = Pθ (ˆ yi | x)
+
+Pθold (ˆ yi | x) (8) The clipping factor B is annealed with training step s:
+
+Bs =
+
+> s
+
+Y
+
+> i=1
+
+ stotal − istotal 
+
+
+
+· ϵ (9) 
+
+Dynamic Sampling. To avoid gradient collapse when all 
+
+G samples receive identical rewards, we skip such batches and continue sampling until variance is non-zero. In summary, our hybrid reward design and GRPO op-timization jointly enhance the model’s factual precision, causal reasoning clarity, and alignment with real-world moderation policies. Figure 3: Comprehensive comparison of model strategies and components. Left : Radar plots highlight improvements in accu-racy, precision, and consistency across key metrics. Middle : Heatmaps visualize performance across fine-grained risk scenarios and external benchmarks. Right : Histograms show the distributional gains in consistency induced by Rule-SFT and SCA-R reward learning. 
+
+## Experiments 
+
+Baselines We compare BLM-Guard against several state-of-the-art open-source multimodal models. These include guard-specific architectures LlavaGuard-7B 
+
+and QwenGuard-7B (Helff et al. 2025), and strong general-purpose foundation models: LLaVA-Next-Video-7B (Zhang et al. 2024), InternVL3-8B (Zhu et al. 2025), and Qwen2.5-VL-7B-Instruct (Bai et al. 2025) (our back-bone). We also evaluate Kimi-VL-A3B-Thinking (Team et al. 2025), which utilizes structured Chain-of-Thought reasoning. For fair comparison, all models are adapted to video moderation via uniform frame sampling and ASR transcript concatenation. 
+
+Datasets. We evaluate BLM-Guard on our BLM-Guard-Bench , a custom benchmark annotated with a three-level policy taxonomy: Severity , Scenario , and Violation Type (Fig. 1). This dataset includes structured reasoning traces for supervised and reward learning. To assess gen-eralization, we further incorporate five public datasets: LSPD (Phan et al. 2022), XD-Violence (Wu et al. 2020), UCF-Crime (Sultani, Chen, and Shah 2018), FakeSV (Qi et al. 2023), and FVC (Papadopoulou, Papadopoulos, and Kompatsiaris 2018), covering violence, anomaly, and mis-information detection. Evaluation of unseen policy domains follows the protocol in SafeWatch (Chen et al. 2024). 
+
+Metrics We evaluate moderation along two dimensions: 
+
+(1) Violation Identification Accuracy. Based on struc-tured <answer> outputs, we report Wide Accuracy (partial match of violation scene or type) and Strict Accuracy (full match of both). We also include macro/weighted precision, recall, and F1-score for harmful vs. harmless classification. 
+
+(2) Consistency Score. To assess reasoning quality in the <think> section, we use a GPT-4o-based guide model to score alignment with moderation principles. The score ranges from 0 to 1, with higher values indicating more con-sistent and interpretable reasoning. 
+
+Results on BLM-Guard Benchmark As Table 1 shows, 
+
+BLM-Guard outperforms all baselines in severity classi-fication, overall accuracy, binary risk detection, and rea-soning consistency, producing more stable and principle-aligned outputs. This demonstrates the effectiveness of com-bining rule-guided supervision, structured reasoning, and re-inforcement learning. Severity-wise Classification Accuracy Binary Detection Con. Model High Medium Low None w-Acc. s-Acc. NR (B) R (B) P R F1 (R) Con.                                                                                                             
+
+> Qwen2.5-VL-7B 0.745 0.701 0.669 0.781 0.712 0.701 0.755 0.918 0.831 0.576 0.680 0.642 Qwen2.5-VL-32B 0.732 0.685 0.652 0.768 0.703 0.682 0.875 0.823 0.769 0.835 0.801 0.667 Kimi-VL-A3B-Thinking 0.728 0.684 0.651 0.624 0.529 0.511 0.887 0.561 0.588 0.898 0.711 0.701 InternVL3-14B 0.581 0.535 0.502 0.622 0.521 0.499 0.931 0.519 0.485 0.950 0.642 0.593 InternVL3-8B 0.695 0.645 0.607 0.701 0.389 0.631 0.921 0.299 0.461 0.961 0.623 0.611 QwenGuard-7B 0.733 0.631 0.599 0.693 0.582 0.512 0.823 0.695 0.642 0.785 0.706 0.598 LlavaGuard-7B 0.301 0.322 0.395 0.392 0.255 0.235 0.329 0.258 0.193 0.251 0.218 0.527 LLaVA-Next-Video-7B 0.321 0.345 0.435 0.443 0.342 0.312 0.348 0.3101 0.1540 0.1780 0.165 0.533
+> BLM-Guard (ours) 0.978 0.940 0.902 0.986 0.962 0.914 0.781 0.950 0.976 0.962 0.969 0.845
+
+Table 1: Evaluation results of harmfulness detection for short-video advertisements. The left block reports severity-wise clas-sification accuracy across High , Medium , Low , and None levels. The middle block presents overall accuracy, including lenient accuracy ( w-Acc. ) and strict accuracy ( s-Acc. ). The right block shows binary detection metrics: recall of non-risky ( NR (B) ) and risky ( R (B) ) classes, along with precision ( P) and recall ( R) for the risky class. “ Con. ” denotes reasoning–answer consistency scores assessed by GPT-4o (ranging from 0 to 1). Bold values indicate the best performance in each column; BLM-Guard 
+
+achieves the strongest results across all metrics. 
+
+Generalization on Existing Datasets. BLM-Guard gen-eralizes well to public benchmarks (LSPD, XD-Violence, UCF-Crime, FakeSV, FVC), particularly excelling in mis-information scenarios (FakeSV/FVC) where prior models struggle. While these datasets do not directly evaluate fac-tual consistency, BLM-Guard effectively detects deceptive content and cross-modal inconsistencies, consistent with its internal benchmark performance (see Figure 3). 
+
+## Ablation Study 
+
+We evaluate BLM-G UARD (Qwen2.5-VL-7B) across seven configurations to verify the impact of our training stages: (1) 
+
+Ans-SFT and (2) Think-SFT (single-component tuning); (3) Full-SFT (13k) vs. (4) Part-SFT (5k) (data scaling); (5) 
+
+Rule-SFT (5k) (rule-anchored joint tuning); (6) +Rule-RL 
+
+(rule-based reward learning); and (7) +SCA-R (Full) , our fi-nal setup with SCA-R guided RL. The results, summarized in Table 2, highlight the synergy between rule-aligned SFT and SCA-R refinement.                                         
+
+> Setting s-Acc. PRF1 Con.
+> Ans-SFT 0.648 0.765 0.702 0.732 0.412 Think-SFT 0.612 0.720 0.679 0.699 0.585 Full-SFT (13k) 0.7925 0.874 0.862 0.867 0.762 Part-SFT (5k) 0.768 0.780 0.840 0.809 0.762 Rule-SFT (5k) 0.783 0.882 0.853 0.867 0.776 + Rule-RL 0.801 0.915 0.874 0.894 0.781 + SCA-R (Full) 0.914 0.976 0.962 0.969 0.845
+
+Table 2: Ablation on Qwen2.5-VL-7B. Ans-SFT /Think-SFT are single-supervision baselines. Rule-SFT uses rule-aligned tuning. +Rule-RL /+SCA-R introduce reward learn-ing; SCA-R adds adaptive alignment. Con. denotes reason-ing consistency. 
+
+Findings: (1) Rule-SFT outperforms single-stage SFT by improving both accuracy and interpretability. (2) RL en-hances robustness; combining Rule-SFT with rule-based RL yields strong gains. (3) The full version (+SCA-R) achieves the best overall performance in reasoning quality and policy alignment. 
+
+## Related Work 
+
+VLM Guardrails. Early guardrails like LLAMA -GUARD (Inan et al. 2023) and L LAVA GUARD (Helff et al. 2025) focused on text/image safety. While recent works extend to video (Chen et al. 2024) and legal alignment (Lu et al. 2025), they often fail to capture nuanced ad violations like misleading visuals or exaggerated claims. 
+
+CoT and RL Alignment. CoT interpretability (Tanneru et al. 2024; Xu et al. 2024) and multi-step reasoning (e.g., Tree-of-Thoughts (Yao et al. 2023), GuardAgent (Xiang et al. 2025)) are foundational to our approach. In multi-modal safety, GuardReasoner (Liu et al. 2025a) and MM-RLHF (Zhang et al. 2025) explore preference-based RL. We extend these by incorporating policy-specific, dynamic prin-ciples to boost alignment. 
+
+Rule-Guided Data & ICoT. Instruction tuning (e.g., Self-Instruct (Wang et al. 2023)) and policy-grounded generation (e.g., MSR-Align (Xia et al. 2025)) minimize annotation costs. Unlike these, we introduce Interleaved CoT (ICoT) and adaptive keyframe sampling specifically designed for structured reasoning in multimodal ad contexts. 
+
+## Conclusion 
+
+We propose BLM-Guard , an explainable multimodal framework for short-video ad moderation. By integrating 
+
+Chain-of-Thought (CoT) reasoning with rule-aligned Rein-forcement Learning (RL), BLM-Guard ensures high accu-racy and policy-grounded transparency. Leveraging a risk-tiered benchmark, the framework utilizes a multi-task objec-tive to detect nuanced violations, such as intra-modal exag-gerations and cross-modal mismatches. Experiments show that BLM-Guard significantly outperforms SOTA baselines and exhibits robust generalization across unseen policies and diverse datasets, proving its utility in high-stakes modera-tion. References 
+
+Ahn, D.; Choi, Y.; Yu, Y.; Kang, D.; and Choi, J. 2024. Tun-ing Large Multimodal Models for Videos using Reinforce-ment Learning from AI Feedback. In Ku, L.-W.; Martins, A.; and Srikumar, V., eds., Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , 923–940. Bangkok, Thailand: As-sociation for Computational Linguistics. Bai, S.; Chen, K.; Liu, X.; Wang, J.; Ge, W.; Song, S.; Dang, K.; Wang, P.; Wang, S.; Tang, J.; Zhong, H.; Zhu, Y.; Yang, M.; Li, Z.; Wan, J.; Wang, P.; Ding, W.; Fu, Z.; Xu, Y.; Ye, J.; Zhang, X.; Xie, T.; Cheng, Z.; Zhang, H.; Yang, Z.; Xu, H.; and Lin, J. 2025. Qwen2.5-VL Technical Report. arXiv:2502.13923. Chen, Y.; Ge, Y.; Wang, R.; Ge, Y.; Cheng, J.; Shan, Y.; and Liu, X. 2025. GRPO-CARE: Consistency-Aware Reinforcement Learning for Multimodal Reasoning. arXiv:2506.16141. Chen, Z.; Pinto, F.; Pan, M.; and Li, B. 2024. SafeWatch: An Efficient Safety-Policy Following Video Guardrail Model with Transparent Explanations. arXiv:2412.06878. Gao, J.; Li, Y.; Cao, Z.; and Li, W. 2025. Interleaved-Modal Chain-of-Thought. arXiv:2411.19488. Goldstein, J. A.; Sastry, G.; Musser, M.; DiResta, R.; Gentzel, M.; and Sedova, K. 2023. Generative Language Models and Automated Influence Operations: Emerging Threats and Potential Mitigations. arXiv:2301.04246. Guo, K.; Utkarsh, A.; Ding, W.; Ondracek, I.; Zhao, Z.; Freeman, G.; Vishwamitra, N.; and Hu, H. 2024. Mod-erating Illicit Online Image Promotion for Unsafe User-Generated Content Games Using Large Vision-Language Models. arXiv:2403.18957. Helff, L.; Friedrich, F.; Brack, M.; Kersting, K.; and Schramowski, P. 2025. LlavaGuard: An Open VLM-based Framework for Safeguarding Vision Datasets and Models. arXiv:2406.05113. Inan, H.; Upasani, K.; Chi, J.; Rungta, R.; Iyer, K.; Mao, Y.; Tontchev, M.; Hu, Q.; Fuller, B.; Testuggine, D.; and Khabsa, M. 2023. Llama Guard: LLM-based Input-Output Safeguard for Human-AI Conversations. arXiv:2312.06674. Liu, Y.; Gao, H.; Zhai, S.; Xia, J.; Wu, T.; Xue, Z.; Chen, Y.; Kawaguchi, K.; Zhang, J.; and Hooi, B. 2025a. GuardReasoner: Towards Reasoning-based LLM Safe-guards. arXiv:2501.18492. Liu, Y.; Zhai, S.; Du, M.; Chen, Y.; Cao, T.; Gao, H.; Wang, C.; Li, X.; Wang, K.; Fang, J.; Zhang, J.; and Hooi, B. 2025b. GuardReasoner-VL: Safeguarding VLMs via Rein-forced Reasoning. arXiv:2505.11049. Lu, X.; Zhang, T.; Meng, C.; Wang, X.; Wang, J.; Zhang, Y.; Tang, S.; Liu, C.; Ding, H.; Jiang, K.; Tang, K.; Wen, B.; Zheng, H.-T.; Yang, F.; Gao, T.; Zhang, D.; and Gai, K. 2025. VLM as Policy: Common-Law Content Moderation Framework for Short Video Platform. arXiv:2504.14904. Papadopoulou, O.; Papadopoulos, S.; and Kompatsiaris, Y. 2018. A two-level verification approach for multimedia con-tent with few available ground truth labels. In 2018 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , 1982–1986. IEEE. Phan, D.-D.; Nguyen, T. T.; Nguyen, Q. H.; Tran, H. L.; Nguyen, K. N. K.; and Vu, D. L. 2022. LSPD: A Large-Scale Pornographic Dataset for Detection and Classification. 
+
+International Journal of Intelligent Engineering & Systems ,15(1): 198–210. Qi, P.; Bu, Y.; Cao, J.; Ji, W.; Shui, R.; Xiao, J.; Wang, D.; and Chua, T.-S. 2022. FakeSV: A Multimodal Benchmark with Rich Social Context for Fake News Detection on Short Video Platforms. arXiv:2211.10973. Qi, P.; Bu, Y.; Cao, J.; Ji, W.; Shui, R.; Xiao, J.; Wang, D.; and Chua, T.-S. 2023. FakeSV: A Multimodal Benchmark with Rich Social Context for Fake News Detection on Short Video Platforms. In Proceedings of the AAAI Conference on Artificial Intelligence .Qu, Y.; Shen, X.; Wu, Y.; Backes, M.; Zannettou, S.; and Zhang, Y. 2024. UnsafeBench: Benchmarking Image Safety Classifiers on Real-World and AI-Generated Images. arXiv:2405.03486. Radford, A.; Kim, J. W.; Hallacy, C.; Ramesh, A.; Goh, G.; Agarwal, S.; Sastry, G.; Askell, A.; Mishkin, P.; Clark, J.; Krueger, G.; and Sutskever, I. 2021. Learning Transfer-able Visual Models From Natural Language Supervision. arXiv:2103.00020. Sultani, W.; Chen, C.; and Shah, M. 2018. Real-World Anomaly Detection in Surveillance Videos. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR) .Tang, X.; Qiu, J.; Xie, L.; Tian, Y.; Jiao, J.; and Ye, Q. 2025. Adaptive Keyframe Sampling for Long Video Understand-ing. arXiv:2502.21271. Tanneru, S. H.; Ley, D.; Agarwal, C.; and Lakkaraju, H. 2024. On the Hardness of Faithful Chain-of-Thought Rea-soning in Large Language Models. arXiv:2406.10625. Team, K.; Du, A.; Yin, B.; Xing, B.; Qu, B.; Wang, B.; Chen, C.; Zhang, C.; Du, C.; Wei, C.; Wang, C.; Zhang, D.; Du, D.; Wang, D.; Yuan, E.; Lu, E.; Li, F.; Sung, F.; Wei, G.; Lai, G.; Zhu, H.; Ding, H.; Hu, H.; Yang, H.; Zhang, H.; Wu, H.; Yao, H.; Lu, H.; Wang, H.; Gao, H.; Zheng, H.; Li, J.; Su, J.; Wang, J.; Deng, J.; Qiu, J.; Xie, J.; Wang, J.; Liu, J.; Yan, J.; Ouyang, K.; Chen, L.; Sui, L.; Yu, L.; Dong, M.; Dong, M.; Xu, N.; Cheng, P.; Gu, Q.; Zhou, R.; Liu, S.; Cao, S.; Yu, T.; Song, T.; Bai, T.; Song, W.; He, W.; Huang, W.; Xu, W.; Yuan, X.; Yao, X.; Wu, X.; Li, X.; Zu, X.; Zhou, X.; Wang, X.; Charles, Y.; Zhong, Y.; Li, Y.; Hu, Y.; Chen, Y.; Wang, Y.; Liu, Y.; Miao, Y.; Qin, Y.; Chen, Y.; Bao, Y.; Wang, Y.; Kang, Y.; Liu, Y.; Dong, Y.; Du, Y.; Wu, Y.; Wang, Y.; Yan, Y.; Zhou, Z.; Li, Z.; Jiang, Z.; Zhang, Z.; Yang, Z.; Huang, Z.; Huang, Z.; Zhao, Z.; Chen, Z.; and Lin, Z. 2025. Kimi-VL Technical Report. arXiv:2504.07491. Wang, Y.; Kordi, Y.; Mishra, S.; Liu, A.; Smith, N. A.; Khashabi, D.; and Hajishirzi, H. 2023. Self-Instruct: Align-ing Language Models with Self-Generated Instructions. arXiv:2212.10560. Wu, Z.; Li, D.; Liu, B.; Su, H.; Zhu, J.; and Tan, T. 2020. Not only look, but also listen: Learning multimodal violence detection under weak supervision. In European Conference on Computer Vision , 322–339. Springer. Xia, Y.; Jiang, Y.; Tan, Y.; Zhu, X.; Yue, X.; and Zheng, B. 2025. MSR-Align: Policy-Grounded Multimodal Align-ment for Safety-Aware Reasoning in Vision-Language Mod-els. arXiv:2506.19257. Xiang, Z.; Zheng, L.; Li, Y.; Hong, J.; Li, Q.; Xie, H.; Zhang, J.; Xiong, Z.; Xie, C.; Yang, C.; Song, D.; and Li, B. 2025. GuardAgent: Safeguard LLM Agents by a Guard Agent via Knowledge-Enabled Reasoning. arXiv:2406.09187. Xu, J.; Fei, H.; Pan, L.; Liu, Q.; Lee, M.-L.; and Hsu, W. 2024. Faithful Logical Reasoning via Symbolic Chain-of-Thought. In Ku, L.-W.; Martins, A.; and Srikumar, V., eds., 
+
+Proceedings of the 62nd Annual Meeting of the Associa-tion for Computational Linguistics (Volume 1: Long Papers) ,13326–13365. Bangkok, Thailand: Association for Compu-tational Linguistics. Yao, S.; Yu, D.; Zhao, J.; Shafran, I.; Griffiths, T. L.; Cao, Y.; and Narasimhan, K. 2023. Tree of Thoughts: Deliberate Problem Solving with Large Language Models. arXiv:2305.10601. Yeh, C.; Chang, Y.-M.; Chiu, W.-C.; and Yu, N. 2024. T2Vs Meet VLMs: A Scalable Multimodal Dataset for Visual Harmfulness Recognition. arXiv:2409.19734. Zhang, Y.; Li, B.; Liu, h.; Lee, Y. j.; Gui, L.; Fu, D.; Feng, J.; Liu, Z.; and Li, C. 2024. LLaVA-NeXT: A Strong Zero-shot Video Understanding Model. Zhang, Y.-F.; Yu, T.; Tian, H.; Fu, C.; Li, P.; Zeng, J.; Xie, W.; Shi, Y.; Zhang, H.; Wu, J.; Wang, X.; Hu, Y.; Wen, B.; Yang, F.; Zhang, Z.; Gao, T.; Zhang, D.; Wang, L.; Jin, R.; and Tan, T. 2025. MM-RLHF: The Next Step Forward in Multimodal LLM Alignment. arXiv:2502.10391. Zhu, J.; Wang, W.; Chen, Z.; Liu, Z.; Ye, S.; Gu, L.; Tian, H.; Duan, Y.; Su, W.; Shao, J.; Gao, Z.; Cui, E.; Wang, X.; Cao, Y.; Liu, Y.; Wei, X.; Zhang, H.; Wang, H.; Xu, W.; Li, H.; Wang, J.; Deng, N.; Li, S.; He, Y.; Jiang, T.; Luo, J.; Wang, Y.; He, C.; Shi, B.; Zhang, X.; Shao, W.; He, J.; Xiong, Y.; Qu, W.; Sun, P.; Jiao, P.; Lv, H.; Wu, L.; Zhang, K.; Deng, H.; Ge, J.; Chen, K.; Wang, L.; Dou, M.; Lu, L.; Zhu, X.; Lu, T.; Lin, D.; Qiao, Y.; Dai, J.; and Wang, W. 2025. InternVL3: Exploring Advanced Training and Test-Time Recipes for Open-Source Multimodal Models. arXiv:2504.10479.

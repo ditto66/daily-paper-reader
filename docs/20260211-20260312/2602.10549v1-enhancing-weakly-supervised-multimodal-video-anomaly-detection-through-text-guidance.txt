@@ -1,0 +1,1068 @@
+Title: Enhancing Weakly Supervised Multimodal Video Anomaly Detection through Text Guidance
+
+URL Source: https://arxiv.org/pdf/2602.10549v1
+
+Published Time: Thu, 12 Feb 2026 01:31:49 GMT
+
+Number of Pages: 16
+
+Markdown Content:
+JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2024 1
+
+# Enhancing Weakly Supervised Multimodal Video Anomaly Detection through Text Guidance 
+
+Shengyang Sun, Jiashen Hua, Junyi Feng, Xiaojin Gong, Member, IEEE 
+
+Abstract —In recent years, weakly supervised multimodal video anomaly detection, which leverages RGB, optical flow, and audio modalities, has garnered significant attention from researchers, emerging as a vital subfield within video anomaly detection. However, previous studies have inadequately explored the role of text modality in this domain. With the proliferation of large-scale text-annotated video datasets and the advent of video captioning models, obtaining text descriptions from videos has become increasingly feasible. Text modality, carrying explicit semantic in-formation, can more accurately characterize events within videos and identify anomalies, thereby enhancing the model’s detection capabilities and reducing false alarms. However, text feature ex-traction challenges anomaly detection. Pre-trained large language models often struggle to effectively capture the nuances associated with anomalies, as their training is based on generalized datasets. Directly fine-tuning the text feature extractor is also challenging, as anomaly-related text descriptions are sparse. Furthermore, due to the varying amounts of information carried by different modalities, issues such as modality redundancy and modality imbalance arise during feature fusion. To address the challenges of text feature extraction and the issues of modality redundancy and imbalance, we propose a novel text-guided weakly supervised multimodal video anomaly detection framework. Specifically, we introduce an in-context learning based multi-stage text augmentation mechanism to generate high-quality anomaly text samples. These high-quality samples are then used to fine-tune the text feature extractor, aiming to obtain a more effective text feature extractor for anomaly detection. Additionally, we present a multi-scale bottleneck Transformer fusion module to enhance multimodal integration, utilizing a set of reduced bottleneck tokens to progressively transmit compressed information across modalities, aiming to address the issues of modality redundancy and imbalance. Experimental results on large-scale datasets UCF-Crime and XD-Violence demonstrate that our proposed approach achieves state-of-the-art performance. This project is publicly available at https://shengyangsun.github.io/TGMVAD. 
+
+Index Terms —multimodal video anomaly detection, in-context learning, text augmentation, multi-scale bottleneck Transformer 
+
+I. I NTRODUCTION 
+
+# VIDEO anomaly detection (VAD) has emerged as a pivotal task within computer vision and artificial intelligence, driven by the increasing prevalence of surveillance systems and the need for enhanced security measures. This task aims 
+
+Shengyang Sun is with the School of Computer Science and Technology, Hangzhou Dianzi University, Hangzhou, China. Jiashen Hua and Junyi Feng are with the Alibaba Cloud, Hangzhou, China. Xiaojin Gong is with the College of Information Science and Electronic Engineering, Zhejiang University, Hangzhou, China. Corresponding author: Xiaojin Gong. E-mail: gongxj@zju.edu.cn Accepted for publication in IEEE Transactions on Multimedia. © 2026 IEEE. Personal use of this material is permitted. For permission to reprint/republish, contact IEEE. Anomaly Score                         
+
+> GT
+> The performance
+> is average .
+> Anomaly Score
+> GT
+> Anomaly Score
+> GT
+> The performance
+> is satisfactory ,
+> but WHY ?
+> The performance
+> is quite good and
+> explainability !
+> Modality Result
+> (a) Previous Methods vs. Text -Guided Multimodal VAD (Ours)
+> 88%
+> 12%
+> Normal Samples Abnormal Samples
+> Normal Samples
+> Abnormal Samples Normal Samples Abnormal Samples
+> Abnormal
+> Samples
+> Normal
+> Samples
+> 50% 50%
+> (b) The Proposed Multi -Stage Text Augmentation (MSTA) for Addressing Samples Imbalanced
+> Stage -I
+> LLM -based Caption Summary
+> Stage -II
+> ICL -based Text Annotation
+> Stage -III
+> ICL -based Text Generation
+> MSTA
+> RGB
+> Flow
+> Audio
+> Aman in asuit is
+> shooting at atrain .
+> 00:02 -00:04
+> Text
+> Unimodal VAD
+> Previous
+> Multimodal VAD
+> Text -Guided
+> Multimodal VAD
+> Method
+
+Fig. 1. (a) Previous methods for multimodal video anomaly detection (VAD) have demonstrated improved performance over unimodal VAD, however, they have inadequately explored the text modality and lack explainability. In contrast, we propose a text-guided multimodal VAD method that not only achieves superior performance but also provides enhanced explainability. (b) Using the UCF-Crime dataset as a case study, we observe that only 12% of the text samples are classified as anomalies. This imbalance in the dataset introduces bias during the feature extractor fine-tuning. To address this issue, we propose the multi-stage text augmentation (MSTA) approach, which generates a greater number of high-quality anomaly samples to address the challenge of sample imbalance. 
+
+to identify unusual or unexpected events in video sequences, distinguishing them from normal patterns. Some earlier meth-ods [1], [2] investigated training models in a fully supervised setting, which require extensive frame-level or snippet-level annotations for training, necessitating significant manual label-ing efforts that can be both time-consuming and costly. While this approach can yield high accuracy in identifying anomalies, the resources required often limit its practical application. In contrast, the unsupervised methods [3], [4] train the model solely on normal videos, recognizing outliers as anomalies during evaluation. Although these methods minimize labeling efforts, they pose challenges in real-world scenarios where obtaining a comprehensive set of normal samples is imprac-tical. Furthermore, without exposure to abnormal samples, the model risks generating numerous false alarms. To bridge the gap between accuracy and labeling efficiency, the weakly supervised methods [5], [6], [7], [8], [9], [10], [11], [12] have gained attention, leveraging only video-level annotations for training. This setting significantly reduces labeling costs  
+
+> arXiv:2602.10549v1 [cs.CV] 11 Feb 2026 JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2024 2
+
+while still aiming to achieve robust performance, making it an increasingly popular choice for applications. In recent years, the field of weakly supervised multimodal video anomaly detection (WS-MVAD) has garnered increased attention for its potential to enhance anomaly detection per-formance through the integration of diverse data modalities. Unlike traditional unimodal approaches that primarily rely on RGB data [5], [6], [7], [8], multimodal detection meth-ods [13], [14], [15], [16], [17], [12] leverage complementary information from various sources, such as optical flow and audio, to achieve a more comprehensive understanding of video content. This multimodal strategy not only allows for a richer representation of contextual cues but also significantly improves the model’s robustness and accuracy in identifying anomalies. For instance, while RGB data may struggle to differentiate between normal and anomalous behaviors in visually cluttered scenes, the inclusion of flow data can capture motion dynamics, and audio inputs can provide important contextual information regarding environmental sounds or con-versations. By synergizing these modalities, weakly supervised multimodal approaches can mitigate the limitations associated with unimodal, thus leading to improved detection rates and reduced false alarms. This integrative approach represents a significant advancement in the quest for more effective video anomaly detection frameworks. Current multimodal video anomaly detection methods primarily employ simplistic approaches to fuse features from different modalities. Specif-ically, features from visual RGB, audio, or text modalities are typically fused via concatenation [18], [9], [19] or cross-attention mechanisms [14], [16], [17], and the fused features are then utilized for anomaly detection. For example, in the method proposed by Chen et al. [19], the visual RGB modality features and text modality features are merged into fused features through concatenation for anomaly detection. Similarly, Yu et al. [17] employ a cross-attention mechanism to fuse visual RGB and audio modality features. These methods employ a straightforward feature fusion approach, making them relatively simple to implement and efficient. However, few current multimodal video anomaly detection methods have focused on the in-depth design of feature fusion modules that enable the fused features to carry more useful information. Besides, the role of text descriptions in multimodal-based video anomaly detection frameworks remains largely unexplored. Models that do not incorporate text modality tend to exhibit relatively inferior performance and lack interpretability, as shown in Fig. 1(a). Recently, advancements such as captioning models [20], [21], [22] and the availability of large-scale text annotated datasets [23] have made text descriptions more accessible than ever, paving the way for their integration into anomaly detection task. The incorporation of text information not only facilitates a deeper contextual understanding of video content but also significantly enhances the model’s performance by providing semantic insights that complement visual and auditory data. By leveraging text descriptions, models can improve their ac-curacy in identifying anomalies while reducing false positives through clearer definitions of expected behaviors. Moreover, these descriptions contribute to model explainability, enabling users to understand the underlying rationale behind detected anomalies, thereby fostering trust and facilitating actionable insights. As research progresses, harnessing the power of text descriptions in WS-MVAD promises to yield more robust and interpretable frameworks, capable of effectively addressing the complexities of real-world scenarios. However, WS-MVAD faces two significant challenges that hinder its effectiveness and reliability. One of the primary difficulties lies in the 1) modality redundancy and im-balance [12], [24], [25]: each modality contains redundant information, which can introduce unintended semantic bias, 
+
+e.g., the noise introduced by background sounds within the audio modality. Besides, the information conveyed by one modality may significantly surpass that of another. If each modality is treated equally, it could result in a decline in detection performance. For example, the RGB typically con-veys more information than the audio modality, resulting in a greater impact on detection performance. Additionally, 2) text feature extraction challenges anomaly detection. Pre-trained large language models often struggle to effectively capture the nuances associated with anomalies, as their training is based on generalized datasets. Consequently, employing these models directly for text feature extraction in anomaly detection may not yield remarkable performance. This limitation has prompted researchers to seek a text feature extractor fine-tuned with anomaly detection-specific data for the task of video anomaly detection. However, the imbalance between normal and anomalous text samples presents a significant challenge. Specifically, the rarity of anomalous events within the text descriptions of videos results in the predominance of samples detailing normal events, with only a small fraction describing anomalies. As shown in Fig. 1(b), the anomalous text samples in the UCF-Crime dataset account for merely 12% of the total dataset. The overwhelming abundance of normal text samples during the fine-tuning of the feature extractor can introduce bias, potentially impairing the model’s generalization capabilities and its effectiveness in accurately detecting anomalies. To address the aforementioned challenges in WS-MVAD, we propose a novel framework known as the text-guided multimodal video anomaly detection (TG-MVAD) framework. Central to our approach is a multi-stage text augmentation (MSTA) mechanism, designed to generate more high-quality abnormal samples that address the training bias during the fine-tuning of the text feature extractor. As illustrated in Fig. 1(b), by augmenting the training dataset with diverse and informative text descriptions, MSTA effectively mitigates the imbalance between normal and abnormal samples, facilitat-ing a more comprehensive text extractor fine-tuning process, further obtaining a powerful text feature extractor for WS-MVAD. Furthermore, we introduce a multi-scale bottleneck Transformer (MSBT)-based fusion module [12] that enhances inter-modality integration, addressing the modality redundancy and imbalance. This module utilizes a reduced set of bottle-neck tokens to progressively transmit condensed information across modalities, thereby capturing intricate dependencies. Besides, our bottleneck token-based weighting scheme allows for adaptive feature weighting during the fusion process, opti-JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2024 3
+
+mizing the influence of each modality based on its relevance to the task at hand. Together, these innovations empower our framework to effectively fuse heterogeneous modalities, improve abnormal pattern recognition, and ultimately advance the field of WS-MVAD. Our contributions in this paper are summarized as follows:  
+
+> •
+
+We introduce an in-context learning (ICL) based multi-stage text augmentation (MSTA) mechanism aimed at generating more high-quality abnormal text samples to counteract the bias of the text feature extractor fine-tuning. By enriching the training dataset with diverse and informative text descriptions, MSTA effectively reduces the imbalance between normal and abnormal samples, promoting a more effective fine-tuning process.  
+
+> •
+
+We propose a multi-scale bottleneck Transformer (MSBT) module that improves inter-modality integration. This module employs a reduced set of bottleneck tokens to progressively convey condensed information between modalities, effectively capturing complex dependencies.  
+
+> •
+
+Experimental results on the large-scale datasets UCF-Crime and XD-Violence demonstrate that our proposed method achieves state-of-the-art results. Furthermore, the results of ablation studies indicate that our proposed MSTA significantly enhances the model’s performance. This paper is an extension of our previous conference work [12]. We extended the initial version in several significant ways: 1) In this paper, we innovatively propose the MSTA mechanism, which generates more high-quality anomalous text samples intended for fine-tuning the text feature extractor. 2) Utilizing the high-quality text features extracted, we incor-porate the text modality into the MSBT module for feature fusion. In contrast to previous works that exclusively employed RGB, optical flow, or audio modalities, the introduction of the text modality not only improves the model’s performance but also gives explainability. 3) Furthermore, this work in-cludes new experimental results on the large-scale UCF-Crime dataset, achieving a new state-of-the-art result, and further validating the effectiveness of our proposed method. II. R ELATED WORK 
+
+A. Video Anomaly Detection 
+
+Video anomaly detection (VAD) has garnered substantial research interest and can be categorized into three main areas: fully supervised methods [2], [26], unsupervised ap-proaches [3], [4], and weakly-supervised VAD [5], [6], [7], [8], [9], [10], [11], [27], [12], [28], [29]. The fully supervised VAD [1], [2] approach requires training a model with frame-level annotations that include precise bounding boxes for anomalies, an effort-intensive task due to the substantial labor involved in labeling the data. Landi et al . [1] enhance the surveillance videos in a dataset by adding spatial and temporal annotations, then train an anomaly de-tection model using bounding box supervision. Experiments demonstrate that a network trained with spatiotemporal tubes performs well. Liu et al . [2] introduce an end-to-end trainable framework guided by anomalous regions, where they design a region loss under fully supervised learning to explicitly guide the network in identifying anomalous areas. Additionally, due to the challenges of deep networks and limited anomaly training data, the architecture incorporates a meta-learning module to mitigate overfitting. To mitigate the arduous task of annotating large quantities of samples, unsupervised methods [30], [31], [3], [4] concentrate on collecting only normal videos for model training. During the inference phase, these models then identify anomalies by detecting deviations from the learned normal patterns. For instance, reconstruction-based unsupervised techniques [30], [31], [4] utilize autoencoders to encode normal samples into latent spaces. During inference, the model identifies poorly re-constructed samples as anomalies, as these deviations indicate a lack of fit with the learned normal patterns. Hasan et al . [30] employ a convolutional neural network (CNN)-based autoen-coder to perform feature reconstruction, thereby labeling video frames with significant reconstruction errors as anomalies. This method relies on the powerful reconstruction capability of the autoencoder. However, a challenge is that the autoencoder can reconstruct both normal and anomalous video frames ef-fectively, making it difficult to distinguish between normal and anomalous frames solely based on reconstruction errors. To address this issue, Gong et al . [31] introduce a memory bank module within the autoencoder-based architecture to store normal patterns. During the reconstruction process, the autoen-coder utilizes weighted features retrieved from the memory bank, which alleviates the autoencoder’s tendency to overly reconstruct anomalous frames. Sun and Gong [4] propose a hierarchical semantic contrastive learning method to develop a scene-aware model. Building on an autoencoder-based re-construction framework, they introduce contrastive learning at both the scene level and object level. This approach encourages the encoded latent features to remain compact within the same semantic class, while also ensuring their separability across different classes. Distance-based unsupervised methods [32], [33], [3] employ Gaussian mixture models or one-class SVMs to establish decision boundaries, identifying data that deviates from these boundaries as anomalous. Ionescu et al . [33] propose a method that combines K-means clustering and support vector machines (SVMs) for anomaly detection in videos. They first apply K-means clustering to group normal samples and then use SVMs to construct the decision boundary for the normal class. Anomalies are identified by calculating the distance between each sample and the centroid of its corresponding cluster. Sun et al . [3] propose a deep evidential reasoning network designed to encode evidence vectors and estimate uncertainty by learning evidence distributions and deriving beliefs from them. They introduce an unsupervised training strategy that minimizes an energy function based on the deep Gaussian mixture model (GMM). This method calculates the decision boundary and identifies frames that deviate from the normal pattern, classifying them as anomalies. However, because the training set lacks abnormal samples, the model often produces false alarms when encountering ambigu-ous normal data. To reduce the labor-intensive annotations and introduce abnormal samples during model training, weakly-supervised video anomaly detection (WS-VAD) [5], [6], [7], [11] addresses this challenge using multiple instance learning JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2024 4
+
+(MIL). By training the model with video-level annotations instead of detailed labels, this approach achieves excellent performance. 
+
+B. Weakly Supervised Video Anomaly Detection 
+
+Weakly supervised learning has already been applied to several visual tasks, such as the weakly supervised point cloud segmentation [34], weakly supervised semantic seg-mentation [35], and weakly supervised video anomaly detec-tion [11], [8]. For example, Xue et al . [34] propose a local semantic embedding network that learns semantic propagation and local structural patterns. This network incorporates graph convolution-based dilation and erosion embedding modules to facilitate ‘inside-out’ and ‘outside-in’ pathways for semantic information dissemination. As a result, the proposed frame-work enables the mutual propagation of semantic information between the foreground and background. Zhang et al . [35] pro-pose an alternate self-dual teaching (ASDT) framework, which is structured around a dual-teacher, single-student network architecture. The information interaction process between the different network branches is framed within the context of knowledge distillation. Given that the knowledge from the two teacher models may be noisy or faulty under weak supervision, they introduce a pulse-width wave-like selection signal to guide the distillation process. This signal helps prevent the student model from converging to trivial solutions caused by the imperfect knowledge of either teacher model. In video anomaly detection, weakly supervised learning-based methods utilize video-level labels for model training, and several approaches [36], [37], [8], [11] have been investi-gated. For instance, Zaheer et al . [36] introduced a clustering loss during the model training process, aimed at improving the performance of video anomaly detection by optimizing the structure of the feature space. Specifically, this strategy minimizes the distance between feature clusters in normal videos to ensure that the features of normal videos are more tightly grouped in the feature space. In contrast, for anomalous videos, it maximizes the distance between feature clusters, enabling the features of anomalous videos to be distinctly separated from those of normal videos in the feature space. Wu et al . [37] introduce VadCLIP, which directly utilizes the frozen CLIP model without any pre-training or fine-tuning. In contrast to existing methods that simply input extracted features into a weakly supervised classifier for frame-level binary classification, VadCLIP fully exploits the fine-grained associations between vision and language enabled by CLIP, incorporating a dual-branch architecture. Chang et al . [8] de-velop a lightweight anomaly detection model that uses normal videos to train a classifier with strong discriminative ability, enhancing the selectivity for anomalous segments and filtering out normal ones. Shi et al . [11] propose a novel framework for WS-VAD, termed ARMS, featuring an abnormal ratio-based MIL loss (AR-MIL) and a multi-phase self-training paradigm. Unlike the aforementioned methods, this paper pro-poses a novel text-guided multimodal video anomaly detection framework, which introduces the text modality under a weakly supervised setting to provide robust detection guidance. 
+
+C. Weakly Supervised Multimodal Video Anomaly Detection 
+
+Weakly supervised multimodal video anomaly detection (WS-MVAD) [38], [19], [39], also known in some works as weakly supervised multimodal violence detection (WS-MVD) [18], [9], [17], [15], [14], [12], refers to the use of addi-tional modalities beyond RGB or optical flow, such as audio or text modality, to detect anomalies under the weak supervision setting. Compared to methods that utilize only RGB or optical flow, designing a framework that incorporates multiple modali-ties, such as audio and text features, can significantly enhance the performance of anomaly detection [17], [15]. Numerous efforts have been devoted to integrating several modalities, resulting in the development of various fusion techniques. These include methods like concatenation or addition [18], [9], [19], bilinear pooling [13], co-attention [14], and cross-attention [16], [17]. For example, Pang et al . [13] propose a neural network, which consists of an attention module, a fusion module, and a mutual learning module, to investigate fusion methods that combine visual and audio features for violence detection. Experimental results demonstrate the effectiveness of each module, and their combination significantly enhances the model’s overall performance on the XD-Violence dataset, achieving 81.69% AP performance. Yu et al . [17] use cross-modality attention to fuse the two modalities, producing the fused features. Chen et al . [19] propose a text-empowered video anomaly detection (TEVAD) framework, which intro-duces text features into the video anomaly detection. However, this method directly extracts the text features by the vanilla text feature extractor and employs the concatenation and addition methods to fuse the text and visual features, not yield particularly satisfactory results. Recently, Yuan et al . [23] meticulously annotated the real-world surveillance dataset UCF-Crime with detailed event content and timing. Through experiments on this dataset, they demonstrate that leveraging it for multimodal surveillance learning enhances anomaly detection performance. Furthermore, they select TEVAD [19] as the baseline for multimodal video anomaly detection [39], which integrates multimodal features, such as visual, tem-poral, and caption features. Additionally, they propose anovel anomaly detection framework that incorporates captions, building upon TEVAD, which improves its anomaly detection performance. Tan et al . [40] investigate the effectiveness of whole-video classification supervision using BERT or LSTM. By utilizing BERT or LSTM, CNN features from all video snippets are aggregated into a single feature, which can then be used for whole-video classification. This straightforward yet effective supervision, when combined with the MIL and RTFM frameworks, delivers outstanding performance on video anomaly datasets, achieving an 86.71% AUC on UCF-Crime by integrating RGB and flow modalities. Shi et al . [41] use video memory to represent both video features (non-semantic) and caption information (semantic). Their method generates and updates memory during training, predicting anomaly scores based on memory similarities between the input video and stored memories, and captions serve as descriptions of representative anomaly actions. Na et al . [42] extend the dual-modality TEVAD [19] to a multi-modal framework integrating JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2024 5
+
+visual, audio, and textual data. They also refine the multi-scale temporal network (MTN) to improve feature extraction across multiple temporal scales in video snippets. Xiao et al . [43] introduce a score fusion-based Transformer framework called Scoreformer. Specifically, optical flow, RGB, and audio features are first processed through independent self-attention Transformer blocks. Then, the optical flow and RGB features are passed through cross-modal Transformer blocks, after which they are fused with the audio features using a score fu-sion block. This approach prevents the noise interference that could arise from directly fusing audio and visual features. This method combines RGB, flow, and audio modalities, achieving an AP performance of 84.54% on the XD-Violence dataset. The majority of these efforts concentrate on audio-visual learning, leaving the efficient integration of additional modal-ities largely unexplored. In contrast, we propose an MSTA mechanism to fine-tune the text feature extractor, obtaining high-quality text features. Besides, we introduce a multi-scale bottleneck Transformer (MSBT) that accommodates a variable number of modalities for the WS-MVAD task, achieving state-of-the-art performance by utilizing RGB, optical flow, audio, and text modalities. 
+
+D. Multimodal Fusion 
+
+Cross-attention based multimodal fusion techniques have been applied in various vision tasks, such as fine-grained recognition [44] and temporal action localization [45]. For example, Wei et al . [44] propose a meta-completion method called MECOM for the task of fine-grained recognition, which integrates multimodal fusion and explicitly completes missing modalities through their techniques of cross-modal attention and decoupling reconstruction. To enhance fine-grained recognition accuracy, they introduce an additional partial stream, complementing the main stream of MECOM, along with a part-level feature selection mechanism that targets fine-grained object parts. Hong et al . [45] propose a cross-modal consensus network for temporal action localization. The approach introduces two identical cross-modal consensus modules, each incorporating a cross-modal attention mech-anism. This mechanism filters out task-irrelevant redundant information by leveraging global information from the primary modality and cross-modal local information from the auxiliary modality. Due to the inherent characteristics of self-attention and its variants, Transformers can function in a modality-agnostic manner and are scalable to multiple modalities [46]. Conse-quently, multimodal Transformers have been widely adopted to integrate diverse modalities such as video, audio, and text across various applications, including emotion recogni-tion [47], speech recognition [48], [49], video retrieval [50], [51], [52], visual question answering [53], and autonomous driving [54], [55], among others. For instance, Li et al . [47] propose a decoupled multimodal distillation (DMD) approach to enable flexible cross-modal knowledge distillation and enhance discriminative features. Each modality is decoupled into modality-irrelevant and modality-exclusive spaces through self-regression. Besides, this method uses multimodal Trans-formers to bridge the distribution gap. DMD uses a graph distillation unit (GD-Unit) for each decoupled part, where a dynamic graph represents modalities and their knowledge distillation. This approach allows automatic learning of distil-lation weights, supporting diverse knowledge transfer patterns. However, the efficiency of multimodal Transformers be-comes a challenge as the number of modalities increases. To reduce information redundancy, Nagrani et al . [24] proposed a multimodal bottleneck Transformer (MBT) that uses a small set of bottleneck tokens for modality interaction, enhancing fusion performance. Inspired by MBT [24], we propose a multi-scale bottleneck Transformer (MSBT) and a bottleneck token-based weighting scheme for multimodal fusion. Unlike MBT [24], which employs a fixed number of bottleneck tokens used solely as intermediaries for modality interaction, our MSBT utilizes a decreasing number of tokens for gradual condensation and leverages the learned tokens to weight fused features, thereby achieving more effective fusion performance. 
+
+E. Text Augmentation 
+
+Text augmentation involves techniques for perturbing the linguistic space without changing class labels, aimed at en-hancing the robustness and generalizability of downstream models in the natural language processing (NLP) tasks [56], [57], [58]. For instance, Møller et al . [56] provide an example along with its corresponding label and guide the large language models (LLMs) to generate similar examples with the same label, leading to improved downstream performance in few-shot classification tasks. Zhang et al . [57] create a comprehen-sive dataset of user-personalized instructions and fine-tune the LLMs with them, resulting in more accurate recommendations that outperform competitive benchmarks. Peng et al . [58] use GPT-4 to create an instruction-following dataset and feedback data for tuning the model. The instruction-tuned LLaMA models from this dataset achieved performance comparable to GPT-4. Although text augmentation has been widely applied in the aforementioned tasks, its potential in the task of VAD remains unexplored. In this paper, we propose a multi-stage text augmentation method that generates a large number of anomalous samples. This approach aims to address the im-balance between normal and anomalous samples in the VAD task. 
+
+F. In-context Learning 
+
+As large language models (LLMs) advance, in-context learning (ICL) has emerged as a new NLP paradigm, where LLMs make predictions based on context enriched with a few examples. Exploring LLMs through ICL has become a prominent trend [59]. ICL bypasses parameter updates and instead relies on pre-trained language models to generate predictions directly. The model is designed to identify and learn patterns within the given demonstrations, enabling it to make accurate predictions accordingly. Min et al . [60] demonstrate that ground truth demonstrations are not essential, as randomly substituting labels in the demonstrations has little impact on performance across a variety of classification tasks. Li et al . [61] propose KB-BINDER, which enables JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2024 6Video                                                      
+
+> Many cars are driving on the highway .
+> Dense Caption
+> 00:00 -00:14
+> 00:14 -00:31
+> Ablack car drove quickly on the
+> isolation belt, followed by apolice car .
+> 00:31 -00:39
+> The black car knocked down several
+> roadblocks on the unrepaired side
+> road .
+> 00:39 -00:56
+> The black car rushed onto the side
+> road and sped away .
+> Large Language Model
+> Label Ablack car drove quickly on the
+> highway, knocking down roadblocks
+> and speeding away, followed by a
+> police car .
+> Summarized Caption
+
+yi                                                                                       
+
+> Prompt
+> PS
+> (a) Stage -I: LLM -based Caption Summary
+> Ablack car drove quickly on the
+> isolation belt, followed by apolice car .
+> Summarization Set
+> CI
+> Large Language Model
+> Video description :Aman in
+> white was arrested by two
+> people in black, aman and a
+> woman, who arrived at astore
+> and put handcuffs on him .
+> Anomaly score :1.0
+> Video description :Ablack car
+> drove quickly on the isolation
+> belt, followed by apolice car .
+> Anomaly score :…
+> Sampling
+> Prompt
+> PA
+> 1.0
+> ×NS
+> Averaged
+> 1.0
+> (b) Stage -II: ICL -based Text Annotation
+> A video caption from CiCV
+> Annotated Set
+> CA
+> Example :Three policemen suppressed
+> the man in black cotton clothes lying on
+> the ground, while the other two stood
+> aside .
+> Example :The woman suddenly fell back
+> and then immediately sat up, waving her
+> arms to fight with the man .
+> Example :
+> …
+> Sampling
+> Large Language Model
+> Prompt
+
+PG                 
+
+> The man in ablack hoodie rushed towards the police
+> officer, who was trying to arrest someone else .
+> Generated Sample
+> (c) Stage -III: ICL -based Text Generation
+> CI
+> CA
+> CG
+> Text Feature
+> Extractor
+
+yi
+
+ˆyi    
+
+> CT
+> Training Textual Set Label
+> (d) Extractor Fine -tuned and Feature Extraction
+> Text Feature
+> Extractor Caption Set
+> CV
+> FT
+> Text Feature
+> Fine -tune the Text Feature Extractor
+> Text Feature Extraction by Using
+> the Fine -tuned Feature Extractor
+
+Fig. 2. Illustration of (a ∼c) the proposed multi-stage text augmentation (MSTA) for (d) extractor fine-tuning and feature extraction. (a) Stage-I: We use a large language model (LLM) to summarize all captions in the videos, obtaining labeled text samples. (b) Stage-II: based on the summarized captions, we utilize ICL to generate pseudo-labels for each caption within the video. (c) Stage-III: We employ the labeled samples from the previous two stages, using ICL to generate new anomalous samples. (d) We fine-tune the feature extractor using both the original and generated samples to obtain high-quality text representation features. 
+
+few-shot in-context learning over knowledge-based question-answering (KBQA) tasks, addressing questions over diverse KBQA datasets with a unified training-free framework. In this work, we propose a multi-stage text augmentation (MSTA) method based on ICL, aimed at generating pseudo-labels for text and producing anomalous text samples. III. M ULTI -STAGE TEXT AUGMENTATION FOR TEXT 
+
+ENCODER FINE -TUNING 
+
+Pre-trained large language models are not well-suited for anomaly detection because they are trained on general datasets, focusing on common patterns, and lack sensitivity to rare abnormal events, i.e., they miss subtle, domain-specific anoma-lies. As our experimental results show in Section V-C1, we observed that directly applying the text features extracted by the vanilla feature extractor to anomaly detection did not yield satisfactory performance. These reasons and observa-tions encourage us to fine-tune a text feature extractor for the specific task of video anomaly detection. However, the scarcity of anomalous events results in a predominance of normal text samples within the video data. This imbalance in the dataset introduces potential bias during the fine-tuning process, ultimately hindering the ability to obtain an effective feature extractor. Fortunately, text samples are relatively easy to generate. We can achieve a balanced sample size by produc-ing anomalous text samples, which facilitates the fine-tuning of feature extractors. Therefore, we propose a multi-stage text augmentation (MSTA) for text samples augmentation, as shown in Fig. 2. This involves using in-context learning to generate a good deal of text descriptions of anomalous events in the dataset, after which the generated anomalous samples are used to fine-tune the pre-trained text feature extractor to extract more distinguishable features. In the Stage-I of MSTA, a summary of all captions in the video allows us to obtain labeled text samples. In the Stage-II, based on the summarized captions, we utilize ICL to produce the anomaly scores as pseudo-labels for each caption within the video. The Stage-III employs the labeled samples from the previous two stages, using ICL to generate new anomalous samples, thereby achieving a balance between the quantities of normal and anomalous samples. The details of each stage in MSTA are as follows. 
+
+A. Stage-I: LLM-based Caption Summary 
+
+Unlike the RGB or audio information explicitly present in videos, for the text information, we need to leverage a pre-trained video captioning model to generate dense captions for the videos, i.e., the caption set for the i-th video is denoted as Ci = {Ci, 1, C i, 2, ..., C i,N }. In the task of weakly supervised video anomaly detection, since each video has a video-level annotation, it is unable to determine whether Ci,j 
+
+specifically describes an anomalous event. Fortunately, we can leverage the powerful text summarization capabilities of LLM to condense all the captions of a video into a concise sentence that summarizes the entire video. Given that we have video-level labels, the summarized sentence inherits a definitive label, i.e., when yi = 1 , the summarized sentence describes an anomalous event, and if yi = 0 , it does not. Therefore, the summarized caption for the i-th video is as follows: 
+
+CIi = ϕLLM (PS ⋄ Ci, 1 ⋄ Ci, 2 ⋄ ... ⋄ Ci,N ), (1) where ⋄ operator denotes that concatenates the texts, P S is the prompt used for summarization by the LLM, which takes the form “Please summarize the following sentences into a single sentence of no more than 30 words. Please just output the summarized sentence without additional details or introductions, just one sentence. ”. The summaried texts of all videos form the summarization set CI , i.e., CI = {CIi }ND
+
+i=1 .
+
+B. Stage-II: ICL-based Text Annotation. 
+
+From the Stage-I of processing, we obtain labeled text samples, with these samples being equivalent in number to the training videos. In order to use a more diverse set of samples as a reference during the Stage-III of text generation, we aim to increase the number of labeled samples. In detail, for the set of captions Ci in each video, each caption is unlabeled, meaning it is impossible to determine whether it describes a normal or anomalous event. The objective of Stage II is to assign pseudo-labels to these captions, thereby increasing the number of labeled samples. To this end, we propose a method JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2024 7
+
+based on in-context learning that employs multiple sampling and scoring iterations, assigning an anomaly score as a pseudo-label to each caption within a video. This anomaly score functions as a pseudo-label for the captions. To be specific, in the process of labeling each caption in a video, we perform 
+
+NS samplings of the set CI . For each sampling, NR context samples are randomly selected from CI and then formatted to serve as the demonstration context. Thus, each sample is formatted as follows: 
+
+CII j = PVD ⋄ CIi ⋄ PAS ⋄ yi, i ∈ I , j ∈ [1 , N R], (2) where the forms of P VD and P AS are “ Video description: ”and “ Anomaly score: ”, respectively, the yi is the video-level label and I denotes the indices set of the selected samples. Therefore, the complete context for i-th sampling is: 
+
+ˆCII i = CII  
+
+> 1
+
+⋄ CII  
+
+> 2
+
+⋄ ... ⋄ CII NR . (3) By utilizing the concatenated ˆCII i as the context, we can employ in-context learning with a LLM to generate an anomaly score for each caption Ci ∈ C V ={Cj ∈ C k|k ∈
+
+[1 , N D ]}. The pseudo-label for each caption is then determined by averaging the anomaly scores obtained from multiple samplings: 
+
+ˆyi = 1
+
+NSNSX
+
+> k=1
+
+ϕLLM (PA ⋄ ˆCII k ⋄ Ci ⋄ PAS ), (4) where ˆyi serves as the pseudo-label of the i-th caption, P A
+
+is formed as “ Each element in the following list contains a description of a video and the corresponding anomaly score. The anomaly score indicates the probability of an anomalous event occurring in the video. Just complete the last space of the correct anomaly score. ”, and ˆCII k denotes the demonstration context of the k-th sampling. 
+
+C. Stage-III: ICL-based Text Generation. 
+
+To generate more text descriptions of anomalous events, we also employ an in-context learning based approach, leveraging the large number of labeled anomaly samples produced in Stage-II as context samples. Through Stage-II, we obtain a set CA = {Cj ∈ CV |ˆyj >δ } composed of anomaly event descriptions, where the δ is a hyperparameter. To produce a new anomaly description, we randomly select NR samples from CA to serve as the demonstration context, and each sample is then formatted as follows: 
+
+CIII j = PEX ⋄ Ci, C i ∈ C A, (5) where the P EX is formed as “ Example: ”. Thus, the complete context for the i-th generated sample is: 
+
+ˆCIII i = CIII  
+
+> 1
+
+⋄ CIII  
+
+> 2
+
+⋄ ... ⋄ CIII NR . (6) Drawing upon the complete context, the description of the 
+
+i-th newly generated anomaly event by the LLM can be expressed as follows: 
+
+˜CIII i = ϕLLM (PG ⋄ ˆCIII i ⋄ PEX ), (7) where P G is the generation prompt formed as “ Each element in the following list contains a description of a video snippet whose category is abnormal events. Just generate one sentence in the same category as the above sentences. ”. The pseudo-label ˆyi for the generated text in ˜CIII i is set to 1. Following 
+
+NG iterations of generation, we derive the resulting set of generated samples, denoted as CG = { ˜CIII i }NG
+
+> i=1
+
+.IV. W EAKLY SUPERVISED MULTIMODAL VIDEO 
+
+ANOMALY DETECTION 
+
+A. Problem Formulation 
+
+In the task of WS-MVAD, there is a training set VT
+
+including ND videos with varied durations and a test set VE .Each training video is annotated by a binary label y ∈ { 0, 1},indicating whether it is normal or anomalous, and the labels for all training videos together form the label set Y. The goal of this task is to train a model f (·) that takes various modalities of a video as input, such as RGB, audio, optical flow, or text, and the model is required to generate a frame-level anomaly score to predict whether each video frame is classified as normal or abnormal. 
+
+B. Feature Extraction 1) Video Feature Extraction: In multimodal video anomaly detection methods [18], [17], [12], pre-trained models are typically employed to extract high-level features from various segments of a video. Following prior works [17], [15], [16], [9], we extract RGB and flow features utilizing the I3D [62] model pre-trained on the Kinetics-400 dataset and extract audio features employing the VGGish [63] pre-trained on the YouTube dataset. Specifically, each video is divided into sev-eral segments, with each segment consisting of a consecutive and non-overlapping set of NC frames ( e.g., NC =16). These 
+
+NC frames with corresponding audio information are then fed into pre-trained models to produce RGB, flow, and audio embedding features, denoted as F R ∈ RDR , F F ∈ RDF , and 
+
+F A ∈ RDA , respectively, where DR, DF , and DA represent the dimensions of the respective features. 
+
+2) Text Feature Extraction: Through Stage-III of MSTA, we can generate an equal number of anomalous event descrip-tions to match the number of normal event descriptions. This balanced set of samples allows us to fine-tune the text feature extractor ϕT F E (·) well, enhancing its ability to distinguish between normal and anomalous text features. To fine-tune the feature extractor, we append a regressor ϕP R (·) to enable it to produce anomaly probability: 
+
+pi = ϕP R (ϕT F E (Ci)) , (8) where ϕT F E (·) : T → RDT extracts the input text into the feature of dimensionality DT , ϕP R (·) : RDT → R transforms the text feature into an anomaly score, implemented using a two-layer multi-layer perceptron (MLP) followed by a sigmoid activation function, and Ci ∈ C T = CI ∪ C V ∪ C G is a text sample from the combined training text set CT , which merges 
+
+CV , CI , and CG.Utilizing the labels ˆY and text samples, we fine-tune the 
+
+ϕT F E (·) by minimizing the binary cross-entropy (BCE) loss: 
+
+LT F E = −ˆyilog (pi) − (1 − ˆyi)log (1 − pi), (9) JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2024 8Caption                                             
+
+> Model
+> Video Video Caption
+> Alarge bulldozer is parked
+> on the side of aroad .
+> 00:00 -00:02
+> 00:02 -00:04 Aman in asuit is shooting
+> at atrain .
+> 00:04 -00:06 Aman in asuit is running .
+> 00:06 -00:08 Aman is standing on top
+> of atrain .
+> RGB Flow Audio
+> …
+> Unimodal Encoder  Multimodal Fusion
+> Vision Encoder Audio
+> Encoder Fine -tuned Text Encoder
+> Projection Projection Projection Projection
+> Unimodal
+> Transformer
+> Unimodal
+> Transformer
+> Unimodal
+> Transformer
+> Unimodal
+> Transformer
+> ××××
+> Weight Computation
+> Multi -scale Bottleneck Transformer Layer -1
+> Multi -scale Bottleneck Transformer Layer -
+> …
+> Transformer
+> Layer
+> Regressor
+> ×
+> Transformer
+> Layer
+> Regressor
+> ×
+> Anomaly Scores
+> Multi -scale Bottleneck Transformer
+> Regressor
+> Anomaly Probability
+> Final Anomaly Score
+> Q
+> K
+> V
+> C
+> C
+> Transformer
+> Layer
+> Transformer
+> Layer
+> Transformer
+> Layer
+> Multi -scale Bottleneck Transformer Layer
+> Multiplication
+> Concatenation C
+> Summation
+> Frozen Model
+> Multimodal Video Anomaly Detection
+> Global Encoder
+> Fused Features
+> Unimodal Features
+
+Fig. 3. An overview of the proposed framework. It includes three unimodal encoders, a multi-scale bottleneck Transformer, and a global encoder for multimodal feature generation. Each unimodal encoder consists of a modality-specific feature extractor and a linear projection layer for tokenization and a modality-shared Transformer for context aggregation within one modality. The multi-scale bottleneck Transformer (MSBT) fuses any pair of modalities and a sub-module to weight concatenated fused features. The global encoder, implemented by a Transformer, aggregates context overall snippets. Finally, the final anomaly score is constructed by combining the anomaly scores from the fused features and the anomaly probabilities from the text. 
+
+where ˆyi ∈ ˆY = {yi}ND
+
+i=1 ∪ { ˆyi}|C V |+|C G|
+
+i=1 is the pseudo-label of i-th text sample. Finally, we use the fine-tuned ϕT F E (·) to extract the text feature F T ∈ RDT , as shown in Fig. 2(d). 
+
+C. MSBT-based Multimodal Video Anomaly Detection 
+
+The proposed text-guided multimodal video anomaly de-tection (TG-MVAD) framework is shown in Fig. 3. Each video is divided into NT non-overlapping snippets. The video caption is obtained by a pre-trained caption model. The RGB, flow, audio, or text snippets go through an unimodal encoder composed of a pre-trained encoder and a linear projection layer for tokenization, and an unimodal Transformer for intra-modal context aggregation, by which modality-specific features are generated. Then, the modality-specific features are fed into a fusion module that employs a multi-scale bottleneck Trans-former to fuse features pairwise for all modality pairs and further concatenates and weights the fused features based on the learned bottleneck tokens. The fused features finally pass through a global encoder and a regressor to predict anomaly scores. Besides, the text modality is processed through a regressor to yield the anomaly probabilities. The final anomaly score is constructed by combining the anomaly scores from the fused features and the anomaly probabilities from the text. 
+
+1) Unimodal Encoder: We construct three unimodal en-coders to produce modality-specific features from input snip-pets. Each input snippet, depending on its modality, is tok-enized using a pre-trained feature extraction backbone (e.g., the I3D model [62] for RGB or optical flow, the VGGish model [63] for audio, and the BERT [64] for text), followed by a linear projection layer that outputs an embedded feature vector z ∈ R1×DE , where DE is the feature dimension unified for all modalities. Subsequently, we use a vanilla Transformer [65] to aggregate contextual information within each modality. Specifically, the embedded feature is input into an unimodal Transformer with LU layers, where each layer comprises Multi-head Self-Attention (MSA) and FeedForward Network (FFN) blocks. The computation for the l-th Trans-former layer, zl+1 = Transformer (zl), is defined as: 
+
+ˆzl = MSA (LN (zl)) + zl,
+
+zl+1 = FFN (LN (ˆ zl)) + ˆ zl, (10) where LN denotes layer normalization and FFN is imple-mented through a two-layer Multilayer Perceptron (MLP). The self-attention mechanism for each head within MSA calculates dot-product attention as follows: MSA (x) = Attention (xW Q, xW K , xW V )= SoftMax 
+
+ xW Q(xW K )T
+
+√d
+
+
+
+xW V , (11) where d = DE , and WQ, WK , WV ∈ RDE ×DH are learnable matrices such that DH = DE /N H , with NH being the number of attention heads. In the unimodal encoders, the feature extractor and linear projection layer are unique to each modality, whereas the unimodal Transformer is shared across all modalities. 
+
+2) Multimodal Fusion: The multimodal fusion is performed at the video level. Let the modality-specific features of a video, produced by the unimodal encoders, be represented as ZR,
+
+ZF , ZA, and ZT for RGB, flow, audio, and text modalities, respectively. Specifically, Za = [ za
+
+LU +1 (1) , ..., za
+
+LU +1 (NT )] ∈
+
+RNT ×DE , where a ∈ M = {T, R, F, A } represents a modal-ity, NT is the number of snippets, and za
+
+LU +1 is the output from the unimodal Transformer. We then conduct multimodal fusion using a multi-scale bottleneck Transformer (MSBT) and a bottleneck token-based weighting scheme as outlined below. 
+
+Multi-scale Bottleneck Transformer. Bottleneck Transform-ers [24], [66] have shown both efficiency and effectiveness in multimodal fusion by utilizing a small number of bot-tleneck tokens to condense the information of a modality, thus significantly reducing information redundancy. Drawing inspiration from these works, we propose a multi-scale bot-tleneck Transformer (MSBT) with LM layers to fuse the features of each pair of modalities. Our multi-scale strategy employs a progressively decreasing number of bottleneck tokens at different layers, allowing for gradual information condensation. This approach contrasts with the fixed number of tokens at all layers used in [24], [66], leading to more effective fusion performance. JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2024 9
+
+More specifically, given modality-specific features Za and 
+
+Zb for two different modalities a and b, respectively, where 
+
+a, b ∈ M , the MSBT fuses the information from modality a
+
+into modality b at layer l by 
+
+[Za
+
+> l+1
+
+, ˜Zbt l ] = Transformer ([ Za 
+
+> l
+
+|| Zbt l ]) , (12) 
+
+[Zb
+
+> l+1
+
+, ˆZbt l ] = Transformer ([ Zb 
+
+> l
+
+|| ˜Zbt l ]) , (13) where [·||· ] denotes the feature concatenation operation. The term Zbt l ∈ RN bt l ×DE (N bt l ≪ T ) represents the bottleneck tokens input to layer l, which carry the previously condensed information of modality a and are learned from the preceding layer ( Zbt  
+
+> 1
+
+is randomly initialized). At the current layer, these tokens serve as intermediaries for transmitting information from modality a to modality b. First, they are refined by re-aggregating information from modality a via Eq. (12). Then, they transmit this information to modality b using Eq. (13), resulting in the fusion output Zb
+
+> l+1
+
+.Additionally, in our proposed MSBT, the bottleneck tokens also serve to pass the condensed information of modality a
+
+from the current layer to the next layer. To facilitate this, we initialize a new set of bottleneck tokens ¯Zbt l+1 ∈ RN bt l+1 ×DE at layer l. The number of tokens is halved, i.e., N bt l+1 = ⌊N bt l /2⌋,to store more condensed information. The condensed informa-tion from layer l is then passed to layer l + 1 by 
+
+Zbt l+1 = Cross-Transformer (¯Zbt l+1 , ˜Zbt l ). (14) Here, Cross-Transformer (x, y) is a cross-attention based Transformer that shares the same architecture as Transformer (x) but computes the following attention: Attention (xW Q, yW K , yW V ). (15) When fusing the modality-specific feature Za into Zb, we take Zb  
+
+> LM+1
+
+as the fusion result and denote it as Zab . This process essentially transmits the condensed information from modality a to modality b, indicating that the fusion of two modalities is asymmetric. Consequently, after fusing all pairs of modalities, we obtain NF = A2 
+
+> |M|
+
+fused features, e.g., 
+
+ZT R , ZRF , and ZF A , where Anm represents the number of permutations when selecting n ones from m elements, where 
+
+|M| denotes the size of the set M.
+
+Bottleneck Token-based Weighting. Through the MSBT module, we obtain several feature pairs resulting from the fusion of two different modalities, such as ZT R , ZRF , and so on. These feature pairs are then merged to form the final mul-timodal fused feature. A straightforward approach to obtaining the fused feature from all modalities is to concatenate the features that have been fused from all pairwise combinations. That is, 
+
+Z = [ ZT R || ZRT || ZT F || ZF T || ZT A || ZAT || 
+
+ZRF || ZF R || ZRA || ZAR || ZF A || ZAF ], (16) where Z ∈ RNT ×(NF ·DE ), NT , NF , and DE represent the number of segments in the current video, the number of modal-ity pair features after fusion through the MSBT module, and the dimensionality of the features, respectively. However, we recognize that the bottleneck token learned at the final layer, 
+
+˜Zbt LM , can be utilized to measure the amount of information transferred from one modality to another. Consequently, we propose leveraging these learned bottleneck tokens to weight the features fused from all pairs of modalities. The weights 
+
+w = [ w1, ..., w NF ] ∈ R1×NF are derived by inputting the tokens into an LW -layer Transformer followed by a regressor. That is, 
+
+w = ϕW R (Transformer (LW ×)(Zbt )) , (17) where Zbt ∈ RNT ×NF ×DE is a stack of the final bottleneck to-kens acquired from all pairwise fusions, Transformer (LW ×)(·)
+
+represents an LW -layer Transformer, and ϕW R (·) is a re-gressor implemented using a three-layer MLP. The weighted feature is then obtained by 
+
+ˆZ =[ w1ZT R || w2ZRT || w3ZT F || w4ZF T || w5ZT A || w6ZAT || 
+
+w7ZRF || w8ZF R || w9ZRA || w10 ZAR || w11 ZF A || w12 ZAF ],
+
+(18) where ˆZ ∈ RNT ×(NF ·DE ) represents the fused features of all snippets in a video. 
+
+Anomaly Score. Once the fused features from all snippets of a single video are generated, we utilize a global encoder, which is implemented using a LG-layer Transformer, to capture the global context across all snippets in a video, as seen in [46], [67]. We then apply a regressor to generate fused anomaly scores, i.e., 
+
+s = ϕSR (Transformer (LG×)(ˆZ)) . (19) Here, s ∈ RT represents the anomaly scores for all snippets in a video, and ϕSR (·) is the regressor implemented using a three-layer MLP. 
+
+D. Training and Inference 
+
+Network Training. The training process is divided into two phases: 1) fine-tuning the text feature extractor and 2) training the MSBT module. We fine-tune the text feature extractor 
+
+ϕT F E by minimizing LT F E as shown in Eq. (9), and we utilize top-K MIL loss [6] to train the MSBT, enabling the model to classify the normal and abnormal events. We fine-tune the text feature extractor ϕT F E by minimizing LT F E 
+
+as shown in Eq. (9), and we utilize top-K MIL loss [6] to train the MSBT, enabling the model to classify the normal and abnormal events. To be specific, we average the top-K
+
+anomaly scores as follows, 
+
+¯s = 1
+
+K
+
+X  
+
+> si∈S K(s)
+
+si, (20) where SK (s) indicates the set of top-K scores in s. Similar to Eq. 9, the tok-K MIL loss is defined by 
+
+LM IL = −ylog (¯ s) − (1 − y)log (1 − ¯s), (21) where y ∈ Y is the video-level label. 
+
+Inference. In the inference stage, we comprehensively con-sider both the anomaly probabilities of the text descriptions within the video and the anomaly scores of the fused features. Due to the potential inaccuracy of captions generated by the pre-trained model, directly adding the anomaly scores produced by the text modality and the fused modality could JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2024 10                                                                                                    
+
+> TABLE I THE AUC (%) ON UCF-C RIME AND AP (%) ON XD-V IOLENCE FOR MODEL VARIANTS WITH VARYING DESIGNS IN MSTA ARE PROVIDED .Index Stage-I Stage-II Stage-III UCF-Crime (%) XD-Violence (%) 1%%%80.53 78.72 2!%%82.41 80.36 3!!%85.36 84.38 4!!!89.67 85.92
+> TABLE II THE AUC (%) ON UCF-C RIME AND AP (%) ON XD-V IOLENCE FOR MODEL VARIANTS EMPLOYING VARIED MODALITIES ARE PROVIDED .Index Text RGB Flow Audio UCF-Crime (%) XD-Violence (%) 1%%!!N/A 77.48 2%!!%87.46 80.82 3%!%!N/A 84.12 4%!!!N/A 84.78 5!%%%79.86 70.21 6!%!!N/A 79.59 7!!!%89.67 82.75 8!!%!N/A 84.69 9!!!!N/A 85.92
+
+lead to misleading results. Therefore, we introduce the hy-perparameter α as a balancing factor in the calculation of the final anomaly score, to adjust the relative weights of the anomaly scores derived from the text modality and the fused modality. Specifically, the anomaly score for each snippet can be calculated as follows: 
+
+ˆsi = αs i + (1 − α)pi, (22) where α ∈ [0 , 1] is a hyperparameter for balancing two scores. V. E XPERIMENTS 
+
+A. Datasets and Evaluation Metrics 1) Datasets: We evaluate our proposed framework on two large-scale public datasets, i.e., UCF-Crime [5] and XD-Violence [18]. The details of the datasets are as follows.  
+
+> •
+
+UCF-Crime [5] is a large-scale dataset comprising 13 categories of anomalies, sourced from real-world indoor and outdoor surveillance footage, totaling 128 hours in video length. It contains 1,610 training videos and 290 test videos. Yuan et al . [23] annotate the videos in UCF-Crime with captions, employing text to describe the events. We followed the annotations presented in this paper for our multimodal video anomaly detection task.  
+
+> •
+
+XD-Violence [18] is another extensive dataset for video anomaly detection, featuring 4,754 untrimmed videos spanning 217 hours, gathered from online videos, real-life movies, surveillance footage, and more. The training set consists of 3,954 videos with video-level annotations, while the testing set includes 800 videos annotated at the frame level. Since this dataset lacks text annotations, we employed BLIP2 [22] to generate text descriptions for video segments. 
+
+2) Evaluation Metrics: To assess the performance of differ-ent models, we follow the common practice [5], [6], [7], [10] by using the frame-level area under the ROC curve (AUC) as the evaluation metric for UCF-Crime, while employing the Number of Samplings NS        
+
+> Performance (%)
+> 89.14
+> 89.56
+> 89.67
+> 89.67
+> 89.62
+> 85.27
+> 85.78
+> 85.92
+> 85.89
+> 85.83
+> 80
+> 82
+> 84
+> 86
+> 88
+> 90
+> 92
+> 94
+> 1510 15 20
+> UCF-Crime XD-Violence
+> Fig. 4. The performance with a variant number of samplings NSin the Stage-II of MSTA. Best viewed in color.
+
+average precision (AP) for the XD-Violence dataset. A higher AUC or AP signifies better performance. 
+
+B. Implementation Details 
+
+The proposed framework is implemented in Pytorch and is trained on 4 × NVIDIA Tesla V100 GPUs. In the MSTA, we employ the LLaMA-3-8B [68] as the LLM, the number of samplings NS is set to 10, the number of context samples NR
+
+is 80, and the threshold δ in Stage-III is set to 0.7. The number of generated samples is 17,000 for UCF-Crime and 65,000 for XD-Violence. In the unimodal encoders, the dimension of encoded features DE is 128, the number of attention heads 
+
+NH is set to 4, and the Transformer layer LU is 1. In the multi-scale bottleneck Transformer, we use LM = 5 fusion layers, and the number of bottleneck tokens in the first layer 
+
+N bt  
+
+> 1
+
+is set to 16. In the global encoder, we set LG = 3 layers for the Transformer to aggregate global context. For the text extractor fine-tuning, we employ the bert-base-uncased as the base model, and we use the AdamW optimizer with a batch size of 256 and a learning rate of 0.00005 for 5 epochs. For the network training, the top-K value in the MIL loss is employed by K = 9 , the model is trained by using the SGD optimizer with a batch size of 32, and a learning rate of 0.0004 for UCF-Crime and 0.005 for XD-Violence. For the inference, the hyperparameter α is set to 0.5. 
+
+C. Ablation Studies 1) Effectiveness of The Proposed MSTA: We first conduct ablation experiments on the proposed MSTA to evaluate the effectiveness of multi-stage text augmentation. The experimen-tal results are presented in Table I. When all three stages (Stage-I, II, III) of the strategy are omitted (Index 1 in the table), relying solely on the extraction of text features using BERT, the performance of the model is suboptimal, evidenced by a 9.14% decrease in AUC on the UCF-Crime dataset. The incorporation of caption summary (Index 2 in the table), which involves fine-tuning BERT with concise descriptive text, results in noticeable improvements in model performance, leading to increases of 1.88% in AUC and 1.64% in AP for the UCF-Crime and XD-Violence datasets, respectively. Further augmenting the process with pseudo-labeling of anomaly scores derived from video captions (Index 3 in the table) significantly enhances the sample size for fine-tuning BERT, which corresponds to a marked improvement in model performance, particularly observed as a 4.02% increase in AP on the XD-Violence dataset. Finally, with the additional JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2024 11 Number of Samples      
+
+> Performance (%)
+> NR
+> 89.35
+> 89.42
+> 89.51
+> 89.67
+> 89.64
+> 85.13
+> 85.38
+> 85.51
+> 85.92
+> 85.83
+> 80
+> 82
+> 84
+> 86
+> 88
+> 90
+> 92
+> 94
+> 10 20 40 80 100
+> UCF-Crime XD-Violence
+
+Fig. 5. The performance with a variant number of context samplings NR in the Stage-II(III) of MSTA. Best viewed in color. 85.79        
+
+> 86.82
+> 87.21
+> 87.43
+> 86.96
+> 87.72
+> 88.84
+> 89.67
+> 81.45
+> 82.76
+> 83.08
+> 83.87
+> 81.61
+> 83.85
+> 84.71
+> 85.92
+> 75
+> 85
+> 24816
+> UCF-Crime (Fixed Number) UCF-Crime (Reduced Number)
+> XD-Violence (Fixed Number) XD-Violence (Reduced Number)
+> Number of Bottleneck Tokens Nbt
+> 1
+> Performance (%)
+
+Fig. 6. The AUC (%) on UCF-Crime and AP (%) on XD-Violence are assessed for model variants utilizing a fixed or decreasing number of bot-tleneck tokens in the MSBT. The comparison of performance is conducted for the model across three modalities. The numbers 2, 4, 8, or 16 represent the number of tokens employed at the first layer (in the reducing case) or consistently across all layers (in the fixed case). Best viewed in color. 
+
+integration of text generation techniques (Index 4 in the table), which produces a substantial number of anomalous samples for fine-tuning the text feature extractor, the model achieves its best performance across both datasets. 
+
+2) Effectiveness of the Text Guidance: We subsequently conduct ablation experiments to validate the effectiveness of introducing the text modality for guidance, the experimental results are summarized in Table II. Given the absence of the audio modality in the UCF-Crime dataset, our experiments utilize a maximum of three modalities: text, RGB, and flow. The findings reveal that by employing our proposed MSBT module, the model achieved an AUC of 87.46% and an AP of 80.82% on the UCF-Crime and XD-Violence datasets, respectively (Index 2 in the table). The introduction of the text modality further enhances the model’s performance on UCF-Crime and XD-Violence, leading to improvements of 2.21% in AUC and 1.93% in AP, respectively. We also report the results of the model utilizing solely the text modality (Index 5 in the table), as determined by the anomaly probabilities produced in Eq. (8). Our findings indicate that the model’s performance when relying solely on the text modality is unsat-isfactory. Furthermore, it is evident that the addition of the text modality consistently improves the model’s performance, with the highest overall performance attained when all modalities are utilized, e.g., an AP of 85.92% was achieved on the XD-Violence dataset. 
+
+3) Impact of the Number of Samplings NS : To investigate the impact of the number of sampling NS in Stage-II of the MSTA on model performance, we conduct experiments varying NS from 1 to 20, and the experimental results are illustrated in Fig. 4. From the results, we can observe that 
+
+TABLE III THE AUC (%) ON UCF-C RIME AND AP (%) ON XD-V IOLENCE FOR MODEL VARIANTS WITH VARIOUS DESIGNS IN THE MULTIMODAL FUSION OF MSBT ARE PRESENTED . I N THIS CONTEXT , ’CT’ REFERS TO THE 
+
+CROSS -T RANSFORMER WITHIN THE MSBT, ’T W’ DENOTES THE 
+
+TRANSFORMER EMPLOYED FOR WEIGHT COMPUTATION , AND 
+
+’W EIGHTING ’ INDICATES THE USE OF THE WEIGHTING SCHEME .1 Index CT T W Weighting UCF-Crime (%) XD-Violence (%) 1 % % % 86.27 81.30 2 % % ! 86.53 81.71 3 % ! ! 87.04 82.06 4 ! % % 87.48 82.34 5 ! % ! 87.62 82.69 6 ! ! ! 89.67 85.92 86.73 86.96 87.72           
+
+> 88.84 89.67
+> 88.49
+> 81.84 81.61
+> 83.85
+> 84.71
+> 85.92
+> 83.32
+> 80
+> 82
+> 84
+> 86
+> 88
+> 90
+> 92
+> 124816 32
+> UCF-Crime XD-Violence
+> Number of Bottleneck Tokens
+> Performance (%)
+> Nbt
+> 1
+
+Fig. 7. The performance evaluation was conducted with varying token numbers in the initial layer of our multi-scale bottleneck Transformer. Best viewed in color. 
+
+the model achieves the best performance on the UCF-Crime dataset with NS values of 10 or 15, while the best performance on the XD-Violence dataset occurs at NS = 10 . Consequently, we set the NS to 10 for our experiments. Additionally, we note that changes in NS have minimal effect on model performance, 
+
+e.g., the AUC on the UCF-Crime dataset ranged from 89.14% to 89.62%. This suggests that the model exhibits a degree of insensitivity to variations in NS during the training process. 
+
+4) Impact of the Number of Context Samples NR: To further investigate the influence of the number of context samples NR in Stages-II and Stage-III of the MSTA on model performance, we conduct experiments by changing 
+
+NR from 10 to 100. The results of these experiments are illustrated in Fig. 5. Notably, the model attains the best results on both datasets when NR is set to 80. Additionally, we note that variations in NR result in minimal changes to the model’s performance, with fluctuation ranges of 0.32% and 0.79% observed on the UCF-Crime and XD-Violence datasets, respectively. 
+
+5) Effectiveness of the Designs in Multimodal Fusion: 
+
+We then delve into the multimodal fusion module, which comprises the multi-scale bottleneck Transformer (MSBT) and a bottleneck token-based weighting sub-module. Each component is validated through comparisons with various alternative designs. In the MSBT, our current design incorporates two key features. First, the bottleneck tokens from each layer are derived from those learned in the previous layer via the Cross-Transformer (CT) defined in Eq. (14), facilitating a gradual condensation of information. An alternative approach would be to skip the Cross-Transformer, resulting in tokens that JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2024 12 Hyperparameter                     
+
+> Performance (%)
+> 80.52
+> 82.14
+> 85.81
+> 87.39
+> 89.67 89.58 88.93 88.54 87.82 87.46
+> 71.46
+> 75.78
+> 79.63
+> 83.95
+> 85.92 85.76 85.31 85.46 85.03 84.78
+> 71
+> 73
+> 75
+> 77
+> 79
+> 81
+> 83
+> 85
+> 87
+> 89
+> 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0
+> UCF-Crime XD-Violence
+
+Fig. 8. The performance of the model on two datasets with different hyperparameter settings for α. Best viewed in color. 87.75 88.04                       
+
+> 88.68
+> 89.21 89.53 89.67 89.67 89.48 89.14
+> 84.82 85.05 85.17 85.28 85.49 85.78 85.92 85.92 85.76
+> 84
+> 85
+> 86
+> 87
+> 88
+> 89
+> 90
+> 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9
+> UCF-Crime XD-Violence
+> Hyperparameter
+> Performance (%)
+
+Fig. 9. The performance of the model on two datasets with different hyperparameter settings for δ. Best viewed in color. 
+
+are randomly initialized at the start of each layer with no information carried over from preceding layers. As shown in Table III, our findings demonstrate the superiority of using the CT. Second, the number of bottleneck tokens in consecutive layers of our current model is halved to promote gradual condensation. In contrast, one could maintain a fixed number of tokens, as seen in other methods [24], [66]. Fig. 6 provides a comparison, validating the effectiveness of our gradual condensing strategy. Regarding the bottleneck token-based weighting sub-module, we evaluate three alternative designs. The first design leaves out the Transformer employed in Eq. (17), while the second eliminates the weighting. Results presented in Table III indicate that the weighting scheme enhances performance, highlighting the significant impact of the weight computation method on outcomes. 
+
+6) Impact of the Number of Bottleneck Token N bt  
+
+> 1
+
+: Bot-tleneck tokens play a crucial role in the MSBT module. To investigate how the quantity of bottleneck tokens affects performance, we conduct experiments by varying the number of tokens N bt  
+
+> 1
+
+from 1 to 32. This range corresponds to the employment of 1 to 5 MSBT layers following a gradual reduction scheme. The results are illustrated in Fig. 7. The results presented in the figure indicate that as the number of bottleneck tokens increases, the model’s performance exhibits an upward trend. Notably, the model achieves the best perfor-mance on both datasets when the number of bottleneck tokens is set to 16 in the first layer. 
+
+7) Impact of the Hyperparameter α: The hyperparameter α
+
+is used to balance the anomaly probabilities derived from tex-tual descriptions and fused modality when calculating anomaly scores during inference. To further investigate the impact of 
+
+α on model performance, we conducted experiments where 
+
+TABLE IV FRAME -LEVEL AUC (%) ON UCF-C RIME DATASET OF VARIOUS STATE -OF -THE -ART METHODS . T HE BEST RESULTS ARE BOLD .Method Venue Modality AUC (%) Sultani et al . [5] CVPR’18 RGB 75.41 Wu et al . [69] TIP’21 RGB 84.89 RTFM [6] ICCV’21 RGB 84.30 MIST [7] CVPR’21 RGB 82.30 DAR [16] TIFS’23 RGB 85.18 LSTC [27] ICME’23 RGB 85.88 UR-DMU [10] AAAI’23 RGB 86.97 MSAF [38] SPL’22 RGB+Flow 81.34 DAR [16] TIFS’23 RGB+Flow 85.36 Tan et al . [40] WACVW’24 RGB+Flow 86.71 TEVAD [19] CVPRW’23 Text+RGB 84.90 Shi et al . [41] Access’24 Text+RGB 84.64 Yuan et al . [39] TCSVT’24 Text+RGB 85.30 TG-MVAD (Ours) This Work RGB+Flow 87.46 
+
+TG-MVAD (Ours) This Work Text+RGB 89.18 
+
+TG-MVAD (Ours) This Work Text+RGB+Flow 89.67 
+
+α was varied from 0.1 to 1.0, with the results shown in Fig. 8. The experimental results indicate that as α increases from 0.1 to 0.5, with the weight on the fused modality-based anomaly scores progressively increasing, the model’s performance improves continuously. Notably, when α is set to 0.5, the model achieves the best performance on both datasets. However, as α increases from 0.5 to 1.0, with the weight on the text modality-based anomaly scores gradually decreasing, the model’s performance begins to decline. In summary, while the hyperparameter α does influence model performance, the best results are obtained when α is set to 0.5 for both datasets. Therefore, α can be set to a value of 0.5 for inference. 
+
+8) Impact of the Hyperparameter δ: The hyperparameter 
+
+δ serves as a threshold in Stage-III to determine whether the generated text describes an anomalous event, with texts having an anomaly score greater than δ being classified as descriptions of anomalous events. We conducted experiments to investigate the effect of δ on model performance, varying δ from 0.1 to 0.9, with the results presented in Fig. 9. The experimental results show that as δ increases, the model’s performance initially improves and then slowly declines. Notably, when δ is set to 0.6 or 0.7, the model achieves the best performance on the UCF-Crime dataset, while when δ is set to 0.7 or 0.8, the model performs best on the XD-Violence dataset. Considering these results, setting δ to 0.7 is optimal, as it enables the model to achieve the best performance on both datasets. 
+
+D. Comparison to State-of-the-Art 1) Results on UCF-Crime Dataset: The frame-level AUC performance of various state-of-the-art (SOTA) methods on the UCF-Crime dataset is summarized in Table IV. Notably, traditional RGB-based approaches like Sultani et al . [5] and MIST [7] demonstrate lower AUC of 75.41% and 82.30%, respectively. In contrast, the inclusion of flow modality en-hances performance significantly, as seen with methods such as DAR [16] and Tan and Liu [40], which achieve AUC of 85.36% and 86.71% for RGB+Flow modalities. Comparatively, our proposed method stands out with substantial improvements. Utilizing RGB+Flow achieves an AUC of 87.46%, while the combination of Text+RGB and JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2024 13 An explosion occurred in                      
+
+> afactory, black smoke
+> filled the air, and then a
+> huge red flame ignited .
+> On the road on the
+> left, alarge oil tanker
+> is driving forward .
+
+(a) Explosion033 (b) Robbery102                        
+
+> After the yard gate opened,
+> ablack car drove in .
+> The man in black and the
+> woman in the courtyard
+> were fighting for the bag,
+> and both sides were
+> pulling .
+
+(c) Shoplifting020                              
+
+> During the process of the
+> man stealing, the boss
+> didn 'tnotice at all and was
+> still solving the older
+> man 'sproblem .
+> Another female customer
+> in pink clothes behind the
+> male customer in green
+> shirt bent down to choose
+> something .
+
+(d) Vandalism015                                                                      
+
+> The man in the hat
+> walked to the far left
+> of the store while
+> observing .
+> The man wearing ahat swung
+> ahammer with one hand and
+> smashed the second window
+> of the store from left to right .
+> The glass was smashed into a
+> spider web shape .
+> 0500 1000 1500 2000 2500 3000
+> Frames
+> 0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1
+> Scores
+> 0200 400 600 800 1000 1200 1400 1600 1800
+> Frames
+> 0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1
+> Scores
+> 01000 2000 3000 4000 5000
+> Frames
+> 0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1
+> Scores
+> 0500 1000 1500 2000 2500
+> Frames
+> 0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1
+> Scores
+> Final Score
+> Textual Anomaly Probability
+> Fused Anomaly Score
+> ˆs
+> s
+> p
+> 0200 400 600 800 1000 1200 1400
+> Frames
+> 0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1
+> Scores
+
+(e) Black Hawk Down                        
+
+> Two soldiers running
+> through afield with an
+> explosion behind the m.
+> Aman is talking on the
+> phone in adark room .
+> 0200 400 600 800 1000 1200
+> Frames
+> 0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1
+> Scores
+
+(f) Ip Man                    
+
+> Aman is fighting
+> with another man in
+> asmall alley .
+> Tw o m e n i n s u i t s
+> talking to each other .
+> 0200 400 600 800 1000
+> Frames
+> 0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1
+> Scores
+
+(g) The Bourne Identity                     
+
+> Aman pushed the other
+> man hard in adark room .
+> Aman in black shirt
+> looking at someone .
+> 0200 400 600 800 1000
+> Frames
+> 0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1
+> Scores
+
+(h) Yellow Sea                
+
+> Awoman with long hair
+> f e l l t o t h e g r o u n d
+> holding her head .
+> Aman and woman
+> sitting on atrain .
+> Final Score
+> Textual Anomaly Probability
+> Fused Anomaly Score
+> ˆs
+> s
+> p
+> Final Score
+> Textual Anomaly Probability
+> Fused Anomaly Score
+> ˆs
+> s
+> p
+> Final Score
+> Textual Anomaly Probability
+> Fused Anomaly Score
+> ˆs
+> s
+> p
+> Final Score
+> Textual Anomaly Probability
+> Fused Anomaly Score
+> ˆs
+> s
+> p
+> Final Score
+> Textual Anomaly Probability
+> Fused Anomaly Score
+> ˆs
+> s
+> p
+> Final Score
+> Textual Anomaly Probability
+> Fused Anomaly Score
+> ˆs
+> s
+> p
+> Final Score
+> Textual Anomaly Probability
+> Fused Anomaly Score
+> ˆs
+> s
+> p
+
+Fig. 10. Visualization of anomaly scores predicted on the (a-d) UCF-Crime and (e-h) XD-Violence test sets. The pink regions indicate ground-truth abnormal events. Best viewed in color. TABLE V FRAME -LEVEL AP (%) ON XD-V IOLENCE DATASET OF VARIOUS STATE -OF -THE -ART METHODS . T HE BEST RESULTS ARE BOLD .Method Venue Modality AP (%) Wu et al . [69] TIP’21 RGB 75.90 RTFM [6] ICCV’21 RGB 77.81 DAR [16] TIFS’23 RGB 78.94 UR-DMU [10] AAAI’23 RGB 81.66 HL-Net [18] ECCV’20 RGB+Audio 78.64 Pang et al . [13] ICASSP’21 RGB+Audio 81.69 ACF [14] ICASSP’22 RGB+Audio 80.13 Pang et al. [15] TMM’22 RGB+Audio 79.37 MACIL-SD [17] MM’22 RGB+Audio 83.40 Wu et al . [9] TMM’22 RGB+Audio 78.64 MSAF [38] SPL’22 RGB+Audio 80.51 DAR [16] TIFS’23 RGB+Audio 79.32 Zhang et al . [70] CVPR’23 RGB+Audio 81.43 DAR [16] TIFS’23 RGB+Flow 79.15 Wu et al . [9] TMM’22 Audio+Flow 72.96 TEVAD [19] CVPRW’23 Text+RGB 79.80 Wu et al . [9] TMM’22 RGB+Audio+Flow 79.53 Xiao et al . [43] ICASSP’23 RGB+Audio+Flow 84.54 Na et al . [42] MLKE’24 Text+RGB+Audio+Flow 83.90 TG-MVAD (Ours) This Work RGB+Audio 84.12 
+
+TG-MVAD (Ours) This Work RGB+Flow 80.82 
+
+TG-MVAD (Ours) This Work Audio+Flow 77.48 
+
+TG-MVAD (Ours) This Work Text+RGB 83.75 
+
+TG-MVAD (Ours) This Work RGB+Audio+Flow 84.78 
+
+TG-MVAD (Ours) This Work Text+RGB+Audio+Flow 85.92 
+
+Text+RGB+Flow further enhances the results to 89.18% and a remarkable 89.67%, respectively. In addition, compared to the TEVAD [19], which similarly employs text modalities, our proposed approach demonstrates an improvement of 4.28% in AUC when utilizing both text and RGB modalities. These results indicate that our approach not only surpasses existing methods in terms of accuracy but also emphasizes the effec-tiveness of integrating text information with visual modalities to enhance performance on the UCF-Crime dataset. 
+
+2) Results on XD-Violence Dataset: Table V presents the frame-level AP performance of various SOTA methods on the XD-Violence dataset. The results indicate a significant perfor-mance range across different modalities, with many methods achieving competitive results in RGB and RGB+Audio modal-ities. For instance, methods like UR-DMU [10] and MACIL-SD [17] yield AP of 81.66% and 83.40%, respectively, using the RGB+Audio modality, which highlights the efficacy of audio modality in enhancing performance. In comparison, our proposed method outperforms several existing approaches, achieving notable AP in various configurations, including RGB+Audio (84.12%), RGB+Flow (80.82%), and a maximum of 85.92% with the combined modality of text, RGB, au-dio, and flow. This suggests that the integration of multiple modalities significantly contributes to improving detection capabilities, affirming the effectiveness of our approach in addressing the XD-Violence dataset. 
+
+E. Qualitative Analyses 1) Predicted Anomaly Scores: We first visualize the anomaly scores predicted by our proposed method on the test sets of the UCF-Crime and XD-Violence datasets, as shown in Fig. 10. To better illustrate the impact of incorporating text anomaly probabilities on the model’s performance during inference, we plot three distinct anomaly score curves for each showcased video. The yellow line represents the text anomaly probability (as per Eq. (8)), the green line denotes the fused feature’s anomaly score (according to Eq. (19)), and the blue line reflects the final weighted anomaly score (as indicated in Eq. (22)). From the figure, we can observe that the text anomaly probability and the fused anomaly score complement each other effectively. For instance, in the short-term normal segment of (a) Explosion033 (frames 1361 ∼1536), the fused anomaly score s is relatively high, while the lower text anomaly probability p reduces the final weighted anomaly score ˆs, thereby avoiding false alarms. Similarly, in the normal segment of (b) Robbery102 (frames JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2024 14 A shirtless man continues                                                                                                                              
+
+> to hit aman in awhite
+> striped shirt .
+> Video
+> Frame
+> Video
+> Caption
+> Annotated
+> Score 1.00
+> Ablue car hit the man in
+> green and the gas station,
+> a n d t h e g a s s t a t i o n
+> caught fire .
+> 1.00
+> (a) Fighting (b) Road Accident
+> The man behind the counter
+> picked up the phone, but put
+> it down again due to the
+> threat of the gunman .
+> 0.80
+> (c) Robbery
+> Two policemen pulled the
+> ma n i n b l a ck u p a n d
+> asked him to sit on achair .
+> 0.83
+> (d) Arrest
+> Aman wearing ahat and
+> aplaid shirt walked to the
+> yellow line and directed
+> the car coming in front .
+> 0.00
+> (e) Normal Event in
+> Shooting
+> The man and the woman
+> s a t p a r a l y z e d o n t h e
+> ground .
+> 0.50
+> (f) Ambiguous Event in
+> Abuse
+> Aman holding agun
+> in front of awall .
+> Video
+> Frame
+> Video
+> Caption
+> Annotated
+> Score 1.00
+> Agroup of people running
+> through aburning building .
+> 1.00
+> (g) Shooting (h) Riot
+> Amilitary vehicle is driving
+> over acar .
+> 1.00
+> (i) Car Accident
+> Asoldier is looking at a
+> fire in the distance .
+> 0.86
+> (j) Explosion
+> Aman is smiling in adark
+> room .
+> 0.00
+> (k) Normal Event in
+> Abuse
+> Awoman with long hair is
+> crying in adark room .
+> 0.50
+> (l) Ambiguous Event in
+> Fighting
+
+Fig. 11. The visualization of score annotation for video segments in the (a-f) UCF-Crime and (g-l) XD-Violence datasets was conducted utilizing the Stage-II labeling strategy. 
+
+801 ∼976), the text anomaly probability also contributes to lowering the final anomaly score. Moreover, the fused anomaly score aids in mitigating false alarms as demonstrated in (f) Ip Man , specifically be-tween frames 849 ∼864 and 977 ∼1008. Additionally, the text anomaly probability proves beneficial for detecting anomalies. For instance, in the anomalous segment of (e) Black Hawk Down (frames 465 ∼480), the text anomaly probability is recorded at 0.97, while the fused anomaly score stands at 0.61. This combination elevates the final anomaly score to 0.79 after weighting. Furthermore, it is noteworthy that our proposed model is capable of detecting not only individual anomalous events but also accurately identifying multiple anomalous events within a single video, as exemplified by the three anomalous events present in (g) The Bourne Identity .
+
+2) Annotated Scores in Stage-II: To better illustrate the effect of the annotation strategy employed in Stage-II for scoring video segments, selected annotated segments from the UCF-Crime and XD-Violence datasets have been presented in Fig. 11. The annotated results presented indicate that the label predictions obtained through Stage-II effectively assign accurate pseudo-labels to certain video segments. For instance, abnormal segments in the UCF-Crime dataset, such as (a) Fighting and (b) Road Accident , as well as (g) Shooting and 
+
+(h) Riot from the XD-Violence dataset, have all been assigned an anomaly score of 1.00. Similarly, normal events within the abnormal videos, exemplified by (e) Normal Event in Shooting 
+
+or (k) Normal Event in Abuse , have been correctly labeled with an anomaly score of 0.00. Moreover, it was observed that some ambiguous event descriptions in the videos pose challenges in determining whether they constitute anomalies. For instance, the descrip-tions depicted in (f) Ambiguous Event in Abuse and (l) Ambiguous Event in Fighting were both assigned pseudo-labels with an anomaly score of 0.50. This underscores the complexities involved in accurately categorizing events that lack clear distinguishing characteristics. 
+
+TABLE VI THE AP PERFORMANCE (%) ON THE XD-V IOLENCE DATASET , MODEL PARAMS , AND FLOATING POINT OPERATIONS (FLOP S) OF THE PROPOSED 
+
+MSBT-BASED VIDEO ANOMALY DETECTION FRAMEWORK ARE COMPARED WITH OTHER METHODS . H ERE , “R”, “F”, “A”, AND “T” 
+
+CORRESPOND TO THE RGB, OPTICAL FLOW , AUDIO , AND TEXT MODALITIES , RESPECTIVELY . † INDICATES THAT THIS RESULT IS REFERENCED FROM THE WORK OF YU et al. [17], AND * DENOTES RESULTS OBTAINED BY RETRAINING THE OFFICIAL CODE WITH DIFFERENT INPUT MODALITY FEATURES .Method Modality AP (%) Params FLOPs MACIL-SD(Light) [17] R+A 82.17 0.347M 29.2G MACIL-SD(Full) [17] R+A 83.40 0.678M 56.4G MACIL-SD(Full) [17]* R+F 79.73 0.792M 65.6G RTFM [6] † R+A 78.54 13.190M 1013.6 G Wu et al. [18] † R+A 78.66 1.539M N/A Pang et al. [13] R+A 81.69 1.876M N/A This work R+A 84.12 0.685M 25.8G (0.154M (MSBT) (10.4G (MSBT) + 0.531M (Others) + 15.4G (Others)) This work R+F 80.82 0.743M 30.8G (0.154M (MSBT) (11.4G (MSBT) 0.589M (Others)) + 19.4G (Others)) This work R+A+F 84.78 3.252M 102.2G (0.154M (MSBT) (25.6G (MSBT) + 3.098M (Others)) + 76.6G (Others)) This work T+R+A+F 85.92 11.478M 288.2G (0.155M (MSBT) (50.0G (MSBT) + 11.323M (Others)) + 238.2G (Others)) 
+
+F. Complexity Analysis 
+
+We further analyze the number of parameters and floating-point operations (FLOPs) of the proposed MSBT-based multi-modal video anomaly detection framework and compare these results with those of other methods. The results are shown in Table VI. As indicated in the table, we divide the number of parameters and FLOPs of the MSBT-based anomaly detection framework into two parts: the former refers to the parameter count of the feature fusion module based on the multi-scale bottleneck Transformer (MSBT), while the latter includes the parameters of other modules, such as the unimodal encoders and global encoder. The MSBT-based feature fusion module can be regarded as a plug-and-play module, meaning it can be integrated into other baseline networks. Taking the case of using both RGB visual and audio modalities, the parameter count of our proposed method is comparable to that of the MACIL-SD (Full) method proposed by Yu et al. , yet JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2024 15 
+
+its AP performance improves by 0.72%. Furthermore, our method requires fewer parameters than those of Wu et al. [18] and Pang et al. [13], while outperforming both in terms of performance. Additionally, we analyze the efficiency of the proposed multi-stage text augmentation (MSTA) method. In this paper, we use the LLaMA-3-8B model for inference in in-context learning. In Stage-I, the average time for summarizing one video is 0.93 seconds. In Stage-II, with the number of sampling Ns = 10 and the number of context samples 
+
+NR = 80 , the average time to label a single sample is 3.58 seconds. In Stage-III, when the number of context samples is also set to 80, the average time to generate a new sample is 2.65 seconds. VI. C ONCLUSION 
+
+In this paper, we propose a novel multi-stage text augmen-tation (MSTA) mechanism that successfully mitigates training bias by generating high-quality abnormal text samples. Our approach enriches the training dataset with diverse, informa-tive text descriptions, thereby reducing the imbalance between normal and abnormal samples and promoting a more effective extractor fine-tuning. Complementarily, we introduce a feature fusion module based on a multi-scale bottleneck Transformer (MSBT), which enhances inter-modality integration by utiliz-ing a streamlined set of bottleneck tokens. This innovative architecture captures complex dependencies across modalities. The experimental results obtained from large-scale datasets, UCF-Crime and XD-Violence, illustrate that our methodology achieves SOTA performance across multiple modalities, in-cluding text, RGB, optical flow, and audio. Notably, ablation studies reveal that the proposed MSTA significantly validates the model’s effectiveness. Overall, our findings underscore the importance of robust text augmentation and efficient multi-modal integration as crucial components in advancing model performance in anomaly detection tasks. ACKNOWLEDGMENTS 
+
+This research was funded by the Zhejiang Province Pioneer Research and Development Project “Research on Multi-modal Traffic Accident Holographic Restoration and Scene Database Construction Based on Vehicle-cloud Intersection” (Grant No. 2024C01017). REFERENCES [1] F. Landi, C. G. Snoek, and R. Cucchiara, “Anomaly locality in video surveillance,” arXiv preprint arXiv:1901.10364 , 2019. [2] K. Liu and H. Ma, “Exploring background-bias for anomaly detection in surveillance videos,” in ACM MM , 2019, pp. 1490–1499. [3] C. Sun, Y. Jia, and Y. Wu, “Evidential reasoning for video anomaly detection,” in ACM MM , 2022, pp. 2106–2114. [4] S. Sun and X. Gong, “Hierarchical semantic contrast for scene-aware video anomaly detection,” in CVPR , 2023, pp. 22 846–22 856. [5] W. Sultani, C. Chen, and M. Shah, “Real-world anomaly detection in surveillance videos,” in CVPR , 2018, pp. 6479–6488. [6] Y. Tian, G. Pang, Y. Chen, R. Singh, J. W. Verjans, and G. Carneiro, “Weakly-supervised video anomaly detection with robust temporal fea-ture magnitude learning,” in ICCV , 2021, pp. 4975–4986. [7] J.-C. Feng, F.-T. Hong, and W.-S. Zheng, “Mist: Multiple instance self-training framework for video anomaly detection,” in CVPR , 2021, pp. 14 009–14 018. [8] S. Chang, Y. Li, S. Shen, J. Feng, and Z. Zhou, “Contrastive attention for video anomaly detection,” IEEE Transactions on Multimedia , vol. 24, pp. 4067–4076, 2021. [9] P. Wu, X. Liu, and J. Liu, “Weakly supervised audio-visual violence detection,” IEEE Transactions on Multimedia , 2022. [10] H. Zhou, J. Yu, and W. Yang, “Dual memory units with uncertainty regulation for weakly supervised video anomaly detection,” in AAAI ,2023. [11] H. Shi, L. Wang, S. Zhou, G. Hua, and W. Tang, “Abnormal ratios guided multi-phase self-training for weakly-supervised video anomaly detection,” IEEE Transactions on Multimedia , 2023. [12] S. Sun and X. Gong, “Multi-scale bottleneck transformer for weakly supervised multimodal violence detection,” in IEEE international con-ference on multimedia and expo (ICME) , 2024. [13] W.-F. Pang, Q.-H. He, Y.-j. Hu, and Y.-X. Li, “Violence detection in videos based on fusing visual and audio information,” in ICASSP . IEEE, 2021, pp. 2260–2264. [14] D.-L. Wei, C.-G. Liu, Y. Liu, J. Liu, X.-G. Zhu, and X.-H. Zeng, “Look, listen and pay more attention: Fusing multi-modal information for video violence detection,” in ICASSP . IEEE, 2022, pp. 1980–1984. [15] W. Pang, W. Xie, Q. He, Y. Li, and J. Yang, “Audiovisual dependency attention for violence detection in videos,” IEEE Transactions on Mul-timedia , vol. 25, pp. 4922–4932, 2022. [16] T. Liu, C. Zhang, K.-M. Lam, and J. Kong, “Decouple and resolve: Transformer-based models for online anomaly detection from weakly labeled videos,” IEEE Transactions on Information Forensics and Secu-rity , vol. 18, pp. 15–28, 2023. [17] J. Yu, J. Liu, Y. Cheng, R. Feng, and Y. Zhang, “Modality-aware contrastive instance learning with self-distillation for weakly-supervised audio-visual violence detection,” in ACM MM , 2022, pp. 6278–6287. [18] P. Wu, J. Liu, Y. Shi, Y. Sun, F. Shao, Z. Wu, and Z. Yang, “Not only look, but also listen: Learning multimodal violence detection under weak supervision,” in ECCV . Springer, 2020, pp. 322–339. [19] W. Chen, K. T. Ma, Z. J. Yew, M. Hur, and D. A.-A. Khoo, “Tevad: Improved video anomaly detection with captions,” in CVPRW , 2023, pp. 5549–5559. [20] K. Lin, L. Li, C.-C. Lin, F. Ahmed, Z. Gan, Z. Liu, Y. Lu, and L. Wang, “Swinbert: End-to-end transformers with sparse attention for video captioning,” in CVPR , 2022, pp. 17 949–17 958. [21] A. Yang, A. Nagrani, P. H. Seo, A. Miech, J. Pont-Tuset, I. Laptev, J. Sivic, and C. Schmid, “Vid2seq: Large-scale pretraining of a visual language model for dense video captioning,” in CVPR , 2023, pp. 10 714– 10 726. [22] J. Li, D. Li, S. Savarese, and S. Hoi, “Blip-2: Bootstrapping language-image pre-training with frozen image encoders and large language models,” in ICML . PMLR, 2023, pp. 19 730–19 742. [23] T. Yuan, X. Zhang, K. Liu, B. Liu, C. Chen, J. Jin, and Z. Jiao, “Towards surveillance video-and-language understanding: New dataset baselines and challenges,” in CVPR , 2024, pp. 22 052–22 061. [24] A. Nagrani, S. Yang, A. Arnab, A. Jansen, C. Schmid, and C. Sun, “Attention bottlenecks for multimodal fusion,” NeurIPS , vol. 34, pp. 14 200–14 213, 2021. [25] C. Du, T. Li, Y. Liu, Z. Wen, T. Hua, Y. Wang, and H. Zhao, “Im-proving multi-modal learning with uni-modal teachers,” arXiv preprint arXiv:2106.11059 , 2021. [26] A. Acsintoae, A. Florescu, M. Georgescu, T. Mare, P. Sumedrea, R. T. Ionescu, F. S. Khan, and M. Shah, “Ubnormal: New benchmark for supervised open-set video anomaly detection,” in CVPR , 2022, pp. 20 143–20 153. [27] S. Sun and X. Gong, “Long-short temporal co-teaching for weakly supervised video anomaly detection,” in IEEE international conference on multimedia and expo (ICME) . IEEE, 2023, pp. 2711–2716. [28] ——, “Event-driven weakly supervised video anomaly detection,” Image and Vision Computing , vol. 149, p. 105169, 2024. [29] S. Sun, J. Hua, J. Feng, D. Wei, B. Lai, and X. Gong, “Tdsd: Text-driven scene-decoupled weakly supervised video anomaly detection,” in ACM MM 2024 , 2024. [30] M. Hasan, J. Choi, J. Neumann, A. K. Roy-Chowdhury, and L. S. Davis, “Learning temporal regularity in video sequences,” in CVPR , 2016, pp. 733–742. [31] D. Gong, L. Liu, V. Le, B. Saha, M. R. Mansour, S. Venkatesh, and A. v. d. Hengel, “Memorizing normality to detect anomaly: Memory-augmented deep autoencoder for unsupervised anomaly detection,” in 
+
+ICCV , 2019, pp. 1705–1714. [32] M. Sabokrou, M. Fayyaz, M. Fathy, and R. Klette, “Deep-cascade: Cascading 3d deep neural networks for fast anomaly detection and lo-JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2024 16 
+
+calization in crowded scenes,” IEEE Transactions on Image Processing ,vol. 26, no. 4, pp. 1992–2004, 2017. [33] R. T. Ionescu, S. Smeureanu, M. Popescu, and B. Alexe, “Detecting abnormal events in video using narrowed normality clusters,” in WACV .IEEE, 2019, pp. 1951–1960. [34] W. Xue, Y. Yang, L. Li, Z. Huang, X. Wang, J. Han, and D. Zhang, “Weakly supervised point cloud segmentation via deep morphological semantic information embedding,” CAAI Transactions on Intelligence Technology , vol. 9, no. 3, pp. 695–708, 2024. [35] D. Zhang, H. Li, W. Zeng, C. Fang, L. Cheng, M.-M. Cheng, and J. Han, “Weakly supervised semantic segmentation via alternate self-dual teaching,” IEEE Transactions on Image Processing , 2023. [36] M. Z. Zaheer, A. Mahmood, M. Astrid, and S.-I. Lee, “Claws: Clustering assisted weakly supervised learning with normalcy suppression for anomalous event detection,” in ECCV , 2020, pp. 358–376. [37] P. Wu, X. Zhou, G. Pang, L. Zhou, Q. Yan, P. Wang, and Y. Zhang, “Vadclip: Adapting vision-language models for weakly supervised video anomaly detection,” in AAAI , vol. 38, no. 6, 2024, pp. 6074–6082. [38] D. Wei, Y. Liu, X. Zhu, J. Liu, and X. Zeng, “Msaf: Multimodal supervise-attention enhanced fusion for video anomaly detection,” IEEE Signal Processing Letters , vol. 29, pp. 2178–2182, 2022. [39] T. Yuan, X. Zhang, B. Liu, K. Liu, J. Jin, and Z. Jiao, “Surveillance video-and-language understanding: from small to large multimodal mod-els,” IEEE Transactions on Circuits and Systems for Video Technology ,2024. [40] W. Tan, Q. Yao, and J. Liu, “Overlooked video classification in weakly supervised video anomaly detection,” in WACV , 2024, pp. 202–210. [41] Y. Shi, T. Yamashita, T. Hirakawa, H. Fujiyoshi, M. Nakazawa, Y. Chae, and B. Stenger, “Caption-guided interpretable video anomaly detection based on memory similarity,” IEEE Access , 2024. [42] G. Na, J. Ko, and K. Cheoi, “Leveraging multi-modality and enhanced temporal networks for robust violence detection,” Machine Learning and Knowledge Extraction , vol. 6, no. 4, pp. 2422–2434, 2024. [43] Y. Xiao, L. Wang, T. Wang, and H. Lai, “Scoreformer: Score fusion-based transformers for weakly-supervised violence detection,” in 
+
+ICASSP . IEEE, 2023, pp. 1–5. [44] X.-S. Wei, H.-T. Yu, A. Xu, F. Zhang, and Y. Peng, “Mecom: A meta-completion network for fine-grained recognition with incomplete multi-modalities,” IEEE Transactions on Image Processing , 2024. [45] F.-T. Hong, J.-C. Feng, D. Xu, Y. Shan, and W.-S. Zheng, “Cross-modal consensus network for weakly supervised temporal action localization,” in ACM MM , 2021, pp. 1591–1599. [46] P. Xu, X. Zhu, and D. A. Clifton, “Multimodal learning with transform-ers: A survey,” IEEE Transactions on Pattern Analysis and Machine Intelligence , vol. 45, no. 10, pp. 12 113–12 132, 2023. [47] Y. Li, Y. Wang, and Z. Cui, “Decoupled multimodal distilling for emotion recognition,” in CVPR , 2023, pp. 6631–6640. [48] Q. Song, B. Sun, and S. Li, “Multimodal sparse transformer network for audio-visual speech recognition,” IEEE Transactions on Neural Networks and Learning Systems , 2022. [49] P. Tzirakis, J. Chen, S. Zafeiriou, and B. Schuller, “End-to-end mul-timodal affect recognition in real-world environments,” Information Fusion , vol. 68, pp. 46–53, 2021. [50] M. Dzabraev, M. Kalashnikov, S. Komkov, and A. Petiushko, “Mdmmt: Multidomain multimodal transformer for video retrieval,” in CVPR ,2021, pp. 3354–3363. [51] V. Gabeur, C. Sun, K. Alahari, and C. Schmid, “Multi-modal transformer for video retrieval,” in ECCV . Springer, 2020, pp. 214–229. [52] N. Shvetsova, B. Chen, A. Rouditchenko, S. Thomas, B. Kingsbury, R. Feris, D. Harwath, J. Glass, and H. Kuehne, “Everything at once – multi-modal fusion transformer for video retrieval,” in CVPR , 2022. [53] A. Urooj, A. Mazaheri, N. D. vitoria lobo, and M. Shah, “Mmft-bert multimodal fusion transformer with bert encodings for visual question answering,” in EMNLP , 2020. [54] A. Prakash, K. Chitta, and A. Geiger, “Multi-modal fusion transformer for end-to-end autonomous driving,” in CVPR , 2021. [55] C. Lin, Y. Jiang, J. Cai, L. Qu, G. Haffari, and Z. Yuan, “Multimodal transformer with variable-length memory for vision-and-language navi-gation,” in ECCV . Springer, 2022, pp. 380–397. [56] A. G. Møller, J. A. Dalsgaard, A. Pera, and L. M. Aiello, “Is a prompt and a few samples all you need? using gpt-4 for data augmentation in low-resource classification tasks,” arXiv preprint arXiv:2304.13861 ,vol. 2, 2023. [57] J. Zhang, R. Xie, Y. Hou, W. X. Zhao, L. Lin, and J.-R. Wen, “Recom-mendation as instruction following: A large language model empowered recommendation approach,” arXiv preprint arXiv:2305.07001 , 2023. [58] B. Peng, C. Li, P. He, M. Galley, and J. Gao, “Instruction tuning with gpt-4,” arXiv preprint arXiv:2304.03277 , 2023. [59] Q. Dong, L. Li, D. Dai, C. Zheng, Z. Wu, B. Chang, X. Sun, J. Xu, and Z. Sui, “A survey on in-context learning,” arXiv preprint arXiv:2301.00234 , 2022. [60] S. Min, X. Lyu, A. Holtzman, M. Artetxe, M. Lewis, H. Hajishirzi, and L. Zettlemoyer, “Rethinking the role of demonstrations: What makes in-context learning work?” arXiv preprint arXiv:2202.12837 , 2022. [61] T. Li, X. Ma, A. Zhuang, Y. Gu, Y. Su, and W. Chen, “Few-shot in-context learning for knowledge base question answering,” arXiv preprint arXiv:2305.01750 , 2023. [62] J. Carreira and A. Zisserman, “Quo vadis, action recognition? a new model and the kinetics dataset,” in CVPR , 2017, pp. 6299–6308. [63] J. F. Gemmeke, D. P. Ellis, D. Freedman, A. Jansen, W. Lawrence, R. C. Moore, M. Plakal, and M. Ritter, “Audio set: An ontology and human-labeled dataset for audio events,” in ICASSP . IEEE, 2017, pp. 776–780. [64] J. Devlin, “Bert: Pre-training of deep bidirectional transformers for language understanding,” arXiv preprint arXiv:1810.04805 , 2018. [65] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, Ł. Kaiser, and I. Polosukhin, “Attention is all you need,” in NeurIPS ,2017. [66] S. Yan, X. Xiong, A. Arnab, Z. Lu, M. Zhang, C. Sun, and C. Schmid, “Multiview transformers for video recognition,” in CVPR , 2022. [67] X. Zhan, Y. Wu, X. Dong, Y. Wei, M. Lu, Y. Zhang, H. Xu, and X. Liang, “Product1m: Towards weakly supervised instance-level product retrieval via cross-modal pretraining,” in ICCV , 2021. [68] A. Meta, “Introducing meta llama 3: The most capable openly available llm to date,” Meta AI , 2024. [69] P. Wu and J. Liu, “Learning causal temporal relation and feature discrimination for anomaly detection,” IEEE Transactions on Image Processing , vol. 30, pp. 3513–3527, 2021. [70] C. Zhang, G. Li, Y. Qi, S. Wang, L. Qing, Q. Huang, and M.-H. Yang, “Exploiting completeness and uncertainty of pseudo labels for weakly supervised video anomaly detection,” in CVPR , 2023, pp. 16 271–16 280.

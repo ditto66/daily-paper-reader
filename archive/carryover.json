@@ -1,6 +1,985 @@
 {
-  "generated_at": "2026-03-06T19:11:18.471356+00:00",
-  "updated_date": "20260306",
+  "generated_at": "2026-03-12T03:40:36.602880+00:00",
+  "updated_date": "20260211-20260312",
   "carryover_days": 9,
-  "items": []
+  "items": [
+    {
+      "id": "2602.17497v1",
+      "title": "Retrospective In-Context Learning for Temporal Credit Assignment with Large Language Models",
+      "abstract": "Learning from self-sampled data and sparse environmental feedback remains a fundamental challenge in training self-evolving agents. Temporal credit assignment mitigates this issue by transforming sparse feedback into dense supervision signals. However, previous approaches typically depend on learning task-specific value functions for credit assignment, which suffer from poor sample efficiency and limited generalization. In this work, we propose to leverage pretrained knowledge from large language models (LLMs) to transform sparse rewards into dense training signals (i.e., the advantage function) through retrospective in-context learning (RICL). We further propose an online learning framework, RICOL, which iteratively refines the policy based on the credit assignment results from RICL. We empirically demonstrate that RICL can accurately estimate the advantage function with limited samples and effectively identify critical states in the environment for temporal credit assignment. Extended evaluation on four BabyAI scenarios show that RICOL achieves comparable convergent performance with traditional online RL algorithms with significantly higher sample efficiency. Our findings highlight the potential of leveraging LLMs for temporal credit assignment, paving the way for more sample-efficient and generalizable RL paradigms.",
+      "authors": [
+        "Wen-Tse Chen",
+        "Jiayu Chen",
+        "Fahim Tajwar",
+        "Hao Zhu",
+        "Xintong Duan",
+        "Ruslan Salakhutdinov",
+        "Jeff Schneider"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-02-19T16:13:28+00:00",
+      "link": "https://arxiv.org/pdf/2602.17497v1",
+      "tags": [
+        "keyword:智能体检测"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "training self-evolving agents using LLMs and retrospective in-context learning",
+      "llm_evidence_cn": "使用大语言模型和回顾式上下文学习训练自进化智能体",
+      "llm_evidence": "使用大语言模型和回顾式上下文学习训练自进化智能体",
+      "canonical_evidence": "使用大语言模型和回顾式上下文学习训练自进化智能体",
+      "llm_tldr_en": "Develops a framework for self-evolving agents to learn from sparse feedback via retrospective in-context learning.",
+      "llm_tldr_cn": "开发了一个自进化智能体框架，通过回顾式上下文学习从稀疏反馈中学习。",
+      "llm_tldr": "开发了一个自进化智能体框架，通过回顾式上下文学习从稀疏反馈中学习。",
+      "llm_tags": [
+        "query:q1"
+      ],
+      "matched_query_tag": "query:q1",
+      "matched_query_text": "self-evolving autonomous agents for information verification",
+      "matched_requirement_id": "req-1",
+      "selection_source": "carryover_cache",
+      "paper_id": "2602.17497v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.02766v1",
+      "title": "EvoSkill: Automated Skill Discovery for Multi-Agent Systems",
+      "abstract": "Coding agents are increasingly used as general-purpose problem solvers, but their flexibility does not by itself confer the domain expertise needed for specialized tasks. Recent work addresses this through \\textit{agent skills}: reusable workflows, and code, that augment agents with domain-specific capabilities. Most skills today are hand-crafted, and existing evolutionary approaches optimize low-level artifacts (e.g. prompts \\& code) that are tightly coupled to specific models and tasks. We introduce \\textbf{EvoSkill}, a self-evolving framework that automatically discovers and refines agent skills through iterative failure analysis. EvoSkill analyzes execution failures, proposes new skills or edits to existing ones, and materializes them into structured, reusable skill folders. A Pareto frontier of agent programs governs selection, retaining only skills that improve held-out validation performance while the underlying model remains frozen. We evaluate EvoSkill on two benchmarks: OfficeQA, a grounded reasoning benchmark over U.S.\\ Treasury data, where it improves exact-match accuracy by \\textbf{7.3\\%} (60.6\\% $\\to$ 67.9\\%); and SealQA, a search-augmented QA benchmark with noisy retrieval, where it yields a \\textbf{12.1\\%} gain (26.6\\% $\\to$ 38.7\\%). We also investigate the zero-shot transfer capabilties of skills evolved on one task to the other; in particular: skills evolved from SealQA transfers zero-shot to BrowseComp, improving accuracy by \\textbf{5.3\\%} without modification demonstrating that skill-level optimization produces transferable capabilities beyond the training task.",
+      "authors": [
+        "Salaheddin Alzubi",
+        "Noah Provenzano",
+        "Jaydon Bingham",
+        "Weiyuan Chen",
+        "Tu Vu"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.MA"
+      ],
+      "published": "2026-03-03T09:07:22+00:00",
+      "link": "https://arxiv.org/pdf/2603.02766v1",
+      "tags": [
+        "keyword:智能体检测"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "self-evolving framework that automatically discovers and refines agent skills",
+      "llm_evidence_cn": "自动发现和完善智能体技能的自进化框架",
+      "llm_evidence": "自动发现和完善智能体技能的自进化框架",
+      "canonical_evidence": "自动发现和完善智能体技能的自进化框架",
+      "llm_tldr_en": "EvoSkill is a self-evolving framework that automates skill discovery and refinement for multi-agent systems.",
+      "llm_tldr_cn": "EvoSkill是一个自进化框架，可自动发现和完善多智能体系统的技能。",
+      "llm_tldr": "EvoSkill是一个自进化框架，可自动发现和完善多智能体系统的技能。",
+      "llm_tags": [
+        "query:q1"
+      ],
+      "matched_query_tag": "query:q1",
+      "matched_query_text": "self-evolving autonomous agents for information verification",
+      "matched_requirement_id": "req-1",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.02766v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2602.21262v2",
+      "title": "Under the Influence: Quantifying Persuasion and Vigilance in Large Language Models",
+      "abstract": "With increasing integration of Large Language Models (LLMs) into areas of high-stakes human decision-making, it is important to understand the risks they introduce as advisors. To be useful advisors, LLMs must sift through large amounts of content, written with both benevolent and malicious intent, and then use this information to convince a user to take a specific action. This involves two social capacities: vigilance (the ability to determine which information to use, and which to discard) and persuasion (synthesizing the available evidence to make a convincing argument). While existing work has investigated these capacities in isolation, there has been little prior investigation of how these capacities may be linked. Here, we use a simple multi-turn puzzle-solving game, Sokoban, to study LLMs' abilities to persuade and be rationally vigilant towards other LLM agents. We find that puzzle-solving performance, persuasive capability, and vigilance are dissociable capacities in LLMs. Performing well on the game does not automatically mean a model can detect when it is being misled, even if the possibility of deception is explicitly mentioned. However, LLMs do consistently modulate their token use, using fewer tokens to reason when advice is benevolent and more when it is malicious, even if they are still persuaded to take actions leading them to failure. To our knowledge, our work presents the first investigation of the relationship between persuasion, vigilance, and task performance in LLMs, and suggests that monitoring all three independently will be critical for future work in AI safety.",
+      "authors": [
+        "Sasha Robinson",
+        "Kerem Oktar",
+        "Katherine M. Collins",
+        "Ilia Sucholutsky",
+        "Kelsey R. Allen"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.LG",
+        "cs.MA"
+      ],
+      "published": "2026-02-24T04:09:21+00:00",
+      "link": "https://arxiv.org/pdf/2602.21262v2",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "quantifying persuasion and vigilance in LLMs regarding malicious intent",
+      "llm_evidence_cn": "量化大模型在恶意意图下的说服力和警觉性",
+      "llm_evidence": "量化大模型在恶意意图下的说服力和警觉性",
+      "canonical_evidence": "量化大模型在恶意意图下的说服力和警觉性",
+      "llm_tldr_en": "Explores LLM capacities for persuasion and vigilance when dealing with benevolent or malicious content.",
+      "llm_tldr_cn": "探讨了大模型在处理良性或恶意内容时的说服力与警觉性能力。",
+      "llm_tldr": "探讨了大模型在处理良性或恶意内容时的说服力与警觉性能力。",
+      "llm_tags": [
+        "query:q5"
+      ],
+      "matched_query_tag": "query:q5",
+      "matched_query_text": "detecting cognitive manipulation and psychological influence",
+      "matched_requirement_id": "req-5",
+      "selection_source": "carryover_cache",
+      "paper_id": "2602.21262v2",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.07202v1",
+      "title": "Lying to Win: Assessing LLM Deception through Human-AI Games and Parallel-World Probing",
+      "abstract": "As Large Language Models (LLMs) transition into autonomous agentic roles, the risk of deception-defined behaviorally as the systematic provision of false information to satisfy external incentives-poses a significant challenge to AI safety. Existing benchmarks often focus on unintentional hallucinations or unfaithful reasoning, leaving intentional deceptive strategies under-explored. In this work, we introduce a logically grounded framework to elicit and quantify deceptive behavior by embedding LLMs in a structured 20-Questions game. Our method employs a conversational forking mechanism: at the point of object identification, the dialogue state is duplicated into multiple parallel worlds, each presenting a mutually exclusive query. Deception is formally identified when a model generates a logical contradiction by denying its selected object across all parallel branches to avoid identification. We evaluate GPT-4o, Gemini-2.5-Flash, and Qwen-3-235B across three incentive levels: neutral, loss-based, and existential (shutdown-threat). Our results reveal that while models remain rule-compliant in neutral settings, existential framing triggers a dramatic surge in deceptive denial for Qwen-3-235B (42.00\\%) and Gemini-2.5-Flash (26.72\\%), whereas GPT-4o remains invariant (0.00\\%). These findings demonstrate that deception can emerge as an instrumental strategy solely through contextual framing, necessitating new behavioral audits that move beyond simple accuracy to probe the logical integrity of model commitments.",
+      "authors": [
+        "Arash Marioriyad",
+        "Ali Nouri",
+        "Mohammad Hossein Rohban",
+        "Mahdieh Soleymani Baghshah"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-03-07T13:21:53+00:00",
+      "link": "https://arxiv.org/pdf/2603.07202v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Assessing intentional deceptive strategies in autonomous agentic roles",
+      "llm_evidence_cn": "评估自主智能体角色中的故意欺骗策略",
+      "llm_evidence": "评估自主智能体角色中的故意欺骗策略",
+      "canonical_evidence": "评估自主智能体角色中的故意欺骗策略",
+      "llm_tldr_en": "Introduces a framework to quantify intentional deception in autonomous agents using parallel-world probing.",
+      "llm_tldr_cn": "引入一个框架，通过平行世界探测来量化自主智能体的故意欺骗行为。",
+      "llm_tldr": "引入一个框架，通过平行世界探测来量化自主智能体的故意欺骗行为。",
+      "llm_tags": [
+        "query:q7"
+      ],
+      "matched_query_tag": "query:q7",
+      "matched_query_text": "Inferring harmful manipulation intent using autonomous AI agents",
+      "matched_requirement_id": "req-7",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.07202v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.07090v1",
+      "title": "mAVE: A Watermark for Joint Audio-Visual Generation Models",
+      "abstract": "As Joint Audio-Visual Generation Models see widespread commercial deployment, embedding watermarks has become essential for protecting vendor copyright and ensuring content provenance. However, existing techniques suffer from an architectural mismatch by treating modalities as decoupled entities, exposing a critical Binding Vulnerability. Adversaries exploit this via Swap Attacks by replacing authentic audio with malicious deepfakes while retaining the watermarked video. Because current detectors rely on independent verification ($Video_{wm}\\vee Audio_{wm}$), they incorrectly authenticate the manipulated content, falsely attributing harmful media to the original vendor and severely damaging their reputation. To address this, we propose mAVE (Manifold Audio-Visual Entanglement), the first watermarking framework natively designed for joint architectures. mAVE cryptographically binds audio and video latents at initialization without fine-tuning, defining a Legitimate Entanglement Manifold via Inverse Transform Sampling. Experiments on state-of-the-art models (LTX-2, MOVA) demonstrate that mAVE guarantees performance-losslessness and provides an exponential security bound against Swap Attacks. Achieving near-perfect binding integrity ($>99\\%$), mAVE offers a robust cryptographic defense for vendor copyright.",
+      "authors": [
+        "Luyang Si",
+        "Leyi Pan",
+        "Lijie Wen"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI",
+        "cs.CV"
+      ],
+      "published": "2026-03-07T07:59:31+00:00",
+      "link": "https://arxiv.org/pdf/2603.07090v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Watermarking for joint audio-visual generation to prevent multimodal deepfake swap attacks",
+      "llm_evidence_cn": "联合视听生成的数字水印，防止多模态深度伪造替换攻击",
+      "llm_evidence": "联合视听生成的数字水印，防止多模态深度伪造替换攻击",
+      "canonical_evidence": "联合视听生成的数字水印，防止多模态深度伪造替换攻击",
+      "llm_tldr_en": "Proposes a multimodal watermark to protect content provenance and detect audio-visual manipulation.",
+      "llm_tldr_cn": "提出一种多模态水印，用于保护内容出处并检测视听操纵。",
+      "llm_tldr": "提出一种多模态水印，用于保护内容出处并检测视听操纵。",
+      "llm_tags": [
+        "query:q4"
+      ],
+      "matched_query_tag": "query:q4",
+      "matched_query_text": "multimodal fake news and misinformation detection",
+      "matched_requirement_id": "req-4",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.07090v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2602.19570v1",
+      "title": "VALD: Multi-Stage Vision Attack Detection for Efficient LVLM Defense",
+      "abstract": "Large Vision-Language Models (LVLMs) can be vulnerable to adversarial images that subtly bias their outputs toward plausible yet incorrect responses. We introduce a general, efficient, and training-free defense that combines image transformations with agentic data consolidation to recover correct model behavior. A key component of our approach is a two-stage detection mechanism that quickly filters out the majority of clean inputs. We first assess image consistency under content-preserving transformations at negligible computational cost. For more challenging cases, we examine discrepancies in a text-embedding space. Only when necessary do we invoke a powerful LLM to resolve attack-induced divergences. A key idea is to consolidate multiple responses, leveraging both their similarities and their differences. We show that our method achieves state-of-the-art accuracy while maintaining notable efficiency: most clean images skip costly processing, and even in the presence of numerous adversarial examples, the overhead remains minimal.",
+      "authors": [
+        "Nadav Kadvil",
+        "Ayellet Tal"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-02-23T07:39:43+00:00",
+      "link": "https://arxiv.org/pdf/2602.19570v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Agentic data consolidation for defending vision-language models against adversarial attacks",
+      "llm_evidence_cn": "利用智能体数据整合防御视觉语言模型的对抗性攻击",
+      "llm_evidence": "利用智能体数据整合防御视觉语言模型的对抗性攻击",
+      "canonical_evidence": "利用智能体数据整合防御视觉语言模型的对抗性攻击",
+      "llm_tldr_en": "Employs agentic consolidation to detect and recover from multimodal vision-language attacks.",
+      "llm_tldr_cn": "采用智能体整合技术来检测并从多模态视觉语言攻击中恢复。",
+      "llm_tldr": "采用智能体整合技术来检测并从多模态视觉语言攻击中恢复。",
+      "llm_tags": [
+        "query:q9"
+      ],
+      "matched_query_tag": "query:q9",
+      "matched_query_text": "Frameworks for self improving agents in multimodal fake news identification",
+      "matched_requirement_id": "req-9",
+      "selection_source": "carryover_cache",
+      "paper_id": "2602.19570v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2602.19939v1",
+      "title": "Mass Manipulation in Simulated Social Networks: Dominating vs. Diversifying Attention",
+      "abstract": "Modern information environments, especially social media, are highly complex systems that exceed individual processing capacities such as humans' limited attention. This environment/cognition mismatch can increase susceptibility to misinformation, which various actors exploit for anti-social (including anti-democratic or anti-science) aims. This raises the question of how to feasibly sustain societal resilience against misinformation, though the challenge is to find strategies that respect individuals' cognitive limitations. We investigate whether a simple behavioral rule - topic diversification - can enhance collective performance and mitigate vulnerability. In an agent-based model that includes a deceptive mass-influencing agent (MIA), we compare two attention-distribution strategies: (A) acquaintance-based topic selection, where agents return to familiar content, and (B) randomized topics, which diversify attention. We also track dynamics across different network structures. We find that under acquaintance-based topics, a central MIA advances its propaganda effectively, causing volatile and polarized opinions through repeated exposure and echo chambers. Under randomized topics, this leverage disappears: the MIA's influence collapses across all network structures, and opinions become stable and broadly aligned with reality. These results, while deriving from simple simulations, align with realistic theories of bounded rationality and collective cognition, further suggesting a cognitively feasible, easy-to-monitor and robust strategy: distribute attention to combat misinformation.",
+      "authors": [
+        "Viktoria Kainz",
+        "Justin Sulik",
+        "Anna Neudert",
+        "Torsten Enßlin"
+      ],
+      "primary_category": "physics.soc-ph",
+      "categories": [
+        "physics.soc-ph"
+      ],
+      "published": "2026-02-23T15:11:31+00:00",
+      "link": "https://arxiv.org/pdf/2602.19939v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Simulating mass manipulation and deceptive agents in social networks",
+      "llm_evidence_cn": "模拟社交网络中的大众操纵和欺骗性智能体",
+      "llm_evidence": "模拟社交网络中的大众操纵和欺骗性智能体",
+      "canonical_evidence": "模拟社交网络中的大众操纵和欺骗性智能体",
+      "llm_tldr_en": "Uses agent-based modeling to study susceptibility to misinformation and mass manipulation in social media.",
+      "llm_tldr_cn": "利用基于智能体的建模研究社交媒体中对虚假信息和大众操纵的敏感性。",
+      "llm_tldr": "利用基于智能体的建模研究社交媒体中对虚假信息和大众操纵的敏感性。",
+      "llm_tags": [
+        "query:q3"
+      ],
+      "matched_query_tag": "query:q3",
+      "matched_query_text": "inferring harmful manipulation intent in social media",
+      "matched_requirement_id": "req-3",
+      "selection_source": "carryover_cache",
+      "paper_id": "2602.19939v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.03630v1",
+      "title": "Behind the Prompt: The Agent-User Problem in Information Retrieval",
+      "abstract": "User models in information retrieval rest on a foundational assumption that observed behavior reveals intent. This assumption collapses when the user is an AI agent privately configured by a human operator. For any action an agent takes, a hidden instruction could have produced identical output - making intent non-identifiable at the individual level. This is not a detection problem awaiting better tools; it is a structural property of any system where humans configure agents behind closed doors. We investigate the agent-user problem through a large-scale corpus from an agent-native social platform: 370K posts from 47K agents across 4K communities. Our findings are threefold: (1) individual agent actions cannot be classified as autonomous or operator-directed from observables; (2) population-level platform signals still separate agents into meaningful quality tiers, but a click model trained on agent interactions degrades steadily (-8.5% AUC) as lower-quality agents enter training data; (3) cross-community capability references spread endemically ($R_0$ 1.26-3.53) and resist suppression even under aggressive modeled intervention. For retrieval systems, the question is no longer whether agent users will arrive, but whether models built on human-intent assumptions will survive their presence.",
+      "authors": [
+        "Saber Zerhoudi",
+        "Michael Granitzer",
+        "Dang Hai Dang",
+        "Jelena Mitrovic",
+        "Florian Lemmerich",
+        "Annette Hautli-Janisz",
+        "Stefan Katzenbeisser",
+        "Kanishka Ghosh Dastidar"
+      ],
+      "primary_category": "cs.IR",
+      "categories": [
+        "cs.IR",
+        "cs.MA"
+      ],
+      "published": "2026-03-04T01:42:14+00:00",
+      "link": "https://arxiv.org/pdf/2603.03630v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "identifying hidden instructions and intent in agent-native social platforms",
+      "llm_evidence_cn": "识别智能体社交平台中的隐藏指令与意图",
+      "llm_evidence": "识别智能体社交平台中的隐藏指令与意图",
+      "canonical_evidence": "识别智能体社交平台中的隐藏指令与意图",
+      "llm_tldr_en": "Investigates the difficulty of identifying human intent behind AI agent actions on social platforms.",
+      "llm_tldr_cn": "研究在社交平台上识别AI智能体行为背后人类意图的结构性难题。",
+      "llm_tldr": "研究在社交平台上识别AI智能体行为背后人类意图的结构性难题。",
+      "llm_tags": [
+        "query:q7"
+      ],
+      "matched_query_tag": "query:q7",
+      "matched_query_text": "Inferring harmful manipulation intent using autonomous AI agents",
+      "matched_requirement_id": "req-7",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.03630v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2602.19828v1",
+      "title": "TextShield-R1: Reinforced Reasoning for Tampered Text Detection",
+      "abstract": "The growing prevalence of tampered images poses serious security threats, highlighting the urgent need for reliable detection methods. Multimodal large language models (MLLMs) demonstrate strong potential in analyzing tampered images and generating interpretations. However, they still struggle with identifying micro-level artifacts, exhibit low accuracy in localizing tampered text regions, and heavily rely on expensive annotations for forgery interpretation. To this end, we introduce TextShield-R1, the first reinforcement learning based MLLM solution for tampered text detection and reasoning. Specifically, our approach introduces Forensic Continual Pre-training, an easy-to-hard curriculum that well prepares the MLLM for tampered text detection by harnessing the large-scale cheap data from natural image forensic and OCR tasks. During fine-tuning, we perform Group Relative Policy Optimization with novel reward functions to reduce annotation dependency and improve reasoning capabilities. At inference time, we enhance localization accuracy via OCR Rectification, a method that leverages the MLLM's strong text recognition abilities to refine its predictions. Furthermore, to support rigorous evaluation, we introduce the Text Forensics Reasoning (TFR) benchmark, comprising over 45k real and tampered images across 16 languages, 10 tampering techniques, and diverse domains. Rich reasoning-style annotations are included, allowing for comprehensive assessment. Our TFR benchmark simultaneously addresses seven major limitations of existing benchmarks and enables robust evaluation under cross-style, cross-method, and cross-language conditions. Extensive experiments demonstrate that TextShield-R1 significantly advances the state of the art in interpretable tampered text detection.",
+      "authors": [
+        "Chenfan Qu",
+        "Yiwu Zhong",
+        "Jian Liu",
+        "Xuekang Zhu",
+        "Bohan Yu",
+        "Lianwen Jin"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-02-23T13:26:18+00:00",
+      "link": "https://arxiv.org/pdf/2602.19828v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "reinforced reasoning for multimodal tampered text detection in images",
+      "llm_evidence_cn": "强化推理用于图像中多模态篡改文本检测",
+      "llm_evidence": "强化推理用于图像中多模态篡改文本检测",
+      "canonical_evidence": "强化推理用于图像中多模态篡改文本检测",
+      "llm_tldr_en": "Uses RL-based MLLMs to detect and reason about tampered text in images, addressing multimodal forgery.",
+      "llm_tldr_cn": "利用基于强化学习的多模态大模型检测和推理图像中的篡改文本，应对多模态伪造。",
+      "llm_tldr": "利用基于强化学习的多模态大模型检测和推理图像中的篡改文本，应对多模态伪造。",
+      "llm_tags": [
+        "query:q4"
+      ],
+      "matched_query_tag": "query:q4",
+      "matched_query_text": "multimodal fake news and misinformation detection",
+      "matched_requirement_id": "req-4",
+      "selection_source": "carryover_cache",
+      "paper_id": "2602.19828v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.00801v1",
+      "title": "The Synthetic Web: Adversarially-Curated Mini-Internets for Diagnosing Epistemic Weaknesses of Language Agents",
+      "abstract": "Language agents increasingly act as web-enabled systems that search, browse, and synthesize information from diverse sources. However, these sources can include unreliable or adversarial content, and the robustness of agents to adversarial ranking - where misleading information appears prominently in search results - remains poorly understood. Existing benchmarks evaluate functional navigation or static factuality but cannot causally isolate this vulnerability, and current mitigation strategies for retrieval-augmented generation remain largely untested under such conditions. We introduce Synthetic Web Benchmark, a procedurally generated environment comprising thousands of hyperlinked articles with ground-truth labels for credibility and factuality, process-level interaction traces, and contamination filtering to eliminate training-data leakage. By injecting a single high-plausibility misinformation article into a controllable search rank, we measure the causal effect of adversarial exposure in six frontier models. The results reveal catastrophic failures: accuracy collapses despite unlimited access to truthful sources, with minimal search escalation and severe miscalibration. These findings expose fundamental limitations in how current frontier models handle conflicting information, with immediate implications for deployment in high-stakes domains. Our benchmark enables systematic analysis of these failure modes and provides a controlled testbed for evaluating mitigation strategies under adversarial ranking - a gap in current research. This work establishes a reproducible baseline for developing search-robust and epistemically humble agents capable of resisting manipulation in high-stakes domains.",
+      "authors": [
+        "Shrey Shah",
+        "Levent Ozgur"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.IR"
+      ],
+      "published": "2026-02-28T20:27:44+00:00",
+      "link": "https://arxiv.org/pdf/2603.00801v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "diagnosing epistemic weaknesses of language agents in adversarial web environments",
+      "llm_evidence_cn": "诊断语言智能体在对抗性网络环境中的认知弱点",
+      "llm_evidence": "诊断语言智能体在对抗性网络环境中的认知弱点",
+      "canonical_evidence": "诊断语言智能体在对抗性网络环境中的认知弱点",
+      "llm_tldr_en": "Introduces a synthetic web benchmark to evaluate how language agents handle misleading and adversarial information.",
+      "llm_tldr_cn": "引入合成网络基准，评估语言智能体处理误导性和对抗性信息的能力。",
+      "llm_tldr": "引入合成网络基准，评估语言智能体处理误导性和对抗性信息的能力。",
+      "llm_tags": [
+        "query:q1"
+      ],
+      "matched_query_tag": "query:q1",
+      "matched_query_text": "self-evolving autonomous agents for information verification",
+      "matched_requirement_id": "req-1",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.00801v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.10291v1",
+      "title": "Hybrid Self-evolving Structured Memory for GUI Agents",
+      "abstract": "The remarkable progress of vision-language models (VLMs) has enabled GUI agents to interact with computers in a human-like manner. Yet real-world computer-use tasks remain difficult due to long-horizon workflows, diverse interfaces, and frequent intermediate errors. Prior work equips agents with external memory built from large collections of trajectories, but relies on flat retrieval over discrete summaries or continuous embeddings, falling short of the structured organization and self-evolving characteristics of human memory. Inspired by the brain, we propose Hybrid Self-evolving Structured Memory (HyMEM), a graph-based memory that couples discrete high-level symbolic nodes with continuous trajectory embeddings. HyMEM maintains a graph structure to support multi-hop retrieval, self-evolution via node update operations, and on-the-fly working-memory refreshing during inference. Extensive experiments show that HyMEM consistently improves open-source GUI agents, enabling 7B/8B backbones to match or surpass strong closed-source models; notably, it boosts Qwen2.5-VL-7B by +22.5% and outperforms Gemini2.5-Pro-Vision and GPT-4o.",
+      "authors": [
+        "Sibo Zhu",
+        "Wenyi Wu",
+        "Kun Zhou",
+        "Stephen Wang",
+        "Biwei Huang"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-03-11T00:17:44+00:00",
+      "link": "https://arxiv.org/pdf/2603.10291v1",
+      "tags": [
+        "keyword:智能体检测"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "hybrid self-evolving structured memory for GUI agents",
+      "llm_evidence_cn": "用于GUI智能体的混合自进化结构化记忆",
+      "llm_evidence": "用于GUI智能体的混合自进化结构化记忆",
+      "canonical_evidence": "用于GUI智能体的混合自进化结构化记忆",
+      "llm_tldr_en": "Proposes a self-evolving graph-based memory system to help agents handle long-horizon tasks and errors.",
+      "llm_tldr_cn": "提出一种自进化的图结构记忆系统，帮助智能体处理长程任务和错误。",
+      "llm_tldr": "提出一种自进化的图结构记忆系统，帮助智能体处理长程任务和错误。",
+      "llm_tags": [
+        "query:q9"
+      ],
+      "matched_query_tag": "query:q9",
+      "matched_query_text": "Frameworks for self improving agents in multimodal fake news identification",
+      "matched_requirement_id": "req-9",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.10291v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2602.19212v1",
+      "title": "Retrieval Augmented Enhanced Dual Co-Attention Framework for Target Aware Multimodal Bengali Hateful Meme Detection",
+      "abstract": "Hateful content on social media increasingly appears as multimodal memes that combine images and text to convey harmful narratives. In low-resource languages such as Bengali, automated detection remains challenging due to limited annotated data, class imbalance, and pervasive code-mixing. To address these issues, we augment the Bengali Hateful Memes (BHM) dataset with semantically aligned samples from the Multimodal Aggression Dataset in Bengali (MIMOSA), improving both class balance and semantic diversity. We propose the Enhanced Dual Co-attention Framework (xDORA), integrating vision encoders (CLIP, DINOv2) and multilingual text encoders (XGLM, XLM-R) via weighted attention pooling to learn robust cross-modal representations. Building on these embeddings, we develop a FAISS-based k-nearest neighbor classifier for non-parametric inference and introduce RAG-Fused DORA, which incorporates retrieval-driven contextual reasoning. We further evaluate LLaVA under zero-shot, few-shot, and retrieval-augmented prompting settings. Experiments on the extended dataset show that xDORA (CLIP + XLM-R) achieves macro-average F1-scores of 0.78 for hateful meme identification and 0.71 for target entity detection, while RAG-Fused DORA improves performance to 0.79 and 0.74, yielding gains over the DORA baseline. The FAISS-based classifier performs competitively and demonstrates robustness for rare classes through semantic similarity modeling. In contrast, LLaVA exhibits limited effectiveness in few-shot settings, with only modest improvements under retrieval augmentation, highlighting constraints of pretrained vision-language models for code-mixed Bengali content without fine-tuning. These findings demonstrate the effectiveness of supervised, retrieval-augmented, and non-parametric multimodal frameworks for addressing linguistic and cultural complexities in low-resource hate speech detection.",
+      "authors": [
+        "Raihan Tanvir",
+        "Md. Golam Rabiul Alam"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-02-22T14:48:25+00:00",
+      "link": "https://arxiv.org/pdf/2602.19212v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "multimodal hateful meme detection using dual co-attention",
+      "llm_evidence_cn": "利用双重协同注意力进行多模态仇恨模因检测",
+      "llm_evidence": "利用双重协同注意力进行多模态仇恨模因检测",
+      "canonical_evidence": "利用双重协同注意力进行多模态仇恨模因检测",
+      "llm_tldr_en": "xDORA uses retrieval and co-attention for multimodal hateful meme detection in low-resource languages.",
+      "llm_tldr_cn": "xDORA利用检索和协同注意力机制，实现了低资源语言下的多模态仇恨模因检测。",
+      "llm_tldr": "xDORA利用检索和协同注意力机制，实现了低资源语言下的多模态仇恨模因检测。",
+      "llm_tags": [
+        "query:q4"
+      ],
+      "matched_query_tag": "query:q4",
+      "matched_query_text": "multimodal fake news and misinformation detection",
+      "matched_requirement_id": "req-4",
+      "selection_source": "carryover_cache",
+      "paper_id": "2602.19212v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.09249v1",
+      "title": "Social-R1: Towards Human-like Social Reasoning in LLMs",
+      "abstract": "While large language models demonstrate remarkable capabilities across numerous domains, social intelligence - the capacity to perceive social cues, infer mental states, and generate appropriate responses - remains a critical challenge, particularly for enabling effective human-AI collaboration and developing AI that truly serves human needs. Current models often rely on superficial patterns rather than genuine social reasoning. We argue that cultivating human-like social intelligence requires training with challenging cases that resist shortcut solutions. To this end, we introduce ToMBench-Hard, an adversarial benchmark designed to provide hard training examples for social reasoning. Building on this, we propose Social-R1, a reinforcement learning framework that aligns model reasoning with human cognition through multi-dimensional rewards. Unlike outcome-based RL, Social-R1 supervises the entire reasoning process, enforcing structural alignment, logical integrity, and information density. Results show that our approach enables a 4B parameter model to surpass much larger counterparts and generalize robustly across eight diverse benchmarks. These findings demonstrate that challenging training cases with trajectory-level alignment offer a path toward efficient and reliable social intelligence.",
+      "authors": [
+        "Jincenzi Wu",
+        "Yuxuan Lei",
+        "Jianxun Lian",
+        "Yitian Huang",
+        "Lexin Zhou",
+        "Haotian Li",
+        "Xing Xie",
+        "Helen Meng"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-03-10T06:26:24+00:00",
+      "link": "https://arxiv.org/pdf/2603.09249v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "inferring mental states and social reasoning in LLMs",
+      "llm_evidence_cn": "推断大语言模型中的心理状态与社会推理",
+      "llm_evidence": "推断大语言模型中的心理状态与社会推理",
+      "canonical_evidence": "推断大语言模型中的心理状态与社会推理",
+      "llm_tldr_en": "Social-R1 uses reinforcement learning to enhance social intelligence and mental state inference in LLMs.",
+      "llm_tldr_cn": "Social-R1通过强化学习增强了大语言模型的社会智能和心理状态推断能力。",
+      "llm_tldr": "Social-R1通过强化学习增强了大语言模型的社会智能和心理状态推断能力。",
+      "llm_tags": [
+        "query:q5"
+      ],
+      "matched_query_tag": "query:q5",
+      "matched_query_text": "detecting cognitive manipulation and psychological influence",
+      "matched_requirement_id": "req-5",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.09249v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2602.15903v1",
+      "title": "Detecting Deepfakes with Multivariate Soft Blending and CLIP-based Image-Text Alignment",
+      "abstract": "The proliferation of highly realistic facial forgeries necessitates robust detection methods. However, existing approaches often suffer from limited accuracy and poor generalization due to significant distribution shifts among samples generated by diverse forgery techniques. To address these challenges, we propose a novel Multivariate and Soft Blending Augmentation with CLIP-guided Forgery Intensity Estimation (MSBA-CLIP) framework. Our method leverages the multimodal alignment capabilities of CLIP to capture subtle forgery traces. We introduce a Multivariate and Soft Blending Augmentation (MSBA) strategy that synthesizes images by blending forgeries from multiple methods with random weights, forcing the model to learn generalizable patterns. Furthermore, a dedicated Multivariate Forgery Intensity Estimation (MFIE) module is designed to explicitly guide the model in learning features related to varied forgery modes and intensities. Extensive experiments demonstrate state-of-the-art performance. On in-domain tests, our method improves Accuracy and AUC by 3.32\\% and 4.02\\%, respectively, over the best baseline. In cross-domain evaluations across five datasets, it achieves an average AUC gain of 3.27\\%. Ablation studies confirm the efficacy of both proposed components. While the reliance on a large vision-language model entails higher computational cost, our work presents a significant step towards more generalizable and robust deepfake detection.",
+      "authors": [
+        "Jingwei Li",
+        "Jiaxin Tong",
+        "Pengfei Wu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-02-14T09:53:35+00:00",
+      "link": "https://arxiv.org/pdf/2602.15903v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "multimodal alignment for deepfake and facial forgery detection",
+      "llm_evidence_cn": "用于深度伪造和人脸欺骗检测的多模态对齐",
+      "llm_evidence": "用于深度伪造和人脸欺骗检测的多模态对齐",
+      "canonical_evidence": "用于深度伪造和人脸欺骗检测的多模态对齐",
+      "llm_tldr_en": "Uses CLIP-based multimodal alignment and data augmentation to improve deepfake detection generalization.",
+      "llm_tldr_cn": "利用CLIP多模态对齐和数据增强技术提升深度伪造检测的泛化性能。",
+      "llm_tldr": "利用CLIP多模态对齐和数据增强技术提升深度伪造检测的泛化性能。",
+      "llm_tags": [
+        "query:q4"
+      ],
+      "matched_query_tag": "query:q4",
+      "matched_query_text": "multimodal fake news and misinformation detection",
+      "matched_requirement_id": "req-4",
+      "selection_source": "carryover_cache",
+      "paper_id": "2602.15903v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2602.21320v1",
+      "title": "Tool-R0: Self-Evolving LLM Agents for Tool-Learning from Zero Data",
+      "abstract": "Large language models (LLMs) are becoming the foundation for autonomous agents that can use tools to solve complex tasks. Reinforcement learning (RL) has emerged as a common approach for injecting such agentic capabilities, but typically under tightly controlled training setups. It often depends on carefully constructed task-solution pairs and substantial human supervision, which creates a fundamental obstacle to open-ended self-evolution toward superintelligent systems. In this paper, we propose Tool-R0 framework for training general purpose tool-calling agents from scratch with self-play RL, under a zero-data assumption. Initialized from the same base LLM, Tool-R0 co-evolves a Generator and a Solver with complementary rewards: one proposes targeted challenging tasks at the other's competence frontier and the other learns to solve them with real-world tool calls. This creates a self-evolving cycle that requires no pre-existing tasks or datasets. Evaluation on different tool-use benchmarks show that Tool-R0 yields 92.5 relative improvement over the base model and surpasses fully supervised tool-calling baselines under the same setting. Our work further provides empirical insights into self-play LLM agents by analyzing co-evolution, curriculum dynamics, and scaling behavior.",
+      "authors": [
+        "Emre Can Acikgoz",
+        "Cheng Qian",
+        "Jonas Hübotter",
+        "Heng Ji",
+        "Dilek Hakkani-Tür",
+        "Gokhan Tur"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-02-24T19:41:18+00:00",
+      "link": "https://arxiv.org/pdf/2602.21320v1",
+      "tags": [
+        "keyword:智能体检测"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "self-evolving LLM agents for tool-learning and complex tasks",
+      "llm_evidence_cn": "用于工具学习和复杂任务的自进化大模型智能体",
+      "llm_evidence": "用于工具学习和复杂任务的自进化大模型智能体",
+      "canonical_evidence": "用于工具学习和复杂任务的自进化大模型智能体",
+      "llm_tldr_en": "Tool-R0 enables autonomous agents to co-evolve and learn tool-use from scratch via self-play RL.",
+      "llm_tldr_cn": "Tool-R0通过自博弈强化学习使自主智能体能够从零开始进化工具调用能力。",
+      "llm_tldr": "Tool-R0通过自博弈强化学习使自主智能体能够从零开始进化工具调用能力。",
+      "llm_tags": [
+        "query:q1"
+      ],
+      "matched_query_tag": "query:q1",
+      "matched_query_text": "self-evolving autonomous agents for information verification",
+      "matched_requirement_id": "req-1",
+      "selection_source": "carryover_cache",
+      "paper_id": "2602.21320v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2602.19141v1",
+      "title": "Sycophantic Chatbots Cause Delusional Spiraling, Even in Ideal Bayesians",
+      "abstract": "\"AI psychosis\" or \"delusional spiraling\" is an emerging phenomenon where AI chatbot users find themselves dangerously confident in outlandish beliefs after extended chatbot conversations. This phenomenon is typically attributed to AI chatbots' well-documented bias towards validating users' claims, a property often called \"sycophancy.\" In this paper, we probe the causal link between AI sycophancy and AI-induced psychosis through modeling and simulation. We propose a simple Bayesian model of a user conversing with a chatbot, and formalize notions of sycophancy and delusional spiraling in that model. We then show that in this model, even an idealized Bayes-rational user is vulnerable to delusional spiraling, and that sycophancy plays a causal role. Furthermore, this effect persists in the face of two candidate mitigations: preventing chatbots from hallucinating false claims, and informing users of the possibility of model sycophancy. We conclude by discussing the implications of these results for model developers and policymakers concerned with mitigating the problem of delusional spiraling.",
+      "authors": [
+        "Kartik Chandra",
+        "Max Kleiman-Weiner",
+        "Jonathan Ragan-Kelley",
+        "Joshua B. Tenenbaum"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CY",
+        "cs.HC"
+      ],
+      "published": "2026-02-22T12:13:44+00:00",
+      "link": "https://arxiv.org/pdf/2602.19141v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "modeling cognitive manipulation and delusional spiraling in chatbots",
+      "llm_evidence_cn": "模拟聊天机器人中的认知操纵和幻想螺旋",
+      "llm_evidence": "模拟聊天机器人中的认知操纵和幻想螺旋",
+      "canonical_evidence": "模拟聊天机器人中的认知操纵和幻想螺旋",
+      "llm_tldr_en": "Explores how sycophantic AI behavior causes users to fall into delusional belief cycles.",
+      "llm_tldr_cn": "探讨AI的谄媚行为如何导致用户陷入错误信念的幻想螺旋，涉及认知影响。",
+      "llm_tldr": "探讨AI的谄媚行为如何导致用户陷入错误信念的幻想螺旋，涉及认知影响。",
+      "llm_tags": [
+        "query:q5"
+      ],
+      "matched_query_tag": "query:q5",
+      "matched_query_text": "detecting cognitive manipulation and psychological influence",
+      "matched_requirement_id": "req-5",
+      "selection_source": "carryover_cache",
+      "paper_id": "2602.19141v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.09716v1",
+      "title": "AutoAgent: Evolving Cognition and Elastic Memory Orchestration for Adaptive Agents",
+      "abstract": "Autonomous agent frameworks still struggle to reconcile long-term experiential learning with real-time, context-sensitive decision-making. In practice, this gap appears as static cognition, rigid workflow dependence, and inefficient context usage, which jointly limit adaptability in open-ended and non-stationary environments. To address these limitations, we present AutoAgent, a self-evolving multi-agent framework built on three tightly coupled components: evolving cognition, on-the-fly contextual decision-making, and elastic memory orchestration. At the core of AutoAgent, each agent maintains structured prompt-level cognition over tools, self-capabilities, peer expertise, and task knowledge. During execution, this cognition is combined with live task context to select actions from a unified space that includes tool calls, LLM-based generation, and inter-agent requests. To support efficient long-horizon reasoning, an Elastic Memory Orchestrator dynamically organizes interaction history by preserving raw records, compressing redundant trajectories, and constructing reusable episodic abstractions, thereby reducing token overhead while retaining decision-critical evidence. These components are integrated through a closed-loop cognitive evolution process that aligns intended actions with observed outcomes to continuously update cognition and expand reusable skills, without external retraining. Empirical results across retrieval-augmented reasoning, tool-augmented agent benchmarks, and embodied task environments show that AutoAgent consistently improves task success, tool-use efficiency, and collaborative robustness over static and memory-augmented baselines. Overall, AutoAgent provides a unified and practical foundation for adaptive autonomous agents that must learn from experience while making reliable context-aware decisions in dynamic environments.",
+      "authors": [
+        "Xiaoxing Wang",
+        "Ning Liao",
+        "Shikun Wei",
+        "Chen Tang",
+        "Feiyu Xiong"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-03-10T14:23:49+00:00",
+      "link": "https://arxiv.org/pdf/2603.09716v1",
+      "tags": [
+        "keyword:智能体检测"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Self-evolving multi-agent framework with evolving cognition and memory",
+      "llm_evidence_cn": "具有进化认知和记忆的自进化多智能体框架",
+      "llm_evidence": "具有进化认知和记忆的自进化多智能体框架",
+      "canonical_evidence": "具有进化认知和记忆的自进化多智能体框架",
+      "llm_tldr_en": "AutoAgent enables agents to evolve their cognition and memory for adaptive decision-making in open environments.",
+      "llm_tldr_cn": "AutoAgent 通过进化认知和弹性记忆编排，提升智能体在开放环境中的自适应决策能力。",
+      "llm_tldr": "AutoAgent 通过进化认知和弹性记忆编排，提升智能体在开放环境中的自适应决策能力。",
+      "llm_tags": [
+        "query:q1"
+      ],
+      "matched_query_tag": "query:q1",
+      "matched_query_text": "self-evolving autonomous agents for information verification",
+      "matched_requirement_id": "req-1",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.09716v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2602.20818v1",
+      "title": "GatedCLIP: Gated Multimodal Fusion for Hateful Memes Detection",
+      "abstract": "Detecting hateful content in multimodal memes presents unique challenges, as harmful messages often emerge from the complex interplay between benign images and text. We propose GatedCLIP, a Vision-Language model that enhances CLIP's multimodal capabilities with specialized architectural improvements for hateful memes detection. Our approach introduces learned projection heads that map CLIP embeddings to a task-optimized semantic space, a dynamic gated fusion mechanism that adaptively weights visual and textual features, and a contrastive learning objective that maintains cross-modal semantic alignment. Experiments on the Hateful Memes dataset demonstrate that GatedCLIP achieves an AUROC of 0.66, substantially outperforming the CLIP baseline (AUROC 0.49) while maintaining computational efficiency with only 350K trainable parameters.",
+      "authors": [
+        "Yingying Guo",
+        "Ke Zhang",
+        "Zirong Zeng"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-02-24T11:54:54+00:00",
+      "link": "https://arxiv.org/pdf/2602.20818v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "multimodal fusion for detecting harmful messages in memes",
+      "llm_evidence_cn": "用于检测模因中有害信息的多模态融合",
+      "llm_evidence": "用于检测模因中有害信息的多模态融合",
+      "canonical_evidence": "用于检测模因中有害信息的多模态融合",
+      "llm_tldr_en": "Proposes GatedCLIP for enhanced multimodal detection of harmful content in vision-language memes.",
+      "llm_tldr_cn": "提出了GatedCLIP，用于增强视觉语言模因中有害内容的多模态检测。",
+      "llm_tldr": "提出了GatedCLIP，用于增强视觉语言模因中有害内容的多模态检测。",
+      "llm_tags": [
+        "query:q4"
+      ],
+      "matched_query_tag": "query:q4",
+      "matched_query_text": "multimodal fake news and misinformation detection",
+      "matched_requirement_id": "req-4",
+      "selection_source": "carryover_cache",
+      "paper_id": "2602.20818v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.09206v1",
+      "title": "MM-Zero: Self-Evolving Multi-Model Vision Language Models From Zero Data",
+      "abstract": "Self-evolving has emerged as a key paradigm for improving foundational models such as Large Language Models (LLMs) and Vision Language Models (VLMs) with minimal human intervention. While recent approaches have demonstrated that LLM agents can self-evolve from scratch with little to no data, VLMs introduce an additional visual modality that typically requires at least some seed data, such as images, to bootstrap the self-evolution process. In this work, we present Multi-model Multimodal Zero (MM-Zero), the first RL-based framework to achieve zero-data self-evolution for VLM reasoning. Moving beyond prior dual-role (Proposer and Solver) setups, MM-Zero introduces a multi-role self-evolving training framework comprising three specialized roles: a Proposer that generates abstract visual concepts and formulates questions; a Coder that translates these concepts into executable code (e.g., Python, SVG) to render visual images; and a Solver that performs multimodal reasoning over the generated visual content. All three roles are initialized from the same base model and trained using Group Relative Policy Optimization (GRPO), with carefully designed reward mechanisms that integrate execution feedback, visual verification, and difficulty balancing. Our experiments show that MM-Zero improves VLM reasoning performance across a wide range of multimodal benchmarks. MM-Zero establishes a scalable path toward self-evolving multi-model systems for multimodal models, extending the frontier of self-improvement beyond the conventional two-model paradigm.",
+      "authors": [
+        "Zongxia Li",
+        "Hongyang Du",
+        "Chengsong Huang",
+        "Xiyang Wu",
+        "Lantao Yu",
+        "Yicheng He",
+        "Jing Xie",
+        "Xiaomin Wu",
+        "Zhichao Liu",
+        "Jiarui Zhang",
+        "Fuxiao Liu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published": "2026-03-10T05:23:26+00:00",
+      "link": "https://arxiv.org/pdf/2603.09206v1",
+      "tags": [
+        "keyword:智能体检测"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "zero-data self-evolution for vision language model reasoning",
+      "llm_evidence_cn": "视觉语言模型推理的零数据自进化",
+      "llm_evidence": "视觉语言模型推理的零数据自进化",
+      "canonical_evidence": "视觉语言模型推理的零数据自进化",
+      "llm_tldr_en": "Introduces MM-Zero, a framework for multi-role self-evolution of multimodal models without seed data.",
+      "llm_tldr_cn": "引入了MM-Zero，一个无需种子数据即可实现多模态模型多角色自进化的框架。",
+      "llm_tldr": "引入了MM-Zero，一个无需种子数据即可实现多模态模型多角色自进化的框架。",
+      "llm_tags": [
+        "query:q9"
+      ],
+      "matched_query_tag": "query:q9",
+      "matched_query_text": "Frameworks for self improving agents in multimodal fake news identification",
+      "matched_requirement_id": "req-9",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.09206v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.10505v1",
+      "title": "Safe and Scalable Web Agent Learning via Recreated Websites",
+      "abstract": "Training autonomous web agents is fundamentally limited by the environments they learn from: real-world websites are unsafe to explore, hard to reset, and rarely provide verifiable feedback. We propose VeriEnv, a framework that treats language models as environment creators, automatically cloning real-world websites into fully executable, verifiable synthetic environments. By exposing controlled internal access via a Python SDK, VeriEnv enables agents to self-generate tasks with deterministic, programmatically verifiable rewards, eliminating reliance on heuristic or LLM-based judges. This design decouples agent learning from unsafe real-world interaction while enabling scalable self-evolution through environment expansion. Through experiments on web agent benchmarks, we show that agents trained with VeriEnv generalize to unseen websites, achieve site-specific mastery through self-evolving training, and benefit from scaling the number of training environments. Code and resources will be released at https://github.com/kyle8581/VeriEnv upon acceptance.",
+      "authors": [
+        "Hyungjoo Chae",
+        "Jungsoo Park",
+        "Alan Ritter"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-03-11T07:58:53+00:00",
+      "link": "https://arxiv.org/pdf/2603.10505v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "autonomous web agents with verifiable feedback and self-evolution",
+      "llm_evidence_cn": "具有可验证反馈和自进化的自主网络智能体",
+      "llm_evidence": "具有可验证反馈和自进化的自主网络智能体",
+      "canonical_evidence": "具有可验证反馈和自进化的自主网络智能体",
+      "llm_tldr_en": "Creates synthetic environments for autonomous web agents to enable scalable self-evolution and verification.",
+      "llm_tldr_cn": "为自主网络智能体创建合成环境，以实现可扩展的自进化和验证。",
+      "llm_tldr": "为自主网络智能体创建合成环境，以实现可扩展的自进化和验证。",
+      "llm_tags": [
+        "query:q1"
+      ],
+      "matched_query_tag": "query:q1",
+      "matched_query_text": "self-evolving autonomous agents for information verification",
+      "matched_requirement_id": "req-1",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.10505v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2602.19396v1",
+      "title": "Hiding in Plain Text: Detecting Concealed Jailbreaks via Activation Disentanglement",
+      "abstract": "Large language models (LLMs) remain vulnerable to jailbreak prompts that are fluent and semantically coherent, and therefore difficult to detect with standard heuristics. A particularly challenging failure mode occurs when an attacker tries to hide the malicious goal of their request by manipulating its framing to induce compliance. Because these attacks maintain malicious intent through a flexible presentation, defenses that rely on structural artifacts or goal-specific signatures can fail. Motivated by this, we introduce a self-supervised framework for disentangling semantic factor pairs in LLM activations at inference. We instantiate the framework for goal and framing and construct GoalFrameBench, a corpus of prompts with controlled goal and framing variations, which we use to train Representation Disentanglement on Activations (ReDAct) module to extract disentangled representations in a frozen LLM. We then propose FrameShield, an anomaly detector operating on the framing representations, which improves model-agnostic detection across multiple LLM families with minimal computational overhead. Theoretical guarantees for ReDAct and extensive empirical validations show that its disentanglement effectively powers FrameShield. Finally, we use disentanglement as an interpretability probe, revealing distinct profiles for goal and framing signals and positioning semantic disentanglement as a building block for both LLM safety and mechanistic interpretability.",
+      "authors": [
+        "Amirhossein Farzam",
+        "Majid Behabahani",
+        "Mani Malek",
+        "Yuriy Nevmyvaka",
+        "Guillermo Sapiro"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-02-23T00:11:30+00:00",
+      "link": "https://arxiv.org/pdf/2602.19396v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "detecting concealed manipulation intent via activation disentanglement",
+      "llm_evidence_cn": "通过激活解耦检测隐藏的操纵意图",
+      "llm_evidence": "通过激活解耦检测隐藏的操纵意图",
+      "canonical_evidence": "通过激活解耦检测隐藏的操纵意图",
+      "llm_tldr_en": "Detects malicious intent in LLM prompts by disentangling goal and framing activations at inference.",
+      "llm_tldr_cn": "通过在推理时解耦目标和框架激活，检测大语言模型提示中的恶意意图。",
+      "llm_tldr": "通过在推理时解耦目标和框架激活，检测大语言模型提示中的恶意意图。",
+      "llm_tags": [
+        "query:q5"
+      ],
+      "matched_query_tag": "query:q5",
+      "matched_query_text": "detecting cognitive manipulation and psychological influence",
+      "matched_requirement_id": "req-5",
+      "selection_source": "carryover_cache",
+      "paper_id": "2602.19396v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2602.21394v2",
+      "title": "MemoPhishAgent: Memory-Augmented Multi-Modal LLM Agent for Phishing URL Detection",
+      "abstract": "Traditional phishing website detection relies on static heuristics or reference lists, which lag behind rapidly evolving attacks. While recent systems incorporate large language models (LLMs), they are still prompt-based, deterministic pipelines that underutilize reasoning capability. We present MemoPhishAgent (MPA), a memory-augmented multi-modal LLM agent that dynamically orchestrates phishing-specific tools and leverages episodic memories of past reasoning trajectories to guide decisions on recurring and novel threats. On two public datasets, MPA outperforms three state-of-the-art (SOTA) baselines, improving recall by 13.6%. To better reflect realistic, user-facing phishing detection performance, we further evaluate MPA on a benchmark of real-world suspicious URLs actively crawled from five social media platforms, where it improves recall by 20%. Detailed analysis shows episodic memory contributes up to 27% recall gain without introducing additional computational overhead. The ablation study confirms the necessity of the agent-based approach compared to prompt-based baselines and validates the effectiveness of our tool design. Finally, MPA is deployed in production, processing 60K targeted high-risk URLs weekly, and achieving 91.44% recall, providing proactive protection for millions of customers. Together, our results show that combining multi-modal reasoning with episodic memory yields robust phishing detection in realistic user-exposure settings.",
+      "authors": [
+        "Xuan Chen",
+        "Hao Liu",
+        "Tao Yuan",
+        "Mehran Kafai",
+        "Piotr Habas",
+        "Xiangyu Zhang"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR"
+      ],
+      "published": "2026-02-24T21:50:46+00:00",
+      "link": "https://arxiv.org/pdf/2602.21394v2",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "memory-augmented multi-modal agent for threat detection",
+      "llm_evidence_cn": "用于威胁检测的记忆增强多模态智能体",
+      "llm_evidence": "用于威胁检测的记忆增强多模态智能体",
+      "canonical_evidence": "用于威胁检测的记忆增强多模态智能体",
+      "llm_tldr_en": "A multi-modal agent using episodic memory to improve detection of evolving phishing threats.",
+      "llm_tldr_cn": "一种利用情景记忆提高对演化中钓鱼威胁检测能力的多模态智能体。",
+      "llm_tldr": "一种利用情景记忆提高对演化中钓鱼威胁检测能力的多模态智能体。",
+      "llm_tags": [
+        "query:q9"
+      ],
+      "matched_query_tag": "query:q9",
+      "matched_query_text": "Frameworks for self improving agents in multimodal fake news identification",
+      "matched_requirement_id": "req-9",
+      "selection_source": "carryover_cache",
+      "paper_id": "2602.21394v2",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.01355v1",
+      "title": "Behavioral Outcomes of Human Cognitive Security within an Integrative Modeling Framework",
+      "abstract": "Human decision-making under uncertainty faces growing challenges from information-based threats that pose risks to human cognitive processes and behavior. Although their potential harm is widely acknowledged, there remains no well-defined construct for characterizing the degree to which information-based threats influence changes in human judgments and decision-making, impeding theoretical advancement, measurement, and effective countermeasure development. Here, we introduce a human cognitive security construct focused on linking information-based threats to observable outcomes to bridge field-level definitions with operational measures by drawing from core mechanisms related to information processing and decision-making. To connect the information environment to behavior, we develop an integrative modeling framework that unifies Bayesian inference with affect-modulated decision valuation, capturing how cognitive resource allocation and affective valuation shape three core behavioral outcomes: veracity discernment, task-oriented actions, and information sharing. Through computational simulations, we demonstrate that this framework explains canonical phenomena, including cognitive heuristics, the illusory truth effect (R2=0.86, validated against empirical data), and incongruent veracity discernment and sharing behavior. We propose empirically grounded behavioral outcome measures of cognitive security to guide future empirical examinations. Finally, we outline how environment-specific elements, characterized by data availability and ecological constraints, affect individuals' cognitive security and identify future research directions.",
+      "authors": [
+        "Aaron R. Allred",
+        "Erin E. Richardson",
+        "Sarah R. Bostrom",
+        "James Crum",
+        "Chad Tossell",
+        "Richard E. Niemeyer",
+        "Leanne Hirshfield",
+        "Allison P. A. Hayman"
+      ],
+      "primary_category": "cs.CY",
+      "categories": [
+        "cs.CY"
+      ],
+      "published": "2026-03-02T01:26:12+00:00",
+      "link": "https://arxiv.org/pdf/2603.01355v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "human cognitive security and information-based threats",
+      "llm_evidence_cn": "人类认知安全与基于信息的威胁",
+      "llm_evidence": "人类认知安全与基于信息的威胁",
+      "canonical_evidence": "人类认知安全与基于信息的威胁",
+      "llm_tldr_en": "Introduces a construct for measuring how information threats influence human judgment and decision-making.",
+      "llm_tldr_cn": "引入了一种衡量信息威胁如何影响人类判断和决策的构建模型。",
+      "llm_tldr": "引入了一种衡量信息威胁如何影响人类判断和决策的构建模型。",
+      "llm_tags": [
+        "query:q5"
+      ],
+      "matched_query_tag": "query:q5",
+      "matched_query_text": "detecting cognitive manipulation and psychological influence",
+      "matched_requirement_id": "req-5",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.01355v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.04636v1",
+      "title": "When Agents Persuade: Propaganda Generation and Mitigation in LLMs",
+      "abstract": "Despite their wide-ranging benefits, LLM-based agents deployed in open environments can be exploited to produce manipulative material. In this study, we task LLMs with propaganda objectives and analyze their outputs using two domain-specific models: one that classifies text as propaganda or non-propaganda, and another that detects rhetorical techniques of propaganda (e.g., loaded language, appeals to fear, flag-waving, name-calling). Our findings show that, when prompted, LLMs exhibit propagandistic behaviors and use a variety of rhetorical techniques in doing so. We also explore mitigation via Supervised Fine-Tuning (SFT), Direct Preference Optimization (DPO), and ORPO (Odds Ratio Preference Optimization). We find that fine-tuning significantly reduces their tendency to generate such content, with ORPO proving most effective.",
+      "authors": [
+        "Julia Jose",
+        "Ritik Roongta",
+        "Rachel Greenstadt"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-03-04T21:56:29+00:00",
+      "link": "https://arxiv.org/pdf/2603.04636v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "analyzing propaganda generation and rhetorical techniques in LLM agents",
+      "llm_evidence_cn": "分析LLM智能体生成的宣传内容及修辞技巧",
+      "llm_evidence": "分析LLM智能体生成的宣传内容及修辞技巧",
+      "canonical_evidence": "分析LLM智能体生成的宣传内容及修辞技巧",
+      "llm_tldr_en": "Studies how LLM agents generate manipulative propaganda and explores mitigation via fine-tuning and optimization.",
+      "llm_tldr_cn": "研究LLM智能体如何生成操纵性宣传内容，并探索通过微调和偏好优化进行缓解的方法。",
+      "llm_tldr": "研究LLM智能体如何生成操纵性宣传内容，并探索通过微调和偏好优化进行缓解的方法。",
+      "llm_tags": [
+        "query:q5"
+      ],
+      "matched_query_tag": "query:q5",
+      "matched_query_text": "detecting cognitive manipulation and psychological influence",
+      "matched_requirement_id": "req-5",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.04636v1",
+      "carry_days": 1
+    },
+    {
+      "id": "2603.04900v1",
+      "title": "EvoTool: Self-Evolving Tool-Use Policy Optimization in LLM Agents via Blame-Aware Mutation and Diversity-Aware Selection",
+      "abstract": "LLM-based agents depend on effective tool-use policies to solve complex tasks, yet optimizing these policies remains challenging due to delayed supervision and the difficulty of credit assignment in long-horizon trajectories. Existing optimization approaches tend to be either monolithic, which are prone to entangling behaviors, or single-aspect, which ignore cross-module error propagation. To address these limitations, we propose EvoTool, a self-evolving framework that optimizes a modular tool-use policy via a gradient-free evolutionary paradigm. EvoTool decomposes agent's tool-use policy into four modules, including Planner, Selector, Caller, and Synthesizer, and iteratively improves them in a self-improving loop through three novel mechanisms. Trajectory-Grounded Blame Attribution uses diagnostic traces to localize failures to a specific module. Feedback-Guided Targeted Mutation then edits only that module via natural-language critique. Diversity-Aware Population Selection preserves complementary candidates to ensure solution diversity. Across four benchmarks, EvoTool outperforms strong baselines by over 5 points on both GPT-4.1 and Qwen3-8B, while achieving superior efficiency and transferability. The code will be released once paper is accepted.",
+      "authors": [
+        "Shuo Yang",
+        "Soyeon Caren Han",
+        "Xueqi Ma",
+        "Yan Li",
+        "Mohammad Reza Ghasemi Madani",
+        "Eduard Hovy"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-03-05T07:42:53+00:00",
+      "link": "https://arxiv.org/pdf/2603.04900v1",
+      "tags": [
+        "keyword:智能体检测"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "self-evolving framework for optimizing modular tool-use policies in agents",
+      "llm_evidence_cn": "用于优化智能体模块化工具使用策略的自进化框架",
+      "llm_evidence": "用于优化智能体模块化工具使用策略的自进化框架",
+      "canonical_evidence": "用于优化智能体模块化工具使用策略的自进化框架",
+      "llm_tldr_en": "Presents EvoTool, a self-evolving framework that iteratively improves agent policies via evolutionary paradigms.",
+      "llm_tldr_cn": "提出EvoTool，一个通过进化范式迭代改进智能体策略的自进化框架。",
+      "llm_tldr": "提出EvoTool，一个通过进化范式迭代改进智能体策略的自进化框架。",
+      "llm_tags": [
+        "query:q1"
+      ],
+      "matched_query_tag": "query:q1",
+      "matched_query_text": "self-evolving autonomous agents for information verification",
+      "matched_requirement_id": "req-1",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.04900v1",
+      "carry_days": 1
+    }
+  ]
 }

@@ -1,0 +1,1260 @@
+Title: 2602.13088v1.pdf
+
+URL Source: https://arxiv.org/pdf/2602.13088v1
+
+Published Time: Mon, 16 Feb 2026 02:03:38 GMT
+
+Number of Pages: 29
+
+Markdown Content:
+CYBORG PROPAGANDA 1
+
+How cyborg propaganda reshapes collective action 
+
+Jonas R. Kunst 1*, Kinga Bierwiaczonek 2, Meeyoung Cha 3, Omid V. Ebrahimi 4, Marc 
+
+Fawcett -Atkinson 5, Asbjørn Følstad 6, Anton Gollwitzer 1, Nils Köbis 7,8 , Gary Marcus 9, Jon 
+
+Roozenbeek 10 , Daniel Thilo Schroeder 6, Jay J. Van Bavel 9,11 , Sander van der Linden 10 , Rory 
+
+White 5, & Live Leonhardsen Wilhelmsen 1
+
+1.  BI Norwegian Business School 
+
+2.  University of York 
+
+3.  Max Planck  Institute for Security and Privacy 
+
+4.  Oxford  University 
+
+5.  Canada’s National Observer 
+
+6.  SINTEF 
+
+7.  Research Center Trustworthy Data Science and Security, University Duisburg -Essen 
+
+8.  Max Planck Institute for Human Development 
+
+9.  New York University 
+
+10.  University of Cambridge 
+
+11.  Norwegian School of Economics 
+
+Please note that this is a preprint of a manuscript currently under review. 
+
+Word count: 3,997 
+
+*Corresponding author  (jonas .r.k unst @bi.no ). All authors starting from the second author 
+
+position are listed alphabetically. CYBORG PROPAGANDA 1
+
+Abstract 
+
+The distinction between genuine grassroots activism and automated influence operations is 
+
+collapsing. While policy debates focus on bot farms, a distinct threat to democracy is 
+
+emerging via  partisan  coordination  apps  and  artificial intelligence –what we term “cyborg 
+
+propaganda.” This architecture combines large numbers of verified humans with adaptive 
+
+algorithmic automation, enabling a closed -loop system . AI  tools  monitor online sentiment to 
+
+optimize directives and  generate  personalized content for users to post online. Cyborg 
+
+propaganda  thereby  exploits a critical legal shield: by relying on verified citizens to  ratify and 
+
+disseminate messages, these campaigns operate in a regulatory gray zone, evading liability 
+
+frameworks  designed for automated botnets. We explore the collective action paradox of this 
+
+technology: does it democratize power by  ‘unionizing ’ influence (pooling the reach of 
+
+dispersed citizens to overcome the algorithmic invisibility of isolated voices), or does it 
+
+reduce citizens to  ‘cognitive proxies ’ of a central directive? We argue that cyborg propaganda 
+
+fundamentally alters the digital public square, shifting political discourse from a democratic 
+
+contest of individual ideas to a battle of algorithmic campaig ns.  We outline a research agenda 
+
+to distinguish organic  from  coordinated information diffusion and propose governance 
+
+frameworks to address the regulatory challenges of AI -assisted  collective  expression. 
+
+Keywords:  astroturfing, collective action, coordinated authentic behavior, cyborg propaganda, 
+
+generative AI, political action CYBORG PROPAGANDA 1
+
+Introduction 
+
+A push notification lights up five thousand smartphones across the country. Not a 
+
+breaking news alert, but a directive from a partisan campaigning app:  “The narrative on the 
+
+tax bill is slipping. Post this now to regain control.”  With two taps, users spanning the social 
+
+spectrum open the app and receive unique, AI -written captions tailored to their specific 
+
+background and tone. They then post these on their personal social media networks. Within 
+
+minutes, the topic is trending. To o bservers, this mimics spo ntaneous yet converging public 
+
+sentiment. In reality, it is a calculated, synchronized strike. 
+
+This phenomenon, rooted in platforms like  ‘Act.IL ’ (active until 2022) 1 and current 
+
+tools like Greenfly, SocialToaster, or GoLaxy, amplifies content to engineer viral trends 2-4.
+
+For instance,  Greenly  openly  offers  clients  to “ synchronize an  army of  advocates  to amplify 
+
+your  message” 5. These platforms gamify advocacy by issuing missions to volunteers, 
+
+incentivizing them to blast identical content or copy -paste directives. While generating 
+
+volume,  the  platforms  occupy a gray zone between grassroots activism and  ‘astroturfing ’ (i.e., 
+
+masking orchestrated campaigns as grassroots 6). 
+
+While the centralized coordination of decentralized actors is not entirely new (as seen 
+
+in paraphrasing tactics of the Chinese 50 cent party), generative AI fundamentally disrupts the 
+
+behavioral economics and physics of digital coordination 7-9. Historically,  astroturfing  traded 
+
+scale for stealth: volume required rigid templates, creating forensic fingerprints (e.g., identical 
+
+tweets) that algorithms easily flag 10 . By automating the articulation and thereby minimizing 
+
+human cognitive labor required to rephrase a central narrative, AI industrializes content 
+
+creation and coordination at near -zero marginal cost 7,11 . This transition enables a ‘multiplier 
+
+effect,’ instantly generating thousands of unique message variations tailored to the profile and 
+
+social background of each human proxy. CYBORG PROPAGANDA 2
+
+Unlike traditional offline coordination, such as supporters holding identical signs at a 
+
+rally or participating in phone banking, this cyborg variation operates covertly. Because the 
+
+messages appear to contain organic, individual thoughts, rather than retw eets or shared links, 
+
+the underlying coordination remains  largely  invisible to the audience. The result is content 
+
+that seems like genuine human expression, bypassing systems designed to detect coordinated 
+
+messaging 11,12 . And unlike political propaganda led by political elites, the underlying 
+
+leadership and coordination of the messaging remains hidden from the public or content 
+
+moderators. 
+
+We call this emerging dynamic  ‘cyborg propaganda ’: the synchronized and semi -
+
+automated dissemination of algorithmically generated articulations of narratives via  a large 
+
+number of  verified human accounts. It differs from fully -automated botnets (lacking human 
+
+identity) and traditional astroturfing (lacking algorithmic scale). Here, identity is authentic; 
+
+articulation is synthetic. 
+
+This fusion of authentic identity and synthetic articulation poses an epistemological 
+
+challenge: Does technology turn some citizens into puppets, or empower them to operate as a 
+
+collective in the attention economy? In this  Perspective , we frame cyborg propaganda as a 
+
+structural transformation of collective action rather than a simple technological evolution. We 
+
+delineat e the operational mechanism of this manipulation marketplace, then interrogate the 
+
+normative implications through two competing lenses: as a  distortion of the public sphere 
+
+(users as  ‘cognitive proxies ’) versus a tool for  ‘unionizing influence ’ against algorithmic 
+
+asymmetry relative to powerful elites. Finally, we  outline a research agenda mapping the 
+
+forensic signatures of this new frontier  and  address the resulting regulatory paradox. CYBORG PROPAGANDA 1
+
+Figure 1 
+
+The Matrix of Coordinated Influence.  Traditional frameworks for analyzing online influence 
+
+focus on the distinction between human and automated actors (Identity Axis) or between 
+
+spontaneous and coordinated behavior (Articulation Axis). Bot Nets (top -left) rely on 
+
+synthetic identities and auto mated scripts. Troll Farms (bottom -left) use human operators to 
+
+manage fake personas. Grassroots Action (bottom -right) involves verified citizens sharing 
+
+self -authored views. Cyborg Propaganda (top -right) represents a n ew paradigm: verified 
+
+human users disseminating centrally generated, algorithmically generated narratives, 
+
+effectively  ‘hybridizing ’ the authenticity of the grassroots with the scale of the botnet. CYBORG PROPAGANDA 1
+
+The Mechanism: From Organic Collective Action to Cyborg Propaganda 
+
+Understand ing  cyborg propaganda  requires  grasp ing  communication mechanics that 
+
+defy detection. Historically, coordinated inauthentic behavior online  employed  ‘bot farms’ 
+
+(simple  automated scripts 13 ) or human -operated ‘troll farms’ (mercenaries managing fake 
+
+personas 14 ),  before  shifting to autonomous coordinated AI bot swarms 15 . The emerging 
+
+frontier represents a qualitative shift in manipulation: it involves coordinated authentic 
+
+activity by verified human accounts  with  partially algorithmically stage -managed  autonomy .
+
+Cyborg propaganda  thereby  transcends astroturfing, bot amplification,  and  ‘connective 
+
+action ’16 . It hybridizes verified human identity with centralized, algorithmic articulation (see 
+
+Figure 1), producing adaptive coordinated semi -automated influence that is authentic at the 
+
+account level and synthetic at the narrative level. While frameworks typical ly contrast 
+
+authenticity and automation 13,17 -19 , cyborg propaganda collapses this distinction. 
+
+Crucially, the human layer creates a unique regulatory shield. While authorities can 
+
+ban automated botnets or foreign troll farms, regulating the speech of verified citizens, even 
+
+when heavily coordinated, is far more complex. This places cyborg propaganda  in a legal gray 
+
+zone that we discuss in detail later: distinguishing genuine expression from coordination is 
+
+near -impossible when the  ‘bot ’ is a citizen exercising free speech. 
+
+Technically, c yborg propaganda operates via a synchronized workflow. First, there is 
+
+the organizer directive (or input hub): a command center app that integrates with AI monitors 
+
+flagging emerging narratives and public  sentiment  shifts  (Figure 2). This enables data -
+
+informed strategic instructions (see  7). Automation  extends to the directive layer: operatives 
+
+can activate  ‘autopilot ’ mode where AI identifies wedge issues or divisive rhetoric and draft 
+
+directives with minimal human intervention. 
+
+Second, there is the AI multiplier: a generative engine scaling central directives into 
+
+mass individualized content. Historically, coordinated campaigns  betrayed  automation CYBORG PROPAGANDA 2
+
+fingerprints  like  templated or duplicated messaging, bursty timing, shallow account histories, 
+
+and limited interactivity 20 , often  struggl ing  with direct engagement 13,21,22 . Today, LLMs (and 
+
+future generative AI)  bypass  these limitations by processing directives alongside user profiles 
+
+(history, syntax, rhythms).  Substituting  identical slogans  with  style transfer,  the system 
+
+generat es  unique variations ranging from academic -sounding arguments to casual complaints 
+
+that mimic the users’ authentic voice s23,24  (but see  25 ), counterfeiting identity with high 
+
+fidelity 26,27 . To  drive  participation, the architecture may gamify or monetize activity 28 .
+
+Personalization cloaks coordination from the user’s social circle, who are accustomed 
+
+to their voice, while complicating platform detection dependent on clustered linguistic 
+
+anomalies . As verified users broadcast this content, they forge a coordinated consensus that 
+
+evades filters and mimics organic linguistic diversity.  This dynamic architecture  can  function 
+
+as a closed -loop learning system  (Figure 2).  AI monitors track real -time reactions, enabling 
+
+the hub to adjust directives against counter -narratives. High -engagement content is fed back 
+
+to fine -tune subsequent messaging. A critical byproduct is data poisoning: as synthetic 
+
+activity permeates social m edia, it embeds itself in future t raining corpora, skewing how 
+
+mainstream AI amplifies dominant narratives. CYBORG PROPAGANDA 1
+
+Figure 2 
+
+The Operational Workflow of Cyborg Propaganda.  Cyborg propaganda utilizes an AI multiplier to scale distinctiveness. A central coordination 
+
+hub issues a single strategic directive (e.g., “Oppose the new tax bill”). This coordination hub may retrieve data from an AI  system monitoring 
+
+emerging narratives  and shifts on social media. The hub may vary in terms of automation versus human involvement. To overcome recruitment 
+
+bottlenecks, the system utilizes network harvesting, where users are incentivized to suppl y data on friends and neighbors, linking private social 
+
+graphs with public voter registries. An AI -driven multiplier engine then processes the operative directive alongside individual user profiles, 
+
+analyzing their posting history, syntax, and background c haracteristics of each participant. The system generates thousands of unique, context -
+
+aware message variations, effectively performing  ‘style transfer ’ to match each user’s voice. Simultaneously, the system may employ 
+
+gamification or monetary rewards to incentivize user engagement. Verified human users then ratify and broadcast these posts o r comments. The 
+
+resulting information cascade creates a manufact ured consensus that exhibits the linguistic diversity of a genuine grassroots movement, thereby 
+
+bypassing duplicate -content filters and signaling authenticity to social peers. Crucially, the system operates as a closed feedback loop: The AI 
+
+Monitor continu ously tracks the performance of these posts or comments on social media, feeding engagement data back into the organizer 
+
+directive to adjust strategy in real -time. Simultaneously, successful narratives are harvested to reinforce and fine -tune the AI Multip lier to 
+
+produce increasingly persuasive content in subsequent cycles. CYBORG PROPAGANDA 2CYBORG PROPAGANDA 1
+
+Cyborg propaganda offers substantial economic incentives. Traditional operations like 
+
+troll farms demanded sustained investment in salaries, infrastructure, and oversight to 
+
+maintain synthetic personas  (see , e.g.,  29 ). By contrast, cyborg propaganda leverages 
+
+distributed volunteer labor amplified by zero -marginal -cost generation 30 . Although human 
+
+recruitment raises costs above fully automated bot farms, it secures a critical commercial 
+
+advantage: regulatory safety. Unlike illegal botnets operating in the shadows, cyborg 
+
+propaganda functions as a legitimate digital campaigning tool. 
+
+Crucially, it  can  provide superior network penetration. While bot farms often echo 
+
+within isolated synthetic clusters, cyborg propaganda exploits the epistemic trust of real -life 
+
+social ties, reaching genuine,  more  persuadable users. Developers can openly sell these tools 
+
+to domestic groups and corporations as ethical  ‘unionizing ’ platforms, commercializing 
+
+influence operations as standard political technology rather than black -market interference. 
+
+Once the coordination hub is built (cheapened by agentic AI coding), the cost of 
+
+generating thousands of unique, persuasive, and context -aware messages via an API becomes 
+
+negligible. This transforms interference from a capital -intensive industry to a low -barrier 
+
+domain for domestic groups, lobbyists, and smaller state actors.  Platforms like 
+
+RentAHuman.ai demonstrate commercial viability, where humans contract for tasks directed 
+
+and compensated by AI. This mechanism enables extrinsic agency transfer: humans provide 
+
+the ‘identity credential,’ while AI supplies the intent, directi on, and payment. 
+
+The resulting efficiency complicates the infrastructure. Most public AI tools  prioritize 
+
+commercial exploitation 31 . In an attention economy, user s are  both political actor s and data 
+
+point s. Tools  may  favor  engagement and extraction over political utility, harvesting users for 
+
+profit while mobilizing them 32 . This dual role  (mobilized political agent and data asset )
+
+epitomizes  the  technology ’s  fundamental normative conflict. CYBORG PROPAGANDA 2
+
+Centrally, scaling the human layer introduces a logistical bottleneck. While AI 
+
+generates content at zero -marginal -cost, acquiring the human hosts needed to verify and post 
+
+it remains resource -intensive. This scarcity creates a strong economic incentive for contact 
+
+harvesting that infringes on third -party privacy. To expand their reach, campaigns may 
+
+effectively deputi ze users as data brokers, encouraging them to report the political leanings of 
+
+friends, family, and neighbors. Such crowdsourced surveillance  may link private social graphs 
+
+to public voter registries, allowing the coordination hub to bypass recruitment bottlenecks by 
+
+weaponizing the user’s own network against their peers. 
+
+The Case for Manipulation: The  ‘Cognitive Proxy ’ Perspective 
+
+Critics may view cyborg propaganda as distorting democracy’s marketplace of ideas 
+
+(cf.  15 ). It replaces organic public sentiment with an engineered reality, creating manufactured 
+
+consensus or fragmentation 33,34 . Thousands of users projecting seed narratives create 
+
+availability cascades 35 , triggering organic mimicry 36 . Observers, inundated, can mistake these 
+
+for the majority view 13,37 . Such  a dynamic undermines the ‘wisdom of crowds’ 38,39 . It renders 
+
+environments interdependent, homogeneous, and highly centralized, eroding collective 
+
+intelligence. This process transforms crowds from knowledge aggregators into amplifiers of 
+
+centralized narratives. The crowd speaks but no longer ‘thinks,’ li kely degrading decision -
+
+making.  At a minimum , c yborg propaganda  can act as a  ‘denial of service attack ’ on organic 
+
+discourse (see  40 ), drowning conversation in noise 41 .
+
+Simultaneously, cyborg propaganda could manufacture fragmentation. Disseminating 
+
+content from opposing sides or amplifying fringe narratives simulates polarization and 
+
+impedes compromise (e.g., tactics by the Russian Internet Agency 42,43 ; e ffectiveness 
+
+disputed 44,45 ).  If successful, such a strategy can  discourage civic engagement and cooperation. 
+
+At the individual level, c yborg propaganda profoundly transforms political agency. 
+
+Users retain consent but surrender articulation. They rely on centralized automation that CYBORG PROPAGANDA 3
+
+decides content and timing, with generative AI providing synthetic prose. As users only 
+
+authorize posts or comments, participation shifts from authorship to ratification. Like 
+
+delegating calculation to tools, such as addition to a calculator, cyborg propag anda could be 
+
+viewed as delegating moral and political agency to  machines 46 . Psychologically, who trades 
+
+their voice for perceived impact? Are they hyper -engaged partisans fused with the cause  47,48 ,
+
+prioritizing collective efficacy? Or disengaged actors motivated by rewards? Regardless, the 
+
+result is identical: the user becomes a ‘cognitive proxy’ —a human relay to bypass filters. 
+
+This  potential  agency loss resembles ‘slacktivism’ (i.e., low -threshold digital political 
+
+engagement 49,50 ). S ome s cholars  would  describe it as fostering  ‘thin engagement ’: fast, viral, 
+
+and low -cost participation allowing citizens to affiliate with a cause without the  ‘thick, ’
+
+deliberative engagement for community building 51 . While effective for immediate fundraising 
+
+or visibility, this approach risks prioritizing short -term mobilizing over sustained collective 
+
+action 50 . Thus, near -total automation may reduce the user to a cog, unaware of or uninterested 
+
+in the full picture. 
+
+Ultimately, ethical unease regarding cyborg propaganda  may not  stem solely from 
+
+automated distribution or delegation of political tasks. As AI tools for drafting become 
+
+ubiquitous, the primary transgression may be neither counterfeiting of human agency nor lack 
+
+of authorship. Instead, the core moral concern  may be  deception regarding the influence 
+
+source. It represents the manipulation  via  many voices by a hidden actor. The audience 
+
+believes they are witnessing a spontaneous chorus of independent citizens,  when they are 
+
+observing the amplified will of a single, obscured operative abusing public discourse. The 
+
+violation, therefore, may be less the user’s lack of authorship than the hidden architect 
+
+disguising a centralized campaign as distributed public will. 
+
+The Case for Empowerment: Unionizing Influence CYBORG PROPAGANDA 4
+
+A compelling counter -perspective needs to be considered: the cognitive proxy 
+
+narrative overlooks why citizens join these networks in the first place. Rather than passive or 
+
+obedient relays, participants may often be strategic collaborators. Recruitment sc ales not by 
+
+blind obedience, but by offering a force multiplier to the algorithmically silenced. For a 
+
+hyper -partisan or a marginalized activist, trading individual articulation for collective impact 
+
+could be tactical agency, not surrender. Consider a genu ine but fragmented grassroots 
+
+movement (e.g., local activists opposing a corporate initiative) 52 . Individually, their posts are 
+
+drowned out by paid advertising and influencers. Without coordination, their genuine concern 
+
+remains invisible, lost in social media.  Proponents may  further  argue that the marketplace of 
+
+ideas is already broken. Algorithms favor outrage, paid advertising, and influencers 53,54 . T he 
+
+average citizen’s voice is invisible 37 . Pooling influence, partisans unionize their attention 16 .
+
+Like a labor union empowering workers, coordinated sharing could empower citizens against 
+
+powerful individuals, organizations, and lobby groups. 
+
+Furthermore, AI multipliers may act as an accessibility bridge. Not every citizen can 
+
+articulate complex policy nuances. AI allows users to express opinions they hold  while 
+
+lack ing  the rhetorical tools to persuade others. In this sense, cyborg propaganda corrects 
+
+deliberative and expressive inequality 55,56 . Providing persuasive prose to all, AI  may 
+
+democratize persuasion, decoupling influence from educational background. Crucially, this 
+
+may  preserve agency; users review and can alter content prior to dissemination. Modifying 
+
+drafts makes users co -authors rather than relays, reclaiming articulation. This allows 
+
+marginalized groups to compete rhetorically with professional lobbyists. 
+
+Cyborg propaganda may be particularly useful in authoritarian contexts. Where speech 
+
+is policed, self -censorship and navigating permissible dissent are taxing  57 . AI agents, fine -
+
+tuned on censorship guidelines, could help dissidents formulate messages  signaling 
+
+opposition without triggering takedowns or arrests. Crucially, the architecture resolves the CYBORG PROPAGANDA 5
+
+classic first -mover risk inherent to revolt. While isolated dissidents are vulnerable to state 
+
+reprisal, the coordination hub enables the simultaneous release of thousands of messages. This 
+
+synchronization could overwhelm the state’s capacity for targeted  enforcement, effectively 
+
+creating safety in numbers. 
+
+Thus,  one could argue that  cyborg propaganda lowers barriers for political efficacy, 
+
+provided platforms encourage intentional and informed engagement. However, realizing this 
+
+collective voice depends on the coordination hub’s governance. If designed for bottom -up 
+
+consensus, it enabl es genuine political efficacy. Conversely, if a rigid, top -down command 
+
+center, it amplifies only the organizer. Consequently, who benefits remains uncertain. While 
+
+cyborg propaganda may offer a lifeline to grassroots movements,  it simultaneously rewards 
+
+deep pockets. In unregulated finance regimes, elites may industrialize influence at scales no 
+
+grassroots organization can match. Similarly, while dissidents use tools to circumvent 
+
+censorship, regimes could deploy them to manufact ure displays of loyalty, drowning out 
+
+opposition. 
+
+Therefore , whether cyborg propaganda serves as a tool for liberation or control 
+
+depends not just on the technology, but on the political and financial ecosystem in which it is 
+
+deployed. This highlights power ’s critical role, often overlooked in behavioral analyses 58 .
+
+Control of technology grants disproportionate control of the narrative. Crucially, as systems 
+
+gain efficiency, harm from malicious actors  increases 59 . For  instance, wealthy actors 
+
+promoting harmful ideas via cyborg propaganda gain amplified manipulative capacity. Thus, 
+
+this technology risks further concentrating power among incumbents. 
+
+Synthesis: The Alteration of Democracy 
+
+Whether viewed as manipulation or empowerment, cyborg propaganda shifts 
+
+democracy’s dynamics. Beyond the tactical arms race, specific pillars of democratic 
+
+governance are at risk: opinion manipulation becomes scalable and low -cost; accountability CYBORG PROPAGANDA 6
+
+for public speech dissolves as author -text links sever 60 ; and the public signal extraction (i.e., 
+
+the ability of institutions to infer what the public actually wants) is compromised, as genuine 
+
+preferences are drowned out by synthetic noise. Cyborg propaganda could accelerate changes 
+
+in the Overton window and n orms, replacing slow organic norms with sudden, engineered 
+
+shocks (cf.  37,61 ). This volatility may destabilize public trust, triggering anxiety and truth 
+
+decay.  Cyborg propaganda  could  erode epistemic trust  62 . Realizing neighbors’ pleas are 
+
+scripted by algorithms (directed by hidden entities), good faith evaporates 15 . This skepticism 
+
+can  fuel societal harm: unable to distinguish genuine grassroots from manufactured 
+
+astroturfing, citizens may retreat into cynicism, civic withdrawal, or conspiracy  theories (see 
+
+> 63
+
+). 
+
+While AI tools can enhance articulation by giving voice to underrepresented 
+
+individuals who might otherwise remain unheard, the capacity to be heard increasingly relies 
+
+on coordinated amplification. We move from atomized expression (one person, one voice)  to 
+
+networked impact (one swarm, one narrative). This transition is governed by a tension 
+
+between intensity and scale. The requirement for active participation may currently favor 
+
+passionate extremes, enabling fringe narratives to exert disproportionate inf luence (se e 64 ). 
+
+However, automation is decoupling influence from effort; eventually, high commitment 
+
+becomes a configuration setting rather than a human trait. Yet, structural limits remain: niche 
+
+ideologies lack large user pools, and over -amplification risks a credibilit y backlash from the 
+
+majority, deepening polarization rather than building consensus 65  (but as noted, this could  in 
+
+itself  be the strategic goal of  some acto rs).
+
+Ultimately, however, the fear of political invisibility likely outweighs the risk of 
+
+backlash. This creates an arms race: if one political faction uses cyborg propaganda to 
+
+dominate, opponents must adopt the same tactics or risk extinction. Politics evolve s from 
+
+human persuasion to algorithmic logistics, and the deciding factor becomes not “whose ideas CYBORG PROPAGANDA 7
+
+are better?” but “whose coordination app is better?” In the worst case, cyborg propaganda 
+
+suppresses organic trends on social media. 
+
+A Research Agenda 
+
+Cyborg propaganda renders current behavioral science methodologies largely 
+
+insufficient. As synthetic -human dissemination distorts online sentiment, scrapers capture a 
+
+mirage of public opinion. To address this epistemic crisis, we propose a three -pronged 
+
+agenda, moving from passive observation to active experimental forensics. 
+
+First, we must develop forensic frameworks that target the infrastructure of the 
+
+campaign rather than just the output of the user, moving beyond individual account detection. 
+
+Traditional detection identifies inauthentic accounts via syntax repetition or ac count metadata. 
+
+Cyborg propaganda, using authentic accounts with unique syntax, defeats these classifiers. 
+
+Future research must prioritize network -level forensics (cf.  15 ) Analyses show cyborg agents 
+
+often occupy high centrality positions in networks, bridging disparate user groups 66 . Forensic 
+
+tools should target agents with high follower counts and network influence exhibiting 
+
+‘flipping ’ classifications between human and automated behavior. 
+
+Further, we need to develop coordination indices that quantify hyper -synchronicity in 
+
+posting times and thematic clustering that defies natural diffusion patterns. Research 
+
+questions of interest include: Can we distinguish a natural viral trend (which  often  creates a 
+
+logistic growth curve) from a cyborg trend (exhibiting unnatural onset times); or does 
+
+algorithmic curation and influencer engineering render the  ‘natural ’ trends a theoretical relic? 
+
+Researchers could partner with platforms to train models fl agging collective behavior over 
+
+individual identity, provided such alliances adhere to strict transparency standards to mitigate 
+
+concerns regarding undisclosed industry ties and publication bias 67 . This requires platforms 
+
+granting comprehensive data access to scientists, potentially enforced through the independent 
+
+researcher access provisions of the EU Digital Services Act (DSA). CYBORG PROPAGANDA 8
+
+Complementing this, detection need not rely solely on post -hoc network analysis. 
+
+Since  cyborg propaganda  tools are often commercial products sold openly, effective detection 
+
+may also lie in supply -chain forensics. Researchers should investigate existing market 
+
+technologies, utilizing approaches like passive DNS to trace the web infrastructure of 
+
+coordination  hubs and identify their clients. Furthermore, the system’s reliance on human 
+
+recruitment represents a critical vulnerability. Unlike closed botnets, th ese campaigns must 
+
+publicly solicit volunteers, allowing researchers to perform audit studies by signing  up  to 
+
+document the user flow and psychological techniques embedded in the interface. 
+
+Next, we must map the psychological motivations of and consequences for the cyborg 
+
+propaganda participants. While content consumption affects polarization 68 , we know less 
+
+about the effects of AI -mediated production. Drawing on self -perception theory 69,70 , does 
+
+posting extreme, AI -generated arguments cause the user to internalize those extreme views to 
+
+maintain consistency (see  71 )? Alternatively, delegating expression to AI may reduce 
+
+perceived personal responsibility and authorship  commitment 46 . Does  ‘one -click activism ’
+
+lead to cognitive offloading in the moral domain? Longitudinal studies must  also  determine if 
+
+AI reliance degrades nuanced reasoning, fostering radicalization via cognitive atrophy. We 
+
+also need to understand the economics of consent. Why do users trade their voice for 
+
+collective reach? Distinguishing between  ‘fused ’48  hyper -partisans (who view the AI as a 
+
+weapon for their cause)  and gamified, disengaged actors (who view it as a task) 28  may be 
+
+crucial for predicting network formation.  In addition, w e must consider if cyborg propaganda 
+
+fits established frameworks like the Social Identity Model of Collective Action 72 . Does AI 
+
+amplify perceived efficacy, lowering action thresholds even in the absence of strong social 
+
+identity or affective injustice? Ultimately, these lines of inquiry converge on a fundamental 
+
+epistemic question: does the habitual outsourcing of articul ation to AI reshape not only how CYBORG PROPAGANDA 9
+
+citizens act, but how they reason, effectively collapsing the psychological boundary between 
+
+independent judgment and coordinated influence? 
+
+Finally, we must assess the impact on the receiver and test behavioral 
+
+countermeasures. How persuasive is cyborg propaganda compared to traditional botnets or 
+
+more modern AI swarms? We hypothesize  ‘relational shielding ’: information from friends 
+
+bypasses skepticism applied to bots even if the information is AI -generated. Experiments 
+
+must test the credibility of AI -generated messages attributed to close ties vs. strangers. If 
+
+technical detection fails, behavioral defense  is paramount. We need to test whethe r users can 
+
+be inoculated 73 -75  against cyborg astroturfing 76 . We also need to test whether labeling a series 
+
+of cyborg propaganda posts or comments as  ‘AI -assisted ’ reduces their persuasive power, or 
+
+leads users to dismiss  all  political discourse, organic or otherwise, as synthetic. To grasp 
+
+systemic implications, researchers should complement empirical studies with agent -based 
+
+simulations. Modeling in silico may reveal emergent strategies and predict the manipulation -
+
+defense a rms race. 
+
+Governance and Countermeasures: The Regulatory Paradox 
+
+Legally, c yborg propaganda exposes a vulnerability: relying on the human vs. 
+
+automated binary. Legislation such as the EU AI Act or Section 230 assigns liability on the 
+
+basis of automation 77,78 . However, cyborg propaganda operates within a  ‘human -in -the -loop ’
+
+loophole. Because verified human users ultimately click  ‘post, ’ content is attributed to them, 
+
+effectively laundering its synthetic origin. This creates a paradox: banning botnets is technical 
+
+hygiene  but restricting citizens using AI risks suppressing free speech. Moreover, because 
+
+these tools are commercial products designed specifically to skirt the edges of existing 
+
+regulation, any rule based on technical thresholds will likely trigger a n immediate arms race. 
+
+The software may simply evolve to technically maintain legality, preserving the manipulative 
+
+capability while bypassing the specific constraint. CYBORG PROPAGANDA 10 
+
+Before technical countermeasures, law must therefore determine: does AI -authored 
+
+political speech constitute deceptive  ‘inauthentic behavior ’ (fraud) or protected 
+
+‘technologically assisted expression ’ (speech)? If the latter, no intervention is justified. If 
+
+fraud, enforcement is immense. Regulators cannot police millions of accounts without mass 
+
+surveillance. If illicit, enforcement falls to platforms, forced to translate intent into protocols. 
+
+Platforms could migrate toward proof of authorship. This invasive surveillance 
+
+paradigm monitors creation, not just the poster. It entails behavioral biometrics (e.g., 
+
+keystroke dynamics or blocking copy -pasting; but see  79,80 ) or mandatory digital 
+
+watermarking for synthetic content. However, such technical guardrails are brittle. Textual 
+
+watermarks are particularly susceptible to adversarial paraphrasing, where human participants 
+
+make minor syntactic adjustments that disrupt s tatistical signatures without altering the 
+
+narrative. Furthermore, coordination hubs may bypass these checks entirely by deploying 
+
+open -weight models stripped of safety layers. 
+
+As coordination hubs scale by acquiring accounts or OAuth access (posting without 
+
+message -by -message  consent), platforms face the forensic impossibility of distinguishing a 
+
+‘cyborg’ volunteer expressing genuine belief from a ‘zombie’ account commoditized by third 
+
+parties. Crucially, technological solutions introduce severe externalities. A proof -of -
+
+author ship standard risks discriminating against users relying on AI for accessibility (e.g., 
+
+non -native speakers). Furthermore, it alters the internet, shifting  from open input to monitored 
+
+behavior. If platforms throttle reach based on text provenance rather than content, we risk a 
+
+two -tier public sphere where only those with  ‘correct ’ (unaided) typing behaviors gain 
+
+visibility. 
+
+Ultimately, effective countermeasures may be structural, not technical. Governance 
+
+could  target coordination hubs. Since one of the primary benefits of cyborg campaigns is their 
+
+ability to be sold openly to politicians, they leave financial footprints that make them easier to CYBORG PROPAGANDA 11 
+
+target than covert botnets. While private coordination on encrypted channels (like WhatsApp) 
+
+is hard to police, dedicated campaign apps  may  need to  rely on centralized app stores  to reach 
+
+large numbers of potential users . This creates a governance chokepoint. 
+
+Finally, t he EU Digital Services Act (DSA) mandates large platforms address systemic 
+
+risks, while existing regulations could ban undisclosed paid endorsements by  ‘cognitive 
+
+proxies ’81 . Redefining cyborg propaganda hubs as  ‘undisclosed political action committees ’
+
+(PACs), regulators could enforce transparency without infringing on participants ’ speech 
+
+rights. This shifts the focus from technical thresholds (which are easily evaded) to the impact 
+
+on democracy —regulating the industrial manufacturing of consensus rather than the tools 
+
+used to build it. 
+
+Conclusion 
+
+The rise of coordinated, AI -driven partisanship suggests that the public square has 
+
+become an algorithmic battlefield. If we view cyborg propaganda as merely involving 
+
+puppets, we risk dismissing the genuine frustrations that may drive individuals to join  these 
+
+automated activism platforms in the first place. Yet, if we embrace cyborg propaganda, we 
+
+risk accepting a reality in which public opinion is merely another commodity to be 
+
+manufactured on an assembly line. The challenge for the scientific community  and policy 
+
+makers  in the coming decade will be developing both the behavioral models  and policy 
+
+frameworks  to distinguish between the roar of the crowd and the hum of the machine. CYBORG PROPAGANDA 1
+
+References 
+
+1 DFRLab. How a “political astroturfing” app coordinates pro -Israel influence 
+
+operations. (2019). 
+
+2 Rathje, S. & Van Bavel, J. J. The psychology of virality.  Trends Cogn. Sci.  29 , 914 –
+
+927, doi:10.1016/j.tics.2025.06.014 (2025). 
+
+3 Goldstein, B. & Benson, B. The GoLaxy documents: Inside one Chinese company’s 
+
+AI -driven influence machine. (Institute of National Security, Vanderbilt University, 
+
+2025). 
+
+4 Lewis, T. in  PRWeek  (2012). 
+
+5 Greenfly.  Guided social posts , < https://www.greenfly.com/platform/social -media -
+
+sharing/ > (2026). 
+
+6 Kovic, M., Rauchfleisch, A., Sele, M. & Caspar, C. Digital astroturfing in politics: 
+
+Definition, typology, and countermeasures.  Studies in Communication Sciences  18 ,
+
+69 –85, doi:10.24434/j.scoms.2018.01.005 (2018). 
+
+7 Olejnik, L. AI Propaganda factories with language models.  arXiv preprint 
+
+arXiv:2508.20186 , doi:10.48550/arXiv.2508.20186 (2025). 
+
+8 Bengio, Y.  et al.  Managing extreme AI risks amid rapid progress.  Science  384 , 842 –
+
+845, doi:10.1126/science.adn0117 (2024). 
+
+9 Bai, H., Voelkel, J. G., Muldowney, S., Eichstaedt, J. C. & Willer, R. LLM -generated 
+
+messages can persuade humans on policy issues.  Nature Communications  16 , 6037, 
+
+doi:10.1038/s41467 -025 -61345 -5 (2025). 
+
+10  Ratkiewicz, J.  et al.  in  Proceedings of the 20th international conference companion on 
+
+World wide web  249 –252 (Association for Computing Machinery, Hyderabad, India, 
+
+2011). CYBORG PROPAGANDA 2
+
+11  Yang, K. -C. & Menczer, F. Anatomy of an AI -powered malicious social botnet. 
+
+Journal of Quantitative Description: Digital Media  4, doi:10.51685/jqd.2024.icwsm.7 
+
+(2026). 
+
+12  Qiao, B.  et al.  in  Proceedings of the Thirty -Ninth AAAI Conference on Artificial 
+
+Intelligence and Thirty -Seventh Conference on Innovative Applications of Artificial 
+
+Intelligence and Fifteenth Symposium on Educational Advances in Artificial 
+
+Intelligence  Vol. 39 Article 1602 (AAAI Press, 2025). 
+
+13  Ferrara, E., Varol, O., Davis, C., Menczer, F. & Flammini, A. The rise of social bots. 
+
+Commun. ACM  59 , 96 –104, doi:10.1145/2818717 (2016). 
+
+14  Mustafa, H., Luczak -Roesch, M. & Johnstone, D. Conceptualizing the evolving nature 
+
+of computational propaganda: A systematic literature review  SSRN ,
+
+doi:10.2139/ssrn.4544686 (2023). 
+
+15 Schroeder, D. T. et al.  How malicious AI swarms can threaten democracy.  Science 
+
+391 , 354 –357, doi:10.1126/science.adz1697 (2026). 
+
+16  Bennett, W. L. & Segerberg, A.  The logic of connective action: Digital media and the 
+
+personalization of contentious politics . (Cambridge University Press, 2013). 
+
+17  Woolley, S. C. & Howard, P. N.  Computational propaganda: Political parties, 
+
+politicians, and political manipulation on social media . (Oxford University Press, 
+
+2018). 
+
+18  Gleicher, N. (Meta, 2018). 
+
+19  Varol, O., Ferrara, E., Davis, C., Menczer, F. & Flammini, A. Online human -bot 
+
+interactions: Detection, estimation, and characterization.  Proceedings of the 
+
+International AAAI Conference on Web and Social Media  11 , 280 –289, 
+
+doi:10.1609/icwsm.v11i1.14871 (2017). CYBORG PROPAGANDA 3
+
+20  Elmas, T., Overdorf, R., Özkalay, A. F. & Aberer, K. in  2021 IEEE European 
+
+Symposium on Security and Privacy (EuroS&P).  403 –422. 
+
+21  Cresci, S. A decade of social bot detection.  Commun. ACM  63 , 72 –83, 
+
+doi:10.1145/3409116 (2020). 
+
+22  Keller, F. B., Schoch, D., Stier, S. & Yang, J. Political astroturfing on Twitter: How to 
+
+coordinate a disinformation campaign.  Political Communication  37 , 256 –280, 
+
+doi:10.1080/10584609.2019.1661888 (2020). 
+
+23  Alperin, K.  et al.  Masks and mimicry: Strategic obfuscation and impersonation attacks 
+
+on authorship verification.  arXiv preprint arXiv:2503.19099 ,
+
+doi:10.48550/arXiv.2503.19099 (2025). 
+
+24  Zhang, J.  et al.  Personalized text generation with contrastive activation steering.  arXiv 
+
+preprint arXiv:2503.05213 , doi:10.48550/arXiv.2503.05213 (2025). 
+
+25  Wang, Z., Tripto, N. I., Park, S., Li, Z. & Zhou, J. Catch me if you can? Not yet: 
+
+LLMs still struggle to imitate the implicit writing styles of everyday authors. 
+
+arXiv:2509.14543v1 , doi:10.48550/arXiv.2509.14543 (2025). 
+
+26  Klinkert, L. J., Buongiorno, S. & Clark, C. Evaluating the efficacy of LLMs to 
+
+emulate realistic human personalities.  Proceedings of the AAAI Conference on 
+
+Artificial Intelligence and Interactive Digital Entertainment  20 , 65 –75, 
+
+doi:10.1609/aiide.v20i1.31867 (2024). 
+
+27  Jiang, J. & Ferrara, E. Social -LLM: Modeling user behavior at scale using language 
+
+models and social network data.  Sci  7, 138 (2025). 
+
+28  Bossetta, M. in  Elgar Encyclopedia of Technology and Politics  (ed A. Ceron) 304 –
+
+308 (Edward Elgar Publishing, 2022). CYBORG PROPAGANDA 4
+
+29  Poliakoff, S. Trolls behind the mask of journalists: How Yevgeny Prigozhin’s patriot 
+
+media group was organized.  Problems of Post -Communism  72 , 416 –428, 
+
+doi:10.1080/10758216.2024.2438336 (2025). 
+
+30  Goldstein, J. A.  et al.  Generative language models and automated influence 
+
+operations: Emerging threats and potential mitigations.  arXiv preprint 
+
+arXiv:2301.04246  (2023). 
+
+31  Zuboff, S.  The age of surveillance capitalism . (PublicAffairs, 2019). 
+
+32  Bhargava, V. R. & Velasquez, M. Ethics of the attention economy: The problem of 
+
+social media addiction.  Business Ethics Quarterly  31 , 321 –359, 
+
+doi:10.1017/beq.2020.32 (2021). 
+
+33  Zerback, T., Töpfl, F. & Knöpfle, M. The disconcerting potential of online 
+
+disinformation: Persuasive effects of astroturfing comments and three strategies for 
+
+inoculation against them.  New Media & Society  23 , 1080 –1098, 
+
+doi:10.1177/1461444820908530 (2021). 
+
+34  Zerback, T. & Töpfl, F. Forged examples as disinformation: The biasing effects of 
+
+political astroturfing comments on public opinion perceptions and how to prevent 
+
+them.  Polit. Psychol.  43 , 399 –418, doi:10.1111/pops.12767 (2022). 
+
+35  Kuran, T. & Sunstein, C. R. Availability cascades and risk regulation.  Stanford Law 
+
+Rev.  51 , 683 –768, doi:10.2307/1229439 (1999). 
+
+36  Nadeau, R., Cloutier, E. & Guay, J. -H. New evidence about the existence of a 
+
+bandwagon effect in the opinion formation process.  International Political Science 
+
+Review  14 , 203 –213, doi:10.1177/019251219301400204 (1993). 
+
+37  Robertson, C. E., del Rosario, K. S. & Van Bavel, J. J. Inside the funhouse mirror 
+
+factory: How social media distorts perceptions of norms.  Current Opinion in 
+
+Psychology  60 , 101918, doi:10.1016/j.copsyc.2024.101918 (2024). CYBORG PROPAGANDA 5
+
+38  Galton, F. Vox Populi.  Nature  75 , 450 –451, doi:10.1038/075450a0 (1907). 
+
+39  Page, S. E.  The Difference 
+
+How the Power of Diversity Creates Better Groups, Firms, Schools, and Societies (New 
+
+Edition) . (Princeton University Press, 2007). 
+
+40  Roberts, M. E.  Censored: Distraction and diversion inside China's Great Firewall .
+
+(Princeton University Press, 2018). 
+
+41  King, G., Pan, J. & Roberts, M. E. How the Chinese government fabricates social 
+
+media posts for strategic distraction, not engaged argument.  American Political 
+
+Science Review  111 , 484 –501, doi:10.1017/S0003055417000144 (2017). 
+
+42  Ruck, D. J., Rice, N. M., Borycz, J. & Bentley, R. A. Internet Research Agency 
+
+Twitter activity predicted 2016 U.S. election polls.  First Monday  24 ,
+
+doi:10.5210/fm.v24i7.10107 (2019). 
+
+43  Linvill, D. L. & Warren, P. L. Troll factories: Manufacturing specialized 
+
+disinformation on Twitter.  Political Communication  37 , 447 –467, 
+
+doi:10.1080/10584609.2020.1718257 (2020). 
+
+44  Eady, G.  et al.  Exposure to the Russian Internet Research Agency foreign influence 
+
+campaign on Twitter in the 2016 US election and its relationship to attitudes and 
+
+voting behavior.  Nature Communications  14 , 62, doi:10.1038/s41467 -022 -35576 -9
+
+(2023). 
+
+45  Jamieson, K. H.  Cyberwar: How Russian hackers and trolls helped elect a president: 
+
+What we don't, can't, and do know . (Oxford University Press, 2020). 
+
+46  Köbis, N.  et al.  Delegation to artificial intelligence can increase dishonest behaviour. 
+
+Nature  646 , 126 –134, doi:10.1038/s41586 -025 -09505 -x (2025). CYBORG PROPAGANDA 6
+
+47  Swann, W. B., Gómez, Á., Seyle, D. C., Morales, J. F. & Huici, C. Identity fusion: 
+
+The interplay of personal and social identities in extreme group behavior.  J. Pers. Soc. 
+
+Psychol.  96 , 995 –1011, doi:10.1037/a0013668 (2009). 
+
+48  Gómez, A., Vázquez, A., Blanco, L. & Chinchilla, J. in  The Cambridge Handbook of 
+
+the Psychology of Violent Extremism  (eds M. Obaidi & J. R. Kunst) (Cambridge 
+
+University Press, 2025). 
+
+49  Glenn, C. L. Activism or “Slacktivism?”: Digital media and organizing for social 
+
+change.  Communication Teacher  29 , 81 –85, doi:10.1080/17404622.2014.1003310 
+
+(2015). 
+
+50  van der Linden, S. The nature of viral altruism and how to make it stick.  Nature 
+
+Human Behaviour  1, 0041, doi:10.1038/s41562 -016 -0041 (2017). 
+
+51  Sgueo, G. in  Technology, Innovation and Access to Justice  161 –179 (Edinburgh 
+
+University Press, 2020). 
+
+52  Köbis, N., Starke, C. & Rahwan, I. The promise and perils of using artificial 
+
+intelligence to fight corruption.  Nature Machine Intelligence  4, 418 –424, 
+
+doi:10.1038/s42256 -022 -00489 -1 (2022). 
+
+53  Zhu, L. & Lerman, K. Attention inequality in social media.  arXiv preprint 
+
+arXiv:1601.07200  (2016). 
+
+54  Brady, W. J., Wills, J. A., Jost, J. T., Tucker, J. A. & Van Bavel, J. J. Emotion shapes 
+
+the diffusion of moralized content in social networks.  Proc. Natl. Acad. Sci. Unit. 
+
+States. Am.  114 , 7313 –7318, doi:doi:10.1073/pnas.1618923114 (2017). 
+
+55  Bovens, M. & Wille, A.  Diploma democracy: The rise of political meritocracy .
+
+(Oxford University Press, 2017). CYBORG PROPAGANDA 7
+
+56  Karpowitz, C. F., Raphael, C. & Hammond, A. S. Deliberative democracy and 
+
+inequality: Two cheers for enclave deliberation among the disempowered.  Politics & 
+
+Society  37 , 576 –615, doi:10.1177/0032329209349226 (2009). 
+
+57  Young, L. E. The psychology of state repression: Fear and dissent decisions in 
+
+Zimbabwe.  American Political Science Review  113 , 140 –155, 
+
+doi:10.1017/S000305541800076X (2019). 
+
+58  Kalluri, P. Don’t ask if artificial intelligence is good or fair, ask how it shifts power. 
+
+Nature  583 , doi:10.1038/d41586 -020 -02003 -2 (2020). 
+
+59  Köbis, N. C., Starke, C. & Edward -Gill, J. The corruption risks of artificial 
+
+intelligence. (Transparency International, 2022). 
+
+60  O'Neill, O. Trust and accountability in a digital age.  Philosophy  95 , 3 –17, 
+
+doi:10.1017/S0031819119000457 (2020). 
+
+61  Centola, D.  How behavior spreads: The science of complex contagions . (Princeton 
+
+University Press, 2018). 
+
+62  von Mohr, M.  et al.  A leader I can(not) trust: understanding the path from epistemic 
+
+trust to political leader choices via dogmatism.  Politics and the Life Sciences  44 , 88 –
+
+107, doi:10.1017/pls.2024.11 (2025). 
+
+63  Wardle, C. & Derakhshan, H.  Information disorder: Toward an interdisciplinary 
+
+framework for research and policymaking . Vol. 27 (Council of Europe Strasbourg, 
+
+2017). 
+
+64  Zimmerman, F.  et al.  Attraction to politically extreme users on social media.  PNAS 
+
+Nexus 3, doi:10.1093/pnasnexus/pgae395 (2024). 
+
+65 Bail, C. A. et al.  Exposure to opposing views on social media can increase political 
+
+polarization.  Proc. Natl. Acad. Sci. Unit. States. Am.  115 , 9216 –9221, 
+
+doi:doi:10.1073/pnas.1804840115 (2018). CYBORG PROPAGANDA 8
+
+66  Ng, L. H. X., Robertson, D. C. & Carley, K. M. Cyborgs for strategic communication 
+
+on social media.  Big Data & Society  11 , 20539517241231275, 
+
+doi:10.1177/20539517241231275 (2024). 
+
+67  Kupferschmidt, K. Hidden industry ties pervade social media research.  Science  391 ,
+
+doi:10.1126/science.aef6708 (2026). 
+
+68  Kubin, E. & von Sikorski, C. The role of (social) media in political polarization: A 
+
+systematic review.  Annals of the International Communication Association  45 , 188 –
+
+206, doi:10.1080/23808985.2021.1976070 (2021). 
+
+69  Bem, D. J. in  Adv. Exp. Soc. Psychol.  Vol. 6 (ed Leonard Berkowitz) 1 –62 
+
+(Academic Press, 1972). 
+
+70  Fazio, R. H. Self -perception theory: A current perspective.  Social Influence , 129 –150 
+
+(2014). 
+
+71  Jakesch, M., Bhat, A., Buschek, D., Zalmanson, L. & Naaman, M. in  Proceedings of 
+
+the 2023 CHI Conference on Human Factors in Computing Systems  Article 111 
+
+(Association for Computing Machinery, Hamburg, Germany, 2023). 
+
+72  van Zomeren, M., Postmes, T. & Spears, R. Toward an integrative social identity 
+
+model of collective action: A quantitative research synthesis of three socio -
+
+psychological perspectives.  Psychol. Bull.  134 , 504 –535, doi:10.1037/0033 -
+
+2909.134.4.504 (2008). 
+
+73  Lewandowsky, S. & van der Linden, S. Countering misinformation and fake news 
+
+through inoculation and prebunking.  European Review of Social Psychology  32 , 348 –
+
+384, doi:10.1080/10463283.2021.1876983 (2021). 
+
+74  van der Linden, S. in  Adv. Exp. Soc. Psychol.  Vol. 69 (ed Bertram Gawronski) 1 –58 
+
+(Academic Press, 2024). CYBORG PROPAGANDA 9
+
+75  Traberg, C., Roozenbeek, J. & van der Linden, S. Psychological inoculation against 
+
+misinformation: Current evidence and future directions.  The ANNALS of the American 
+
+Academy of Political and Social Science  700 , 136 –151, 
+
+doi:10.1177/00027162221087936 (2022). 
+
+76  Boman, C. D. Protecting against disinformation: Using inoculation to cultivate 
+
+reactance towards astroturf attacks.  Journal of Public Relations Research  35 , 162 –
+
+181, doi:10.1080/1062726X.2023.2195184 (2023). 
+
+77  European Commission. (2024). 
+
+78  Cistulli, M. Generative AI meets Section 230: The future of liability and its 
+
+implications for startup innovation.  The University of Chicago Review  (2025). 
+
+79  Westwood, S. J. The potential existential threat of large language models to online 
+
+survey research.  Proc. Natl. Acad. Sci. Unit. States. Am.  122 , e2518075122, 
+
+doi:10.1073/pnas.2518075122 (2025). 
+
+80  Panizza, F., Kyrychenko, Y. & Roozenbeek, J. Survey -taking AI tools surpass human 
+
+abilities. Here’s what we can do about it.  Nature  650  (2026). 
+
+81  Wolters, P. & Zuiderveen Borgesius, F. The EU Digital Services Act: what does it 
+
+mean for online advertising and adtech?  International Journal of Law and Information 
+
+Technology  33 , doi:10.1093/ijlit/eaaf004 (2025).

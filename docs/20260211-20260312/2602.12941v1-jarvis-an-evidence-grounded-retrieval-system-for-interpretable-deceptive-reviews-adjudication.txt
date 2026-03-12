@@ -1,0 +1,199 @@
+Title: JARVIS: An Evidence-Grounded Retrieval System for Interpretable Deceptive Reviews Adjudication
+
+URL Source: https://arxiv.org/pdf/2602.12941v1
+
+Published Time: Mon, 16 Feb 2026 01:51:09 GMT
+
+Number of Pages: 5
+
+Markdown Content:
+# JARVIS: An Evidence-Grounded Retrieval System for Interpretable Deceptive Reviews Adjudication 
+
+## Nan Lu ∗
+
+Beijing Jiaotong University &JD.com Beijing, China 
+
+## Leyang Li ∗
+
+JD.com Beijing, China 
+
+## Yurong Hu 
+
+JD.com Beijing, China 
+
+## Rui Lin 
+
+JD.com Beijing, China 
+
+## Shaoyi Xu †
+
+Beijing Jiaotong University Beijing, China 
+
+## Abstract 
+
+Deceptive reviews, refer to fabricated feedback designed to artifi-cially manipulate the perceived quality of products. Within modern e-commerce ecosystems, these reviews remain a critical governance challenge. Despite advances in review-level and graph-based detec-tion methods, two pivotal limitations remain: inadequate general-ization and lack of interpretability. To address these challenges, we propose JARVIS , a framework providing Judgment via Augmented 
+
+Retrieval and e VI dence graph Structures. Starting from the review to be evaluated, it retrieves semantically similar evidence via hy-brid dense–sparse multimodal retrieval, expands relational signals through shared entities, and constructs a heterogeneous evidence graph. Large language model then performs evidence-grounded adjudication to produce interpretable risk assessments. Offline ex-periments demonstrate that JARVIS enhances performance on our constructed review dataset, achieving a precision increase from 0.953 to 0.988 and a recall boost from 0.830 to 0.901. In the produc-tion environment, our framework achieves a 27% increase in the recall volume and reduces manual inspection time by 75%. Further-more, the adoption rate of the model-generated analysis reaches 96.4%. 
+
+## Keywords 
+
+Fraud Detection, Multi-Modal Retrieval, Heterogeneous Graph, Large Language Model 
+
+## 1 Introduction 
+
+Online reviews play a significant role in shaping consumer purchas-ing decisions and influencing product reputation on e-commerce platforms[ 24 ]. To enhance the influence and reputation of their products, many merchants resort to manipulate online reviews[ 7 ,13 ]. Such manipulative practices create a lose-lose scenario: in the short term, users are deceived into purchasing sub-optimal products, leading to financial and emotional dissatisfaction. From a long-term perspective, deceptive reviews erodes the consumer trust, ultimately undermining the platform’s ecosystem and viability. Despite years of research dedicated to deceptive review detection, existing methods suffer from two major limitations (Section 2): they either lack generalization by focusing solely on individual review 
+
+> ∗Both authors contributed equally to this research.
+> †Corresponding author.
+
+features, or they fail to provide a clear reasoning chain for their decisions, necessitating heavy reliance on manual re-verification. To address these limitations, we propose a framework named 
+
+JARVIS , providing Judgment via Augmented Retrieval and e VI dence graph Structures. Our method addresses the issue of poor gener-alization by employing a hybrid multi-modal retrieval strategy to obtain reviews that are structurally or semantically similar to the target. Furthermore, by constructing a heterogeneous evidence subgraph, we provide the Large Language Model with the essen-tial contextual sources required for reasoning, thereby effectively resolving the lack of an interpretable evidence chain. The entire pipeline is training-free: it takes review images and text as input and outputs a definitive adjudication accompanied by a complete evidence chain. Both our offline and online experimental results demonstrate that our approach significantly outperforms the exist-ing baseline. Our contributions are summarized as follows: 
+
+• We systematically analyze and summarize existing review fraud detection methods, identifying two major critical limitations. Based on these insights, we propose a retrieval-driven and inter-pretable framework for review fraud detection. 
+
+• We propose a retrieval methodology that decomposes multi-modal reviews into dense and sparse representations, which are then organically integrated to perform hybrid retrieval. 
+
+• Our approach significantly outperforms the baseline in both offline benchmarks and online A/B tests, delivering tangible value to production environments. 
+
+## 2 Literature Review 
+
+Deceptive reviews Detecting. Existing research on deceptive review detection predominantly follows two paradigms: review-level analysis and graph-level modeling. Review-level methods focus on discriminating fraudulent content by integrating tex-tual styles, sentiment cues, and multi-modal information using both classical machine learning[ 1, 2, 9, 11 , 12 , 25 ] and deep neu-ral networks[ 5, 10 , 18 , 19 , 21 , 23 , 26 ]. While recent studies[ 6 , 17 ]have leveraged Large Language Models (LLMs) for their superior semantic reasoning, these efforts primarily target "AI-generated re-views," thus overlooking broader manipulative patterns and remain-ing inherently review-level. In contrast, graph-level approaches [8 , 14 , 20 , 22 , 28 , 31 ] treat the problem as a structural anomaly de-tection task, modeling the complex relational web among users, products, and timestamps to uncover large-scale collusive behav-iors. 
+
+> arXiv:2602.12941v1 [cs.IR] 13 Feb 2026 Trovato et al.
+
+Figure 1: The overall architecture of the proposed deceptive review detection framework. The process begins with Stage 1, encoding the target review via dual multi-modal encoders and a hybrid scoring engine for retrieval. In Stage 2, the retrieved Top-k reviews seed a heterogeneous graph expansion. Finally, Stage 3 feeds review content, relational entities, and behavioral paths into the LLM based reasoner for graph-grounded evidence chain generation and fraud classification. 
+
+Despite their respective strengths, both paradigms suffer from limitations in real-world deployment. Review-level models are eas-ily circumvented by sophisticated rewriting and lack the context to capture fraudulent signals beyond the review. Conversely, while graph-level models excel at detecting group anomalies, they often function as "black boxes", struggling to provide the fine-grained, interpretable evidence. These limitations highlight the need for a unified framework that can jointly support review-centric analy-sis, scalable evidence retrieval, and interpretable decision-making, which motivates our work. 
+
+Multi-Modal Embedding Retrieval has been successfully de-ployed across various domains, including search engines[ 16 ], rec-ommendation systems[ 27 ], and risk management[ 15 ]. In this work, we adopt a hybrid retrieval approach that combines dense and sparse representations allowing the framework to simultaneously address semantic paraphrasing and the presence of rare characters. 
+
+## 3 Method 
+
+We propose JARVIS, a retrieval-driven framework for interpretable deceptive review adjudication. The framework consists of three core components: (1) Hybrid Multi-Modal Embedding Retrieval, (2) Heterogeneous Evidence Graph Expansion, and (3) Retrieval-Augmented LLM Reasoning. In the following sections, we provide a detailed explanation of these three components. 
+
+## 3.1 Hybrid Multi-Modal Embedding Retrieval 
+
+This part serves as a critical prerequisite for constructing the hetero-geneous evidence graph. Our goal is to transcend purely physical associations such as user–user or user–review links by discovering semantically related evidence beyond explicit relational structures. However, this objective introduces several retrieval challenges. First, deceptive reviews often employ domain-specific promotional ter-minology that is poorly generalized by dense semantic encoders. In parallel, intentional lexical substitutions weaken sparse retrieval signals based on exact term matching. Second, visual content may contain reused templates or promotional patterns that are not fully reflected in textual parts of reviews. Therefore, we design a hybrid multi-modal embedding re-trieval module that integrates dense semantic similarity, sparse lexical matching, and multi-modal description augmentation to achieve high-recall and high-precision evidence discovery. Let 𝑟 0 denote the meta-review, consisting of textual content 𝑡 0
+
+and an associated image 𝑣 0. Given a review corpus R = {𝑟 𝑖 }, our goal is to retrieve a set of semantically and lexically related reviews 
+
+C( 𝑟 0) ⊂ R that can serve as candidate evidence for downstream analysis. To evaluate the similarity scores between pairs of reviews, we employ a hybrid retrieval approach that integrates both dense and sparse retrieval mechanisms: 
+
+𝑠 (𝑟 0, 𝑟 𝑖 ) = 𝜆 · cos (e0, e𝑖 ) + ( 1 − 𝜆 ) · 𝜙 lex ( ˜𝑡 0, ˜𝑡 𝑖 ), (1) where 𝑐𝑜𝑠 (.) denotes the cosine similarity between dense multi-modal embeddings, measuring high-level semantic relevance be-tween reviews, 𝜙 lex (.) represents the sparse lexical matching score computed over augmented textual representations, capturing ex-act term overlap and salient keyword matching, and 𝜆 is a hype-parameter controling the trade-off between dense and sparse sim-ilarity. 𝑒 𝑖 is obtained by feeding the textual content of a review and its associated images into a pre-trained multi-modal encoder, which projects these heterogeneous inputs into a unified embed-ding space. ˜𝑡 𝑖 denotes the augmented textual representation derived from ˜𝑡 𝑖 = 𝑡 𝑖 ∪𝑔 MLLM (𝑣 𝑖 ), where 𝑔 MLLM (.) generates a detailed textual description of the image. By selecting the top-k most similar reviews, we finally get the target set of candidates: 
+
+C( 𝑟 0) = Top-k 𝑟 𝑖 ∈ R (𝑠 (𝑟 0, 𝑟 𝑖 )) (2) 
+
+## 3.2 Heterogeneous Evidence Graph Expansion 
+
+Building upon the retrieved candidate reviews, we construct a het-erogeneous evidence subgraph to organize cross-node signals. We initialize the seed set as 𝑆 𝑟 = 𝑟 0 ∪ C( 𝑟 0) and similarities between JARVIS: An Evidence-Grounded Retrieval System for Interpretable Deceptive Reviews Adjudication 
+
+initial nodes as 𝐸 𝑟𝑟 . Starting from 𝑆 𝑟 , we expand to entity nodes (e.g., users, devices, IPs, items) through behavioral relations (e.g., users post the reviews), and collect additional reviews attached to these entities, while retaining review–review similarity links inherited from embedding retrieval. The expanded node set is defined as: 
+
+V𝑟 = S𝑟 ∪ N 𝐸 (S 𝑟 ) ∪ { 𝑟 ′ ∈ N 𝑅 (N 𝐸 (S 𝑟 )) : |𝑇 𝑟 − 𝑇 𝑠 | ≤ Δ𝑇 }, (3) where N𝐸 expands to entities and N𝑅 additionally retrieves other reviews associated with these entities. Notably, we impose a con-straint on the absolute time difference between reviews belonging to the same entity. This temporal filtering mechanism prevents the introduction of excessive noise from irrelevant reviews. The edge set within the subgraph is denoted by 𝐸 𝑟 , which char-acterizes the multi-relational dependencies between nodes. Specifi-cally, these edges are categorized into three types: (1) E𝑟𝑟 , repre-senting the similarities between review nodes; since the review nodes expanded via entities have not been previously compared, 
+
+E𝑟𝑟 must be updated using Equation 4. (2) E𝑟𝑒 , representing the associations between entities and review nodes, such as a review being affiliated with a specific product. (3) E𝑒𝑒 , representing the connections between entity nodes, such as a user logging into a particular device. 
+
+E𝑟𝑟 ← E 𝑟𝑟 ∪ (𝑟 𝑖 , 𝑟 𝑗 ) | 𝑟 𝑖 , 𝑟 𝑗 ∈ V 𝑟 , 𝑖 ≠ 𝑗 (4) The final evidence subgraph can be represented as: 
+
+G𝑟 = (V 𝑟 , E𝑟 ) (5) 
+
+## 3.3 Retrieval-Augmented LLM Reasoning 
+
+We adopt a graph-grounded retrieval strategy, allowing the LLM to query externalized knowledge from G𝑟 for reasoning. Given a query review 𝑟 0 the LLM retrieves relevant evidence paths from the graph: 
+
+K𝑟 = Retrieve (𝑟 0, G𝑟 ), (6) The detailed LLM configuration, retrieved evidence schema, and reasoning design are presented in Table 1. Specifically, the reasoning process mimics the cognitive workflow of a human auditor, moving from low-level data extraction (e.g., IP and device logs) to high-level pattern recognition (e.g., unnatural stylistic coordination among reviews). To this end, we have obtained an interpretable verdict and a comprehensive evidence chain for the target review generated by the LLM. This output can be utilized for both automated residual risk discovery and as an auxiliary tool for manual adjudication. 
+
+## 4 Experiments 4.1 Offline Evaluation 
+
+4.1.1 Datasets and Experiments Setup. We construct a dataset com-prising 300,000 reviews spanning 15 active product categories. We select open-source detection methods to be trained and evaluated on our dataset. For a fair comparison with supervised learning baselines, we split the dataset into training and testing subsets. It is worth noting that while our method directly operates on the testing set without any prior training, the supervised baselines[ 6, 8, 14 ] are trained on the training set to reach their optimal performance. We also compare our framework against the current production model, which is an ensemble system comprising a BERT-based supervised sub-model and a risk-feature-driven graph sub-model.                 
+
+> Component Description
+> Role Definition The LLM is assigned as a senior e-commerce risk control expert and anti-fraud auditor, responsi-ble for analyzing suspicious reviews based on retrieved knowledge graph evidence. Task Objective Given the meta-review and its associated knowl-edge graph evidence, the model determines whether the review is deceptive. Graph-Retrieved Evidence Evidence is retrieved from the heterogeneous subgraph G𝑟
+> •Meta-review content (text, image descrip-tion)
+> •Retrieved reviews and acquisition paths
+> •Similarities between reviews
+> •Entities (user/device/IP/item)
+> •Entity-sharing interaction records Reasoning (1) Entity Consistency Audit:
+> Assess whether shared entity activities exhibit abnormal collusion patterns. (2) Semantic Style Alignment:
+> Examine whether retrieved reviews show unnat-ural stylistic coordination. Output Format •Evidence chains
+> •Risk level
+> •Final fraud judgment
+
+Table 1: Graph-grounded retrieval and reasoning schema for LLM-based review risk assessment. This schema illustrates how JARVIS integrates heterogeneous evidence into a unified LLM reasoning process. By simulating a senior anti-fraud expert, the model transforms raw graph-retrieved data into structured deception judgments and explainable evidence paths. 
+
+We employ CN-CLIP ViT-B/16 [ 30 ] to generate dense embeddings, Qwen3-VL-30B-A3B-Instruct[ 3 ] to describe the review images, and BGE-M3[ 4] for sparse vector representations. The hybrid hyperpa-rameter 𝜆 is set to 0.5 and top-25 most similar reviews are retrieved. For computational efficiency and temporal relevance, the embed-ding database only maintains reviews within a sliding 30-day time window. In the LLM reasoning phase, we use Qwen3-30B-A3B[ 29 ]for reasoning and risk adjudication. 
+
+4.1.2 Results. Table 2 presents the experimental results. The re-sults indicate that our method substantially outperforms state-of-the-art research in deceptive review detection. Also, our approach consistently surpasses the production baseline in both precision and recall. 
+
+## 4.2 Ablation Study 
+
+In this section, we conduct ablation studies based on our offline evaluation setup to verify the necessity of each individual module within our proposed framework. Figure 2 illustrates the results. 
+
+4.2.1 Retrieval Strategy. We evaluate the performance by consider-ing scenes that exclude dense embeddings, sparse embeddings, and review images, as well as scenarios involving alternative 𝜆 values. From the results in Figure 2a, we can conclude that the absence of dense embeddings leads to a significant decline in both precision Trovato et al. 
+
+Table 2: Performance Comparison between Different Meth-ods and Our Proposed Framework. P-baseline is denoted as the current production-deployed system. We standard-ize the backbone models across all evaluated methods: CN-CLIP ViT-B/16 [ 30 ] is employed for all tasks requiring dense embeddings, and Qwen3-30B-A3B[ 29 ] is utilized as the uni-fied LLM. Method Precision Recall F1-score 
+
+Detect[8] 0.803 0.815 0.809 Gas[14] 0.917 0.692 0.743 Combat[6] 0.916 0.648 0.759 FraudSquad[17] 0.686 0.601 0.641 P-baseline 0.953 0.830 0.887 
+
+JARVIS 0.988 0.901 0.942 Precision Recall F1-score 
+
+> 0.75
+> 0.80
+> 0.85
+> 0.90
+> 0.95
+> 1.00
+> Score
+> JARVIS
+> w/o dense
+> w/o sparse
+> w/o image
+> =0.75
+> =0.25
+
+(a) Retrieval Strategy. Precision Recall F1-score  
+
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> 1.0
+> Score
+> JARVIS
+> w/o enity
+> w/o review
+
+(b) Graph Node Types. 
+
+Figure 2: Ablation Study on JARVIS components. "Dense" and "Sparse" denote Dense Embedding and Sparse Embedding 
+
+relatively. "Review" and "Entity" denote Review Node and 
+
+Entity Node in the evidence subgraph, respectively. 
+
+and recall. In contrast, the removal of image modalities and sparse embeddings primarily results in a notable loss in recall. It is reason-able to hypothesize that reviews with dense semantic similarities play a pivotal role in identifying fraudulent patterns, whereas visual evidence and sparse lexical signals function more as auxiliary cues to expand the coverage of suspicious candidates. Meanwhile, the results also validate that 𝜆 = 0.5 is an optimal setting. 
+
+4.2.2 Graph Node Types. We evaluated the model by individually removing review and entity nodes from the evidence subgraph (along with their corresponding edges). The results, as illustrated in Figure 2b, demonstrate that both node types and their associated relations are crucial for the reasoning process. Notably, the removal of entity nodes exerts a more substantial impact on evaluation metrics. 
+
+## 4.3 Online Deployment 
+
+We deploy JARVIS to a production environment covering the entire JD.com platform where more than 1.5 million newly added reviews are processed into embeddings and integrated into the database everyday. To optimize resource utilization, we introduce an inspec-tion mechanism that triggers the pipeline only when anomalies are detected in review-related metrics or when manual verification is requested. To provide a more comprehensive evaluation, we conduct an A/B test. The results demonstrate that JARVIS outperforms the existing baseline by 2.2% in manual verification precision and achieves a 27% increase in recall volume. Furthermore, the average time required for manual verification is reduced by 75% . Additionally, we evaluate the adoption rate of the LLM-generated reasoning. An analysis is deemed "adopted" if the verdict on the target review is accurate and the evidence chain derived from the heterogeneous subgraph provides a comprehensive and persuasive justification of the fraudulent behavior. Our evaluation reveals an exceptionally high adoption rate of 96.4% . All performance improvements are statistically significant with 𝑝 -value < 0.05 .
+
+## 5 Conclusion 
+
+In this work, we presented JARVIS, an evidence-grounded adjudi-cation system that integrates multimodal retrieval, heterogeneous evidence graph expansion, and LLM-based reasoning for decep-tive review detection. By grounding risk judgments in retrieved semantic and relational evidence, JARVIS enables interpretable ad-judication beyond traditional review-level or graph-level detection approaches. Offline experiments and real-world deployment demon-strate its effectiveness in uncovering residual risks and improving governance efficiency. We hope our methodology can serve as a robust blueprint for future research in constructing efficient and comprehensive fraud detection frameworks. Ultimately, we envi-sion this work contributing to the cultivation of a more trustworthy and sustainable ecosystem for e-commerce platforms. 
+
+## References                              
+
+> [1] Mujahed Abdulqader, Abdallah Namoun, and Yazed Alsaawy. 2022. Fake online reviews: A unified detection model using deception theories. IEEE Access 10 (2022), 128622–128655. [2] S Nagi Alsubari, Sachin N Deshmukh, A Abdullah Alqarni, Nizar Alsharif, TH Aldhyani, F Waselallah Alsaade, and Osamah I Khalaf. 2022. Data analytics for the identification of fake reviews using supervised learning. Computers, Materials & Continua 70, 2 (2022), 3189–3204. [3] Shuai Bai, Yuxuan Cai, Ruizhe Chen, Keqin Chen, Xionghui Chen, et al .2025. Qwen3-VL Technical Report. arXiv preprint arXiv:2511.21631 (2025). [4] Jianlv Chen, Shitao Xiao, Peitian Zhang, Kun Luo, Defu Lian, and Zheng Liu. 2024. Bge m3-embedding: Multi-lingual, multi-functionality, multi-granularity text embeddings through self-knowledge distillation. arXiv preprint arXiv:2402.03216
+> 4, 5 (2024). [5] Michael Crawford and Taghi M Khoshgoftaar. 2021. Using inductive transfer learning to improve hotel review spam detection. In 2021 IEEE 22nd international conference on information reuse and integration for data science (IRI) . IEEE, 248– 254. [6] Alessandro Gambetti and Qiwei Han. 2023. Combat ai with ai: Counteract machine-generated fake restaurant reviews on social media. arXiv preprint arXiv:2302.07731 (2023). [7] Stefan Gössling, C Michael Hall, and Ann-Christin Andersson. 2018. The man-ager’s dilemma: a conceptualization of online review manipulation strategies.
+> Current issues in Tourism 21, 5 (2018), 484–503. [8] Sherry He, Brett Hollenbeck, Gijs Overgoor, Davide Proserpio, and Ali Tosyali. 2022. Detecting fake-review buyers using network structure: Direct evidence from Amazon. Proceedings of the National Academy of Sciences 119, 47 (2022), e2211932119. [9] Divyanshu Jalther and G Priya. 2019. Reputation reporting system using text based classification. International Journal of Innovative Technology and Exploring Engineering 8, 8 (2019), 1555–1558. [10] Chen Jing-Yu and Wang Ya-Jun. 2022. Semi-supervised fake reviews detection based on AspamGAN. Journal of Artificial Intelligence and Capsule Networks 4, 1
+
+JARVIS: An Evidence-Grounded Retrieval System for Interpretable Deceptive Reviews Adjudication 
+
+(2022), 17–36. [11] Mst Eshita Khatun, Halima Akter, Tasnimul Rehan, and Toufiq Ahmed. 2025. Leveraging Big Data Frameworks for Spam Detection in Amazon Reviews. arXiv preprint arXiv:2509.21579 (2025). [12] Faisal Khurshid, Yan Zhu, Zhuang Xu, Mushtaq Ahmad, and Muqeet Ahmad. 2018. Enactment of ensemble learning for review spam detection on selected features. International Journal of Computational Intelligence Systems 12, 1 (2018), 387–394. [13] Shun-Yang Lee, Liangfei Qiu, and Andrew Whinston. 2018. Sentiment manipula-tion in online platforms: An analysis of movie tweets. Production and Operations Management 27, 3 (2018), 393–416. [14] Ao Li, Zhou Qin, Runshi Liu, Yiqun Yang, and Dong Li. 2019. Spam review detection with graph convolutional networks. In Proceedings of the 28th ACM international conference on information and knowledge management . 2703–2711. [15] Hanzhong Liang, Jinghao Shi, Xiang Shen, Zixuan Wang, Vera Wen, Ardalan Mehrani, Zhiqian Chen, Yifan Wu, and Zhixin Zhang. 2025. Embedding-based Retrieval in Multi-Modal Content Moderation. In Proceedings of the 48th Inter-national ACM SIGIR Conference on Research and Development in Information Retrieval . 4264–4268. [16] Dong Liu and Esther Lopez Ramos. 2025. Multimodal semantic retrieval for product search. In Companion Proceedings of the ACM on Web Conference 2025 .2170–2175. [17] Xin Liu, Rongwu Xu, Xinyi Jia, Jason Liao, Jiao Sun, Ling Huang, and Wei Xu. 2025. Detecting LLM-Generated Spam Reviews by Integrating Language Model Embeddings and Graph Neural Network. arXiv preprint arXiv:2510.01801 (2025). [18] Yuanchao Liu, Bo Pang, and Xiaolong Wang. 2019. Opinion spam detection by incorporating multimodal embedded representation into a probabilistic review graph. Neurocomputing 366 (2019), 276–283. [19] Yuxin Liu, Li Wang, Tengfei Shi, and Jinyan Li. 2022. Detection of spam reviews through a hierarchical attention architecture with N-gram CNN and Bi-LSTM. 
+
+Information Systems 103 (2022), 101865. [20] Bundit Manaskasemsak, Jirateep Tantisuwankul, and Arnon Rungsawang. 2023. Fake review and reviewer detection through behavioral graph partitioning inte-grating deep neural network. Neural Computing and Applications 35, 2 (2023), 1169–1182. [21] Rami Mohawesh, Haythem Bany Salameh, Yaser Jararweh, Mohannad Alkha-laileh, and Sumbal Maqsood. 2024. Fake review detection using transformer-based enhanced LSTM and RoBERTa. International Journal of Cognitive Comput-ing in Engineering 5 (2024), 250–258. [22] Xunyi Ren, Ziyan Yuan, and Jiaming Huang. 2022. Research on fake reviews detection based on graph neural network. In International symposium on computer applications and information systems (ISCAIS 2022) , Vol. 12250. SPIE, 290–297. [23] Ali Şenol, Garima Agrawal, and Huan Liu. 2025. Domain Knowledge-Enhanced LLMs for Fraud and Concept Drift Detection. arXiv preprint arXiv:2506.21443 
+
+(2025). [24] Steven Tadelis. 2016. Reputation and feedback systems in online platform mar-kets. Annual review of economics 8, 1 (2016), 321–340. [25] Hina Tufail, M Usman Ashraf, Khalid Alsubhi, and Hani Moaiteq Aljahdali. 2022. The effect of fake reviews on e-commerce during and after Covid-19 pandemic: SKL-based fake reviews detection. Ieee Access 10 (2022), 25555–25564. [26] Suhasnadh Reddy Veluru, Sai Teja Erukude, and Viswa Chaitanya Marella. 2025. Multimodal Detection of Fake Reviews using BERT and ResNet-50. In 2025 4th International Conference on Innovative Mechanisms for Industry Applications (ICIMIA) . IEEE, 877–882. [27] Haoyu Wang, Yitong Wang, and Jining Wang. 2025. MMSRARec: Summarization and Retrieval Augumented Sequential Recommendation Based on Multimodal Large Language Model. arXiv preprint arXiv:2512.20916 (2025). [28] Hongtao Wang, Renchi Yang, Hewen Wang, Haoran Zheng, and Jianliang Xu. 2025. SAFT: Structure-aware Transformers for Textual Interaction Classification. In Proceedings of the 48th International ACM SIGIR Conference on Research and Development in Information Retrieval . 771–781. [29] An Yang, Anfeng Li, Baosong Yang, Beichen Zhang, Binyuan Hui, Bo Zheng, Bowen Yu, Chang Gao, Chengen Huang, Chenxu Lv, et al . 2025. Qwen3 technical report. arXiv preprint arXiv:2505.09388 (2025). [30] An Yang, Junshu Pan, Junyang Lin, Rui Men, Yichang Zhang, Jingren Zhou, and Chang Zhou. 2022. Chinese clip: Contrastive vision-language pretraining in chinese. arXiv preprint arXiv:2211.01335 (2022). [31] Wenxin Zhang, Jingxing Zhong, Guangzhen Yao, Renda Han, Xiaojian Lin, Lei Jiang, Zeyu Zhang, and Cuicui Luo. 2025. Dual-channel heterophilic message passing for graph fraud detection. In 2025 International Joint Conference on Neural Networks (IJCNN) . IEEE, 1–8.

@@ -1,0 +1,1693 @@
+Title: Process Over Outcome: Cultivating Forensic Reasoning for Generalizable Multimodal Manipulation Detection
+
+URL Source: https://arxiv.org/pdf/2603.01993v1
+
+Published Time: Tue, 03 Mar 2026 03:50:11 GMT
+
+Number of Pages: 30
+
+Markdown Content:
+Process Over Outcome: Cultivating Forensic Reasoning for Generalizable Multimodal Manipulation Detection 
+
+Yuchen Zhang 1 Yaxiong Wang 2* Kecheng Han 1 Yujiao Wu 3
+
+Lianwei Wu 4 Li Zhu 1 Zhedong Zheng 5
+
+> 1
+
+School of Software Engineering, Xi’an Jiaotong University 
+
+> 2
+
+School of Computer Science and Information Engineering, Hefei University of Technology 
+
+> 3
+
+CSIRO 4Northwestern Polytechnical University 5University of Macau  
+
+> yczhang@stu.xjtu.edu.cn wangyx@hfut.edu.cn
+
+Abstract 
+
+Recent advances in generative AI have signifi-cantly enhanced the realism of multimodal me-dia manipulation, thereby posing substantial challenges to manipulation detection. Exist-ing manipulation detection and grounding ap-proaches predominantly focus on manipulation type classification under result-oriented super-vision, which not only lacks interpretability but also tends to overfit superficial artifacts. In this paper, we argue that generalizable detection requires incorporating explicit forensic reason-ing, rather than merely classifying a limited set of manipulation types, which fails to gen-eralize to unseen manipulation patterns. To this end, we propose REFORM , a reasoning-driven framework that shifts learning from out-come fitting to process modeling. REFORM adopts a three-stage curriculum that first in-duces forensic rationales, then aligns reasoning with final judgments, and finally refines logical consistency via reinforcement learning. To sup-port this paradigm, we introduce ROM , a large-scale dataset with rich reasoning annotations. Extensive experiments show that REFORM establishes new state-of-the-art performance with superior generalization, achieving 81.52% ACC on ROM, 76.65% ACC on DGM4, and 74.9 F1 on MMFakeBench. The code is avail-able at https://github.com/YcZhangSing/ REFORM .
+
+1 Introduction 
+
+The democratization of Generative AI (StabilityAI, 2023; Bai et al., 2023; Liu et al., 2023), has precip-itated a paradigm shift in digital content creation. While this technological renaissance empowers cre-ativity, it simultaneously lowers the barrier for fab-ricating hyper-realistic misinformation. The prolif-eration of sophisticated multimodal manipulations, ranging from subtle face swaps to fully synthesized news events, poses severe threats to information 
+
+> *Corresponding author.
+
+Figure 1: Comparison between learning paradigms. (a) The prevailing Result-Oriented Supervision usually suf-fers from poor generalization by merely fitting statistical artifacts of training data. (b) Our Reasoning-Driven Op-timization facilitates robust generalization by explicitly optimizing the forensic reasoning chain, enabling the model to uncover intrinsic inconsistencies effectively across unseen domains. 
+
+integrity and public trust (Pan et al., 2023; Park et al., 2022; Olan et al., 2024). Consequently, de-tecting and grounding multimodal media manipula-tion (DGM4) has attracted wide attention and seen notable progress these years (Shao et al., 2024a; Zhang et al., 2025d; Liu et al., 2024). Despite the progress made on the DGM4 prob-lem, a pivotal challenge still remains: generaliza-tion . In practical scenarios, detectors must operate on diverse news domains and unseen manipula-tion patterns. Prior research has largely focused on invariant feature learning and knowledge aug-mentation (Liu et al., 2024; Zhang et al., 2025c). For example, FKA-Owl (Liu et al., 2024) aug-ments Large Vision-Language Models with seman-tic correlations of forgery knowledge and visual artifacts for generalization enhancement. Concur-rently, AMD (Zhang et al., 2025c) explicitly aligns visual artifacts with textual inconsistencies in a shared latent space to learn invariant forensic rep-1
+
+> arXiv:2603.01993v1 [cs.CV] 2 Mar 2026
+
+resentations robust to semantic contexts. While effective, these methods generally optimize models to map multimodal news directly to label annota-tions. This paradigm, which is heavily reliant on 
+
+result-oriented supervision , tends to encourage models to fit specific statistical artifacts rather than cultivating a deep, transferable understanding of the underlying forensic logic. As illustrated in Fig. 1 (a), relying solely on out-come supervision struggles to equip models with the intrinsic logic required for robust generaliza-tion. The essential reason is that optimizing exclu-sively for the final prediction (i.e., "Is this fake?") does not guarantee that the model implicitly learns the underlying forensic rationale, often leading to performance degradation when facing novel forg-eries (Chu et al., 2025; Zhang et al., 2025a). To address this, we argue that the core of generalizable detection lies in explicitly cultivating forensic rea-soning capabilities, as depicted in Fig.1 (b). Akin to a human forensic analyst, a model should not merely memorize the appearance of a forgery but rather deduce why an image-text pair is inconsis-tent through a logical chain of evidence. However, simply supervising this reasoning process is insuf-ficient. While Supervised Fine-Tuning establishes a basic alignment, it remains constrained by the passive imitation of static annotations (Chu et al., 2025; Ma et al., 2025). Motivated by this insight, we propose anew framework that shifts the learning ob-jective from outcome fitting to Reasoning-Driven Optimization . To this end, we pro-pose Reasoning-Enhanced Forensic Optimization via Reinforcement Modeling (REFORM ), areasoning-endowed architecture designed to de-tect, ground, and explain multimodal manipula-tions. To effectively cultivate this capability, we implement a progressive three-stage learning cur-riculum. First, we perform Cognitive Reasoning Warm-up , teaching the model to articulate forensic rationales via data distillation. Second, we execute 
+
+Reasoning-Endowed Joint Fine-Tuning , where the model learns to align its final judgment with its reasoning chain. Finally, recognizing that super-vised learning suffers from exposure bias and lacks the ability to self-correct, we introduce Constraint-Aware Policy Refinement . Leveraging Reinforce-ment Learning with Group Relative Policy Opti-mization (Shao et al., 2024b), we incentivize the model to explore optimal reasoning paths that are logically consistent with the final verdict. This opti-mization strictly constrains the generation process with forensic accuracy, enabling REFORM to in-ternalize robust judgment logic rather than fitting domain-specific patterns. To rigorously benchmark this new paradigm, we construct Reasoning-enhanced analysis for 
+
+Omnibus Manipulation ( ROM ) dataset. Beyond the face-centric scope of previous benchmarks (Zhang et al., 2025c; Shao et al., 2023), ROM in-troduces scene-level synthesis and, crucially, pro-vides detailed reasoning annotations for over 704k 
+
+samples to support process-oriented learning. In summary, our contributions are threefold: • We identify the limitations of result-oriented ma-nipulation detection and propose a paradigm shift towards reasoning-driven analysis, implementing REFORM, a new framework for robust multi-modal manipulation detection, grounding, and forensic explanation. • We introduce a progressive three-stage training framework culminating in a GRPO-based RL phase. This approach realizes Reasoning-Driven Optimization, effectively aligning the model’s cognitive process with forensic logic to distin-guish intrinsic anomalies from statistical biases. • We curate ROM, a large-scale, comprehensive benchmark that includes omnibus manipulation beyond face-related manipulations and provides high-quality reasoning supervision, setting a new standard for interpretable multimodal forensics. 
+
+2 Related Work 
+
+Multimodal Misinformation Detection. Given challenging aligned forgeries (Shao et al., 2024a), recent approaches typically leverage external knowledge or refine internal features. For in-stance, FKA-Owl (Liu et al., 2024) utilizes LVLMs for factual verification, while RamDG (Shen et al., 2025) cross-references news with attribute databases. Conversely, feature-centric methods, 
+
+e.g. , AMD (Zhang et al., 2025c), encode artifact tokens alongside semantic content. However, these methods predominantly rely on result-oriented su-pervision . This paradigm usually encourages short-cut learning (Zhang et al., 2025a), causing models to overfit statistical artifacts rather than logical ev-idence, which degrades generalization on unseen domains (Chu et al., 2025). 
+
+Vision Language Models and Reasoning Opti-mization. Large Vision Language Models, such as 2Orig: The image shows a woman posing on what is clearly a formal red carpet setup, with visible Billboard Music Awards signage and other event-speci fi c branding in the background. Her styling, attire, and 
+
+posture are consistent with how guests typically present themselves at high-pro fi le award ceremonies. The lighting, camera angle, and overall production quality also match the standards of professional event 
+
+photography rather than staged or low-quality fabricated material. The text describes a surprise appearance at the Billboard Music Awards, and nothing in the image contradicts that scenario; the visual 
+
+elements align naturally with such an event. There are no signs of digital alteration, mismatched elements, or contextual inconsistencies between the image and the accompanying text. Together, the congruent 
+
+setting, event-speci fi c background, and professional presentation support the conclusion that this image-text news item is real. TF: The image visually depicts German Chancellor Angela Merkel 
+
+standing and gesturing with open arms towards US President Barack Obama, who is seated on a bench, in a relaxed, outdoor setting at the G7 summit. Her expression appears animated or emphatic, while his 
+
+posture is calm and attentive, with his arms resting on the back of the bench. The accompanying text claims Merkel "forcefully pushes Obama to accept her proposal." This interpretation relies heavily on 
+
+misconstruing Merkel's open-hand gesture as a physically aggressive or overpowering 'push', which is not supported by the visual evidence of a relaxed, seated conversation in a scenic area. The text employs 
+
+an exaggerated, aggressive verb ("forcefully pushes") and sensationalized language ("to accept her proposal") to create a false narrative of con fl ict and dominance from a moment that visually suggests a 
+
+dynamic, but standard, diplomatic discussion between two leaders. This mismatch between the high-con fl ict text and the non-confrontational visual evidence justi fi es concluding that the text was maliciously 
+
+generated by an AI language model to sensationalize a neutral photograph. FA: The news text is a standard, factual announcement about the  fi lm Love  & Mercy , starring Paul Dano as Brian Wilson, 
+
+and its screening date and location. The text mentions Paul  Dano portraying Brian  Wilson . The image depicts a musician playing a bass guitar and singing on stage, resembling a performance scene, likely from 
+
+the  fi lm or a related event. However, upon visual inspection, the facial features of the central musician, while perhaps bearing a resemblance to the Brian  Wilson character or a generic depiction of an older 
+
+musician, do not convincingly match the known appearance of the actor named in the text, Paul  Dano , who is signi fi cantly younger than the person depicted. Furthermore, the central musician's face appears 
+
+somewhat unnatural or "o ff ," characterized by an unusually smoothed texture, perhaps slightly distorted proportions, or an odd  fi t with the neck and body. This subtle but noticeable discrepancy in the central 
+
+face's quality and its lack of  fi delity to the named actor, Paul  Dano , while representing the character Brian  Wilson , suggests that the facial attributes of the original subject have been digitally altered or edited to 
+
+represent a di ff erent age or person for the news item. FA&TF: The image shows Presidents Obama and Karzai seated opposite each other during a meeting at the NATO Chicago Summit. Obama is 
+
+leaning slightly forward, gesturing emphatically while speaking. Karzai is seated, listening intently. The surrounding environment, including  fl ags and the summit banner, appears consistent with a high-level 
+
+diplomatic event. The text sensationalizes the scene with the claim "Obama Displays Rare Anger in Stern Warning to Karzai" and "Tensions Flare." Visually, Obama's expression is serious and  fi rm, but not clearly 
+
+one of "rare anger." However, a closer look at his face reveals characteristics of a face  attribute  edit . The skin appears overly smooth, and the creases around his eyes and mouth seem slightly exaggerated to 
+
+intensify the perceived emotion, pushing a serious demeanor towards an aggressive one. This arti fi cial ampli fi cation suggests the image was manipulated to align with a narrative of con fl ict. The text is an AI-
+
+generated  malicious  caption because it uses hyperbolic language ("Rare Anger," "Tensions Flare") to drastically overstate the visual evidence. Even accounting for the subtle facial edit, the overall composure 
+
+of the scene contradicts the extreme con fl ict described in the caption. The text sensationalizes a serious discussion into a dramatic confrontation, con fi rming its malicious generation. FS:  The news item 
+
+combines a photo of a man and a woman with a caption naming "Dominique Bentzen" and "Miriam Oremans of The Foxton Trust," referencing a speci fi c charitable donation event. The text is authentic, detailing 
+
+a genuine real-world activity, which lends a sense of credibility to the news. However, visual analysis con fi rms the image is manipulated. Speci fi cally, the face of the man seated on the right, presumably 
+
+Dominique Bentzen, shows characteristic artifacts of a face replacement. The skin tone and texture appear unnaturally smooth and detached from the body, and the blending around the hairline and jawline is 
+
+suspicious. This manipulation indicates that a di ff erent face was swapped onto the original subject's body. The purpose of this face swap is to falsely attribute a real event to a di ff erent set of individuals or to 
+
+misrepresent one of the key  fi gures. Thus, the overall news item is classi fi ed as false due to the maliciously altered image being paired with the genuine text.  FS&TF:  The image displays a man standing 
+
+in front of a screen displaying the "facebook" logo. He is wearing a plain t-shirt and has an intent, serious expression. The caption identi fi es this person as "Milo Đukanovi ć" speaking at a Facebook event. Based 
+
+on visual evidence, the man in the image bears a strong resemblance to the co-founder of Facebook, Mark Zuckerberg, rather than the former President of Montenegro, Milo Đukanovi ć. This discrepancy in 
+
+identity strongly suggests a face  replacement manipulation. The skin texture, especially on the face and neck, appears slightly mismatched in color and detail compared to the body, a common artifact of a face 
+
+swap where a foreign face is pasted onto a di ff erent head. Furthermore, the caption itself is false and likely AI-generated because it misidenti fi es the prominent  fi gure in the image. Although the setting is 
+
+consistent with a Facebook event, the claim that Milo Đukanovi ć, a non-Facebook executive, is addressing the nation at a Facebook event, particularly when the face appears to be Zuckerberg's, introduces 
+
+con fl icting and highly improbable information. This gross misidenti fi cation and the visible facial artifacts together con fi rm that both the image and the text are maliciously fabricated. BR:  The caption 
+
+"The island of Francisqui is known for its calm lagoons" is a factual, descriptive statement about a geographical location. This text is easily veri fi able as a neutral fact and, consistent with the provided 
+
+information, is regarded as authentic real news without manipulation. However, the image, which depicts a man and a woman standing in the ocean against a dramatic sunset, shows clear visual discrepancies 
+
+that con fi rm it has been altered via background  replacement . The light falling on the two individuals in the foreground appears relatively bright and di ff use, which is inconsistent with the intense, low-angle light 
+
+and saturated colors of the striking sunset background. This poor lighting match, along with potential blending artifacts around the subjects and the horizon, indicates that the original background was digitally 
+
+swapped for the current, highly-saturated sunset scene. Therefore, the overall news item is false because an authentic piece of text has been maliciously paired with a manipulated image to create a 
+
+sensationalized or misleading visual context. BR&TF: The image shows three individuals—two men and one woman—seated around a shiny metal table, eating outdoors next to a small stream, 
+
+waterfall, and lush garden area. The text identi fi es them as "Ben Jeavons, Lisa Rex, and Ezra Gildesgame" and claims they are enjoying a meal at "ME, Gran Eléctrica's outdoor dining area." Visually, the scene 
+
+exhibits inconsistencies suggesting a background  replacement . The light on the foreground subjects appears harsh and direct, contrasting with the heavily shaded, verdant background, which features a 
+
+waterfall with highly saturated greens and blues. The man on the left has an unnaturally sharp outline, and the areas where the subjects meet the background, such as around the man on the right's shirt, show 
+
+subtle haloing or poor blending, indicating the background was digitally inserted. The text, meanwhile, is likely AI-generated due to its overly speci fi c and promotional tone. Naming three random individuals and 
+
+a speci fi c, perhaps  fi ctitious, restaurant (ME, Gran Eléctrica's outdoor dining area) in a single sentence is a common pattern in machine-generated captions designed to provide a high level of detail, often using 
+
+obscure or fabricated proper nouns to sound authentic. The combination of the visible background manipulation and the highly speci fi c, promotional caption suggests both components were maliciously 
+
+fabricated. FG:  The news item is a fabrication because it pairs a true but entirely irrelevant piece of text with a visually inconsistent image. The caption, "The Rangers last won a playo ff  game in 1997, 
+
+when Russ Courtnall and Mike Eastwood were on the team," provides a speci fi c, veri fi able fact about ice hockey history and is considered authentic. However, the image, which depicts two political  fi gures, 
+
+former Chancellor Angela Merkel and former President Barack Obama, in a scenic outdoor setting, has no contextual relation to the sports fact in the caption. Moreover, the image itself exhibits strong evidence 
+
+of being entirely AI-generated . The standing  fi gure's hands appear slightly distorted, and the lighting and textures across the grass, foliage, and mountains possess a hyper-real or overly smooth, painting-like 
+
+quality, which lacks the characteristic detail of genuine photography. The combination of a factually true but deliberately mismatched caption and a synthetic, fabricated image renders the entire news item false 
+
+and designed to mislead. FG&TF:  The news item is entirely false, as both the image and the text show strong evidence of being fabricated. The image, depicting a meeting between two men in a lavish 
+
+setting, exhibits visual artifacts consistent with being completely  AI-generated . The photo is characterized by extreme color saturation, particularly the intense gold hues, and dramatic, unrealistic lighting that 
+
+over-highlights elements like the ornate chairs. The textures on the subjects' clothing and the environment lack the  fi ne detail and natural variation expected in a genuine photograph, appearing instead hyper-
+
+stylized and synthesized. The accompanying caption, "Egypt's President Morsi Meets with Military Chief Sisi in Palace, Discussing National Security and Stability," is also AI-generated . It is constructed with 
+
+highly speci fi c, politically charged names and a formal context to lend false authority to the synthetic visual. The combination of a visually fake image and a sensationalized, factually unsupported caption 
+
+con fi rms that the entire news item was maliciously created to spread disinformation. 
+
+Taylor Swift Makes a 
+
+Surprise Appearance on 
+
+the Billboard Music 
+
+Awards Red Carpet 
+
+Reason ： The image shows a woman posing 
+
+on what is clearly a formal red carpet setup, 
+
+with visible Billboard Music Awards signage and 
+
+other event-speci fi c branding in the background 
+
+…. Together, the congruent setting, event-
+
+speci fi c background, and professional 
+
+presentation support the conclusion that this 
+
+image-text news item is real. 
+
+Answer ：Real 
+
+Answer ：TF 
+
+Answer ：FA. Fake Face 
+
+(133,28,164,66) 
+
+Answer ：FA&TF. Fake Face 
+
+(431,255,464,302) 
+
+Answer ：FS. Fake Face 
+
+(424,44,526,185) 
+
+Answer ：FS&TF. Fake Face 
+
+(243,28,310,117) 
+
+Answer ：BR. 
+
+Answer ：BR&TF. 
+
+Answer ：FG. 
+
+Answer ：FG&TF. 
+
+The film Love & Mercy ,
+
+starring Paul Dano as 
+
+Brian Wilson, will be 
+
+shown from July 31 at the 
+
+Rosendale Theater 
+
+Merkel forcefully pushes 
+
+obama to accept her 
+
+proposal at G7 summit. 
+
+Milo Đukanovi ć speaks 
+
+at a Facebook event, 
+
+addressing the nation on 
+
+the latest developments. 
+
+Tensions Flare at Chicago 
+
+Summit: Obama Displays 
+
+Rare Anger in Stern 
+
+Warning to Karzai 
+
+Dominique Bentzen 
+
+handed the money over to 
+
+Miriam Oremans of The 
+
+Foxton Trust 
+
+The island of Francisqui 
+
+is known for its calm 
+
+lagoons. 
+
+Ben Jeavons, Lisa Rex, 
+
+and Ezra Gildesgame 
+
+enjoy a relaxing meal at 
+
+ME, Gran Eléctrica's 
+
+outdoor dining area. 
+
+Egypt's President Morsi 
+
+Meets with Military Chief 
+
+Sisi in Palace, Discussing 
+
+National Security and 
+
+Stability 
+
+The Rangers last won a 
+
+playoff game in 1997, 
+
+when Russ Courtnall and 
+
+Mike Eastwood were on 
+
+the team. 
+
+Reason ：The image visually depicts German 
+
+Chancellor Angela Merkel standing and 
+
+gesturing with open arms towards US President 
+
+Barack Oto create a false narrative of con fl ict … 
+
+and the non-confrontational visual evidence 
+
+justi fi es concluding that the text was maliciously 
+
+generated by an AI language model to 
+
+sensationalize a neutral photograph. 
+
+Reason ：The news text is a standard, factual 
+
+announcement about the  fi lm Love  & Mercy ,
+
+starring Paul Dano as Brian Wilson, and its 
+
+screening date and location. … suggests that 
+
+the facial attributes of the original subject have 
+
+been digitally altered or edited to represent a 
+
+di ff erent age or person for the news item. 
+
+Reason ：The image shows Presidents Obama 
+
+and Karzai seated opposite each other during a 
+
+meeting at the NATO Chicago Summit. Obama 
+
+is leaning slightly forward, gesturing 
+
+emphatically while speaking. … a serious 
+
+discussion into a dramatic confrontation, 
+
+con fi rming its malicious generation. 
+
+Reason ：The news item combines a photo of a 
+
+man and a woman with a caption naming 
+
+"Dominique Bentzen" and "Miriam Oremans of 
+
+The Foxton Trust," referencing a speci fi c
+
+charitable donation … Thus, the overall news 
+
+item is classi fi ed as false due to the maliciously 
+
+altered image being paired with the genuine 
+
+text. 
+
+Reason ： The image displays a man standing 
+
+in front of a screen displaying the "facebook" 
+
+logo. He is wearing a plain t-shirt and has an 
+
+intent, serious expression. … This gross 
+
+misidenti fi cation and the visible facial artifacts 
+
+together con fi rm that both the image and the 
+
+text are maliciously fabricated. 
+
+Reason ：The caption "The island of Francisqui 
+
+is known for its calm lagoons" is a factual, 
+
+descriptive statement about … Therefore, the 
+
+overall news item is false because an authentic 
+
+piece of text has been maliciously paired with a 
+
+manipulated image to create a sensationalized 
+
+or misleading visual context. 
+
+Reason ：The image shows three individuals— 
+
+two men and one woman—seated around a 
+
+shiny metal table, eating outdoors next to a 
+
+small stream, waterfall, and lush garden area. 
+
+… The combination of the visible background 
+
+manipulation and the highly speci fi c, 
+
+promotional caption suggests both components 
+
+were maliciously fabricated 
+
+Reason ：The news item is a fabrication 
+
+because it pairs a true but entirely irrelevant 
+
+piece of text with a visually inconsistent image. 
+
+The caption, "The Rangers last won a playo ff 
+
+game … The combination of a factually true but 
+
+deliberately mismatched caption and a 
+
+synthetic, fabricated image renders the entire 
+
+news item false and designed to mislead. 
+
+Reason ：The news item is entirely false, as 
+
+both the image and the text show strong 
+
+evidence of being fabricated. The image, 
+
+depicting a meeo AI-generated. … The 
+
+combination of a visually fake image and a 
+
+sensationalized, factually unsupported caption 
+
+con fi rms that the entire news item was 
+
+maliciously created to spread disinformation. 4% 4% 7% 8% 9% 9% 19% 20% 20% 
+
+Real 50% 
+
+V.S. 
+
+Fake 50% 
+
+BR&TF 
+
+FG&TF 
+
+FA&TF 
+
+> FS&TF
+> BR
+> FG
+
+FA 
+
+FS 
+
+TF 
+
+(a) Categories in ROM 8.38 8.74 11.32 33.28 38.29 
+
+NYT  Guardian 
+
+USA  Wash. 
+
+BBC 
+
+> Percentage (%)
+
+(b) Media Domains in ROM Figure 2: Overview of the ROM dataset. Left: Representative samples spanning 9 manipulated and 1 real categories, ranging from face-centric edits to scene-level synthesis, each accompanied by a detailed reasoning annotation. Right: 
+
+Statistical distribution showing the diversity of manipulation types and the coverage of news media domains. 
+
+Qwen-VL (Bai et al., 2025) and InternVL (Wang et al., 2025b), have revolutionized multimodal un-derstanding and been adapted for forensics via Supervised Fine-Tuning (SFT) (Yan et al., 2025; Wang et al., 2025a). However, SFT often fails to cultivate robust reasoning as it focuses on mim-icking outputs, limiting generalization and self-correction (Huang et al., 2025a; Chu et al., 2025). To address this, Reasoning-Driven Optimization 
+
+utilizing Chain-of-Thought (Li et al., 2025b; Zhang et al., 2025a) and Reinforcement Learning meth-ods like GRPO (Shao et al., 2024b) has emerged to incentivize the reasoning process itself (Huang et al., 2025b; Zheng et al., 2025). Inspired by this, our REFORM framework integrates RL-based op-timization to enforce logical consistency between forensic reasoning chains and verdicts, enabling robust and generalizable detection. 
+
+3 Methodology 
+
+3.1 Data Preparation 
+
+To support our process reasoning-focused train-ing as well as construct a comprehensive bench-mark for generalization evaluation, we prepare Reasoning-enhanced analysis for Omnibus Ma-nipulation (ROM) dataset, a full-scene large-scale benchmark with thinking annotation. While incor-porating face-centric samples from MDSM (Zhang et al., 2025c), ROM significantly transcends previ-ous boundaries by expanding the scope to scene-level synthesis and integrating logical reasoning. As illustrated in Fig. 2, the ROM dataset comprises 
+
+704,456 image-text pairs across five news domains and nine manipulation categories. 
+
+Manipulation Scope Expansion. ROM assimi-lates six face-specific classes from MDSM (Zhang et al., 2025c), comprising Original (Orig), FaceAt-tribute (FA), FaceSwap (FS), TextFabrication (TF), and their composites (FA&TF, FS&TF). Crucially, 
+
+Figure 3: Probability Density of Token Count for An-swer and Reasoning. 
+
+we extend this taxonomy by introducing four scene-level categories: BackgroundReplacement (BR), 
+
+FullGeneration (FG), and their text-fabricated vari-ants (BR&TF, FG&TF). This expansion moves beyond local facial edits to holistic scene syn-thesis, utilizing diverse generative models (e.g., SD3 (Esser et al., 2024), FLUX.1 (Labs et al., 2025)) to ensure artifact diversity. For a step-by-step breakdown of the sample generation process, please refer to the Appendix E. 
+
+Reasoning Data Distillation. We augment ROM with rationale annotations to enhance interpretabil-ity. Using InternVL3.5-30B (Wang et al., 2025b), we generate textual reasoning for each image-text pair given its manipulation label. Fig. 2 visualizes these reasoning samples. As shown in Fig. 3, gen-erated rationales typically peak around 130 tokens, offering significantly richer context than standard short answers ( <20 tokens). Detailed prompts are in the Appendix G. 
+
+3.2 Architecture 
+
+Fig. 4a illustrates the architecture of our proposed REFORM model, which ingests multimodal in-puts and produces both detection and grounding results in textual form. REFORM is a sequence-to-sequence framework employs a novel encoder-dual-decoder structure as its backbone. We design a 
+
+Cognitive Priming Module to enhance the model’s ability to capture forgery-related cues, and a Dual-Decoder to strengthen its capability in interpreting forged evidence. 3Figure 4: Overview of the REFORM framework and its three-stage training curriculum. (a) The primary pipeline employs a Cognitive Priming Encoder Ep and a Dual-Decoder structure, Dr and Da, for reasoning-driven detection. (b) Cognitive Reasoning Warm-up via partial freezing. (c) Reasoning-Endowed Joint Fine-Tuning incorporating the Reason-Answer Consistency Loss LRAC . (d) Constraint-Aware Policy Refinement using GRPO-based Reinforce-ment Learning to align forensic logic with the final verdict. 
+
+Prompt Paradigm. The Prompt follows heuris-tic question(human)-answer(assistant) paradigm where the image-question pair serves as input and the text response constitutes REFORM’s output 1:    
+
+> Prompt Template Definition
+> ###Human: ⟨Task ⟩⟨ Options ⟩⟨ Grounding ⟩
+> ###Assistant: ⟨Response ⟩[⟨Coordinates ⟩]•⟨Task ⟩: Specifies manipulation detection objective & pairs input. •⟨Options ⟩: Lists all candidate answers for the ROM task. •⟨Grounding ⟩: Triggers region localization condition-ally. •⟨Response ⟩: Encapsulates the correct answers. • [ ⟨Coordinates ⟩]: Encloses edited region coordinates.
+
+Token Embedding. Through the image encoder, the input image is transformed into a sequence of 
+
+<Image Tokens> , denoted as Ti, where nv is the number of visual tokens and d is the embedding di-mension. Similarly, the question prompt is passed through an embedding layer to produce a sequence of <Text Tokens> , represented as Tt.
+
+Cognitive Priming. This module is designed to perceive manipulation-related cues from the input data and distill these forensic signals into the Cog-nitive token sequence Tr. Structurally, the module is built upon the Cognitive Priming Encoder Ep, in-stantiated as a standard Transformer encoder. Cru-cially, Ep operates in a parameter-frozen state; this constraint forces the learnable query tokens Tr to 
+
+> 1Details and examples are given in Appendix G.
+
+actively extract and aggregate multimodal inconsis-tencies from the fixed semantic context provided by 
+
+Ti and Tt. Formally, the tokens are concatenated to form Sinp = [ Ti; Tr; Tt], where [·; ·] denotes concatenation along the token dimension. The se-quence Sinp is then processed by Ep:
+
+Ep(Sinp ) = [ ˆTi; ˆTr; ˆTt]. (1) We retain only ˆTr for further processing, which encapsulates the distilled manipulation signals. 
+
+Dual-Decoder Reasoning. The primed reason to-kens ˆTr are concatenated with the initial image tokens Ti and text tokens Tt to construct the com-posite input sequence Sp = [ Ti; ˆTr; Tt]. This se-quence is encoded by the multimodal encoder Em
+
+to yield the latent representation Sm. Subsequently, 
+
+Sm is fed into the Reason-Answer Dual-Decoder in parallel to generate textual responses. The An-swer Decoder Da generates a structured textual out-put comprising three distinct predictions, as shown in Fig. 4a: (1) the authenticity classification (e.g., identifying the news as ‘fake’), (2) fine-grained ma-nipulation types (e.g., detecting face-swapped and AI-generated captions), and (3) manipulation local-ization (e.g., outputting coordinates to pinpoint the manipulated region). Meanwhile, the Reason De-coder Dr is tasked with producing a comprehensive explanation that rationalizes the model’s verdict. We adopt a dual-decoder architecture rather than a shared one for two reasons: (1) The expanded parameter space offers greater flexibility for opti-mizing both tasks independently, thereby reducing 4potential gradient conflicts during joint training. (2) It supports seamless switching between two modes: plugging reasoning decoder for reasoning mode, while un-equipping it for answer-only mode, resulting in a more configurable framework. 
+
+3.3 Cognitive Reasoning Warm-up 
+
+This initial phase is dedicated to aligning the model’s cognitive process with the ground-truth forensic reasoning. Our primary objective is to specifically enhance the forensic reasoning capa-bility by supervising the model with the distilled rationale annotations. As illustrated in Fig. 4b, we adopt a partial freez-ing strategy where the Multimodal Encoder Em, the Answer Decoder Da, and the Cognitive Priming Encoder Ep remain frozen. The optimization exclu-sively targets the learnable reason tokens Tr and the Reason Decoder Dr. Under the supervision of the ground-truth rationales, the model is trained to reconstruct the detailed forensic explanation. And the reason token Tr are forced to extract and en-code specific manipulation traces that match the logical patterns in the reasoning annotations. We employ the standard causal language modeling ob-jective as the reasoning generation loss, denoted as 
+
+LLM r , to guide this alignment: 
+
+LLM r = − 1
+
+L
+
+> L
+
+X
+
+> t=1
+
+log P (yt | y<t , S m), (2) where L is the length of the ground-truth rationale sequence, and yt denotes the t-th target token. 
+
+3.4 Reasoning-Endowed Joint Fine-Tuning 
+
+Having established a coherent forensic logic foun-dation, we transition to the Supervised Fine-Tuning stage to endow the model’s judgment logic with these forensic reasoning capabilities. This phase is executed through two key strategies: 
+
+Dual-Stream Generative Optimization. First, we activate the model’s full capacity for simultaneous reasoning and judgment. As shown in Fig. 4c, we unfreeze the entire backbone, including Em and 
+
+Da. The model is now tasked with generating both the reasoning chain R and the structured answer 
+
+A. Thus, we optimize both streams via language modeling losses LLM r and LLM a , where LLM a
+
+mirrors Eq. 2 on answers annotations. 
+
+Reason-Answer Semantic Alignment. Solely minimizing generative losses independent of each other could lead to logical discrepancies, where the generated reasoning contradicts the final verdict. To bridge this potential semantic gap, we intro-duce the Reason-Answer Consistency Loss (LRAC ). This objective enforces a minimum semantic sim-ilarity between the representation of the rationale and the answer, ensuring the reasoning trajectory effectively substantiates the final answer. We derive fixed-size global embeddings vR and 
+
+vA via mean pooling over hidden states, masked to exclude padding tokens to capture only valid semantic content. We then employ a margin-based hinge loss to penalize alignments falling below a threshold η:
+
+LRAC = max {0, η − cos( vR, vA)}. (3) Overall, the full objectives for this Reasoning-Endowed Joint Fine-Tuning stage is: 
+
+LRJF = LLM r + LLM a + LRAC . (4) 
+
+3.5 Constraint-Aware Policy Refinement 
+
+To mitigate SFT’s exposure bias and encourage the exploration of optimal reasoning, we adopt Group Relative Policy Optimization (GRPO) with a multi-dimensional reward function R consisting of four components: 
+
+Consistency Reward ( Rc) measures the semantic alignment between the generated reasoning chain 
+
+R and the predicted manipulation types, denoted as ˆci (image-modal) and ˆct (text-modal). We in-troduce a Consistency Verifier Vϕ to evaluate the logical entailment between the reasoning and these answer components. We instantiate Vϕ using a lightweight TinyBERT encoder (Jiao et al., 2020) equipped with two parallel classification heads for both modalities. Prior to RL training, Vϕ is pre-trained on ground-truth reason-label pairs, achiev-ing over 99% classification accuracy. This ensures 
+
+Vϕ can reliably deduce the correct manipulation category solely from a reasoning description. The consistency reward is calculated by checking if 
+
+Vϕ’s deductions match the predictions from Da:
+
+Rc = I(V iϕ = ˆ ci) + I(V tϕ = ˆ ct), (5) where I(·) is the indicator function. 
+
+Accuracy Reward ( Ra) aligns predictions with ground-truth labels via binary verification ( Rbin )and fine-grained type recognition ( Rf in ). Given ground truths ybin , c i, c t and predictions ˆy, ˆci, ˆct,5we formulate the reward as: 
+
+Rbin = I(ˆ y = ybin ), (6) 
+
+Rf in = I(ˆ ci = ci) + I(ˆ ct = ct), (7) 
+
+Ra = Rbin + Rf in . (8) 
+
+Grounding Reward ( Rg) evaluates the spatial pre-cision by calculating the Intersection over Union (IoU) between the predicted bounding boxes ˆb and the ground truth boxes b:
+
+Rg = IoU (ˆb, b ). (9) 
+
+Format Reward ( Rf ) enforces strict adherence to the specified output structure, as defined in Sec. 3.2. Let ˆa be the generated answer string and S be the set of valid regex patterns: 
+
+Rf = I(ˆ a ∈ S ). (10) 
+
+Optimization Objective. For each input prompt x,we sample a group of G outputs {o1, o 2, . . . , o G}
+
+from the current policy πθ. The total reward for the i-th output is the sum of the above components: 
+
+R(i) 
+
+> total
+
+= Rc + Ra + Rg + Rf . To compute the advantage Ai, we normalize the rewards within the group to reduce variance. Let ri = πθ (oi|x) 
+
+> πold (oi|x)
+
+denote the probability ratio. The surrogate objective for the i-th sample is formulated as: 
+
+J (i) 
+
+> clip
+
+= min ( riAi, clip (ri, 1 ± ϵ) Ai) . (11) The final GRPO objective averages this surrogate objective while applying a KL-divergence penalty to prevent policy collapse: 
+
+LG = E
+
+"
+
+1
+
+G
+
+> G
+
+X
+
+> i=1
+
+J (i) 
+
+> clip
+
+− βDKL (πθ|| πref )
+
+#
+
+. (12) 
+
+4 Experiment 
+
+Please refer to Appendix B for implementation de-tails and evaluation metric. Since rationale predic-tion is introduced solely to cultivate reasoning capa-bilities without ground-truth rationales, we validate its effectiveness implicitly through the performance of the primary detection and grounding tasks. Qual-itative examples are provided in Appendix F. 
+
+4.1 Quantitative Results 
+
+We evaluate REFORM on three comprehensive benchmarks: ROM, MMFakeBench (Liu et al., 2025), and DGM4 (Shao et al., 2024a). (1) Cross-Domain Generalization (Tab. 1): On ROM, RE-FORM significantly outperforms state-of-the-art (SOTA) baselines. In the challenging cross-domain setting (Train on NYT), REFORM achieves an av-erage accuracy of 88.22, surpassing AMD (85.92) and HAMMER (72.41). Notably, REFORM also outperforms MMD-Agent-34B (57.45), an agentic pipeline that utilizes iterative reasoning and exter-nal knowledge (Wikipedia) retrieval. (2) Zero-shot Generalization (Tab. 2): Despite dealing with un-seen manipulation types (e.g., manual PS editing) in MMFakeBench, REFORM achieves a remark-able F1 score of 74.9. It significantly outperforms 7B and 13B parameter LVLMs, demonstrating that forensic reasoning equips small-scale models (0.3B) with superior zero-shot generalizability com-pared to their larger counterparts. (3) Superiority over Specialized Detectors (Tab. 3): REFORM establishes a new SOTA on the face-centric DGM4 benchmark. As observed, fine-tuned LVLMs strug-gle to detect subtle artifacts, yielding unsatisfac-tory mAP ( < 47 ). While specialized detectors like AMD and FKA-Owl, REFORM significantly out-performs them with average mAP 65.72. It shows that optimizing forensic reasoning captures intrin-sic manipulation traces with greater cross-domain universality compared to feature-engineering ap-proaches, leading to superior generalization. 
+
+4.2 Ablation Studies 
+
+We conduct extensive ablation studies, as summa-rized in Tab. 4. Note that all data presented in this table denote the cross-domain average performance. 
+
+Impact of Component Modules. Tab. 4a validates our three-stage curriculum. The base model ( LM a)achieves 84.88 accuracy on NYT. Introducing the reasoning objective ( LM r) improves performance to 87.76, confirming that rationalization aids detec-tion. The addition of consistency loss ( RAC ) and GRPO further boosts accuracy to 88.22 and mIoU to 78.48, demonstrating that enforcing logical con-sistency between reasoning and judgment is crucial for optimal performance. 
+
+Impact of Reason Token Length. We examine the effect of reason token length on cross-domain average performance. in Tab. 4b. Performance initially improves with length as the model captures more forensic details, peaking at 32 tokens with optimal ACC 88.22. 
+
+Sensitivity Analysis of Consistency Margin. As shown in Tab. 4c on η in LRAC . We observe that the model exhibits robustness within a reasonable range, and η = 0 .0 yields the best trade-off, effec-tively penalizing semantic misalignment without 6Table 1: Comparison of multi-modal learning methods on ROM, where the background gray indicates the intra-domain test. The better results are in bold . AVG refers to the average performance across 5 news domains. 
+
+> Setting
+
+Method Test Domain 
+
+NYT Guardian USA Wash. BBC AVG 
+
+ACC mAP mIoU ACC mAP mIoU ACC mAP mIoU ACC mAP mIoU ACC mAP mIoU ACC mAP mIoU Zero-Shot Yi-VL-6B (01.AI, 2024) 31.03 21.86 2.67 20.13 19.18 1.14 19.65 12.76 1.72 26.15 25.47 1.79 29.67 17.38 1.11 25.33 19.33 1.69 DeepSeek-VL2-27B (Wu et al., 2024) 45.74 34.01 8.21 39.76 27.67 7.13 31.78 36.91 7.21 29.25 29.03 6.90 33.01 29.62 4.03 35.91 31.45 6.70 LLaVA-v1.6-34B (Liu et al., 2023) 47.66 41.09 7.45 38.54 31.12 6.76 32.89 37.27 6.43 31.09 31.23 6.78 36.00 29.58 4.12 37.24 34.06 6.31 Qwen2.5-VL-72B (Bai et al., 2025) 50.74 42.24 12.79 40.18 32.70 11.08 33.64 37.60 10.99 35.11 34.29 10.28 37.11 30.51 7.69 39.35 35.47 10.56 GPT-4o (Hurst et al., 2024) 51.98 42.15 16.42 42.18 32.09 11.79 46.08 38.31 14.36 39.18 33.41 11.07 37.21 30.72 10.47 43.33 35.34 12.82 Gemini-2.5 (Comanici et al., 2025) 50.86 42.73 15.41 42.11 33.16 11.54 49.42 40.56 15.24 39.84 38.70 11.87 39.54 34.84 11.71 44.35 38.00 13.15 
+
+MMD-Agent-34B (Liu et al., 2025) 61.34 41.63 40.46 61.13 36.24 55.67 62.32 47.11 63.54 51.23 42.42 63.07 51.23 45.34 71.47 57.45 42.55 58.84 Train on NYT Fine-tuned LVLMs Qwen2.5-3B (Bai et al., 2025) 86.76 57.54 65.34 80.04 41.34 62.78 72.07 34.82 62.59 74.87 38.43 55.75 73.13 39.98 70.00 77.38 42.42 63.29 LLaVa-v1.6-7B (Liu et al., 2023) 94.42 81.23 83.87 83.45 60.37 58.06 70.16 53.96 61.36 69.80 53.13 59.27 84.59 52.26 73.99 80.48 60.19 67.31 Deepfake Detectors ViLT (Kim et al., 2021) 80.17 69.71 32.07 67.02 55.16 30.61 66.14 56.71 31.18 71.71 58.31 29.61 71.03 45.11 30.62 71.21 57.00 30.82 HAMMER (Shao et al., 2023) 81.49 73.97 59.53 67.94 56.24 43.29 68.05 61.35 49.12 70.94 57.61 49.02 73.63 54.50 45.05 72.41 60.73 49.20 HAMMER++ (Shao et al., 2024a) 82.91 74.07 59.92 66.42 57.04 44.36 67.55 63.22 51.04 71.11 58.12 49.62 74.98 52.01 45.39 72.59 60.89 50.07 FKA-Owl (Liu et al., 2024) 95.76 89.66 74.13 82.22 64.42 65.17 83.64 63.33 73.74 78.37 59.84 64.52 85.83 61.03 69.13 85.17 67.66 69.34 AMD (Zhang et al., 2025c) 94.13 89.28 89.22 85.52 68.98 75.17 81.32 67.72 73.74 80.14 65.01 74.15 88.48 64.68 74.64 85.92 71.13 77.38 
+
+REFORM (Ours) 96.69 91.76 88.34 86.87 73.18 76.86 83.35 69.16 75.26 83.87 72.15 76.40 90.34 74.17 75.52 88.22 76.08 78.48 
+
+> Train on Guardian
+
+Fine-tuned LVLMs Qwen2.5-3B (Bai et al., 2025) 61.90 22.23 61.99 92.76 75.62 77.23 67.59 44.62 63.44 70.76 36.04 67.64 76.21 49.17 72.38 73.84 45.54 68.54 LLaVa-v1.6-7B (Liu et al., 2023) 63.15 23.14 65.35 93.66 75.13 83.37 67.68 45.87 66.72 69.08 33.74 62.54 80.63 54.56 77.52 74.84 46.49 71.10 Deepfake Detectors ViLT (Kim et al., 2021) 68.06 47.36 38.44 88.50 89.79 60.36 65.37 51.17 46.13 63.30 58.34 47.02 78.89 49.15 58.69 72.82 59.16 50.13 HAMMER (Shao et al., 2023) 71.15 49.74 47.24 90.69 92.50 69.25 63.50 51.47 57.41 64.12 57.02 58.42 80.04 43.43 73.26 73.90 58.83 61.12 HAMMER++ (Shao et al., 2024a) 70.79 47.57 47.61 89.63 91.90 71.67 61.53 50.85 58.39 62.58 55.17 59.66 81.14 43.91 73.35 73.13 57.88 62.14 FKA-Owl (Liu et al., 2024) 75.46 45.14 56.41 91.83 70.28 72.51 70.32 30.65 76.85 70.06 31.56 72.34 83.14 42.93 63.16 78.16 44.11 68.25 AMD (Zhang et al., 2025c) 74.23 42.98 64.49 91.07 76.54 90.16 71.50 35.76 80.42 71.46 37.84 80.94 83.42 46.18 76.13 78.34 47.86 78.43 
+
+REFORM (Ours) 74.38 63.62 67.53 94.04 92.90 94.07 79.16 58.48 84.56 78.04 59.49 83.41 81.98 64.26 77.75 81.52 67.75 81.46 
+
+Table 2: Comparison of zero-shot binary detection performance on the MMFakeBench validation and test sets. We compare our proposed REFORM with baseline models using “Standard” and “MMD-Agent” prompting paradigms as defined in the MMFakeBench paper. Baseline results are cited from the original MMFakeBench publication. 
+
+Model Language Prompt Validation (1000) Test (10000) Name Model Method F1 Precision Recall ACC F1 Precision Recall ACC LVLMs with 7B Parameter 
+
+InstructBLIP (Dai et al., 2023a) Vicuna-7B (Dai et al., 2023b) Standard 14.7 30.8 13.2 8.1 16.1 40.5 14.2 8.8 Qwen-VL (Bai et al., 2023) Qwen-7B (Bai et al., 2023) Standard 43.6 50.6 44.9 60.3 44.0 51.6 45.2 60.5 PandaGPT (Su et al., 2023) Vicuna-7B (Dai et al., 2023b) Standard 24.6 60.6 50.5 30.9 24.1 61.7 50.4 30.6 mPLUG-Owl2 (Ye et al., 2025) LLaMA2-7B (Touvron et al., 2023) Standard 47.2 64.9 52.3 70.6 48.7 71.1 53.3 71.4 
+
+LLaVA-1.6 (Liu et al., 2023) Vicuna-7B (Dai et al., 2023b) Standard 48.1 48.2 48.5 59.5 52.5 53.0 52.6 62.5 
+
+LVLMs with 13B Parameter 
+
+InstructBLIP (Dai et al., 2023a) Vicuna-13B (Dai et al., 2023b) Standard 41.1 35.0 49.9 69.9 41.1 35.0 49.9 69.8 MMD-Agent 51.3 53.4 54.0 53.1 47.9 50.1 50.1 49.9 LLaVA-1.6 (Liu et al., 2023) Vicuna-13B (Dai et al., 2023b) Standard 41.1 35.0 50.0 69.7 42.3 57.3 50.1 69.5 MMD-Agent 51.8 66.7 54.6 71.4 50.2 67.3 53.9 71.3 
+
+Ours 
+
+REFORM(Ours) Florence2-0.3B (Bin et al., 2023) Ours (Sec.3.2) 74.9 74.5 75.4 64.7 74.1 74.1 74.0 63.7 
+
+disrupting the learning of distinct modal features. 
+
+Impact of GRPO Reward Configurations. As illustrated in Tab. 4d, we analyze the cumulative effect of reward components. I denotes the base-line model without RL. Subsequent configurations sequentially introduce the Format Reward ( Rf , II), Accuracy Reward ( Ra, III), Grounding Reward (Rg, IV), and Consistency Reward ( Rc, V). Ob-serving the Guard. ACC, NYT mAP, and Guard. mAP metrics, a substantial performance leap oc-curs at III with the introduction of Ra. Simi-larly, the integration of Rc in V yields another distinct performance boost. Regarding NYT ACC, since the baseline performance is already satu-rated (87.84), the scope for RL-driven improve-ment is naturally limited; thus, Ra and Rc yield only marginal gains, which is expected. Mean-while, the inclusion of Rg significantly enhances mIoU across both domains. 
+
+Impact of RL Training Configurations. We ana-lyze the impact of generation group size G through-out the training process in Tab. 4e-f, with perfor-mance measured by mAP. All RL configurations significantly outperform the SFT baselines (73.25 on NYT and 54.11 on Guardian), strongly vali-dating our policy refinement. Notably, G = 8 
+
+7Table 3: Comparison of multi-modal learning methods on DGM4 (%), where the guardian domain with background gray is intra-domain. P tok is Precision of fake token grounding. 
+
+Method Test Domain 
+
+Guardian USA Wash. BBC AVG 
+
+ACC mAP Ptok mIoU ACC mAP Ptok mIoU ACC mAP Ptok mIoU ACC mAP Ptok mIoU ACC mAP Ptok mIoU Fine-tuned LVLMs Qwen2.5-3B (Bai et al., 2025) 61.57 37.36 61.35 40.19 60.65 34.25 70.19 33.28 51.79 32.23 63.23 35.11 62.20 38.02 61.22 41.23 59.05 35.47 64.00 37.45 LLaVa-v1.6-7B (Liu et al., 2023) 68.67 46.26 65.71 42.30 62.54 37.48 71.24 35.63 63.16 40.27 71.03 34.22 66.14 46.44 62.17 42.18 65.13 42.61 67.54 38.58 Deepfake Detectors ViLT (Kim et al., 2021) 68.27 42.29 69.87 43.19 52.79 31.28 62.11 33.78 55.76 33.26 57.17 31.10 44.14 39.68 59.06 21.96 55.24 36.63 62.05 32.51 HAMMER (Shao et al., 2023) 78.34 66.79 78.27 61.09 64.97 40.49 73.76 40.51 63.54 40.26 76.13 38.53 54.97 40.84 81.48 43.74 65.46 47.10 77.41 45.97 HAMMER++ (Shao et al., 2024a) 79.13 67.11 78.24 62.15 65.25 40.74 73.24 41.14 63.83 40.34 76.17 38.21 54.24 41.25 81.73 43.23 65.61 47.36 77.35 46.18 FKA-Owl (Liu et al., 2024) 82.97 53.86 87.70 65.69 67.57 38.97 79.44 32.57 67.05 37.70 81.55 31.86 70.26 40.20 84.54 46.48 71.96 42.68 83.31 44.15 AMD (Zhang et al., 2025c) 84.61 68.50 82.78 81.24 70.62 43.20 75.73 41.99 70.28 43.36 77.76 39.05 72.37 56.57 83.76 45.20 74.47 52.91 80.01 51.87 
+
+REFORM (ours) 91.10 84.30 89.92 83.88 71.95 59.08 81.23 55.19 72.84 59.53 83.13 53.79 70.70 59.97 86.37 47.92 76.65 65.72 85.17 60.19 
+
+Table 4: Ablation of components (a), reason token length (b), η sensitivity (c), reward (d), and completion (e-f). 
+
+Components NYT Guardian LM a LM r RAC GRPO ACC mAP mIoU ACC mAP mIoU 
+
+✓ 84.88 66.16 75.98 72.18 45.86 78.72 
+
+✓ ✓ 87.76 73.01 77.68 74.74 53.65 79.59 
+
+✓ ✓ ✓ 87.84 73.25 78.00 75.71 54.11 79.58 
+
+✓ ✓ ✓ ✓ 88.22 76.08 78.48 81.52 67.75 81.64 
+
+(a) Components Ablation. 
+
+Len. NYT Guardian ACC mAP mIoU ACC mAP mIoU 16 87.49 75.10 76.83 80.78 67.26 80.38 32 88.22 76.08 78.48 81.52 67.75 81.46 
+
+64 88.16 76.17 78.28 81.39 67.52 81.41 
+
+(b) Reason Token Length. 
+
+η NYT Guardian ACC mAP mIoU ACC mAP mIoU -0.1 88.12 75.50 78.03 81.11 67.11 81.18 0.0 88.22 76.08 78.48 81.52 67.75 81.46 
+
+0.1 88.05 75.87 78.08 81.94 67.67 81.19 
+
+(c) Sensitivity of η.表格 1                                        
+
+> III III IV V
+> NYT ACC 87.84 87.76 88.02 87.84 88.22
+> Guard. ACC 75.71 76.03 80.78 80.94 81.52
+> NYT mAP 73.25 73.24 75.21 75.14 76.08
+> Guard. mAP 54.11 54.26 64.86 65.06 67.75
+> NYT mIoU 78.00 77.91 77.88 78.49 78.48
+> Guard. mIoU 79.58 79.62 79.12 81.26 81.46
+> Average Performance (%)
+
+50 
+
+63 
+
+76 
+
+89 
+
+NYT ACC  Guard. ACC  NYT mAP  Guard. mAP  NYT mIoU  Guard. mIoU 
+
+I II  III  IV  V
+
+1: SFT-ed 
+
+2: Format 
+
+3. Acc 
+
+4. IoU 
+
+5. BERT                                                                                                                                                                                                   
+
+> mAP
+> STEP Comp. =4Comp. =8Comp. =12 Comp. =4Comp. =8Comp. =12 COUNT
+> 073.25 73.25 73.25 54.11 54.11 54.11 1
+> 200 73.83 73.29 74.2 54.74 56.75 58.31 2
+> 400 73.56 74.22 74.1 55.18 55.68 57.91 3
+> 600 73.72 73.42 74.06 55.49 54.55 60.9 4
+> 800 73.91 75.1 74.18 54.22 57.24 58.85 5
+> 1000 73.58 73.74 74.67 57.17 60.27 59.68 6
+> 1200 73.9 74.73 74.88 57.18 57.72 62.4 7
+> 1400 74.09 74.94 75.283 61.12 62.04 63.23 8
+> 1600 74.4 74.51 75.12 59.02 62.98 66.1 9
+> 1800 74.28 75.19 74.836 59.35 64.71 65.11 10
+> 2000 74.35 75.11 75.46 58.04 62.8 65.9 11
+> 2200 74.52 74.91 75.74 61.79 65.67 66.16 12
+> 2400 74.78 75.58 75.81 61.7 67.1 65.81 13
+> 2600 74.5 75.95 75.74 61.06 67.75 65.89 14
+> 2800 74.76 76.08 75.90 62.77 67.09 65.73 15
+> 3000 74.78 75.77 74.82 60.46 66.73 64.96 16
+> 3200 74.98 75.64 75.33 63.55 66.09 65.8 17
+> 3400 74.38 75.9 74.77 64.92 65.86 65.13 18
+> 3600 74.62 75.15 74.71 63.4 64.6 65.08 19
+> 3800 74.37 75.29 75.1 63.15 64.91 65.43 20
+> 4000 73.96 75.78 75.35 63.29 64.76 64.81 21
+> 4200 74.14 75.88 75.27 63.6 63.29 65.12 22
+> 4400 74.63 75.295 74.91 62.63 64.26 64.59 23
+> 4600 74.81 75.65 74.43 63.47 65.001 64.77 24
+> 4800 74.4 75.31 74.32 62.5 64.76 64.61 25
+> Performance(%)
+
+52 
+
+58 
+
+63 
+
+69 
+
+Step 
+
+0 800  1600  2400  3200  4000  4800 
+
+Comp. = 12 
+
+Comp. = 8 
+
+Comp. = 4 
+
+Train on Guardian 
+
+SFT Baseline 54.11 
+
+1
+
+(d) GRPO Reward Configurations. SFT Baseline 73.25 
+
+Train on NYT 
+
+> Performance(%)
+
+73 
+
+74 
+
+75 
+
+77 
+
+Step 
+
+0 800  1600  2400  3200  4000  4800 
+
+G = 12 
+
+G = 8 
+
+G = 4 
+
+2 (e) GRPO training on NYT. 表格 1                                        
+
+> III III IV V
+> NYT ACC 87.84 87.76 88.02 87.84 88.22
+> Guard. ACC 75.71 76.03 80.78 80.94 81.52
+> NYT mAP 73.25 73.24 75.21 75.14 76.08
+> Guard. mAP 54.11 54.26 64.86 65.06 67.75
+> NYT mIoU 78.00 77.91 77.88 78.49 78.48
+> Guard. mIoU 79.58 79.62 79.12 81.26 81.46
+> Average Performance (%)
+
+50 
+
+63 
+
+76 
+
+89 
+
+NYT ACC  Guard. ACC  NYT mAP  Guard. mAP  NYT mIoU  Guard. mIoU 
+
+I II  III  IV  V
+
+1: SFT-ed 
+
+2: Format 
+
+3. Acc 
+
+4. IoU 
+
+5. BERT                                                                                                                                                                                                   
+
+> mAP
+> STEP G=4G=8G=12 G=4G=8G=12 COUNT
+> 073.25 73.25 73.25 54.11 54.11 54.11 1
+> 200 73.83 73.29 74.2 54.74 56.75 58.31 2
+> 400 73.56 74.22 74.1 55.18 55.68 57.91 3
+> 600 73.72 73.42 74.06 55.49 54.55 60.9 4
+> 800 73.91 75.1 74.18 54.22 57.24 58.85 5
+> 1000 73.58 73.74 74.67 57.17 60.27 59.68 6
+> 1200 73.9 74.73 74.88 57.18 57.72 62.4 7
+> 1400 74.09 74.94 75.283 61.12 62.04 63.23 8
+> 1600 74.4 74.51 75.12 59.02 62.98 66.1 9
+> 1800 74.28 75.19 74.836 59.35 64.71 65.11 10
+> 2000 74.35 75.11 75.46 58.04 62.8 65.9 11
+> 2200 74.52 74.91 75.74 61.79 65.67 66.16 12
+> 2400 74.78 75.58 75.81 61.7 67.1 65.81 13
+> 2600 74.5 75.95 75.74 61.06 67.75 65.89 14
+> 2800 74.76 76.08 75.90 62.77 67.09 65.73 15
+> 3000 74.78 75.77 74.82 60.46 66.73 64.96 16
+> 3200 74.98 75.64 75.33 63.55 66.09 65.8 17
+> 3400 74.38 75.9 74.77 64.92 65.86 65.13 18
+> 3600 74.62 75.15 74.71 63.4 64.6 65.08 19
+> 3800 74.37 75.29 75.1 63.15 64.91 65.43 20
+> 4000 73.96 75.78 75.35 63.29 64.76 64.81 21
+> 4200 74.14 75.88 75.27 63.6 63.29 65.12 22
+> 4400 74.63 75.295 74.91 62.63 64.26 64.59 23
+> 4600 74.81 75.65 74.43 63.47 65.001 64.77 24
+> 4800 74.4 75.31 74.32 62.5 64.76 64.61 25
+> Performance(%)
+
+52 
+
+58 
+
+63 
+
+69 
+
+Step 
+
+0 800  1600  2400  3200  4000  4800 
+
+G = 12 
+
+G = 8 
+
+G = 4 
+
+Train on Guardian 
+
+SFT Baseline 54.11 
+
+1 (f) GRPO training on Guardian. 
+
+Table 5: Efficiency comparison. We report total param-eters and throughput (pairs/sec) on RTX 4090. Fast Mode refers to REFORM generating only prediction labels without the reasoning chain. 
+
+Method Params (M) ↓ Throughput (p/s) ↑
+
+Total Trainable Train Inference ViLT 121.07 121.07 1.85 2.38 HAMMER(++) 441.12 228.25 28.97 61.28 FKA-Owl 6771.98 33.55 1.25 1.33 MMD-Agent 34751.17 34447.66 - 0.02 AMD 276.95 276.95 5.55 13.38 
+
+Explainable : 1.03 
+
+REFORM (Ours) 376.23 376.23 4.68 Fast Mode : 13.17 
+
+delivers the most robust results, achieving peak per-formance at ∼2.8k steps on NYT and ∼2.6k steps on Guardian. This configuration effectively bal-ances exploration against stability. Visual analysis reveals that while larger groups ( G = 12 ) facilitate rapid initial convergence, they suffer from train-ing instability and performance fluctuations in later stages. Conversely, smaller groups ( G = 4 ) re-strict the exploration space, leading to suboptimal convergence and consistently lower accuracy. 
+
+Efficiency Discussion. As shown in Tab. 5, with only 376M parameters, REFORM is significantly more compact than FKA-Owl (6.7B) and MMD-Agent (34B). Crucially, our dual-decoder design enables a Fast Mode (13.17 p/s) that bypasses the reasoning branch to achieve real-time screening speeds comparable to AMD. Since the reasoning and answer branches operate independently and in parallel, Fast Mode incurs zero accuracy loss compared to the Explainable Mode. 
+
+Please refer to the Appendix for more gener-alization results. 
+
+5 Conclusion 
+
+In this paper, we address the generalization chal-lenge by shifting from result-oriented supervision to explicit forensic reasoning. We propose RE-FORM, which integrates cognitive priming and a dual-decoder architecture, optimized via a GRPO-based curriculum to align judgment with logical ev-idence. Additionally, we contribute ROM, a large-scale benchmark expanding the scope to scene-level synthesis with reasoning annotations. Ex-periments demonstrate that REFORM significantly outperforms SOTA methods in cross-domain and zero-shot settings, establishing a robust paradigm for interpretable forensics. 86 Limitations 
+
+Despite the superior performance of REFORM, it has several limitations that merit future study. 
+
+Dependence on Distilled Rationales. Our train-ing relies on reasoning annotations distilled from larger MLLMs (InternVL). Although we employ Reinforcement Learning to refine the policy, the model’s upper bound is partially constrained by the quality and correctness of the teacher model’s forensic knowledge. Hallucinations in the teacher model could potentially introduce noise into the reasoning supervision. 
+
+Inference Latency in Reasoning Mode. While our Fast Mode achieves high throughput suit-able for real-time screening, the Explainable Mode requires auto-regressive generation of rea-soning chains, which increases computational cost (1.03 pairs/sec). Future work could explore non-autoregressive generation or token pruning to ac-celerate the reasoning process. 
+
+References 
+
+01.AI. 2024. Yi: Open foundation models by 01.ai. 
+
+arXiv preprint arXiv:2403.04652v3 .Jinze Bai, Shuai Bai, Yunfei Chu, Zeyu Cui, Kai Dang, Xiaodong Deng, Yang Fan, Wenbin Ge, Yu Han, Fei Huang, and 1 others. 2023. Qwen technical report. 
+
+arXiv preprint arXiv:2309.16609 .Shuai Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wen-bin Ge, Sibo Song, Kai Dang, Peng Wang, Shijie Wang, Jun Tang, and 1 others. 2025. Qwen2. 5-vl technical report. arXiv preprint arXiv:2502.13923 .Xiao Bin, Wu Haiping, Xu Weijian, Dai Xiyang, Hu Houdong, Lu Yumao, Zeng Michael, Liu Ce, and Yuan Lu. 2023. Florence-2: Advancing a unified representation for a variety of vision tasks. In CVPR .Ali Furkan Biten, Lluis Gomez, Marçal Rusiñol, and Dimosthenis Karatzas. 2019. Good news, everyone! context driven entity-aware captioning for news im-ages. In CVPR .Renwang Chen, Xuanhong Chen, Bingbing Ni, and Yanhao Ge. 2020. Simswap: An efficient framework for high fidelity face swapping. In ACM MM .Zhongxi Chen, Ke Sun, Ziyin Zhou, Xianming Lin, Xiaoshuai Sun, Liujuan Cao, and Rongrong Ji. 2024. Diffusionface: Towards a comprehensive dataset for diffusion-based face forgery analysis. 
+
+arXiv:2403.18471 .Harry Cheng, Yangyang Guo, Tianyi Wang, Liqiang Nie, and Mohan Kankanhalli. 2024. Diffusion facial forgery detection. In ACM MM .Tianzhe Chu, Yuexiang Zhai, Jihan Yang, Shengbang Tong, Saining Xie, Dale Schuurmans, Quoc V. Le, Sergey Levine, and Yi Ma. 2025. Sft memorizes, rl generalizes: A comparative study of foundation model post-training. In ICML .Hyung Won Chung, Le Hou, Shayne Longpre, Barret Zoph, Yi Tay, William Fedus, Yunxuan Li, Xuezhi Wang, Mostafa Dehghani, Siddhartha Brahma, Al-bert Webson, Shixiang Shane Gu, Zhuyun Dai, Mirac Suzgun, Xinyun Chen, Aakanksha Chowdhery, Alex Castro-Ros, Marie Pellat, Kevin Robinson, and 16 others. 2024. Scaling instruction-finetuned language models. Journal of Machine Learning Research ,25(70). Gheorghe Comanici, Eric Bieber, Mike Schaekermann, and 1 others. 2025. Gemini 2.5: Pushing the frontier with advanced reasoning, multimodality, long con-text, and next generation agentic capabilities. arXiv Preprint arXiv:2507.06261 .Wenliang Dai, Junnan Li, DONGXU LI, Anthony Tiong, Junqi Zhao, Weisheng Wang, Boyang Li, Pascale N Fung, and Steven Hoi. 2023a. Instructblip: Towards general-purpose vision-language models with instruc-tion tuning. In NeurIPS .Wenliang Dai, Junnan Li, DONGXU LI, Anthony Tiong, Junqi Zhao, Weisheng Wang, Boyang Li, Pascale N Fung, and Steven Hoi. 2023b. Instructblip: Towards general-purpose vision-language models with instruc-tion tuning. In NeurIPS .Tri Dao. 2024. Flashattention-2: Faster attention with better parallelism and work partitioning. In ICLR .Mingyu Ding, Bin Xiao, Noel Codella, Ping Luo, Jing-dong Wang, and Lu Yuan. 2022. Davit: Dual atten-tion vision transformers. In ECCV .Patrick Esser, Sumith Kulal, Andreas Blattmann, Rahim Entezari, Jonas Müller, Harry Saini, Yam Levi, Do-minik Lorenz, Axel Sauer, Frederic Boesel, Dustin Podell, Tim Dockhorn, Zion English, Kyle Lacey, Alex Goodwin, Yannik Marek, and Robin Rombach. 2024. Scaling rectified flow transformers for high-resolution image synthesis. In ICML .Liu Fuxiao, Wang Yinghan, Wang Tianlu, and Ordonez Vicente. 2021. Visual news: Benchmark and chal-lenges in news image captioning. In EMNLP . Asso-ciation for Computational Linguistics. Jing Huang, Zhiya Tan, Shutao Gong, Fanwei Zeng, Joey Tianyi Zhou, Changtao Miao, Huazhe Tan, Weibin Yao, and Jianshu Li. 2025a. Lav-cot: Language-aware visual cot with multi-aspect reward optimization for real-world multilingual vqa. arXiv preprint arXiv:2509.10026 .Runsheng Huang, Liam Dugan, Yue Yang, and Chris Callison-Burch. 2024. MiRAGeNews: Multimodal realistic AI-generated news detection. In EMNLP Findings .
+
+9Zhenglin Huang, Tianxiao Li, Xiangtai Li, Haiquan Wen, Yiwei He, Jiangning Zhang, Hao Fei, Xi Yang, Xiaowei Huang, Bei Peng, and Guangliang Cheng. 2025b. So-fake: Benchmarking and explaining so-cial media image forgery detection. arXiv preprint arXiv:2505.13379 .Aaron Hurst, Adam Lerer, Adam P Goucher, Adam Perelman, Aditya Ramesh, Aidan Clark, AJ Ostrow, Akila Welihinda, Alan Hayes, Alec Radford, and 1 others. 2024. Gpt-4o system card. arXiv preprint arXiv:2410.21276 .Xiaoqi Jiao, Yichun Yin, Lifeng Shang, Xin Jiang, Xiao Chen, Linlin Li, Fang Wang, and Qun Liu. 2020. TinyBERT: Distilling BERT for natural language understanding. In EMNLP Findings . Association for Computational Linguistics. Wonjae Kim, Bokyung Son, and Ildoo Kim. 2021. Vilt: Vision-and-language transformer without convolu-tion or region supervision. In ICML .Black Forest Labs, Stephen Batifol, Andreas Blattmann, Frederic Boesel, Saksham Consul, Cyril Diagne, Tim Dockhorn, Jack English, Zion English, Patrick Esser, Sumith Kulal, Kyle Lacey, Yam Levi, Cheng Li, Dominik Lorenz, Jonas Müller, Dustin Podell, Robin Rombach, Harry Saini, and 2 others. 2025. Flux.1 kontext: Flow matching for in-context im-age generation and editing in latent space. Preprint ,arXiv:2506.15742. Bo Li, Yuanhan Zhang, Liangyu Chen, Jinghao Wang, Fanyi Pu, Joshua Adrian Cahyono, Jingkang Yang, Chunyuan Li, and Ziwei Liu. 2025a. Otter: Amulti-modal model with in-context instruction tuning. 
+
+TPAMI , 47(9). Junnan Li, Dongxu Li, Silvio Savarese, and Steven Hoi. 2023. Blip-2: Bootstrapping language-image pre-training with frozen image encoders and large lan-guage models. In ICML .Zongxia Li, Wenhao Yu, Chengsong Huang, Rui Liu, Zhenwen Liang, Fuxiao Liu, Jingxi Che, Dian Yu, Jordan Boyd-Graber, Haitao Mi, and Dong Yu. 2025b. Self-rewarding vision-language model via reasoning decomposition. arXiv preprint arXiv:2508.19652 .Ji Lin, Hongxu Yin, Wei Ping, Yao Lu, Pavlo Molchanov, Andrew Tao, Huizi Mao, Jan Kautz, Mo-hammad Shoeybi, and Song Han. 2024. Vila: On pre-training for visual language models. In CVPR .Haotian Liu, Chunyuan Li, Qingyang Wu, and Yong Jae Lee. 2023. Visual instruction tuning. In NeurIPS .Xuannan Liu, Peipei Li, Huaibo Huang, Zekun Li, Xing Cui, Jiahao Liang, Lixiong Qin, Weihong Deng, and Zhaofeng He. 2024. Fka-owl: Advancing mul-timodal fake news detection through knowledge-augmented lvlms. In ACM MM .Xuannan Liu, Zekun Li, Peipei Li, Huaibo Huang, Shuhan Xia, Xing Cui, Linzhi Huang, Weihong Deng, and Zhaofeng He. 2025. Mmfakebench: A mixed-source multimodal misinformation detection bench-mark for lvlms. In ICLR .Ilya Loshchilov and Frank Hutter. 2017. Decoupled weight decay regularization. In ICLR .Ruotian Ma, Peisong Wang, Cheng Liu, Xingyan Liu, Jiaqi Chen, Bang Zhang, Xin Zhou, Nan Du, and Jia Li. 2025. S2R: Teaching LLMs to self-verify and self-correct via reinforcement learning. In ACL .Association for Computational Linguistics. Femi Olan, Uchitha Jayawickrama, Emmanuel Ogiem-wonyi Arakpogun, Jana Suklan, and Shaofeng Liu. 2024. Fake news on social media: the impact on soci-ety. Information Systems Frontiers , 26(2):443–458. Yikang Pan, Liangming Pan, Wenhu Chen, Preslav Nakov, Min-Yen Kan, and William Wang. 2023. On the risk of misinformation pollution with large lan-guage models. In EMNLP Findings . Association for Computational Linguistics. Chan Young Park, Julia Mendelsohn, Anjalie Field, and Yulia Tsvetkov. 2022. Challenges and opportunities in information manipulation detection: An examina-tion of wartime Russian media. In EMNLP Findings .Association for Computational Linguistics. Rui Shao, Tianxing Wu, and Ziwei Liu. 2023. Detecting and grounding multi-modal media manipulation. In 
+
+CVPR .Rui Shao, Tianxing Wu, Jianlong Wu, Liqiang Nie, and Ziwei Liu. 2024a. Detecting and grounding multi-modal media manipulation and beyond. TPAMI ,46(8):5556–5574. Zhihong Shao, Peiyi Wang, Qihao Zhu, Runxin Xu, Junxiao Song, Xiao Bi, Haowei Zhang, Mingchuan Zhang, Y. K. Li, Y. Wu, and Daya Guo. 2024b. Deepseekmath: Pushing the limits of mathematical reasoning in open language models. arXiv preprint arXiv:2402.03300 .Jinjie Shen, Yaxiong Wang, Lechao Cheng, Nan Pu, and Zhun Zhong. 2025. Beyond artificial misalignment: Detecting and grounding semantic-coordinated mul-timodal manipulations. In ACM MM .Aneja Shivangi, Bregler Chris, and Nießner Matthias. 2023. Cosmos: Catching out-of-context image mis-use using self-supervised learning. In AAAI .StabilityAI. 2023. Introducing stable diffusion 3.5. Ac-cessed: 2025-08-24. Yixuan Su, Tian Lan, Huayang Li, Jialu Xu, Yan Wang, and Deng Cai. 2023. PandaGPT: One model to instruction-follow them all. In Proceedings of the 1st Workshop on Taming Large Language Models .Association for Computational Linguistics. 
+
+10 MosaicML NLP Team. 2023. Introducing mpt-7b: A new standard for open-source, commercially usable llms. Hugo Touvron, Louis Martin, Kevin Stone, Peter Al-bert, Amjad Almahairi, Yasmine Babaei, Nikolay Bashlykov, Soumya Batra, Prajjwal Bhargava, Shruti Bhosale, Dan Bikel, Lukas Blecher, Cristian Canton Ferrer, Moya Chen, Guillem Cucurull, David Esiobu, Jude Fernandes, Jeremy Fu, Wenyin Fu, and 49 oth-ers. 2023. Llama 2: Open foundation and fine-tuned chat models. arXiv preprint arXiv:2307.09288 .Alasdair Tran, Alexander Mathews, and Lexing Xie. 2020. Transform and tell: Entity-aware news image captioning. In CVPR .JunXi Wang, Yaxiong Wang, Lechao Cheng, and Zhun Zhong. 2025a. FakeSV-VLM: Taming VLM for de-tecting fake short-video news via progressive mixture-of-experts adapter. In EMNLP Findings . Association for Computational Linguistics. Weiyun Wang, Zhangwei Gao, Lixin Gu, Hengjun Pu, Long Cui, Xingguang Wei, Zhaoyang Liu, Linglin Jing, Shenglong Ye, Jie Shao, and 1 others. 2025b. In-ternvl3. 5: Advancing open-source multimodal mod-els in versatility, reasoning, and efficiency. arXiv preprint arXiv:2508.18265 .Zhiyu Wu, Xiaokang Chen, Zizheng Pan, Xingchao Liu, Wen Liu, Damai Dai, Huazuo Gao, Yiyang Ma, Chengyue Wu, Bingxuan Wang, and 1 oth-ers. 2024. Deepseek-vl2: Mixture-of-experts vision-language models for advanced multimodal under-standing. arXiv preprint arXiv:2412.10302 .Zehong Yan, Peng Qi, Wynne Hsu, and Mong-Li Lee. 2025. TRUST-VL: An explainable news assistant for general multimodal misinformation detection. In 
+
+EMNLP . Association for Computational Linguistics. Jiabo Ye, Haiyang Xu, Haowei Liu, Anwen Hu, Ming Yan, Qi Qian, Ji Zhang, Fei Huang, and Jingren Zhou. 2025. mplug-owl3: Towards long image-sequence understanding in multi-modal large language models. In ICLR .Ruohong Zhang, Bowen Zhang, Yanghao Li, Haotian Zhang, Zhiqing Sun, Zhe Gan, Yinfei Yang, Ruom-ing Pang, and Yiming Yang. 2025a. Improve vision language model chain-of-thought reasoning. In ACL .Wenhua Zhang, Weicheng Li, Xuanrong Rao, Lixin Zou, Xiangyang Luo, Chubin Zhuang, Yongjie Hong, Zhen Qin, Hengyu Chang, Chenliang Li, and Bo Zheng. 2025b. AIGuard: A benchmark and lightweight detection for E-commerce AIGC risks. In ACL Findings . Association for Computational Lin-guistics. Yuchen Zhang, Yaxiong Wang, Yujiao Wu, Lianwei Wu, and Li Zhu. 2025c. The coherence trap: When mllm-crafted narratives exploit manipulated visual contexts. arXiv preprint arXiv:2505.17476 .Zhenxing Zhang, Yaxiong Wang, Lechao Cheng, Zhun Zhong, Dan Guo, and Meng Wang. 2025d. Asap: Ad-vancing semantic alignment promotes multi-modal manipulation detecting and grounding. In CVPR .Peng Zheng, Dehong Gao, Deng-Ping Fan, Li Liu, Jorma Laaksonen, Wanli Ouyang, and Nicu Sebe. 2024. Bilateral reference for high-resolution di-chotomous image segmentation. arXiv preprint arXiv:2401.03407 .Tong Zheng, Hongming Zhang, Wenhao Yu, Xiaoyang Wang, Runpeng Dai, Rui Liu, Huiwen Bao, Cheng-song Huang, Heng Huang, and Dong Yu. 2025. Parallel-r1: Towards parallel thinking via reinforce-ment learning. arXiv preprint arXiv:2509.07980 .Deyao Zhu, jun chen, Xiaoqian Shen, Xiang Li, and Mohamed Elhoseiny. 2024. Minigpt-4: Enhancing vision-language understanding with advanced large language models. In ICLR .
+
+11 Process Over Outcome: Cultivating Forensic Reasoning for Generalizable Multimodal Manipulation Detection 
+
+Supplementary Materials 
+
+Contents 
+
+A Human Performance on Multimodal Misinformation Detection 12 B Experimental Setup 13 
+
+B.1 Baseline Settings . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 14 B.2 Evaluation Metrics . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 15 B.3 Task-Specific Adaptation for DGM4 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 15 
+
+C Comprehensive Evaluation and Generalization Analysis 15 
+
+C.1 Performance Benchmark on MDSM . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 15 C.2 Zero-Shot Generalization on Unseen Misinformation Benchmarks . . . . . . . . . . . . . . . . . . . . . . . 16 C.3 Robustness Against Missing Modalities . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 18 
+
+D Performance of Fine-Tuned MLLMs on ROM 18 E Details of Proposed ROM 19 
+
+E.1 Fully Generated Variants. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 21 E.2 Background Replacement Variants. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 22 
+
+F Case Study 23 
+
+F.1 Visualization of Detection Results . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 23 F.2 Human Assessment of Explainability . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 23 F.3 Limitations and Failure Cases . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 23 
+
+G Prompt Paradigm 27 
+
+G.1 Prompt for REFORM . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 27 G.2 Prompt for Reasoning Data Distillation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 27 G.3 Prompt for General-purpose Model . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 27 G.4 Prompt for MMD-Agent . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 27 
+
+H Statements 28 
+
+H.1 Ethical Considerations . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 28 H.2 Data Privacy and Safety . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 28 H.3 Reproducibility Statement . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 28 H.4 Large Language Model Usage Statement . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 29 
+
+A Human Performance on Multimodal Misinformation Detection 
+
+To empirically assess the vulnerability of the gen-eral public to multimodal misinformation, we con-ducted a human evaluation study. The primary objective was to gauge human capability in dis-cerning news authenticity, thereby highlighting the limitations of manual verification. 
+
+Study Design. We randomly sampled 117 image-text pairs from the ROM dataset for evaluation. As shown in Figure 5, the test set encompasses four distinct categories: authentic news (Orig), image-only manipulation (F-I), text-only manipulation (F-T), and joint manipulation of both image and text (F-I&T). Participants were required to identify the specific manipulation type for each sample. We recruited 18 volunteers, all holding a bachelor’s de-gree or higher, from our academic and professional networks. Informed consent was obtained from all participants prior to the study. They participated voluntarily without financial compensation. 
+
+Fine-grained Classification Analysis. The chal-lenge inherent in this task is evident in the fine-grained classification results shown in Figure 6(a). While participants achieved a moderate accuracy of 57.98% on authentic samples (Orig), their perfor-mance on manipulated categories was significantly compromised: 14.41% for F-I, 22.00% for F-T, and 24.44% for F-I&T. Notably, no manipulated category exceeded a 25% recognition rate .To further investigate the patterns of human error, we computed a row-normalized confusion matrix (Figure 6b). The results reveal that participants ex-12 Figure 5: The user interface of the human evaluation study where each participant is given pairs of news images and caption and asked to determine whether they are manipulated or not. 
+
+hibited the greatest difficulty with F-T (Fake Text) samples, with a staggering 47.56% being misclas-sified as completely authentic. This observation suggests that human evaluators tend to overlook subtle semantic inconsistencies in textual descrip-tions compared to visual anomalies. 
+
+Binary Detection Capabilities. Considering real-world scenarios, humans often do not need to identify the exact manipulated modality; it is of-ten sufficient to detect the presence of any form of misinformation to avoid being misled. Therefore, we utilize two binary metrics to quantify this ability as shown in Figure 6c: • Overall Recall: Defined as the proportion of manipulated items (F-I, F-T, F-I&T) correctly identified as any type of fake. Even under this relaxed criterion, participants only achieved an Overall Recall of 57.9%. When breaking this down by category, F-I samples exhibited the highest detection rate at 64.5%, whereas F-T dropped to 52.4% and F-I&T to 56.7%. This performance gap (12.1%) between im-age and text manipulation further corroborates that humans are less sensitive to textual incon-sistencies than to visual traces. • False Alarm Rate: Crucially, this moderate detection rate came at a high cost: a False Alarm Rate of 42.0%. This high error rate on authentic content indicates that participants adopted a hyper-vigilant, "better safe than sorry" strategy specific to the testing environ-ment. This suggests that the observed detec-tion performance is likely an optimistic upper bound. In a natural, unguarded social me-dia context where users are typically more relaxed, their actual sensitivity to misinforma-tion would inevitably be significantly lower than the results presented here. The human evaluation results expose a critical vulnerability: human evaluators demonstrate gen-erally low sensitivity to multimodal misinforma-tion, particularly when textual fabrication is in-volved. The high error rate implies that relying solely on human judgment is insufficient to miti-gate the spread of fake news. Consequently, these findings strongly motivate the urgent need for re-searching and developing high-precision foren-sic methods, which can discern subtle inconsis-tencies that evade human scrutiny. 
+
+B Experimental Setup 
+
+Implementation Details. All experiments are im-plemented in PyTorch and conducted on NVIDIA GeForce RTX 4090 GPUs using Distributed Data Parallel (DDP). The image encoder Ev adopts the DaViT architecture (Ding et al., 2022). Both the Multimodal Encoder Em and the Cognitive Prim-ing Encoder Ep are initialized with the pre-trained weights from Florence-2-B (Bin et al., 2023). Simi-larly, the Reason Decoder Dr and Answer Decoder 
+
+Da are initialized using the Florence-2-B decoder weights. The semantic alignment verifier Vϕ is built upon the TinyBERT-4L-312D architecture (Jiao et al., 2020), comprising 4 transformer layers with a hidden dimension of 312. It employs a dual-head design—targeting 5-class image and 2-class text classification—where each head consists of a dense projection layer, GELU activation, and a dropout 13 Figure 6: Human evaluation statistics on multimodal fake news identification. (a) Per-class accuracy across four types of image-text pairs on ROM. (b) Row-normalized confusion matrix showing classification tendencies. (c) Human perception of manipulated news and misclassification of real content using binary metrics (Overall Recall and False Alarm Rate). 
+
+rate of 0.2. The input sequence length for Vϕ is truncated to 320 tokens. 
+
+Parameter Settings. Input images are resized to 
+
+224 × 224 and augmented with random horizon-tal flipping. For the supervised training phases (Stage 1 and Stage 2), we set the per-GPU batch size to 5 and train the model for 4 and 12 epochs, respectively. Optimization is performed using AdamW (Loshchilov and Hutter, 2017) with an initial learning rate of 1 × 10 −7 and a weight decay of 0.01. We employ a cosine learning rate scheduler with a linear warm-up: the learning rate increases to 1 × 10 −6 over the first 1,000 steps and subse-quently decays to 1 × 10 −7. In Stage 3, initialized with the best Stage 2 checkpoint, we set the gener-ation group size to G = 8 to enhance exploration and optimization stability. The model is trained with a global batch size of 32 and a maximum se-quence length of 1024. We utilize BF16 precision and Flash Attention 2 (Dao, 2024) for efficiency. 
+
+B.1 Baseline Settings 
+
+We adapt six state-of-the-art multi-modal methods to the ROM setting for comparison. These methods encompass two conventional multi-modal manip-ulation detection models, two Multimodal Large Language Model (MLLM) -based detection frame-works, one MLLM-based agentic manipulation de-tection framework, and one general multi-modal learning approach: • HAMMER (Shao et al., 2023) is a pioneering model for multi-modal manipulation detec-tion and grounding. It employs two unimodal encoders to extract visual and textual forgery features, which are then aligned through con-trastive learning. Following this, a multi-branch transformer architecture with two spe-cialized decoders is utilized for manipulation detection and grounding. • HAMMER++ (Shao et al., 2024a) is a more powerful model that builds upon HAMMER by integrating contrastive learning from both global and local perspectives to capture fine-grained inconsistencies. • FKA-Owl (Liu et al., 2024) is a detection model designed on MLLM, demonstrating outstanding cross-domain performance. Since FKA-Owl does not natively support fine-grained classification tasks, we fine-tuned it using the same prompts as those used for RE-FORM to enable comparable evaluation. • AMD (Zhang et al., 2025c) is a unified frame-work built upon MLLM designed for the MLLM-driven semantic-aligned DGM4 task. It introduces an Artifact Pre-perception En-coding module to capture manipulation traces into learnable artifact tokens and utilizes Manipulation-Oriented Reasoning to generate grounded detection results via a sequence-to-sequence format. • MMD-Agent (Liu et al., 2025) is a training-free, MLLM-based agentic framework. It de-composes the detection task into sequential sub-tasks: text-based fact-checking (retriev-ing external knowledge), visual manipulation analysis, and cross-modal consistency verifi-cation. To adapt this pipeline for the ground-ing task in ROM, we modified its visual analy-sis prompt to explicitly request bounding box coordinates for manipulated regions. 14 • ViLT (Kim et al., 2021) serves as the general multi-modal learning baseline. It is a repre-sentative single-stream method where cross-modal interaction layers operate on the con-catenation of image and text inputs. For adap-tation to the forgery detection task, we add classification and detection heads to the corre-sponding outputs of the model. 
+
+B.2 Evaluation Metrics 
+
+To comprehensively evaluate our proposed ROM, we follow the rigorous evaluation protocols and metrics outlined in (Shao et al., 2023) for all manip-ulation detection and grounding tasks. The detailed evaluation setup is organized as follows: • Binary Classification. Accuracy (ACC) is adopted as the evaluation metric to measure the correctness of real/fake news classification results. • Multi-Label Classification. For multi-label classification tasks, we employ the mean Av-erage Precision (mAP) , which measures the per-class average precision and then takes the arithmetic mean across all manipulation types. This macro-averaged mAP provides a compre-hensive evaluation of the model’s overall per-formance across different manipulation types. • Manipulated Image Bounding Box Ground-ing. To evaluate the precision of predicted manipulated bounding boxes, we calculate the 
+
+mean Intersection over Union (mIoU) be-tween the ground-truth and predicted coordi-nates for all testing samples. This metric quan-tifies the spatial overlap between detected re-gions and actual manipulated areas, reflecting the localization accuracy of the model. • Manipulated Text Token Grounding. In the DGM4 benchmark, an additional task of manipulated text token grounding is included. For this task, Precision ( Ptok ) is used as the evaluation metric to measure the accuracy of identifying manipulated text tokens within in-put sequences. This standardized evaluation framework ensures a systematic and comparative assessment of ROM across diverse manipulation scenarios, aligning with both general detection tasks and benchmark-specific requirements. 
+
+B.3 Task-Specific Adaptation for DGM4 
+
+To adapt REFORM for fine-grained fake word de-tection on DGM4, we introduce a Token Precision Reward ( Rtok ). Let ˆytok denote the predicted ma-nipulated words and ytok be the ground truth token labels. The reward calculates the token-level con-sistency: 
+
+Rtok = ACC (Tokenize (ˆ ytok ), y tok ), (13) where, Tokenize (·) performs text normalization (lowercasing and punctuation removal) and aligns the word-level predictions with the caption’s token grid to generate a binary prediction mask. ACC (·)
+
+computes the token-wise accuracy between this mask and the ground truth. Crucially, for pristine samples, this metric enforces strict hallucination suppression by assigning a reward of 1.0 only if the model predicts "none" or an empty set. Conse-quently, the final total Reward when training RE-FORM on DGM4 is formulated as: 
+
+RDGM4 = Rc + Ra + Rg + Rf + Rtok . (14) The training settings of other stages in REFORM are consistent with the main paper. 
+
+C Comprehensive Evaluation and Generalization Analysis 
+
+To rigorous evaluate the robustness and general-izability of our REFORM, we conduct compre-hensive experiments across three distinct evalu-ation protocols. Specifically, our evaluation en-compasses: (1) Cross-domain Performance , as-sessed using the multi-domain news benchmark MDSM (Zhang et al., 2025c); (2) Zero-shot Gen-eralization , tested on a wide array of unseen mis-information datasets, , as illustrated in Fig. 7, in-cluding news-domain benchmarks (DGM 4 (Shao et al., 2024a), MMFakeBench (Liu et al., 2025), MiRAGe (Huang et al., 2024)), non-news sce-narios (COSMOS (Shivangi et al., 2023), AI-GUARD (Zhang et al., 2025b)), and high-fidelity facial forgery datasets (DiffFace (Chen et al., 2024), DiFF (Cheng et al., 2024)); and (3) Robustness Against Missing Modalities , validating model sta-bility under modality-incomplete conditions. 
+
+C.1 Performance Benchmark on MDSM 
+
+Tab. 6 presents the quantitative comparison results on the MDSM benchmark under two training set-tings: training on NYT and training on Guardian .15 Figure 7: Overview of the generalization evaluation datasets. The Unseen News Dataset category includes the DGM4, MMFakeBench, and MiRAGe benchmarks. The Beyond News Scenarios category encompasses the non-news AIGUARD dataset and the mixed-source COSMOS. The Facial Forgeries category consists of the DiffFace and DiFF datasets, which focus on diffusion-based facial manipulations. 
+
+Intra-domain Performance. As shown in the gray-shaded regions of Tab. 6, REFORM demon-strates superior capability in capturing domain-specific manipulation patterns. When trained and tested on the NYT dataset, REFORM achieves re-markable performance with 96.26% ACC, 92.55% mAP, and 82.18% mIoU, significantly outperform-ing the strong baseline AMD by 4.02%, 8.08%, and 9.24%, respectively. Similarly, in the Guardian set-ting, REFORM maintains its lead with an accuracy of 95.63% and an mIoU of 88.85%. In contrast, traditional methods like ViLT and HAMMER ex-hibit limited grounding capabilities (e.g., <25% mIoU on NYT), highlighting the effectiveness of our reasoning-driven approach in precise manipu-lation localization. 
+
+Cross-domain Generalization. The results on unseen domains (e.g., USA , Wash. , BBC ) further validate the robustness of our model. Despite the domain shift, REFORM consistently achieves the best average performance. Specifically, in the Tr. on NYT setting, REFORM achieves the highest av-erage accuracy of 85.10% across five domains, sur-passing AMD (83.96%) and FKA-Owl (81.60%). Notably, even when generalizing from Guardian 
+
+to NYT , REFORM maintains competitive ground-ing performance (52.33% mIoU), comparable to the in-domain baseline HAMMER (51.34% mIoU). These results indicate that REFORM learns gener-alizable forensic features rather than overfitting to domain-specific biases. 
+
+C.2 Zero-Shot Generalization on Unseen Misinformation Benchmarks 
+
+To evaluate the cross-domain adaptability, we con-duct zero-shot experiments on five public multi-modal misinformation datasets: • DGM4 (Shao et al., 2023): Focuses on com-plex image-text multimodal manipulation sce-narios, supporting both manipulation detec-tion and grounding. • MiRAGe (Huang et al., 2024): Characterized by fully generated images, and supports bi-nary classification of image-text pairs as real or fake. • AIGUARD (Zhang et al., 2025b): Targets AIGC risks in real-world e-commerce scenar-ios, such as abnormal bodies and physical vi-olations. It supports binary classification of image-text pairs, facilitating the evaluation of generalization to industrial generation arti-facts beyond the news domain. • COSMOS (Shivangi et al., 2023): Targets scenarios involving text replacement lead-16 Table 6: Comparison of multi-modal learning methods on MDSM, where the background gray indicates the intra-domain performance. The better results in each group are in bold . AVG refers to the average performance across five news domains.                                                                                                                                                                                                                                               
+
+> Setting
+> Method Test Domain
+> NYT Guardian USA Wash. BBC AVG
+> ACC mAP mIoU ACC mAP mIoU ACC mAP mIoU ACC mAP mIoU ACC mAP mIoU ACC mAP mIoU Tr. on NYT  ViLT (Kim et al., 2021) 83.27 64.27 22.73 72.18 31.76 20.21 70.34 36.45 21.48 65.71 36.23 17.56 74.33 36.10 19.36 73.17 40.96 20.27 HAMMER (Shao et al., 2023) 79.20 55.86 51.34 68.23 40.10 21.56 71.52 41.17 13.74 68.50 41.47 13.92 67.37 42.23 16.12 70.96 44.16 23.34 HAMMER++ (Shao et al., 2024a) 79.61 57.06 54.44 66.99 38.07 17.34 67.18 37.58 10.76 66.28 37.97 10.88 66.12 37.82 13.68 69.23 41.70 21.42 FKA-Owl (Liu et al., 2024) 94.67 78.18 55.81 77.20 46.88 43.67 78.00 44.45 50.73 75.49 50.83 43.53 84.65 60.73 43.28 81.60 56.77 46.23 AMD (Zhang et al., 2025c) 92.24 84.47 72.94 80.21 64.00 62.51 78.56 68.49 55.17 82.64 69.41 56.66 86.14 60.58 70.54 83.96 69.39 63.56
+> REFORM(ours) 96.26 92.55 82.18 80.88 70.75 64.80 78.29 60.79 56.28 81.00 69.70 57.50 89.08 61.21 63.34 85.10 71.00 64.82
+> Tr. on Guardian  ViLT (Kim et al., 2021) 68.80 43.99 21.77 85.29 67.34 41.80 70.34 46.24 37.68 78.61 47.17 38.13 80.00 44.79 38.97 76.61 49.90 35.67 HAMMER (Shao et al., 2023) 61.89 37.98 18.84 78.50 52.40 51.53 74.78 50.76 43.40 75.11 50.34 46.36 81.32 50.15 56.03 74.32 48.33 43.23 HAMMER++ (Shao et al., 2024a) 62.75 36.45 23.76 80.95 59.92 64.67 75.36 48.77 47.13 76.30 49.56 48.91 80.12 50.36 57.97 75.10 49.01 48.49 FKA-Owl (Liu et al., 2024) 80.60 40.44 26.33 92.60 78.24 71.04 80.90 51.80 50.93 78.88 51.62 50.88 87.61 68.57 61.82 84.12 58.13 52.20 AMD (Zhang et al., 2025c) 84.29 48.54 52.38 91.43 80.85 85.09 88.80 53.05 52.51 86.64 54.07 53.27 89.74 64.75 61.82 88.18 60.25 61.02
+> REFORM(ours) 85.26 48.85 52.33 95.63 82.33 88.85 88.54 54.98 52.93 88.88 56.19 51.47 89.89 66.81 62.43 89.64 61.83 61.60
+
+Table 7: Zero-shot performance of ROM-trained models on six unseen datasets. The best results in each column are in boldface. AVG is the average accuracy across all datasets in each row. 
+
+Method 
+
+DGM4 MiRAGe AIGUARD COSMOS DiffFace DiFF 
+
+AVG 
+
+ACC mAP mIoU ACC ACC ACC DiffSwap Text2Image DDIM FaceSwap FaceEdit Image2Image ACC ACC ACC ACC ACC ACC ViLT 43.25 27.14 35.58 45.12 43.76 41.90 51.82 55.45 80.33 69.50 53.22 85.11 52.68 HAMMER 53.88 30.55 47.92 47.45 41.33 56.77 52.14 59.22 93.55 75.40 56.91 95.33 59.20 HAMMER++ 54.15 31.42 50.11 48.99 42.17 56.12 52.77 58.30 95.12 77.55 56.33 96.88 59.99 FKA-Owl 57.55 34.11 23.44 55.90 61.33 55.88 54.88 60.12 97.44 74.12 58.45 97.55 60.90 
+
+REFORM (Ours) 61.20 35.88 51.33 56.99 56.28 56.85 55.30 63.95 98.12 75.88 59.10 98.15 64.09 
+
+ing to image-text inconsistency, and supports binary classification of image-text pairs as paired or not. • MMFakeBench (Liu et al., 2025): A mixed-source benchmark tailored for Large Vision-Language Models (LVLMs). It aggregates diverse misinformation types to comprehen-sively evaluate capabilities in text-based fact-checking and cross-modal consistency verifi-cation. What’s more, considering the emerging threat of generative AI, we further assess the model’s ro-bustness against high-fidelity diffusion-based facial forgeries using: • DiffFace (Chen et al., 2024): Focuses on com-prehensive diffusion-based facial forgeries in non-news scenarios, supporting binary forgery detection. • DiFF (Cheng et al., 2024): Centers on high-fidelity diffusion-generated facial imagery and manipulation in non-news contexts, support-ing binary forgery detection. 
+
+Analysis on Unseen Misinformation Bench-marks. Tab. 7 reports the zero-shot performance on five diverse benchmarks. 1) Complex Manipula-tion & Grounding: On DGM4, REFORM achieves the best performance across all metrics. Notably, it surpasses the runner-up FKA-Owl by a signif-icant 27.89 in mIoU (51.33 vs. 23.44), demon-strating that our model does not merely predict binary labels but truly comprehends the manipu-lation traces for precise localization. 2) Genera-tive & Industrial Scenarios: On MiRAGe and AI-GUARD, which feature fully AI-generated news and e-commerce artifacts respectively, REFORM demonstrates strong adaptability. It achieves the highest accuracy on MiRAGe (56.99) and remains highly competitive on AIGUARD (56.28), signif-icantly outperforming the HAMMER series. 3) Cross-Modal Inconsistency: On COSMOS, detect-ing subtle text-image conflicts remains challenging. REFORM attains the top accuracy of 56.85, indicat-ing its robustness in verifying semantic coherence. Overall, REFORM achieves the highest average ac-curacy (AVG) of 64.09 across all unseen datasets, validating its superior generalization capability be-yond the training domains. 
+
+Robustness Against Facial Forgeries. While ROM covers face manipulations within news con-17 texts (e.g., FaceSwap, FaceAttribute), real-world threats often involve more diverse generation tech-niques and non-news scenarios. We thus evalu-ate robustness on DiffFace and DiFF, which fo-cus on high-fidelity diffusion-based facial forgeries. 1) Diffusion Artifact Detection: REFORM ex-hibits exceptional robustness against diffusion arti-facts, achieving near-perfect accuracy on DiffFace-DDIM (98.12) and DiFF-Image2Image (98.15). 2) Generalization from News to General Vision: Although trained on news-oriented manipulations, REFORM generalizes effectively to these specific high-fidelity forgery benchmarks. On the DiFF benchmark, it dominates the FaceEdit and Im-age2Image categories and achieves the highest overall average. This suggests that REFORM has successfully learned intrinsic forensic features rather than overfitting to the semantic context of news images, enabling it to detect sophisticated facial forgeries in broader visual domains. 
+
+Detailed Analysis on MMFakeBench. Due to space limitations, the main paper only reports a condensed version of the binary detection results in Tab 2. Here, we present the complete com-parison, encompassing both binary (Tab. 9a) and fine-grained (Tab. 9b) detection tasks across a full spectrum of baseline models. Tab. 9 details the zero-shot performance of REFORM compared to various LVLMs on MMFakeBench. Despite hav-ing only 0.3B parameters, REFORM demonstrates exceptional efficiency and accuracy. In the bi-nary detection task , REFORM achieves a Test F1 score of 74.1% , significantly outperforming the 13B-parameter LLaVA-1.6 baseline (50.2%) even when the latter is enhanced by the MMD-Agent framework. Furthermore, in the more chal-lenging fine-grained detection task , where mod-els must identify specific manipulation types, RE-FORM maintains its superiority with a Test F1 of 
+
+37.3% . In contrast, most standard LVLMs struggle significantly in this setting (e.g., <20% F1), and even the 13B LLaVA-1.6 with MMD-Agent trails behind with an F1 of 34.5%. These results con-firm that REFORM’s reasoning-driven architecture effectively generalizes to complex, unseen mixed-source misinformation without relying on massive model scale. 
+
+C.3 Robustness Against Missing Modalities 
+
+In real-world scenarios, multimodal data streams may be incomplete or corrupted. To evaluate RE-FORM’s reliability under such conditions, we con-ducted inference-time experiments where either vi-sual or textual input was masked. This test assesses whether the model can maintain effective detection capabilities using only partial information. We evaluate the model on the test set under three settings without retraining: • ROM (full multimodal): The standard set-ting with complete image-text pairs (I, T )
+
+from test set of ROM. • Text-Only Inference: The visual input I is replaced by a zero-tensor image I∅ (represent-ing a black image), testing the model’s ability to reason solely based on textual semantics. • Image-Only Inference: The textual input T
+
+is replaced by an empty sequence T∅, testing the model’s capacity to identify forensic traces solely from visual signals. As shown in Tab. 8, REFORM demonstrates exceptional reliability and generalizability in simu-lated real-world scenarios where data streams are incomplete. In the Image-Only setting, the model retains high performance with a negligible drop (∼7-8%), ensuring robust usability even without captions. In the Text-Only setting, a larger perfor-mance drop ( ∼15%) is observed. This decline is inevitable, as verifying visual authenticity solely through text is inherently challenging without di-rect forensic evidence. Remarkably, despite this severe lack of visual signals, REFORM still main-tains a commendable average accuracy of over 70% (e.g., 75.47% on NYT). This confirms that while performance naturally degrades in single-modal set-tings, REFORM effectively maximizes the utility of available information to ensure valid detection even in degraded environments. 
+
+D Performance of Fine-Tuned MLLMs on ROM 
+
+To investigate the adaptability of general-purpose MLLMs for manipulation detection, we fine-tuned representative models across two parameter scales: the 3B-scale Qwen2.5-VL-3B (Bai et al., 2025) and DeepSeek-VL2-3B (Wu et al., 2024), as well as the 7B-scale Qwen2.5-VL-7B (Bai et al., 2025) and LLaVA-v1.6-7B (Liu et al., 2023). All fine-tuning was performed with LoRA (r = 22, α = 22) using a learning rate of 2 × 10 −5 for two epochs. The quantitative results are detailed in Tab. 10. Supervised fine-tuning significantly unlocks the 18 Table 8: Robustness Against Missing Modalities of REFORM in ROM. The background gray highlights the relative performance decline (Drop) compared to the full modality setting. AVG refers to the average performance across the five news domains.                                                                                                                                         
+
+> Train
+> Modality Test Domain
+> NYT Guardian USA Wash. BBC AVG
+> ACC mIoU ACC mIoU ACC mIoU ACC mIoU ACC mIoU ACC mIoU Image-Only 91.53 84.65 78.12 69.88 76.94 65.77 80.61 67.15 82.44 70.16 81.93 71.52
+> Performance drop(%) 5.34 4.18 10.07 9.09 7.69 12.61 3.88 12.11 8.75 7.10 7.14 8.86
+> Text-Only 82.08 -73.90 -74.91 -71.91 -74.53 -75.47 -
+> Performance drop(%) 15.11 -14.93 -10.13 -14.26 -17.50 -14.46 -NYT
+> ROM 96.69 88.34 86.87 76.86 83.35 75.26 83.87 76.40 90.34 75.52 88.22 78.48 Image-Only 71.90 59.35 79.40 87.60 74.85 81.40 74.25 76.33 75.40 69.45 75.16 74.83
+> Performance drop(%) 3.33 12.12 15.56 6.88 5.44 3.74 4.86 8.48 8.03 10.67 7.80 8.15
+> Text-Only 68.27 -74.72 -67.07 -67.22 -64.02 -68.26 -
+> Performance drop(%) 8.21 -20.54 -15.27 -13.87 -21.90 -16.26 -Guardian
+> ROM 74.38 67.53 94.04 94.07 79.16 84.56 78.04 83.41 81.98 77.75 81.52 81.46
+
+potential of general MLLMs. For instance, on the in-domain NYT split, Qwen2.5-VL-7B achieves an average accuracy of 81.87, and DeepSeek-VL2-3B reaches 77.26. This represents a substantial leap compared to their zero-shot performance (approx-imately 39 for both series) reported in the main paper. Despite these strong gains, our proposed REFORM consistently outperforms all baselines across ACC, mAP, and mIoU metrics in both in-domain and cross-domain settings with approxi-mately 0.3B parameters. This superiority high-lights the effectiveness of our forensic-oriented architectural design over simply adapting larger general-purpose models. In summary, while fine-tuning enhances general-purpose MLLMs’ performance, purpose-built ar-chitectures like REFORM offer a more parameter-efficient and robust solution for detecting sophisti-cated multimedia manipulation. 
+
+E Details of Proposed ROM 
+
+The ROM dataset is constructed by extending the manipulation categories of the MDSM (Zhang et al., 2025c). We utilize high-quality image-text pairs from VisualNews (Fuxiao et al., 2021), NYTimes800k (Tran et al., 2020), and Good-News (Biten et al., 2019) as our source reposi-tory. ROM assimilates six face-specific classes from MDSM, comprising Original (Orig), FaceAt-tribute (FA), FaceSwap (FS), TextFabrication (TF), and their composites (FA&TF, FS&TF). Crucially, we extend this taxonomy by introducing four scene-level categories: BackgroundReplacement (BR), 
+
+FullGeneration (FG), and their text-fabricated vari-ants (BR&TF, FG&TF). Fig. 8a presents the comprehensive distribution of the ROM dataset. The concentric pie chart illus-trates the dataset’s composition. The inner chart de-lineates the data source proportions: 62% (412,433 samples) are derived from the existing MDSM dataset, while 38% (263,344 samples) are newly extended to incorporate scene-level manipulations. The outer ring specifically breaks down the distri-bution of this newly extended portion. To ensure class balance alongside the introduction of scene-level manipulations, we proportionally increased the number of REAL and TF samples. Specifi-cally, the extended data consists of 150,181 REAL, 19,109 TF, 31,809 BG, 14,763 BG&TF, 32,013 FG, and 15,781 FG&TF samples. In terms of media sources, the final ROM dataset encompasses five distinct news domains. Detailed statistics and their specific roles in our experimen-tal setup are summarized in Table 11. It is worth noting that the significant variance in data volume across these domains is inherent to the distribu-tion of the source data, where The New York Times 
+
+(NYT) and The Guardian are predominant in pub-licly available repositories. Leveraging this distri-bution, we establish a rigorous cross-domain eval-uation protocol: the two largest domains serve as training sources, each split into training, validation, and testing sets following an 8:1:1 ratio. In con-trast, the smaller domains (e.g. USA Today , The Washington Post , and BBC News ) are reserved ex-clusively for testing, serving as unseen domains to evaluate zero-shot generalization capabilities. The specific construction details for the newly 19 President Obama visited Turtle Beach on Midway Atoll in 
+
+the Pacific and declared a Connecticut-sized marine 
+
+monument in the Atlantic on Thursday. 
+
+Orig 
+
+Obama Visits Midway Atoll, Emphasizes Importance of 
+
+Marine Conservation in Pacific. 
+
+Fake 
+
+Femi Koleoso , center, played drums in the band Ezra 
+
+Collective at the Steam Down improv night in London in 
+
+August. 
+
+Join us for an unforgettable evening with Femi Koleoso as 
+
+they perform live at the Jazz Cafe. Don't miss out on this 
+
+incredible opportunity to experience the very best in jazz. 
+
+Get your tickets now! 
+
+Orig  Fake 
+
+TF 
+
+MLLM 
+
+MLLM 
+
+The King of the Classics Meets the Tour de France 
+
+Champion: A Rare Encounter Between Sean  Kelly 
+
+and Sir Bradley  Wiggins .
+
+Orig 
+
+Dimension Jumper! WWE superstar Chris  Jericho 
+
+drops into cycling world, seeking Sir Bradley 
+
+Wiggins ' trade secrets. 
+
+Fake 
+
+Speaker John  A.  Boehner at the House Republican 
+
+leadership’s annual retreat in Cambridge, Md., on 
+
+Thursday. 
+
+Speaker Jia  Qinglin at the House Republican 
+
+leadership’s annual retreat in Cambridge, Md., on 
+
+Thursday. 
+
+Orig  Fake 
+
+> FS  FS&TF
+
+MLLM 
+
+Name 
+
+Align   
+
+> Chris Jericho
+> Jia Qinglin
+
+Sophie  David SC counsel assisting the royal 
+
+commission into institutional responses to child 
+
+sexual abuse  
+
+> Sophie David
+
+DESCRIPTION : In  a formal  setting  with 
+
+wooden  desks  and  blurred  figures  in  the 
+
+background,  a woman  with  shoulder-length 
+
+brown  hair,  wearing  a light  gray  blazer  over 
+
+a white  blouse,  stands  at  a podium,  her 
+
+expression  earnest  and  composed  as  she 
+
+speaks;  the  soft  lighting  highlights  her 
+
+features  from  a slightly  elevated  camera  angle. 
+
+Her  posture  is  upright  and  professional,  hands 
+
+resting  on  the  podium,  while  other 
+
+individuals  seated  around  her  are  partially 
+
+visible  but  out  of  focus. 
+
+Orig 
+
+MLLM 
+
+Sophie  David SC counsel assisting the royal 
+
+commission into institutional responses to child 
+
+sexual abuse 
+
+Generate 
+
+Sophie  David SC counsel assisting the royal 
+
+commission into institutional responses to child 
+
+sexual abuse 
+
+Fake 
+
+> FG
+
+Face 
+
+Align 
+
+Secretary of State John  Kerry at the United States 
+
+Embassy in London on Tuesday. 
+
+William  Baldwin delivers powerful speech at 
+
+prestigious event, addressing critical issues with 
+
+passion and conviction.  
+
+> William Baldwin
+
+DESCRIPTION:  A man  stands  at  a wooden 
+
+podium  in  a well-lit  room,  his  hands  raised  as  if 
+
+he  is  addressing  an  audience.  He  has  short,  gray 
+
+hair  and  is  wearing  a dark  suit  with  a light  blue 
+
+tie.  The  American  flag  is  displayed  behind  him, 
+
+and  he  is  wearing  a pair  of  glasses.  The 
+
+background  features  blue  curtains  and  several 
+
+cameras  mounted  on  the  ceiling,  suggesting  a
+
+press  conference  or  official  announcement  setting. 
+
+The  man's  facial  expression  is  serious  and 
+
+focused,  indicating  he  is  delivering  an  important 
+
+message. 
+
+Orig 
+
+> FG&TF
+
+Fake 
+
+Secretary of State John  Kerry at the United States 
+
+Embassy in London on Tuesday. 
+
+MLLM 
+
+Generate 
+
+MLLM 
+
+Separated Foreground 
+
+The Shannara Chronicles, an adaptation of Terry 
+
+Brooks's fantasy novels, starting Tuesday night on 
+
+MTV, stars Austin  Butler  and  Poppy  Drayton .
+
+INPAINT:  A young  couple,  dressed  in 
+
+medieval  attire,  stands  on  a sandy  beach 
+
+with  the  sun  setting  in  the  background, 
+
+casting  warm  hues  over  the  scene.  The 
+
+couple  appears  to  be  running,  with  the 
+
+man  leading  the  way  and  the  woman 
+
+following  closely  behind.  The  background 
+
+features  rolling  hills  covered  in  greenery, 
+
+with  a few  scattered  trees  and  bushes.  The 
+
+atmosphere  is  serene  yet  dynamic,  capturing 
+
+the  essence  of  a journey  or  adventure. 
+
+Orig 
+
+MTV's New Series 'The Shannara Chronicles' 
+
+Premieres with Exciting Beach Scene Starring Austin 
+
+Butler  and  Poppy  Drayton .
+
+Fake 
+
+RMBG2 
+
+MLLM 
+
+Generate Inpainting 
+
+Prompt  Inpainting 
+
+> BR&TF
+
+Kimberly  Gordon  fi lling growlers in a Duane Reade 
+
+in the Williamsburg neighborhood of Brooklyn. 
+
+INPAINT:  A bustling  city  street  at  dusk, 
+
+with  neon  lights  reflecting  off  wet 
+
+pavement,  a crowd  of  people  walking  by, 
+
+and  a vintage  diner  in  the  background. 
+
+Orig 
+
+Separated Foreground 
+
+RMBG2 
+
+MLLM 
+
+Generate Inpainting 
+
+Prompt 
+
+Inpainting 
+
+Kimberly  Gordon prepares a signature brew at the 
+
+bustling streets of Williamsburg, showcasing the 
+
+vibrant co ff ee culture of the neighborhood. 
+
+Fake 
+
+> BR
+
+Philip Hammond urged all nations to boost their 
+
+response to combat the virus. 
+
+Orig 
+
+Philip Hammond criticises media in strong terms at 
+
+diplomatic conference. 
+
+Fake 
+
+MLLM 
+
+Ali picture here in 2012 has been battling Parkinson s 
+
+disease for 30 years 
+
+Ali picture here in 2012 has been battling Parkinson s 
+
+disease for 30 years 
+
+Orig  Fake 
+
+> FA  FA&TF
+
+Old Age 
+
+Emotion 
+
+Reverse 
+
+REAL 
+
+Taylor Swift to Receive Artist of the Decade Award at 
+
+2019 AMAs. 
+
+Rapace with Ridley Scott, shooting "Prometheus" in 
+
+Iceland.  (c) (b) 
+
+(d)  (e) 
+
+(f) 
+
+(g) 
+
+(a) Figure 8: Overview of the ROM dataset construction pipeline and statistics. (a) Distribution of real vs. fake data and manipulation categories. (b)-(g) Visual examples and generation pipelines for distinct categories: (b) Real samples, (c) Text Fabrication (TF), (d) Face Attribute (FA), (e) Face Swap (FS), (f) Fully Generated (FG), and (g) Background Replacement (BR). 
+
+20 Table 9: Zero-shot performance comparison on the MMFakeBench. Top: Binary Detection Results. Bottom: Fine-grained Detection Results. We compare REFORM with baselines using “Standard” and “MMD-Agent” prompting paradigms as defined in the MMFakeBench paper. Baseline results are cited from the original MMFakeBench publication. The best result in each column is highlighted in bold .
+
+(a) Binary Detection Performance Model Language Prompt Validation (1000) Test (10000) Name Model Method F1 Precision Recall ACC F1 Precision Recall ACC 
+
+LVLMs with 7B Parameters 
+
+Otter-Image (Li et al., 2025a) MPT-7B (Team, 2023) Standard 7.9 4.1 4.5 7.9 8.6 32.4 5.0 8.6 MiniGPT4 (Zhu et al., 2024) Vicuna-7B (Dai et al., 2023b) Standard 40.4 38.2 45.7 63.1 41.7 41.0 47.4 65.2 InstructBLIP (Dai et al., 2023a) Vicuna-7B (Dai et al., 2023b) Standard 14.7 30.8 13.2 8.1 16.1 40.5 14.2 8.8 Qwen-VL (Bai et al., 2023) Qwen-7B (Bai et al., 2023) Standard 43.6 50.6 44.9 60.3 44.0 51.6 45.2 60.5 VILA (Lin et al., 2024) LLaMA2-7B (Touvron et al., 2023) Standard 41.2 35.0 50.0 70.0 41.2 35.0 50.0 70.0 PandaGPT (Su et al., 2023) Vicuna-7B (Dai et al., 2023b) Standard 24.6 60.6 50.5 30.9 24.1 61.7 50.4 30.6 mPLUG-Owl2 (Ye et al., 2025) LLaMA2-7B (Touvron et al., 2023) Standard 47.2 64.9 52.3 70.6 48.7 71.1 53.3 71.4 
+
+BLIP2 (Li et al., 2023) FlanT5-XL (Chung et al., 2024) Standard 41.2 35.0 50.0 70.0 41.2 35.0 50.0 70.0 LLaVA-1.6 (Liu et al., 2023) Vicuna-7B (Dai et al., 2023b) Standard 48.1 48.2 48.5 59.5 52.5 53.0 52.6 62.5 
+
+LVLMs with 13B Parameters 
+
+VILA (Lin et al., 2024) LLaMA2-13B (Touvron et al., 2023) Standard 41.1 35.0 50.0 70.0 41.1 35.0 50.0 70.0 MMD-Agent 56.5 62.2 56.9 70.3 56.6 64.3 57.2 71.2 InstructBLIP (Dai et al., 2023a) Vicuna-13B (Dai et al., 2023b) Standard 41.1 35.0 49.9 69.9 41.1 35.0 49.9 69.8 MMD-Agent 51.3 53.4 54.0 53.1 47.9 50.1 50.1 49.9 BLIP2 (Li et al., 2023) FlanT5-XXL (Chung et al., 2024) Standard 31.6 63.4 53.6 35.5 30.6 64.9 53.4 34.9 MMD-Agent 51.5 53.4 54.0 53.6 51.8 54.0 54.7 53.5 LLaVA-1.6 (Liu et al., 2023) Vicuna-13B (Dai et al., 2023b) Standard 41.1 35.0 50.0 69.7 42.3 57.3 50.1 69.5 MMD-Agent 51.8 66.7 54.6 71.4 50.2 67.3 53.9 71.3 
+
+Ours 
+
+REFORM Florence2-0.3B (Bin et al., 2023) Ours (Sec.3.2) 74.9 74.5 75.4 64.7 74.1 74.1 74.0 63.7 
+
+(b) Fine-grained Detection Performance Model Language Prompt Validation (1000) Test (10000) Name Model Method F1 Precision Recall ACC F1 Precision Recall ACC 
+
+LVLMs with 7B Parameters 
+
+Otter-Image (Li et al., 2025a) MPT-7B (Team, 2023) Standard 5.2 10.5 3.4 4.1 4.9 9.3 3.3 4.0 MiniGPT4 (Zhu et al., 2024) Vicuna-7B (Dai et al., 2023b) Standard 5.2 5.2 21.2 9.0 5.3 6.9 21.0 9.1 InstructBLIP (Dai et al., 2023a) Vicuna-7B (Dai et al., 2023b) Standard 7.1 7.9 6.5 7.8 8.1 16.4 7.2 8.5 Qwen-VL (Bai et al., 2023) Qwen-7B (Bai et al., 2023) Standard 7.5 10.3 24.3 11.0 8.0 35.9 25.5 11.6 VILA (Lin et al., 2024) LLaMA2-7B (Touvron et al., 2023) Standard 11.5 7.5 25.0 30.0 11.5 7.5 25.0 30.0 PandaGPT (Su et al., 2023) Vicuna-7B (Dai et al., 2023b) Standard 11.8 9.8 25.0 30.0 11.6 8.6 25.0 30.0 mPLUG-Owl2 (Ye et al., 2025) LLaMA2-7B (Touvron et al., 2023) Standard 14.5 22.2 25.9 31.1 15.1 25.2 26.3 31.5 BLIP2 (Li et al., 2023) FlanT5-XL (Chung et al., 2024) Standard 16.4 20.1 27.5 33.0 16.7 17.3 27.7 33.2 LLaVA-1.6 (Liu et al., 2023) Vicuna-7B (Dai et al., 2023b) Standard 17.4 14.8 25.7 30.8 19.0 16.5 26.9 32.3 
+
+LVLMs with 13B Parameters 
+
+VILA (Lin et al., 2024) LLaMA2-13B (Touvron et al., 2023) Standard 11.5 7.5 25.0 30.0 11.6 32.5 25.0 30.0 MMD-Agent 22.7 27.3 24.4 28.7 24.0 30.4 25.5 29.4 InstructBLIP (Dai et al., 2023a) Vicuna-13B (Dai et al., 2023b) Standard 13.7 13.2 24.0 28.8 13.9 25.5 24.3 29.1 MMD-Agent 26.0 33.3 30.1 29.5 24.5 32.1 28.8 27.3 BLIP2 (Li et al., 2023) FlanT5-XXL (Chung et al., 2024) Standard 16.7 34.9 27.3 32.8 16.3 34.6 27.3 32.8 MMD-Agent 31.6 39.8 32.2 34.4 28.8 39.0 30.4 32.1 LLaVA-1.6 (Liu et al., 2023) Vicuna-13B (Dai et al., 2023b) Standard 12.0 22.5 25.0 30.0 14.4 35.7 26.0 31.2 MMD-Agent 38.0 44.5 41.0 40.6 34.5 42.7 37.5 37.4 
+
+Ours 
+
+REFORM Florence2-0.3B (Bin et al., 2023) Ours (Sec.3.2) 38.9 34.6 48.9 57.3 37.3 32.1 47.0 56.7 
+
+introduced categories are as follows. 
+
+E.1 Fully Generated Variants. 
+
+This category involves generating entirely new vi-sual scenes based on the semantic context of orig-inal news events, as shown in Fig. 8f. We con-structed a total of 32,013 FG samples and 15,781 FG&TF samples. The generation pipeline begins by employing Qwen2.5-VL (Bai et al., 2025) to cre-ate a dense caption for the original image ( Iorig ). Using this dense caption as a prompt, we utilize advanced text-to-image models, randomly select-ing between FLUX (Labs et al., 2025) and Stable Diffusion (StabilityAI, 2023), to synthesize a high-quality candidate image. Subsequently, to ensure precise character control, we apply SimSwap (Chen et al., 2020) for face replacement on the generated body. We differentiate the variants based on the source of the identity injection: • FG (Visual Fake only): We extract the face of the person from Iorig and swap it onto the generated body. This maintains identity con-sistency with the original caption, creating a scenario where the person appears in a fake context but the text remains factually descrip-tive of the person (though not the scene). 21 Table 10: Comparison of fine-tuned MLLMs for ROM, where the background gray indicates the intra-domain performance. The better results in each group are in boldface. AVG refers to the average performance across the five news domains.                                                                                                                                                                                                           
+
+> Train Domain
+> Method Test Domain
+> NYT Guardian USA Wash. BBC AVG
+> ACC mAP mIoU ACC mAP mIoU ACC mAP mIoU ACC mAP mIoU ACC mAP mIoU ACC mAP mIoU Tr. on NYT  Qwen2.5-VL-3B (Bai et al., 2025) 86.76 57.54 65.34 80.04 41.34 62.78 72.07 34.82 62.59 74.87 38.43 55.75 73.13 39.98 70.00 77.38 42.42 63.29 DeepSeek-VL2-3B (Wu et al., 2024) 86.12 56.15 64.23 80.35 41.10 63.45 73.20 35.55 63.80 74.14 39.12 57.20 72.50 39.30 71.15 77.26 42.24 63.97 Qwen2.5-VL-7B (Bai et al., 2025) 95.10 83.40 85.12 84.20 62.15 60.45 72.55 55.80 63.10 71.40 55.25 61.30 86.10 54.40 75.20 81.87 62.20 69.03 LLaVa-v1.6-7B (Liu et al., 2023) 94.42 81.23 83.87 83.45 60.37 58.06 70.16 53.96 61.36 69.80 53.13 59.27 84.59 52.26 73.99 80.48 60.19 67.31
+> REFORM(ours) 96.69 91.76 88.34 86.87 73.18 76.86 83.35 69.16 75.26 83.87 72.15 76.40 90.34 74.17 75.52 88.22 76.08 78.48
+> Tr. on Guard.  Qwen2.5-VL-3B (Bai et al., 2025) 61.90 22.23 61.99 92.76 75.62 77.23 67.59 44.62 63.44 70.76 36.04 67.64 76.21 49.17 72.38 73.84 45.54 68.54 DeepSeek-VL2-3B (Wu et al., 2024) 61.45 22.10 63.20 92.10 74.05 78.40 68.25 45.80 64.10 71.30 36.50 68.20 77.40 49.30 73.10 74.10 45.55 69.40 Qwen2.5-VL-7B (Bai et al., 2025) 64.80 25.40 66.80 94.25 79.12 85.30 69.10 48.20 68.45 70.50 35.80 64.10 81.20 56.40 77.60 75.97 48.98 72.45 LLaVa-v1.6-7B (Liu et al., 2023) 63.15 23.14 65.35 93.66 75.13 83.37 67.68 45.87 66.72 69.08 33.74 62.54 80.63 54.56 77.52 74.84 46.49 71.10
+> REFORM(ours) 74.38 63.62 67.53 94.04 92.90 94.07 79.16 58.48 84.56 78.04 59.49 83.41 81.98 64.26 77.75 81.52 67.75 81.46
+
+Table 11: Statistics and experimental roles of the five news domains in the ROM dataset. Due to the inherent distribution of source data, larger domains (The New York Times, Guardian) are utilized for training, while smaller domains serve as unseen test sets for zero-shot evaluation. 
+
+News Domain Count Experimental Role 
+
+The New York Times 269,525 Training Source (Split 8:1:1) The Guardian 234,540 USA Today 79,788 Unseen Testing Domain (Zero-shot) The Washington Post 61,577 BBC News 59,026 
+
+• FG&TF (Multimodal Fake): We randomly select a face identity from a different news event. After swapping this “intruder” face into the generated image, we use the name of this new identity to construct a prompt for Qwen2.5-VL. The model then generates a fab-ricated news caption (Text Fabrication) that aligns with the visual scene and the new iden-tity (e.g., “William Baldwin delivers powerful speech...” in Fig. 8f), creating a coherent but entirely fabricated multimodal news piece. 
+
+E.2 Background Replacement Variants. 
+
+This category focuses on manipulating the semantic context by radically altering the environmental set-ting while preserving the foreground subject ( If g ). As illustrated in Fig. 8g, this results in a scenario where the actor is real, but the location is fabricated. We constructed a total of 31,809 BR samples and 14,763 BR&TF samples. To generate these samples, we first utilize RMBG-2 (Zheng et al., 2024) to accurately seg-ment and isolate foreground subjects from the orig-inal image. Subsequently, we task Qwen2.5-VL to “imagine” a reasonable but distinct background description that is compatible with the isolated fore-ground. Using this description as a prompt, we randomly employ either Stable Diffusion Inpaint-ing (StabilityAI, 2023) or FLUX Inpainting (Labs et al., 2025) to synthesize a new background behind the fixed subjects. This randomized selection strat-egy enhances the diversity of generation artifacts while ensuring seamless lighting and perspective consistency. Based on this synthesized imagery, we define two distinct manipulation categories: • BR (Visual Fake only): In this variant, we pair the modified image with the original cap-tion. This creates a subtle conflict where the visual evidence (the new background) no longer supports the factual location described in the text, serving as a test for visual forensic grounding. • BR&TF (Multimodal Fake): This variant represents a comprehensive forgery. We first extract the specific named entities (e.g., per-son names) from the original context. We then prompt Qwen2.5-VL to hallucinate a com-pletely new news event that aligns with the newly synthesized background. This results in a fabricated caption that is semantically co-herent with the visual scene but factually false, creating a highly deceptive multimodal news piece. 22 F Case Study 
+
+F.1 Visualization of Detection Results 
+
+To intuitively demonstrate the effectiveness and interpretability of REFORM, we visualize its de-tection results, reasoning chains, and grounding outputs across different scenarios. 
+
+Performance on ROM Benchmark. As illus-trated in Figure 9, REFORM exhibits precise dis-criminative capabilities across the diverse manipu-lation categories defined in ROM. • Face-level Manipulation: For subtle face swapsin Fig. 9b, the model not only cor-rectly classifies the image as “Face swap” or “Face attribute” but also accurately predicts the bounding box coordinates of the manipu-lated face, validating the effectiveness of our grounding objective. • Scene-level Synthesis: In scenarios involving background inpainting or full generation (Fig. 9c), REFORM successfully identifies intrinsic inconsistencies, such as the lighting mismatch on the wooden cabin or the illogical setting of water and greenery for a business execu-tive, labeling them as “Whole generated” or “Inpainted background”. • Text Fabrication: Even when the visual con-tent is authentic, REFORM detects semantic conflicts between the image and the caption (Fig. 9d). In the left example, the model cor-rectly identifies that the entity “M. Shyaan” mentioned in the text is a fabrication incon-sistent with the actual actors present in the scene. 
+
+Zero-Shot Generalization on Unseen Data. 
+
+Fig. 10 further showcases REFORM’s robustness on six unseen datasets. Without any fine-tuning, the model generalizes its forensic reasoning to: (1) 
+
+Complex News Scenarios: On DGM4 and MM-FakeBench, it distinguishes between playful illus-trations (Real) and industrial disasters (Fake), and accurately grounds manipulated faces in political news. (2) Out-of-Context Misinformation: On COSMOS, it detects subtle text-image mismatches where the image is real but attributed to the wrong person. (3) Domain Shifts: Remarkably, the model adapts to non-news domains like e-commerce (AI-GUARD) and high-fidelity facial forgeries (Diff-Face&DiFF), focusing on general forensic cues like “smooth skin texture” or “blurred edges” rather than overfitting to news-specific patterns. 
+
+F.2 Human Assessment of Explainability 
+
+To objectively evaluate the quality of the forensic reasoning generated by REFORM, we conducted a human study following the same rigorous proto-col as described in Appendix A. We recruited 18 volunteers and randomly sampled 193 image-text pairs along with their generated reasoning chains from the ROM test set. As shown in Fig. 11, participants were presented with the news snippet and the model’s output. They were asked to evaluate "how well the generated reasoning convinces them to trust the model’s judg-ment" based on a 4-point Likert scale: Not Convinc-ing , Weakly Convincing , Acceptable , and Highly Convincing .The statistical results are illustrated in Fig. 12. REFORM demonstrates a high level of inter-pretability across all news domains. On average, 
+
+85.8% of the reasoning chains were rated as ef-fective (summing “Acceptable” and “Highly Con-vincing”). Conversely, the “Not Convincing” rate remains extremely low (avg. 5.5%), suggesting that REFORM rarely produces hallucinations or illogi-cal inferences that would mislead users. These re-sults confirm that REFORM not only achieves high detection accuracy but also fosters trust through transparent and logical decision-making processes. 
+
+F.3 Limitations and Failure Cases 
+
+While REFORM achieves state-of-the-art perfor-mance, analyzing its failure cases provides critical insights into the boundaries of reasoning-driven forensics. As shown in Fig. 13, we categorize rep-resentative failures into four dimensions aligned with the model’s cognitive process: 
+
+Logical Hallucination. In Fig. 13a, the model correctly detects the text fabrication but justifies it with a logical fallacy. It argues that the subject could not perform the action in 2015 because she passed away in 2020 ( 2020 > 2015 ). This Ratio-nale Hallucination suggests that while REFORM learns the tone of forensic verification from the teacher model, it lacks an external knowledge base to validate the temporal logic of specific entities, a side-effect of the distillation process. 
+
+Semantic-Dominant Attention Masking. In complex composite forgeries, strong semantic sig-nals can overshadow subtle visual cues. In Fig. 13b, 23 Figure 9: Qualitative results of REFORM on the ROM test set. The figure displays representative samples across four categories: (a) Real, (b) Face-level Manipulation, (c) Scene-level Manipulation, and (d) Text Fabrication. For each sample, REFORM generates a comprehensive Reasoning chain explaining the forensic logic, followed by a structured Answer that includes the authenticity, fine-grained manipulation type, and grounding coordinates (if applicable). 
+
+24 Figure 10: Zero-shot generalization results on unseen benchmarks. We visualize REFORM’s performance on (a) DGM4, (b) MMFakeBench, (c) MiRAGe, (d) COSMOS, (e) AIGUARD, and (f) DiffFace&DiFF. Despite the significant domain shift and unseen manipulation types (e.g., e-commerce, high-fidelity diffusion faces), REFORM successfully detects anomalies and provides convincing reasoning, demonstrating robust generalizability. 
+
+25 Figure 11: User interface for the human evaluation of reasoning quality. Participants review the news sample alongside the AI’s verdict and reasoning chain to determine whether the rationale is logically sound and convincing enough to justify the decision. 
+
+> Figure 12: Distribution of human ratings on reasoning quality across five news domains. The results show that the vast majority of REFORM’s reasoning is rated as “Acceptable” or “Highly Convincing”, demonstrating consistent explainability across different sources.
+
+REFORM correctly identifies the text fabrication by spotting the contradiction between the shirt slogan ("BEAT THE...") and the caption ("Ohio State"). However, this strong semantic discov-ery dominates the inference attention, causing the model to overlook the simultaneous facial manipu-lation. This reflects a human-like cognitive short-cut: once a high-level factual inconsistency is es-tablished, the model deprioritizes low-level pixel scrutiny. 
+
+Sensory Limits in Low-Fidelity Imagery. Phys-ical image quality remains a hard bottleneck. Fig. 13c illustrates a False Negative case where a Face Swap is missed. The input image suffers from severe degradation and high ISO noise, which effec-tively masks the fine-grained artifacts required for detection. In such low-SNR scenarios, REFORM adopts a conservative prediction strategy to prevent false alarms, prioritizing precision over recall. 
+
+Visual Perception Failure in OOD Domains. 
+
+Fig. 13d highlights the visual encoder’s struggle with Out-of-Distribution (OOD) data. The input is a cinematic still (from Fight Club) featuring dra-matic low-key lighting, which differs significantly from standard news imagery. Consequently, the vi-sion encoder fails to resolve the background crowd, leading the reasoning module to hallucinate that "only one man" is present to support its verdict. This highlights the challenge of grounding forensic reasoning in visually ambiguous, artistic contexts. 
+
+Future Directions. Our failure analysis high-lights two critical avenues for further improvement: refining the quality of reasoning and exploring its deeper utility. First, regarding the logical hallucina-tions observed in Case (a), prior research indicates that student models usually benefit from more ro-bust knowledge distillation protocols. Strategies such as noise filtering or retrieval-augmented su-pervision usually mitigate teacher-induced halluci-nations and ensure high-fidelity student learning. Second, beyond generation, there is significant po-tential in better leveraging rationales to guide the detection process. Mechanisms such as rationale-guided attention usually alleviate semantic masking (Case b), while uncertainty-aware reasoning usu-ally modulates decision confidence effectively in challenging low-fidelity or OOD scenarios (Case c and d). We hope these insights contribute to the development of more generalizable and trustworthy multimodal detectors. 26 Figure 13: Qualitative Failure Analysis. We analyze limitations across four cognitive dimensions: (a) Logical Hallucination: The model uses flawed temporal logic ( 2020 > 2015 ) to support a correct verdict. (b) Attention Masking: Strong text-image semantic conflicts distract the model from detecting pixel-level facial manipulation. (c) Sensory Limits: High noise and pixelation mask forensic traces, leading to a miss. (d) Perception Failure: OOD cinematic lighting causes the model to hallucinate visual content (missing the crowd). 
+
+G Prompt Paradigm 
+
+In this section, we present the specific prompt tem-plates designed for our proposed framework, the data distillation process, and the baseline compar-isons. These templates ensure consistent task for-mulation across different experimental settings. 
+
+G.1 Prompt for REFORM 
+
+To enable fine-grained manipulation detection and localization, we design a structured prompt for the REFORM model. As shown in Fig. 14, the prompt concatenates system instructions, the news caption, and a specific set of ten options covering various manipulation types (e.g., face swap, text rewriting). Crucially, the task instruction explicitly requires the model to append the manipulated face’s bounding box coordinates to the selected option if a face manipulation is detected. 
+
+G.2 Prompt for Reasoning Data Distillation 
+
+To equip our model with explicit reasoning capabil-ities, we distill knowledge from a powerful VLM, InternVL3.5-30B (Wang et al., 2025b). Fig. 15 illustrates the template used for reasoning genera-tion. In this process, the ground-truth manipulation information is injected into the context, and the teacher model is instructed to generate a coherent, factual rationale explaining why the news falls into the target category, focusing on visual and textual evidence. 
+
+G.3 Prompt for General-purpose Model 
+
+For zero-shot comparisons with general-purpose MLLMs, we adapt the prompt to ensure parsing stability. As depicted in Fig. 16, while the input data and options remain consistent with the RE-FORM setting, we modify the task instruction to request normalized coordinates (relative position-ing from 0 to 1). Furthermore, explicit constraints are added to suppress intermediate reasoning and force the model to output only the final option and coordinates. 
+
+G.4 Prompt for MMD-Agent 
+
+We also evaluate the MMD-Agent baseline. Since the original MMD-Agent pipeline does not natively support grounding for specific manipulation types, we modified the prompt in Stage 2 (Image Modal-ity) to include localization instructions. Fig. 17 shows the complete workflow, where the agent se-quentially performs text-based fact-checking, im-age manipulation detection (with our added bound-ing box requirement), and cross-modal consistency verification. 27 Prompt Template for REFORM   
+
+> [System Instruction]
+> <image> The following are multiple choice questions about fake news detection.
+> [Input Data]
+> The text caption of news is: {News Caption}
+> [Question & Options]
+> The image and text should not be manipulated. Question: Is there any manipulation in the image or text of this news? A. No. B. Image: Face swap; Text: No. C. Image: Face attribute; Text: No. D. Image: Whole generated; Text: No. E. Image: Inpainted background; Text: No. F. Image: Face swap; Text: Fully rewritten. G. Image: Face attribute; Text: Fully rewritten. H. Image: Whole generated; Text: Fully rewritten. I. Image: Inpainted background; Text: Fully rewritten. J. Image: No; Text: Fully rewritten.
+> [Task Instruction]
+> If the face is manipulated, locate the manipulated face in the image and append the results to your selected option. The answer is: The answer is:
+
+Figure 14: The prompt template for REFORM. The prompt strictly concatenates the system instruction, caption, options, and the localization instruction. 
+
+H Statements 
+
+H.1 Ethical Considerations 
+
+This work adheres to the ACL Code of Ethics. The ROM dataset and associated analyses were created solely to support research on detecting and grounding multimodal manipulations. We recognize that assembling realistic synthetic ex-amples entails dual-use risks: the same materials and procedures could be misused to produce de-ceptive content. To minimize harm, we adopt a harm-minimizing, controlled-release approach: we will not publish the generation pipeline, detailed prompts, or prompt–response pairs to prevent their exploitation by adversaries for generating harm-ful content; public distribution is limited to vetted, research-only access under a signed Data Usage Agreement (DUA); distributed images will carry conspicuous visual watermarks and standardized metadata tags; high-fidelity originals and sensi-tive metadata will be withheld; images of minors and clearly sensitive contemporary conflict content have been excluded; and we reserve the right to revoke access on evidence of misuse. Full techni-cal and procedural details of these safeguards are documented in the dataset README file. 
+
+H.2 Data Privacy and Safety 
+
+We prioritize the privacy and safety of individuals. The raw images and captions in the ROM dataset are derived exclusively from established, publicly available academic datasets (NYTimes800k, Good-News, and VisualNews), which have been widely adopted in top-tier conferences and have under-gone prior ethical scrutiny. These source datasets consist of published news media and typically do not contain sensitive personally identifiable infor-mation (PII) of private citizens. In our curation process, we adhered to strict protocols to ensure that no private PII is exposed. Furthermore, regard-ing offensive content, as detailed in Section H.1, we implemented additional filtering steps to ex-clude images involving minors, graphic violence, or clearly sensitive contemporary conflict content. We conducted manual verification on random sub-sets to ensure compliance with these standards. 
+
+H.3 Reproducibility Statement 
+
+To ensure the reproducibility of our research, we provide comprehensive code, data, and experimen-tal details. (1) Code : The source code for all mod-els, along with scripts to run experiments and ana-lyze results, will be available at GitHub. The repos-itory will include a detailed README.md file with instructions for installing dependencies and repro-ducing our findings. (2) Data : The dataset used in this study will be made available to researchers under a Data Use Agreement. 28 Prompt Template for Reasoning Generation 
+
+[System Instruction] 
+
+You are a fake news analysis expert. You will be provided with a news item in the form of an image-text pair. 
+
+[Ground Truth Context (Dynamic)] 
+
+It is known that {Manipulation Description} (e.g., "the image has been manipulated using face swap", "the image and text are original", etc.). 
+
+[Task Instruction] 
+
+Without assuming any prior knowledge about the authenticity or manipulation of this image-text news, analyze it carefully and reason only on the visual and textual evidence. 
+
+[Input Data] 
+
+The news text is: {News Caption} 
+
+[Reasoning Goal] 
+
+Finally, summarize your reasoning to justify why this news can be considered that {Target Label Description} .
+
+[Constraints] 
+
+Keep your reasoning coherent, factual, and concise ( {Min Keywords} -{Max Keywords} words). Write your response as plain continuous text, without any Markdown symbols, lists, or bullet points. 
+
+Figure 15: The prompt template used to generate reasoning chains. The {Italicized Text} represents dynamic content filled based on the ground-truth labels and input data. 
+
+Prompt Template for General-purpose Model 
+
+[System Instruction] 
+
+Same as REFORM 
+
+[Input Data] 
+
+Same as REFORM 
+
+[Question & Options] 
+
+Same as REFORM 
+
+[Task Instruction] 
+
+If face manipulation, use rectangular box coordinates in the format of [x1,y1,x2,y2], where the top-left vertex of the image is defined as (0,0) and the bottom-right vertex as (1,1) for relative positioning, and append the results to the option you have selected. 
+
+[Constraints] 
+
+Please think carefully before giving the finnal answer, but you don’t have to output the reasoning process. ONLY output the final answer in format: [Option + Coordinates (if applicable).] 
+
+Figure 16: The prompt template used for General-purpose Model. Note the change in coordinate format to normalized [x1,y1,x2,y2]. 
+
+H.4 Large Language Model Usage Statement 
+
+This paper used Large Language Models solely for text polishing and expression refinement. No large language models were involved in other aspects of the research, including data collection, experimen-tal design, result analysis, or conclusion derivation. 29 Prompt Templates for MMD-Agent Workflow 
+
+[Stage 1: Fact-Checking (Text Modality)] 
+
+Given a news caption, news caption is: {News Caption} 
+
+Determine if there is credible objective evidence that SUPPORTS or REFUTES the news caption. Please follow the instructions below: 
+
+Thought 1: You need to find the key entity noun in the news caption. The key entity noun could be person or object or location or event, etc. 
+
+Action 1: Search [key entity noun]. 
+
+Observation: {External Knowledge / Wiki Results} 
+
+Thought 2: According to Observation and other credible objective evidence, please analysis there is any objective fact that SUPPORTS or REFUTES the news caption, or if there is NOT ENOUGH INFORMATION. Analysis is: [Analysis]. 
+
+Action 2: Draw the conclusion based on the analysis in the thought 2: if there is any credible objective evidence refuting the news caption, please answer in the form: ’Finish[TEXT REFUTES].’. If no, please answer in the form: ’Finish[TEXT SUPPORTS].’ 
+
+[Stage 2: Manipulation Detection (Image Modality)] 
+
+According to the given news image, determine if the image is manipulated and identify the type of manipulation. 
+
+Classification categories: ’Real’, ’Face Swap’, ’Face Expression’, ’Background Swap’, ’Full AI Generated’. Please follow the instructions below: 
+
+Thought 1: Analyze the image for visual inconsistencies such as unnatural lighting, blurred edges, distorted faces, or inconsistent background noise. 
+
+Observation: [Fact-conflicting Description] 
+
+Action 1: Draw the conclusion based on the observation. • If Real: ’Finish[Real]’. • If Face Swap/Expression: ’Finish[Face Swap, BBox: [x1, y1, x2, y2]]’ (normalized 0.0-1.0). • If Background/Full AI: ’Finish[Background Swap]’ or ’Finish[Full AI Generated]’. 
+
+[Stage 3: Cross-Modal Consistency (Multimodal)] 
+
+Given a multimodal misinformation, it contains both news caption and news image. News caption is: {News Caption} 
+
+Determine if the news caption matches the content news image. You should answer in the following forms: ’Fin-ish[MATCH].’ or ’Finish[MISMATCH].’. Please follow the instructions below: 
+
+IMAGE DESCRIPTION: {Image Description from Stage 2} 
+
+Draw the conclusion: Based on the [IMAGE DESCRIPTION] of the news image, does the news caption match the content of news image? If yes, please answer in the form: ’Finish[MATCH].’. If no, please answer in the form: ’Finish[MISMATCH].’. 
+
+Figure 17: The MMD-Agent prompt workflow. The agent sequentially performs Fact-Checking (utilizing external knowledge), Image Manipulation Detection (providing bounding boxes for faces), and Consistency Verification, before aggregating the status to determine the final authenticity. 
+
+30

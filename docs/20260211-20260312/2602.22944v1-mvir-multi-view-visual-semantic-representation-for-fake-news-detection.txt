@@ -1,0 +1,258 @@
+Title: MViR: Multi-View Visual-Semantic Representation for Fake News Detection
+
+URL Source: https://arxiv.org/pdf/2602.22944v1
+
+Published Time: Fri, 27 Feb 2026 02:02:07 GMT
+
+Number of Pages: 5
+
+Markdown Content:
+## MVIR: MULTI-VIEW VISUAL-SEMANTIC REPRESENTATION FOR FAKE NEWS DETECTION 
+
+## Haochen Liang †, Xinqi Su †, Jun Wang ∗, Chaomeng Chen, and Zitong Yu ∗
+
+## School of Computing and Information Technology, Great Bay University lianghaochenbit@gmail.com, suxinqi@tju.edu.cn, wangjunsdnu@gmail.com gianluigi-chen@bupt.edu.cn, zitong.yu@ieee.org 
+
+ABSTRACT 
+
+With the rise of online social networks, detecting fake news accurately is essential for a healthy online environment. While existing methods have advanced multimodal fake news de-tection, they often neglect the multi-view visual-semantic aspects of news, such as different text perspectives of the same image. To address this, we propose a Multi-View Visual-Semantic Representation (MViR) framework. Our approach includes a Multi-View Representation module using pyramid dilated convolution to capture multi-view visual-semantic features, a Multi-View Feature Fusion module to integrate these features with text, and multiple aggre-gators to extract multi-view semantic cues for detection. Experiments on benchmark datasets demonstrate the superi-ority of MViR. The source code of FedCoop is available at https://github.com/FlowerinZDF/FakeNews-MVIR. 
+
+Index Terms — Fake News Detection, Multi-View Repre-sentation, Feature Fusion, Multimodal Learning. 
+
+1. INTRODUCTION 
+
+Fake news refers to deliberately spreading false or mislead-ing information with the aim of deceiving the public, creating confusion, manipulating public opinion, or achieving specific political, economic, or social objectives. Online social net-works (OSNs) have increased the convenience of real-time information dissemination, but they also lead to the rapid and widespread dissemination of fake news, causing detrimental effects on the online environment [ 1 ] [ 2]. Detecting fake news has thus become a current research hotspot [3]. Early works primarily focused on manually extracting fea-tures from text content [ 4 ], such as the proportion of negation words, writing style, and language styles. However, traditional methods are inefficient and unable to handle large amounts of data. Therefore, researchers began to focus on deep learning-based automatic fake news detection. Bhattarai et al. [ 5 ] cap- 
+
+> †
+
+Equal contribution. ∗ Corresponding authors. This work was supported by National Natural Science Foundation of China (Grant No. 62576076), and sponsored by CCF-Tencent Rhino-Bird Open Research Fund. View1     
+
+> A large "Welcome to Sochi!" sign is
+> displayed near the beachfront area
+> on Feb. 18, 2013 in Sochi, Russia.
+> View3
+> Enjoy your stay in Sochi. Waterslide!
+> Lighthouse! Camping!
+> View2
+> A man sits among his belongings
+> on the beachfront in central Sochi
+> on February 18, 2013.
+> View4
+> Thousands of ordinary people in the
+> Sochi region are enduring squalor
+> and environmental pollution .
+
+Fig. 1 . Motivation of our proposed MViR. We can see that different news texts describe the same image from various perspectives. For instance, some focus on the background building, others on the sign, and some on the person. tured the lexical and semantic properties of news text. Jin et al. [6] detected fake news by leveraging significant disparities in image distributions. With the development of OSNs [ 7 ], multimodal fake news which includes text, images, and videos, has emerged. These forms are often more attractive and have a broader reach than traditional unimodal fake news. EANN [ 8 ] introduces an event discriminator to detect fake news. MVAE [ 9] incorporates a multimodal variational autoencoder for multimodal fake news detection. MCAN [ 10 ] designs a co-attention network to better fuse multimodal features. However, existing multimodal fake news detection meth-ods struggle to effectively capture the multi-view visual-semantic relationships present in news content. News images often contain information from various perspectives [ 11 ]. For instance, as shown in Figure 1, the left side illustrates an image associated with fake news, while the right side presents the accompanying text. It is evident that the text reports multiple aspects of the image from different viewpoints, a common phenomenon in real-world news articles. This poses a challenge for previous detection methods [ 12 ], as they often fail to consider the multi-view semantics of the content for trustworthy fake news detection. We propose a multi-view visual-semantic representation for fake news detection (MViR) to address the above issues. Specifically, we propose a multi-view representation module to      
+
+> arXiv:2602.22944v1 [cs.MM] 26 Feb 2026 Co-Attn
+> Image
+> Text BERT
+> During the summer,
+> there is a market at
+> Hongdae Park every
+> weekend …
+> ...
+> Co-Attn
+> Aggregator 1
+> Aggregator 2
+> Aggregator n
+> Mat-
+> mul
+> Multi-View Representation Multi-View Feature Fusion Multi-View Aggregation Multimodal News
+> VGG-19
+> d×NN×r
+> ...
+> Classifier
+> ...
+> .
+> .
+> .
+> d×r
+> Concat
+> Real
+> Fake
+> Dilated
+> Convolution
+
+## ... 
+
+> ...
+
+## ...   
+
+> Multi-View Fusio n L ayers Multi-View Matrix
+
+Fig. 2 . The MViR framework consists of three modules: Multi-View Representation (MVR), Multi-View Feature Fusion (MVFF), and Multi-View Aggregation (MVA). It extracts image and text features, learns multi-view visual-semantic representations via MVR, fuses features with MVFF, and uses MVA to generate embeddings and predict fake news probabilities. extract multi-view fine-grained features from images, thereby providing the model with comprehensive multi-view visual-semantic information. Afterward, we use a multi-view feature fusion module to fuse image and text information, further enhancing the representation capability of multi-view features. Finally, we use a Multi-View Aggregation module to process the fused features and extract multi-view semantic cues to enhance fake news detection. Our main contributions include: (1) We design a multi-view representation module, which can explicitly model the multi-view semantics in news images and capture the multi-view features within the images. (2) We design a multi-view aggregation module to learn multi-view embeddings and extract multi-view semantic cues for enhanced fake news detection. (3) Experiments conducted on the widely used datasets show that MViR significantly outperforms previous ap-proaches. 
+
+2. METHODOLOGY 
+
+As shown in Figure 2, MViR consists of three main parts: Multi-View Representation (MVR), Multi-View Feature Fu-sion (MVFF), and Multi-View Aggregation (MVA). 
+
+2.1. Feature Extraction 
+
+For an image I from multimodal news, we utilize VGG-19 [ 20 ] to extract visual features. These features are sub-sequently projected into a d-dimensional space via a fully connected (FC) layer, yielding image features represented as 
+
+V = [ v1, v 2, . . . , v r ] ∈ Rr×d, where r denotes the number of extracted regions. Similarly, for a text T containing m words, word embeddings are extracted using a pre-trained BERT [ 21 ], which are mapped to the d-dimensional space using a FC layer. Text features are expressed as T = [ t1, t 2, . . . , t m] ∈ Rm×d.
+
+2.2. Multi-View Representation 
+
+We propose a Multi-View Representation (MVR) module to capture the multi-view semantics of images. Understanding an image from different perspectives means that each region requires different attention from different perspectives. To achieve this, we employ a pyramid dilated convolution [ 22 ]layer with K parallel kernels to aggregate multi-scale contex-tual information from the image, which serves as the basis for calculating view-specific importance scores. 
+
+ski = Convd (V, w k , d k ), k = 1 , 2, . . . , K, (1) 
+
+where wk and dk denote its kernel size and dilation rate, ski
+
+denotes the output of the k-th kernel. We then concatenate these outputs: 
+
+si = Concat (s1 
+
+> i
+
+, ..., s Ki ), (2) 
+
+where Concat (·) denotes the concatenation of vectors. Af-terward, a FC followed by a softmax activation is applied to compute the multi-view matrix ˆS = [ˆ s1; ... ; ˆ sr ] ∈ Rr×N ,where N is the number of views, and ˆsi is the i-th row vector. The above process can be summarized as follows: 
+
+ˆsij = exp (( Wssi + bs)j )
+
+Prj=1 exp (( Wssi + bs)j ) , (3) 
+
+where (Wssi + bs) ∈ Rr×N , ˆsi ∈ RN represents the impor-tance scores of the i-th region over N views, Ws ∈ RN ×d
+
+and bs ∈ R1×N are the learnable weights and bias, respec-tively. Finally, the image features can be summarized into a multi-view representation V∗ ∈ RN ×d as follows: 
+
+V∗ = ˆST V. (4) 
+
+2.3. Multi-View Feature Fusion 
+
+We propose a Multi-View Feature Fusion (MVFF) module that combines multi-view image features with the corresponding text features, further enhancing their representational capacity. MVFF consists of l multi-view fusion layers, each containing a co-attention mechanism [ 23 ] and a feed-forward network (FFN). Both components are enclosed by a residual connection and followed by layer normalization. The co-attention extends the standard multi-head attention by using queries ( Q) from Table 1 . Results on two datasets. The best performance is in bold, while underlining highlights the follow-up.                                                                                                                          
+
+> Dataset Method Accuracy Fake News Real News Precision Recall F1 score Precision Recall F1 score Weibo EANN [8] 0.827 0.847 0.812 0.829 0.807 0.843 0.825 SAFE [13] 0.816 0.818 0.815 0.817 0.816 0.818 0.817 MCAN [10] 0.899 0.913 0.889 0.901 0.884 0.909 0.897 CAFE [14] 0.840 0.855 0.830 0.842 0.825 0.851 0.837 FND-CLIP [15] 0.907 0.914 0.901 0.907 0.917 0.901 0.908 MSACA [16] 0.903 0.935 0.873 0.903 0.872 0.935 0.902 EVENT-RADAR [17] 0.919 0.924 0.905 0.914 0.932 0.915 0.924
+> MViR (Ours) 0.924 0.944 0.906 0.920 0.906 0.941 0.928
+> GossipCop EANN [8] 0.864 0.702 0.518 0.594 0.887 0.956 0.920 SAFE [13] 0.838 0.758 0.558 0.643 0.857 0.937 0.895 SPOTFAKE [18] 0.858 0.732 0.372 0.494 0.866 0.962 0.914 CAFE [14] 0.867 0.732 0.409 0.587 0.887 0.957 0.921 FND-CLIP [15] 0.880 0.761 0.549 0.638 0.899 0.959 0.928 MSACA [16] 0.887 0.816 0.538 0.648 0.897 0.971 0.933 RaCMC [19] 0.879 0.745 0.563 0.641 0.902 0.954 0.927
+> MViR (Ours) 0.895 0.784 0.619 0.692 0.914 0.963 0.937
+
+one modality and keys ( K) and values ( V ) from another. In our approach, Q comes from the multi-view features of the image or fused features, while K and V come from the text. 
+
+Qi = V∗W Qi , Ki = T W Ki , Vi = T W Vi , (5) 
+
+where W Qi , W Ki , W Vi ∈ R1×dh are the projection matrices for the i-th head, H denotes the number of heads, dh = d/H 
+
+is the dimension of the output feature of each head. The calculation of the co-attention can be presented as follows: 
+
+M ultiHead (Q, K, V ) = Concat (h1, h 2, ..., h H )W O + V, (6) 
+
+where W O is learnable weights, and hi = Att (Qi, K i, V i).
+
+Att denotes scaled-dot product attention, defined as follows: 
+
+Att (Qi, K i, V i) = sof tmax 
+
+ QiK⊤
+
+> i
+
+√dh
+
+
+
+Vi. (7) 
+
+To enhance the representational capacity of the fused features, the output of the co-attention is processed through an FFN. It is implemented as a two-layer multi-layer perceptron (MLP) with a ReLU activation function applied between the layers. The above process can be summarized as follows: 
+
+X = F F N (M ultiHead (Q, K, V )) ⊕ Q, (8) 
+
+where X ∈ RN ×d denotes the features after fusion, ⊕ repre-sents the fusion operation, e.g., vector concatenation or ele-mentwise add. 
+
+2.4. Multi-View Aggregation 
+
+The uniqueness of the Multi-View Aggregation (MVA) mod-ule lies in its use of multiple aggregators to generate a set of embeddings from the fused features, explicitly modeling multi-view features. This allows for the evaluation of news authenticity through multi-view semantic cues. Specifically, after obtaining a fused feature set {xn}Nn=1 , a series of feature aggregators {f vn }Nn=1 are used to aggregate {xn}Nn=1 into a set of semantic cues embeddings {ˆxn}Nn=1 :
+
+ˆxn = f vn
+
+
+
+{xn}Nn=1 
+
+
+
+, (9) 
+
+where ˆxn ∈ Rd. Each ˆxn represents the semantic cues of a set of views. N is the number of views. Next, we combine the semantic cues from each view with the text features and use a decision network to assess whether the news is true or fake. We employ only a single aggregator to obtain the text embedding: 
+
+zn = max  0, W f Concat (ˆ xn, f t(T ))  , (10) 
+
+ˆy = N
+
+max  
+
+> n=1
+
+(softmax (znWl)) , (11) 
+
+where ˆy represents the probability of the news being fake, Wf
+
+represents the parameters of the fully connected layers, and 
+
+Wl represents the parameters of the linear layer within the softmax function. For multiple semantic cues from different views of news, if any of these cues is detected as fake, the news is classified as fake. 
+
+2.5. Objective Function 
+
+We leverage cross-entropy to measure the classification loss and train our model: 
+
+L =
+
+> N
+
+X
+
+> i=1
+
+− [yi ∗ log (ˆ yi) + (1 − yi) ∗ log (1 − ˆyi)] , (12) 
+
+where N denotes the number of news reports, yi represents the ground-truth label of the i-th news. Labels 0 and 1 refer to real news and fake news, respectively. 
+
+3. EXPERIMENTS 3.1. Datasets and Experimental Settings 
+
+Our model, implemented in PyTorch 2.3.1, was trained on a single NVIDIA Tesla A100 GPU. For text features, we utilized bert-base-chinese (max length: 160) for the Weibo dataset and bert-base-uncased (max length: 394) for GossipCop. Images were resized to 224 × 224 pixels for VGG-19 feature extrac-tion. The feature dimension d for both modalities was set to Table 2 . Configurations of pyramid dilated convolution.                             
+
+> k1234567
+> wk1333555
+> dk1123123
+> sk256 128 128 128 128 128 128
+
+Table 3 . Ablation study on two datasets. Method Accuracy F1 score Fake News Real News Weibo MViR (Ours) 0.924 0.920 0.928                                  
+
+> w/o MVR 0.901 0.893 0.909 w/o MVFF 0.894 0.884 0.902 w/o MVA 0.907 0.904 0.909 Max Probability(Real) 0.912 0.908 0.915 Average Probability 0.918 0.915 0.921 GossipCop MViR (Ours) 0.895 0.692 0.937
+> w/o MVR 0.883 0.648 0.930 w/o MVFF 0.881 0.667 0.927 w/o MVA 0.886 0.639 0.932 Max Probability(Real) 0.874 0.655 0.915 Average Probability 0.884 0.653 0.929
+
+256, with 4 attention heads and a 0.5 dropout rate. Training employed the AdaBelief optimizer for 50 epochs, using a batch size of 32 and an initial learning rate of 1e-4. Experiments were conducted on two real-world datasets: Weibo [ 24 ] (9,528 news items) and GossipCop [ 25 ] (12,840 news items). For fair comparison, we adhered to the data-splitting and processing protocols of prior works [10, 26]. A core component is the Pyramid Dilated Convolutional Layers, with configurations detailed in Table 2. Here, k de-notes the kernel index; wk, dk, and sk represent the kernel size, dilation rate, and output channels, respectively. This design effectively expands the receptive field with increasing dilation rates without compromising spatial resolution. 
+
+3.2. Performance Comparison 
+
+Table 1 shows the performance comparison between MViR and the baseline methods. MViR demonstrated excellent per-formance across all metrics, including accuracy, precision, recall, and F1 score. MViR achieved an average accuracy of 92.4% on the Weibo dataset and 89.5% on the GossipCop dataset, outperforming the best existing models by 1.9 and 1.7 percentage points. While many methods, such as MCAN, detect fake news by fusing multimodal features, they do not consider the multi-view characterization of fake news. In contrast, MViR effec-tively captures the multi-view features of images, thus improv-ing the performance of multimodal fake news detection. 
+
+3.3. Ablation Study 
+
+To evaluate the contribution of each component in MViR, we removed the MVR, MVFF, and MVA modules individually. Table 3 shows that removing any module leads to a significant performance drop, confirming that the components comple-ment each other to improve fake news detection. Additionally, 
+
+Table 4 . Analysis for different numbers of MVFF layer.                      
+
+> Layers Accuracy F1 score Fake News Real News Weibo 20.912 0.908 0.915 30.924 0.920 0.928
+> 40.917 0.915 0.921 GossipCop 20.884 0.648 0.930 30.895 0.692 0.937
+> 40.891 0.674 0.935
+
+Fig. 3 . Analysis for different numbers of views. we compared decision networks using maximum real news probability, average probability, and maximum fake news prob-ability. The results indicate that the network using maximum fake news probability performs best, as it can capture more reliable key features of fake news. 
+
+3.4. Parameter Sensitivity Analysis Impact of the Number of MVFF Layers: As shown in Ta-ble 4. The experimental results demonstrate that appropri-ately increasing the number of layers can promote interactions between modality features, thereby enhancing model perfor-mance. However, when the number of layers becomes larger, further increases result in performance degradation, likely due to excessive model complexity leading to overfitting. 
+
+Impact of the Number of views: We also analyzed the impact of the number of viewpoints on model performance, as shown in Figure 3. It can be observed that appropriately increasing the number of viewpoints helps capture richer details and more diverse features, thereby improving performance. However, when the number of viewpoints increases further, the model’s performance may decline due to the introduction of redundant information, which could affect its generalization ability. In our experiments, MViR performed best with 12 viewpoints. 
+
+4. CONCLUSION 
+
+In this work, we propose MViR, a novel framework for fake news detection using multi-view visual-semantic represen-tations. Our approach includes a multi-view representation module to extract visual-semantic features from images, a fea-ture fusion module to combine image and text features, and a Multi-View Aggregation module to learn multi-view em-beddings. Experiments on two benchmark datasets show that MViR outperforms existing state-of-the-art methods. 5. REFERENCES 
+
+[1] Xinyi Zhou and Reza Zafarani, “A survey of fake news: Fundamental theories, detection methods, and opportuni-ties,” ACM Computing Surveys , vol. 53, no. 5, pp. 1–40, 2020. [2] Xun Lin, Ajian Liu, Zitong Yu, Rizhao Cai, Shuai Wang, Yi Yu, Jun Wan, Zhen Lei, Xiaochun Cao, and Alex Kot, “Reliable and balanced transfer learning for generalized multimodal face anti-spoofing,” IEEE Transactions on Pattern Analysis and Machine Intelligence , 2025. [3] Xinqi Su, Zitong Yu, Yawen Cui, Ajian Liu, Xun Lin, Yuhao Wang, Haochen Liang, Wenhui Li, Li Shen, and Xiaochun Cao, “Dynamic analysis and adaptive discrim-inator for fake news detection,” in ACM MM , 2025, pp. 8164–8173. [4] Anshika Choudhary and Anuja Arora, “Linguistic fea-ture based learning model for fake news detection and classification,” Expert Systems with Applications , vol. 169, pp. 114171, 2021. [5] Bimal Bhattarai, Ole-Christoffer Granmo, and Lei Jiao, “Explainable tsetlin machine framework for fake news de-tection with credibility score assessment,” arXiv preprint arXiv:2105.09114 , 2021. [6] Zhiwei Jin, Juan Cao, Yongdong Zhang, Jianshe Zhou, and Qi Tian, “Novel visual and statistical image features for microblogs news verification,” IEEE Transactions on Multimedia , 2016. [7] Esma Aïmeur, Sabrine Amri, and Gilles Brassard, “Fake news, disinformation and misinformation in social media: a review,” Social Network Analysis and Mining , vol. 13, no. 1, pp. 30, 2023. [8] Yaqing Wang, Fenglong Ma, Zhiwei Jin, Ye Yuan, Guangxu Xun, Kishlay Jha, Lu Su, and Jing Gao, “Eann: Event adversarial neural networks for multi-modal fake news detection,” in KDD , 2018. [9] Dhruv Khattar, Jaipal Singh Goud, Manish Gupta, and Vasudeva Varma, “Mvae: Multimodal variational autoen-coder for fake news detection,” in WWW , 2019. [10] Yang Wu, Pengwei Zhan, Yunjian Zhang, Liming Wang, and Zhen Xu, “Multimodal fusion with co-attention networks for fake news detection,” in ACL-IJCNLP ,2021. [11] Qilang Ye, Zitong Yu, Rui Shao, Yawen Cui, Xiangui Kang, Xin Liu, Philip Torr, and Xiaochun Cao, “Cat+: Investigating and enhancing audio-visual understanding in large language models,” IEEE Transactions on Pattern Analysis and Machine Intelligence , 2025. [12] Rizhao Cai, Yawen Cui, Zitong Yu, Xun Lin, Chang-sheng Chen, and Alex Kot, “Rehearsal-free and efficient continual learning for cross-domain face anti-spoofing,” 
+
+IEEE Transactions on Pattern Analysis and Machine Intelligence , 2025. [13] Xinyi Zhou, Jindi Wu, and Reza Zafarani, “Similarity-aware multi-modal fake news detection,” in PAKDD ,2020, pp. 354–367. [14] Yixuan Chen, Dongsheng Li, Peng Zhang, Jie Sui, Qin Lv, Lu Tun, and Li Shang, “Cross-modal ambiguity learning for multimodal fake news detection,” in WWW ,2022. [15] Yangming Zhou, Yuzhou Yang, Qichao Ying, Zhenx-ing Qian, and Xinpeng Zhang, “Multimodal fake news detection via clip-guided learning,” in ICME , 2023. [16] Jiandong Wang, Hongguang Zhang, Chun Liu, and Xiongjun Yang, “Fake news detection via multi-scale semantic alignment and cross-modal attention,” in ACM SIGIR , 2024, pp. 2406–2410. [17] Zihan Ma, Minnan Luo, Hao Guo, Zhi Zeng, Yiran Hao, and Xiang Zhao, “Event-radar: Event-driven multi-view learning for multimodal fake news detection,” in ACL ,2024, pp. 5809–5821. [18] Shivangi Singhal, Anubha Kabra, Mohit Sharma, Ra-jiv Ratn Shah, Tanmoy Chakraborty, and Ponnurangam Kumaraguru, “Spotfake+: A multimodal framework for fake news detection via transfer learning (student abstract),” in AAAI , 2020. [19] Xinquan Yu, Ziqi Sheng, Wei Lu, Xiangyang Luo, and Jiantao Zhou, “Racmc: Residual-aware compensation network with multi-granularity constraints for fake news detection,” arXiv preprint arXiv:2412.18254 , 2024. [20] Karen Simonyan and Andrew Zisserman, “Very deep convolutional networks for large-scale image recogni-tion,” arXiv preprint arXiv:1409.1556 , 2014. [21] Jacob Devlin, Ming-Wei Chang, Kenton Lee, and Kristina Toutanova, “Bert: Pre-training of deep bidi-rectional transformers for language understanding,” in 
+
+NAACL , 2019. [22] Leigang Qu, Meng Liu, Da Cao, Liqiang Nie, and Qi Tian, “Context-aware multi-view summarization net-work for image-text matching,” in ACM MM , 2020, pp. 1047–1055. [23] Jiasen Lu, Dhruv Batra, Devi Parikh, and Stefan Lee, “Vilbert: Pretraining task-agnostic visiolinguistic repre-sentations for vision-and-language tasks,” in NeurIPS ,2019. [24] Zhiwei Jin, Juan Cao, Han Guo, Yongdong Zhang, and Jiebo Luo, “Multimodal fusion with recurrent neural networks for rumor detection on microblogs,” in ACM MM , 2017. [25] Kai Shu, Deepak Mahudeswaran, Suhang Wang, Dong-won Lee, and Huan Liu, “Fakenewsnet: A data repository with news content, social context, and spatiotemporal in-formation for studying fake news on social media,” Big Data , vol. 8, no. 3, pp. 171–188, 2020. [26] Qichao Ying, Xiaoxiao Hu, Yangming Zhou, Zhenxing Qian, Dan Zeng, and Shiming Ge, “Bootstrapping multi-view representations for fake news detection,” in AAAI ,2023.

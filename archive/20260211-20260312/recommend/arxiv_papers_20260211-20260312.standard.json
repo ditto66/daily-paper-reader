@@ -1,0 +1,965 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-03-12T03:40:36.601343+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 42,
+    "deep_cap": 6,
+    "deep_selected": 13,
+    "quick_candidates": 83,
+    "quick_skim_target": 11,
+    "quick_selected": 11
+  },
+  "deep_dive": [
+    {
+      "id": "2602.22963v1",
+      "title": "FactGuard: Agentic Video Misinformation Detection via Reinforcement Learning",
+      "abstract": "Multimodal large language models (MLLMs) have substantially advanced video misinformation detection through unified multimodal reasoning, but they often rely on fixed-depth inference and place excessive trust in internally generated assumptions, particularly in scenarios where critical evidence is sparse, fragmented, or requires external verification. To address these limitations, we propose FactGuard, an agentic framework for video misinformation detection that formulates verification as an iterative reasoning process built upon MLLMs. FactGuard explicitly assesses task ambiguity and selectively invokes external tools to acquire critical evidence, enabling progressive refinement of reasoning trajectories. To further strengthen this capability, we introduce a two-stage training strategy that combines domain-specific agentic supervised fine-tuning with decision-aware reinforcement learning to optimize tool usage and calibrate risk-sensitive decision making. Extensive experiments on FakeSV, FakeTT, and FakeVV demonstrate FactGuard's state-of-the-art performance and validate its excellent robustness and generalization capacity.",
+      "authors": [
+        "Zehao Li",
+        "Hongwei Yu",
+        "Hao Jiang",
+        "Qiang Sheng",
+        "Yilong Xu",
+        "Baolong Bi",
+        "Yang Li",
+        "Zhenlong Yuan",
+        "Yujun Cai",
+        "Zhaoqi Wang"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-02-26T13:00:31+00:00",
+      "link": "https://arxiv.org/pdf/2602.22963v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "agentic framework for video misinformation detection via reinforcement learning",
+      "llm_evidence_cn": "基于强化学习的视频虚假信息检测智能体框架",
+      "llm_evidence": "基于强化学习的视频虚假信息检测智能体框架",
+      "canonical_evidence": "基于强化学习的视频虚假信息检测智能体框架",
+      "llm_tldr_en": "FactGuard uses agentic MLLMs and RL for iterative reasoning and external verification of video misinformation.",
+      "llm_tldr_cn": "FactGuard利用智能体多模态大模型和强化学习进行视频虚假信息的迭代推理与外部验证。",
+      "llm_tldr": "FactGuard利用智能体多模态大模型和强化学习进行视频虚假信息的迭代推理与外部验证。",
+      "llm_tags": [
+        "query:q6"
+      ],
+      "matched_query_tag": "query:q6",
+      "matched_query_text": "Self evolving agents for multimodal misinformation detection in short videos",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.01993v1",
+      "title": "Process Over Outcome: Cultivating Forensic Reasoning for Generalizable Multimodal Manipulation Detection",
+      "abstract": "Recent advances in generative AI have significantly enhanced the realism of multimodal media manipulation, thereby posing substantial challenges to manipulation detection. Existing manipulation detection and grounding approaches predominantly focus on manipulation type classification under result-oriented supervision, which not only lacks interpretability but also tends to overfit superficial artifacts. In this paper, we argue that generalizable detection requires incorporating explicit forensic reasoning, rather than merely classifying a limited set of manipulation types, which fails to generalize to unseen manipulation patterns. To this end, we propose REFORM, a reasoning-driven framework that shifts learning from outcome fitting to process modeling. REFORM adopts a three-stage curriculum that first induces forensic rationales, then aligns reasoning with final judgments, and finally refines logical consistency via reinforcement learning. To support this paradigm, we introduce ROM, a large-scale dataset with rich reasoning annotations. Extensive experiments show that REFORM establishes new state-of-the-art performance with superior generalization, achieving 81.52% ACC on ROM, 76.65% ACC on DGM4, and 74.9 F1 on MMFakeBench.",
+      "authors": [
+        "Yuchen Zhang",
+        "Yaxiong Wang",
+        "Kecheng Han",
+        "Yujiao Wu",
+        "Lianwei Wu",
+        "Li Zhu",
+        "Zhedong Zheng"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-03-02T15:45:33+00:00",
+      "link": "https://arxiv.org/pdf/2603.01993v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "generalizable multimodal manipulation detection using forensic reasoning",
+      "llm_evidence_cn": "使用取证推理的可泛化多模态操纵检测",
+      "llm_evidence": "使用取证推理的可泛化多模态操纵检测",
+      "canonical_evidence": "使用取证推理的可泛化多模态操纵检测",
+      "llm_tldr_en": "Proposes REFORM, a reasoning-driven framework for generalizable and interpretable multimodal media manipulation detection.",
+      "llm_tldr_cn": "提出REFORM框架，通过推理驱动实现可泛化且可解释的多模态媒体操纵检测。",
+      "llm_tldr": "提出REFORM框架，通过推理驱动实现可泛化且可解释的多模态媒体操纵检测。",
+      "llm_tags": [
+        "query:q4"
+      ],
+      "matched_query_tag": "query:q4",
+      "matched_query_text": "multimodal fake news and misinformation detection",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.02519v1",
+      "title": "Agentic Mixed-Source Multi-Modal Misinformation Detection with Adaptive Test-Time Scaling",
+      "abstract": "Vision-language models (VLMs) have been proven effective for detecting multi-modal misinformation on social platforms, especially in zero-shot settings with unavailable or delayed annotations. However, a single VLM's capacity falls short in the more complex mixed-source multi-modal misinformation detection (M3D) task. Taking captioned images as an example, in M3D, false information can originate from untruthful texts, forged images, or mismatches between the two modalities. Although recent agentic systems can handle zero-shot M3D by connecting modality-specific VLM agents, their effectiveness is still bottlenecked by their architecture. In existing agentic M3D solutions, for any input sample, each agent performs only one forward reasoning pass, making decisions prone to model randomness and reasoning errors in challenging cases. Moreover, the lack of exploration over alternative reasoning paths prevents modern VLMs from fully utilizing their reasoning capacity. In this work, we present AgentM3D, a multi-agent framework for zero-shot M3D. To amplify the reasoning capability of VLMs, we introduce an adaptive test-time scaling paradigm in which each modality-specific VLM agent applies a Best-of-N mechanism, coupled with a critic agent for task-aligned scoring. The agents are organized in a cascading, modality-specific decision chain to reduce unnecessary computation and limit error propagation. To ensure scalability, a planning agent dynamically determines the maximum number of reasoning paths based on sample difficulty, and an adaptive stopping mechanism prevents excessive reasoning within each agent. Extensive experiments on two M3D benchmarks demonstrate that AgentM3D achieves state-of-the-art zero-shot detection performance compared with various VLM-based and agentic baselines.",
+      "authors": [
+        "Wei Jiang",
+        "Tong Chen",
+        "Wei Yuan",
+        "Quoc Viet Hung Nguyen",
+        "Hongzhi Yin"
+      ],
+      "primary_category": "cs.MM",
+      "categories": [
+        "cs.MM",
+        "cs.IR"
+      ],
+      "published": "2026-03-03T02:07:52+00:00",
+      "link": "https://arxiv.org/pdf/2603.02519v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Agentic multi-modal misinformation detection with adaptive scaling",
+      "llm_evidence_cn": "具有自适应缩放的智能体多模态虚假信息检测",
+      "llm_evidence": "具有自适应缩放的智能体多模态虚假信息检测",
+      "canonical_evidence": "具有自适应缩放的智能体多模态虚假信息检测",
+      "llm_tldr_en": "An agentic system for zero-shot mixed-source multi-modal misinformation detection using adaptive test-time scaling.",
+      "llm_tldr_cn": "一种利用自适应测试时缩放进行零样本混合源多模态虚假信息检测的智能体系统。",
+      "llm_tldr": "一种利用自适应测试时缩放进行零样本混合源多模态虚假信息检测的智能体系统。",
+      "llm_tags": [
+        "query:q6"
+      ],
+      "matched_query_tag": "query:q6",
+      "matched_query_text": "Self evolving agents for multimodal misinformation detection in short videos",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2602.14441v1",
+      "title": "D-SECURE: Dual-Source Evidence Combination for Unified Reasoning in Misinformation Detection",
+      "abstract": "Multimodal misinformation increasingly mixes realistic im-age edits with fluent but misleading text, producing persuasive posts that are difficult to verify. Existing systems usually rely on a single evidence source. Content-based detectors identify local inconsistencies within an image and its caption but cannot determine global factual truth. Retrieval-based fact-checkers reason over external evidence but treat inputs as coarse claims and often miss subtle visual or textual manipulations. This separation creates failure cases where internally consistent fabrications bypass manipulation detectors and fact-checkers verify claims that contain pixel-level or token-level corruption. We present D-SECURE, a framework that combines internal manipulation detection with external evidence-based reasoning for news-style posts. D-SECURE integrates the HAMMER manipulation detector with the DEFAME retrieval pipeline. DEFAME performs broad verification, and HAMMER analyses residual or uncertain cases that may contain fine-grained edits. Experiments on DGM4 and ClaimReview samples highlight the complementary strengths of both systems and motivate their fusion. We provide a unified, explainable report that incorporates manipulation cues and external evidence.",
+      "authors": [
+        "Gagandeep Singh",
+        "Samudi Amarasinghe",
+        "Priyanka Singh"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-02-16T03:51:49+00:00",
+      "link": "https://arxiv.org/pdf/2602.14441v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "multimodal misinformation detection with unified reasoning",
+      "llm_evidence_cn": "结合统一推理的多模态虚假信息检测",
+      "llm_evidence": "结合统一推理的多模态虚假信息检测",
+      "canonical_evidence": "结合统一推理的多模态虚假信息检测",
+      "llm_tldr_en": "D-SECURE combines content-based and retrieval-based evidence for robust multimodal misinformation detection.",
+      "llm_tldr_cn": "D-SECURE框架结合内容和检索证据，提升了多模态虚假信息的检测能力。",
+      "llm_tldr": "D-SECURE框架结合内容和检索证据，提升了多模态虚假信息的检测能力。",
+      "llm_tags": [
+        "query:q4"
+      ],
+      "matched_query_tag": "query:q4",
+      "matched_query_text": "multimodal fake news and misinformation detection",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2602.18193v2",
+      "title": "BLM-Guard: Explainable Multimodal Ad Moderation with Chain-of-Thought and Policy-Aligned Rewards",
+      "abstract": "Short-video platforms now host vast multimodal ads whose deceptive visuals, speech and subtitles demand finer-grained, policy-driven moderation than community safety filters. We present BLM-Guard, a content-audit framework for commercial ads that fuses Chain-of-Thought reasoning with rule-based policy principles and a critic-guided reward. A rule-driven ICoT data-synthesis pipeline jump-starts training by generating structured scene descriptions, reasoning chains and labels, cutting annotation costs. Reinforcement learning then refines the model using a composite reward balancing causal coherence with policy adherence. A multitask architecture models intra-modal manipulations (e.g., exaggerated imagery) and cross-modal mismatches (e.g., subtitle-speech drift), boosting robustness. Experiments on real short-video ads show BLM-Guard surpasses strong baselines in accuracy, consistency and generalization.",
+      "authors": [
+        "Yiran Yang",
+        "Zhaowei Liu",
+        "Yuan Yuan",
+        "Yukun Song",
+        "Xiong Ma",
+        "Yinghao Song",
+        "Xiangji Zeng",
+        "Lu Sun",
+        "Yulu Wang",
+        "Hai Zhou",
+        "Shuai Cui",
+        "Zhaohan Gong",
+        "Jiefei Zhang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-02-20T12:59:27+00:00",
+      "link": "https://arxiv.org/pdf/2602.18193v2",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "multimodal moderation for short-video ads using reasoning and rewards",
+      "llm_evidence_cn": "利用推理和奖励对短视频广告进行多模态审核",
+      "llm_evidence": "利用推理和奖励对短视频广告进行多模态审核",
+      "canonical_evidence": "利用推理和奖励对短视频广告进行多模态审核",
+      "llm_tldr_en": "Presents BLM-Guard for explainable multimodal moderation of deceptive short-video advertisements.",
+      "llm_tldr_cn": "提出了BLM-Guard，用于对欺骗性短视频广告进行可解释的多模态审核。",
+      "llm_tldr": "提出了BLM-Guard，用于对欺骗性短视频广告进行可解释的多模态审核。",
+      "llm_tags": [
+        "query:q6"
+      ],
+      "matched_query_tag": "query:q6",
+      "matched_query_text": "Self evolving agents for multimodal misinformation detection in short videos",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2602.22944v1",
+      "title": "MViR: Multi-View Visual-Semantic Representation for Fake News Detection",
+      "abstract": "With the rise of online social networks, detecting fake news accurately is essential for a healthy online environment. While existing methods have advanced multimodal fake news detection, they often neglect the multi-view visual-semantic aspects of news, such as different text perspectives of the same image. To address this, we propose a Multi-View Visual-Semantic Representation (MViR) framework. Our approach includes a Multi-View Representation module using pyramid dilated convolution to capture multi-view visual-semantic features, a Multi-View Feature Fusion module to integrate these features with text, and multiple aggregators to extract multi-view semantic cues for detection. Experiments on benchmark datasets demonstrate the superiority of MViR. The source code of FedCoop is available at https://github.com/FlowerinZDF/FakeNews-MVIR.",
+      "authors": [
+        "Haochen Liang",
+        "Xinqi Su",
+        "Jun Wang",
+        "Chaomeng Chen",
+        "Zitong Yu"
+      ],
+      "primary_category": "cs.MM",
+      "categories": [
+        "cs.MM"
+      ],
+      "published": "2026-02-26T12:35:09+00:00",
+      "link": "https://arxiv.org/pdf/2602.22944v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "multi-view visual-semantic representation for fake news",
+      "llm_evidence_cn": "用于虚假新闻检测的多视角视觉语义表示",
+      "llm_evidence": "用于虚假新闻检测的多视角视觉语义表示",
+      "canonical_evidence": "用于虚假新闻检测的多视角视觉语义表示",
+      "llm_tldr_en": "MViR captures multi-view visual-semantic cues to improve the accuracy of multimodal fake news detection.",
+      "llm_tldr_cn": "MViR通过捕捉多视角的视觉语义线索，提升了多模态虚假新闻检测的准确率。",
+      "llm_tldr": "MViR通过捕捉多视角的视觉语义线索，提升了多模态虚假新闻检测的准确率。",
+      "llm_tags": [
+        "query:q4"
+      ],
+      "matched_query_tag": "query:q4",
+      "matched_query_text": "multimodal fake news and misinformation detection",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.00267v1",
+      "title": "Multi-Sourced, Multi-Agent Evidence Retrieval for Fact-Checking",
+      "abstract": "Misinformation spreading over the Internet poses a significant threat to both societies and individuals, necessitating robust and scalable fact-checking that relies on retrieving accurate and trustworthy evidence. Previous methods rely on semantic and social-contextual patterns learned from training data, which limits their generalization to new data distributions. Recently, Retrieval Augmented Generation (RAG) based methods have been proposed to utilize the reasoning capability of LLMs with retrieved grounding evidence documents. However, these methods largely rely on textual similarity for evidence retrieval and struggle to retrieve evidence that captures multi-hop semantic relations within rich document contents. These limitations lead to overlooking subtle factual correlations between the evidence and the claims to be fact-checked during evidence retrieval, thus causing inaccurate veracity predictions.   To address these issues, we propose WKGFC, which exploits authorized open knowledge graph as a core resource of evidence. LLM-enabled retrieval is designed to assess the claims and retrieve the most relevant knowledge subgraphs, forming structured evidence for fact verification. To augment the knowledge graph evidence, we retrieve web contents for completion. The above process is implemented as an automatic Markov Decision Process (MDP): A reasoning LLM agent decides what actions to take according to the current evidence and the claims. To adapt the MDP for fact-checking, we use prompt optimization to fine-tune the agentic LLM.",
+      "authors": [
+        "Shuzhi Gong",
+        "Richard O. Sinnott",
+        "Jianzhong Qi",
+        "Cecile Paris",
+        "Preslav Nakov",
+        "Zhuohan Xie"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.IR",
+        "cs.SI"
+      ],
+      "published": "2026-02-27T19:29:01+00:00",
+      "link": "https://arxiv.org/pdf/2603.00267v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "multi-agent evidence retrieval for fact-checking and misinformation",
+      "llm_evidence_cn": "用于事实核查和虚假信息处理的多智能体证据检索",
+      "llm_evidence": "用于事实核查和虚假信息处理的多智能体证据检索",
+      "canonical_evidence": "用于事实核查和虚假信息处理的多智能体证据检索",
+      "llm_tldr_en": "Proposes a multi-agent RAG framework to improve evidence retrieval for scalable fact-checking.",
+      "llm_tldr_cn": "提出多智能体RAG框架，通过增强证据检索提升事实核查的准确性。",
+      "llm_tldr": "提出多智能体RAG框架，通过增强证据检索提升事实核查的准确性。",
+      "llm_tags": [
+        "query:q1"
+      ],
+      "matched_query_tag": "query:q1",
+      "matched_query_text": "self-evolving autonomous agents for information verification",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.01225v1",
+      "title": "Can Thinking Models Think to Detect Hateful Memes?",
+      "abstract": "Hateful memes often require compositional multimodal reasoning: the image and text may appear benign in isolation, yet their interaction conveys harmful intent. Although thinking-based multimodal large language models (MLLMs) have recently advanced vision-language understanding, their capabilities remain underexplored for hateful meme analysis. We propose a reinforcement learning based post-training framework that improves reasoning in thinking-based MLLMs through task-specific rewards and a novel Group Relative Policy Optimization (GRPO) objective. Specifically, we (i) conduct a systematic empirical study of off-the-shelf MLLMs for hateful meme understanding, (ii) extend an existing hateful meme dataset by generating weakly or pseudo-supervised chain-of-thought rationales via distillation, and (iii) introduce a GRPO-based objective that jointly optimizes meme classification and explanation quality to encourage fine-grained, step-by-step reasoning. Experiments on the Hateful Memes benchmark show that our approach achieves state-of-the-art performance, improving accuracy and F1 by approximately 1 percent and explanation quality by approximately 3 percent. We will publicly release our code, dataset extensions, and evaluation resources to support reproducibility.",
+      "authors": [
+        "Mohamed Bayan Kmainasi",
+        "Mucahid Kutlu",
+        "Ali Ezzat Shahroor",
+        "Abul Hasnat",
+        "Firoj Alam"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-03-01T18:41:52+00:00",
+      "link": "https://arxiv.org/pdf/2603.01225v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "inferring harmful intent in memes using thinking-based MLLMs",
+      "llm_evidence_cn": "利用思考型多模态大模型推断模因中的有害意图",
+      "llm_evidence": "利用思考型多模态大模型推断模因中的有害意图",
+      "canonical_evidence": "利用思考型多模态大模型推断模因中的有害意图",
+      "llm_tldr_en": "Improves reasoning in MLLMs to detect harmful intent in multimodal memes through reinforcement learning.",
+      "llm_tldr_cn": "通过强化学习提升多模态大模型的推理能力，以检测多模态模因中的有害意图。",
+      "llm_tldr": "通过强化学习提升多模态大模型的推理能力，以检测多模态模因中的有害意图。",
+      "llm_tags": [
+        "query:q7"
+      ],
+      "matched_query_tag": "query:q7",
+      "matched_query_text": "Inferring harmful manipulation intent using autonomous AI agents",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.02684v1",
+      "title": "HateMirage: An Explainable Multi-Dimensional Dataset for Decoding Faux Hate and Subtle Online Abuse",
+      "abstract": "Subtle and indirect hate speech remains an underexplored challenge in online safety research, particularly when harmful intent is embedded within misleading or manipulative narratives. Existing hate speech datasets primarily capture overt toxicity, underrepresenting the nuanced ways misinformation can incite or normalize hate. To address this gap, we present HateMirage, a novel dataset of Faux Hate comments designed to advance reasoning and explainability research on hate emerging from fake or distorted narratives. The dataset was constructed by identifying widely debunked misinformation claims from fact-checking sources and tracing related YouTube discussions, resulting in 4,530 user comments. Each comment is annotated along three interpretable dimensions: Target (who is affected), Intent (the underlying motivation or goal behind the comment), and Implication (its potential social impact). Unlike prior explainability datasets such as HateXplain and HARE, which offer token-level or single-dimensional reasoning, HateMirage introduces a multi-dimensional explanation framework that captures the interplay between misinformation, harm, and social consequence. We benchmark multiple open-source language models on HateMirage using ROUGE-L F1 and Sentence-BERT similarity to assess explanation coherence. Results suggest that explanation quality may depend more on pretraining diversity and reasoning-oriented data rather than on model scale alone. By coupling misinformation reasoning with harm attribution, HateMirage establishes a new benchmark for interpretable hate detection and responsible AI research.",
+      "authors": [
+        "Sai Kartheek Reddy Kasu",
+        "Shankar Biradar",
+        "Sunil Saumya",
+        "Md. Shad Akhtar"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.SI"
+      ],
+      "published": "2026-03-03T07:26:53+00:00",
+      "link": "https://arxiv.org/pdf/2603.02684v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "harmful intent embedded within manipulative narratives in YouTube discussions",
+      "llm_evidence_cn": "YouTube讨论中嵌入操纵性叙述的有害意图",
+      "llm_evidence": "YouTube讨论中嵌入操纵性叙述的有害意图",
+      "canonical_evidence": "YouTube讨论中嵌入操纵性叙述的有害意图",
+      "llm_tldr_en": "Introduces HateMirage, a dataset for decoding subtle online abuse and harmful intent in misinformation narratives.",
+      "llm_tldr_cn": "推出HateMirage数据集，用于解码虚假信息叙述中的微妙在线虐待和有害意图。",
+      "llm_tldr": "推出HateMirage数据集，用于解码虚假信息叙述中的微妙在线虐待和有害意图。",
+      "llm_tags": [
+        "query:q3"
+      ],
+      "matched_query_tag": "query:q3",
+      "matched_query_text": "inferring harmful manipulation intent in social media",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.03128v1",
+      "title": "Behavior Change as a Signal for Identifying Social Media Manipulation",
+      "abstract": "Social media accounts engaging in online manipulation can change their behaviors for re-purposing or to evade detection. Existing detection systems are built on features that do not exploit such behavioral patterns. Here we investigate the degree to which change in behavior can serve as a signal for identifying automated or coordinated accounts. First, we use Behavioral Languages for Online Characterization (BLOC) to represent the behavior of a social media account as a sequence of symbols that represent the account's actions and content. Second, we segment an account's BLOC strings and measure the changes between consecutive segments. Third, we represent an account as a feature vector that captures the distribution of behavioral change values. Finally, the resulting features are used to train and test supervised classifiers. We apply the proposed method to two detection tasks aimed at automated behavior (social bots) and coordinated inauthentic behavior (information operations). Our results reveal that the distributions of behavioral changes tend to be consistent across authentic accounts, while social bots exhibit either very low or very high behavioral change. Coordinated inauthentic accounts exhibit highly similar distributions of behavioral change within the same campaign, but diverse across campaigns. These patterns allow our classifiers to achieve good accuracy in both tasks, demonstrating the effectiveness of behavioral change as a signal for identifying online manipulation.",
+      "authors": [
+        "Isuru Ariyarathne",
+        "Gangani Ariyarathne",
+        "Alessandro Flammini",
+        "Filippo Menczer",
+        "Alexander C. Nwala"
+      ],
+      "primary_category": "cs.SI",
+      "categories": [
+        "cs.SI"
+      ],
+      "published": "2026-03-03T16:02:21+00:00",
+      "link": "https://arxiv.org/pdf/2603.03128v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "identifying social media manipulation through behavioral change signals",
+      "llm_evidence_cn": "通过行为变化信号识别社交媒体操纵",
+      "llm_evidence": "通过行为变化信号识别社交媒体操纵",
+      "canonical_evidence": "通过行为变化信号识别社交媒体操纵",
+      "llm_tldr_en": "Uses behavioral language sequences to detect automated or coordinated manipulation on social media.",
+      "llm_tldr_cn": "使用行为语言序列来检测社交媒体上的自动化或协同操纵。",
+      "llm_tldr": "使用行为语言序列来检测社交媒体上的自动化或协同操纵。",
+      "llm_tags": [
+        "query:q3"
+      ],
+      "matched_query_tag": "query:q3",
+      "matched_query_text": "inferring harmful manipulation intent in social media",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.04921v1",
+      "title": "AILS-NTUA at SemEval-2026 Task 10: Agentic LLMs for Psycholinguistic Marker Extraction and Conspiracy Endorsement Detection",
+      "abstract": "This paper presents a novel agentic LLM pipeline for SemEval-2026 Task 10 that jointly extracts psycholinguistic conspiracy markers and detects conspiracy endorsement. Unlike traditional classifiers that conflate semantic reasoning with structural localization, our decoupled design isolates these challenges. For marker extraction, we propose Dynamic Discriminative Chain-of-Thought (DD-CoT) with deterministic anchoring to resolve semantic ambiguity and character-level brittleness. For conspiracy detection, an \"Anti-Echo Chamber\" architecture, consisting of an adversarial Parallel Council adjudicated by a Calibrated Judge, overcomes the \"Reporter Trap,\" where models falsely penalize objective reporting. Achieving 0.24 Macro F1 (+100\\% over baseline) on S1 and 0.79 Macro F1 (+49\\%) on S2, with the S1 system ranking 3rd on the development leaderboard, our approach establishes a versatile paradigm for interpretable, psycholinguistically-grounded NLP.",
+      "authors": [
+        "Panagiotis Alexios Spanakis",
+        "Maria Lymperaiou",
+        "Giorgos Filandrianos",
+        "Athanasios Voulodimos",
+        "Giorgos Stamou"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-03-05T08:09:10+00:00",
+      "link": "https://arxiv.org/pdf/2603.04921v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Agentic LLM pipeline for psycholinguistic marker extraction and conspiracy detection",
+      "llm_evidence_cn": "用于心理语言学标记提取和阴谋论检测的智能体LLM流水线",
+      "llm_evidence": "用于心理语言学标记提取和阴谋论检测的智能体LLM流水线",
+      "canonical_evidence": "用于心理语言学标记提取和阴谋论检测的智能体LLM流水线",
+      "llm_tldr_en": "Uses an agentic architecture to detect conspiracy endorsement and extract psychological influence markers.",
+      "llm_tldr_cn": "利用智能体架构检测阴谋论认可并提取心理影响标记。",
+      "llm_tldr": "利用智能体架构检测阴谋论认可并提取心理影响标记。",
+      "llm_tags": [
+        "query:q5"
+      ],
+      "matched_query_tag": "query:q5",
+      "matched_query_text": "detecting cognitive manipulation and psychological influence",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.07496v1",
+      "title": "From Thinker to Society: Security in Hierarchical Autonomy Evolution of AI Agents",
+      "abstract": "Artificial Intelligence (AI) agents have evolved from passive predictive tools into active entities capable of autonomous decision-making and environmental interaction, driven by the reasoning capabilities of Large Language Models (LLMs). However, this evolution has introduced critical security vulnerabilities that existing frameworks fail to address. The Hierarchical Autonomy Evolution (HAE) framework organizes agent security into three tiers: Cognitive Autonomy (L1) targets internal reasoning integrity; Execution Autonomy (L2) covers tool-mediated environmental interaction; Collective Autonomy (L3) addresses systemic risks in multi-agent ecosystems. We present a taxonomy of threats spanning cognitive manipulation, physical environment disruption, and multi-agent systemic failures, and evaluate existing defenses while identifying key research gaps. The findings aim to guide the development of multilayered, autonomy-aware defense architectures for trustworthy AI agent systems.",
+      "authors": [
+        "Xiaolei Zhang",
+        "Lu Zhou",
+        "Xiaogang Xu",
+        "Jiafei Wu",
+        "Tianyu Du",
+        "Heqing Huang",
+        "Hao Peng",
+        "Zhe Liu"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-03-08T06:45:28+00:00",
+      "link": "https://arxiv.org/pdf/2603.07496v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Hierarchical Autonomy Evolution framework addressing cognitive manipulation in agent ecosystems",
+      "llm_evidence_cn": "分层自主演化框架，解决智能体生态系统中的认知操纵问题",
+      "llm_evidence": "分层自主演化框架，解决智能体生态系统中的认知操纵问题",
+      "canonical_evidence": "分层自主演化框架，解决智能体生态系统中的认知操纵问题",
+      "llm_tldr_en": "Proposes a framework to secure self-evolving agents against cognitive manipulation and systemic risks.",
+      "llm_tldr_cn": "提出一个框架，保护自进化智能体免受认知操纵和系统性风险的影响。",
+      "llm_tldr": "提出一个框架，保护自进化智能体免受认知操纵和系统性风险的影响。",
+      "llm_tags": [
+        "query:q8"
+      ],
+      "matched_query_tag": "query:q8",
+      "matched_query_text": "Cognitive manipulation detection in social media via evolving agents",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.08483v1",
+      "title": "X-AVDT: Audio-Visual Cross-Attention for Robust Deepfake Detection",
+      "abstract": "The surge of highly realistic synthetic videos produced by contemporary generative systems has significantly increased the risk of malicious use, challenging both humans and existing detectors. Against this backdrop, we take a generator-side view and observe that internal cross-attention mechanisms in these models encode fine-grained speech-motion alignment, offering useful correspondence cues for forgery detection. Building on this insight, we propose X-AVDT, a robust and generalizable deepfake detector that probes generator-internal audio-visual signals accessed via DDIM inversion to expose these cues. X-AVDT extracts two complementary signals: (i) a video composite capturing inversion-induced discrepancies, and (ii) an audio-visual cross-attention feature reflecting modality alignment enforced during generation. To enable faithful cross-generator evaluation, we further introduce MMDF, a new multimodal deepfake dataset spanning diverse manipulation types and rapidly evolving synthesis paradigms, including GANs, diffusion, and flow-matching. Extensive experiments demonstrate that X-AVDT achieves leading performance on MMDF and generalizes strongly to external benchmarks and unseen generators, outperforming existing methods with accuracy improved by 13.1%. Our findings highlight the importance of leveraging internal audio-visual consistency cues for robustness to future generators in deepfake detection.",
+      "authors": [
+        "Youngseo Kim",
+        "Kwan Yun",
+        "Seokhyeon Hong",
+        "Sihun Cha",
+        "Colette Suhjung Koo",
+        "Junyong Noh"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-03-09T15:18:42+00:00",
+      "link": "https://arxiv.org/pdf/2603.08483v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "audio-visual cross-attention for robust deepfake detection in synthetic videos",
+      "llm_evidence_cn": "用于合成视频鲁棒深度伪造检测的音视频交叉注意力",
+      "llm_evidence": "用于合成视频鲁棒深度伪造检测的音视频交叉注意力",
+      "canonical_evidence": "用于合成视频鲁棒深度伪造检测的音视频交叉注意力",
+      "llm_tldr_en": "Uses internal cross-attention cues for robust audio-visual deepfake detection in highly realistic synthetic videos.",
+      "llm_tldr_cn": "利用内部交叉注意力线索，在高度逼真的合成视频中进行鲁棒的音视频深度伪造检测。",
+      "llm_tldr": "利用内部交叉注意力线索，在高度逼真的合成视频中进行鲁棒的音视频深度伪造检测。",
+      "llm_tags": [
+        "query:q6"
+      ],
+      "matched_query_tag": "query:q6",
+      "matched_query_text": "Self evolving agents for multimodal misinformation detection in short videos",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2602.12852v1",
+      "title": "WebClipper: Efficient Evolution of Web Agents with Graph-based Trajectory Pruning",
+      "abstract": "Deep Research systems based on web agents have shown strong potential in solving complex information-seeking tasks, yet their search efficiency remains underexplored. We observe that many state-of-the-art open-source web agents rely on long tool-call trajectories with cyclic reasoning loops and exploration of unproductive branches. To address this, we propose WebClipper, a framework that compresses web agent trajectories via graph-based pruning. Concretely, we model the agent's search process as a state graph and cast trajectory optimization as a minimum-necessary Directed Acyclic Graph (DAG) mining problem, yielding pruned trajectories that preserve essential reasoning while eliminating redundant steps. Continued training on these refined trajectories enables the agent to evolve toward more efficient search patterns and reduces tool-call rounds by about 20% while improving accuracy. Furthermore, we introduce a new metric called F-AE Score to measure the model's overall performance in balancing accuracy and efficiency. Experiments demonstrate that WebClipper compresses tool-call rounds under excellent performance, providing practical insight into balancing effectiveness and efficiency in web agent design.",
+      "authors": [
+        "Junjie Wang",
+        "Zequn Xie",
+        "Dan Yang",
+        "Jie Feng",
+        "Yue Shen",
+        "Duolin Sun",
+        "Meixiu Long",
+        "Yihan Jiao",
+        "Zhehao Tan",
+        "Jian Wang",
+        "Peng Wei",
+        "Jinjie Gu"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-02-13T11:56:20+00:00",
+      "link": "https://arxiv.org/pdf/2602.12852v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "evolution of web agents via trajectory pruning and training",
+      "llm_evidence_cn": "通过轨迹剪枝和训练实现网页智能体的进化",
+      "llm_evidence": "通过轨迹剪枝和训练实现网页智能体的进化",
+      "canonical_evidence": "通过轨迹剪枝和训练实现网页智能体的进化",
+      "llm_tldr_en": "A framework for optimizing and evolving web agents by pruning redundant reasoning trajectories.",
+      "llm_tldr_cn": "一种通过剪枝冗余推理轨迹来优化和进化网页智能体的框架。",
+      "llm_tldr": "一种通过剪枝冗余推理轨迹来优化和进化网页智能体的框架。",
+      "llm_tags": [
+        "query:q1"
+      ],
+      "matched_query_tag": "query:q1",
+      "matched_query_text": "self-evolving autonomous agents for information verification",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2602.10546v1",
+      "title": "RealHD: A High-Quality Dataset for Robust Detection of State-of-the-Art AI-Generated Images",
+      "abstract": "The rapid advancement of generative AI has raised concerns about the authenticity of digital images, as highly realistic fake images can now be generated at low cost, potentially increasing societal risks. In response, several datasets have been established to train detection models aimed at distinguishing AI-generated images from real ones. However, existing datasets suffer from limited generalization, low image quality, overly simple prompts, and insufficient image diversity. To address these limitations, we propose a high-quality, large-scale dataset comprising over 730,000 images across multiple categories, including both real and AI-generated images. The generated images are synthesized via state-of-the-art methods, including text-to-image generation (guided by over 10,000 carefully designed prompts), image inpainting, image refinement, and face swapping. Each generated image is annotated with its generation method and category. Inpainting images further include binary masks to indicate inpainted regions, providing rich metadata for analysis. Compared to existing datasets, detection models trained on our dataset demonstrate superior generalization capabilities. Our dataset not only serves as a strong benchmark for evaluating detection methods but also contributes to advancing the robustness of AI-generated image detection techniques. Building upon this, we propose a lightweight detection method based on image noise entropy, which transforms the original image into an entropy tensor of Non-Local Means (NLM) noise before classification. Extensive experiments demonstrate that models trained on our dataset achieve strong generalization, and our method delivers competitive performance, establishing a solid baseline for future research. The dataset and source code are publicly available at https://real-hd.github.io.",
+      "authors": [
+        "Hanzhe Yu",
+        "Yun Ye",
+        "Jintao Rong",
+        "Qi Xuan",
+        "Chen Ma"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-02-11T05:38:40+00:00",
+      "link": "https://arxiv.org/pdf/2602.10546v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "dataset for detecting AI-generated fake images",
+      "llm_evidence_cn": "用于检测AI生成虚假图像的数据集",
+      "llm_evidence": "用于检测AI生成虚假图像的数据集",
+      "canonical_evidence": "用于检测AI生成虚假图像的数据集",
+      "llm_tldr_en": "Introduces RealHD, a large-scale dataset for robust detection of state-of-the-art AI-generated images.",
+      "llm_tldr_cn": "发布RealHD大规模数据集，用于增强对先进AI生成图像的检测能力。",
+      "llm_tldr": "发布RealHD大规模数据集，用于增强对先进AI生成图像的检测能力。",
+      "llm_tags": [
+        "query:q4"
+      ],
+      "matched_query_tag": "query:q4",
+      "matched_query_text": "multimodal fake news and misinformation detection",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2602.10549v1",
+      "title": "Enhancing Weakly Supervised Multimodal Video Anomaly Detection through Text Guidance",
+      "abstract": "Weakly supervised multimodal video anomaly detection has gained significant attention, yet the potential of the text modality remains under-explored. Text provides explicit semantic information that can enhance anomaly characterization and reduce false alarms. However, extracting effective text features is challenging due to the inability of general-purpose language models to capture anomaly-specific nuances and the scarcity of relevant descriptions. Furthermore, multimodal fusion often suffers from redundancy and imbalance. To address these issues, we propose a novel text-guided framework. First, we introduce an in-context learning-based multi-stage text augmentation mechanism to generate high-quality anomaly text samples for fine-tuning the text feature extractor. Second, we design a multi-scale bottleneck Transformer fusion module that uses compressed bottleneck tokens to progressively integrate information across modalities, mitigating redundancy and imbalance. Experiments on UCF-Crime and XD-Violence demonstrate state-of-the-art performance.",
+      "authors": [
+        "Shengyang Sun",
+        "Jiashen Hua",
+        "Junyi Feng",
+        "Xiaojin Gong"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-02-11T05:44:30+00:00",
+      "link": "https://arxiv.org/pdf/2602.10549v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "text-guided framework for multimodal video anomaly detection",
+      "llm_evidence_cn": "用于多模态视频异常检测的文本引导框架",
+      "llm_evidence": "用于多模态视频异常检测的文本引导框架",
+      "canonical_evidence": "用于多模态视频异常检测的文本引导框架",
+      "llm_tldr_en": "Enhances multimodal video anomaly detection by using text guidance and in-context learning for augmentation.",
+      "llm_tldr_cn": "通过使用文本引导和上下文学习增强多模态视频异常检测。",
+      "llm_tldr": "通过使用文本引导和上下文学习增强多模态视频异常检测。",
+      "llm_tags": [
+        "query:q4"
+      ],
+      "matched_query_tag": "query:q4",
+      "matched_query_text": "multimodal fake news and misinformation detection",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2602.12941v1",
+      "title": "JARVIS: An Evidence-Grounded Retrieval System for Interpretable Deceptive Reviews Adjudication",
+      "abstract": "Deceptive reviews, refer to fabricated feedback designed to artificially manipulate the perceived quality of products. Within modern e-commerce ecosystems, these reviews remain a critical governance challenge. Despite advances in review-level and graph-based detection methods, two pivotal limitations remain: inadequate generalization and lack of interpretability. To address these challenges, we propose JARVIS, a framework providing Judgment via Augmented Retrieval and eVIdence graph Structures. Starting from the review to be evaluated, it retrieves semantically similar evidence via hybrid dense-sparse multimodal retrieval, expands relational signals through shared entities, and constructs a heterogeneous evidence graph. Large language model then performs evidence-grounded adjudication to produce interpretable risk assessments. Offline experiments demonstrate that JARVIS enhances performance on our constructed review dataset, achieving a precision increase from 0.953 to 0.988 and a recall boost from 0.830 to 0.901. In the production environment, our framework achieves a 27% increase in the recall volume and reduces manual inspection time by 75%. Furthermore, the adoption rate of the model-generated analysis reaches 96.4%.",
+      "authors": [
+        "Nan Lu",
+        "Leyang Li",
+        "Yurong Hu",
+        "Rui Lin",
+        "Shaoyi Xu"
+      ],
+      "primary_category": "cs.IR",
+      "categories": [
+        "cs.IR"
+      ],
+      "published": "2026-02-13T13:57:45+00:00",
+      "link": "https://arxiv.org/pdf/2602.12941v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "multimodal retrieval and evidence graphs for deceptive review adjudication",
+      "llm_evidence_cn": "用于虚假评论判定的多模态检索与证据图谱",
+      "llm_evidence": "用于虚假评论判定的多模态检索与证据图谱",
+      "canonical_evidence": "用于虚假评论判定的多模态检索与证据图谱",
+      "llm_tldr_en": "An evidence-grounded system using multimodal retrieval to detect and explain deceptive online reviews.",
+      "llm_tldr_cn": "一个利用多模态检索来检测和解释虚假在线评论的证据驱动系统。",
+      "llm_tldr": "一个利用多模态检索来检测和解释虚假在线评论的证据驱动系统。",
+      "llm_tags": [
+        "query:q4"
+      ],
+      "matched_query_tag": "query:q4",
+      "matched_query_text": "multimodal fake news and misinformation detection",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2602.10869v1",
+      "title": "Agentic Knowledge Distillation: Autonomous Training of Small Language Models for SMS Threat Detection",
+      "abstract": "SMS-based phishing (smishing) attacks have surged, yet training effective on-device detectors requires labelled threat data that quickly becomes outdated. To deal with this issue, we present Agentic Knowledge Distillation, which consists of a powerful LLM acts as an autonomous teacher that fine-tunes a smaller student SLM, deployable for security tasks without human intervention. The teacher LLM autonomously generates synthetic data and iteratively refines a smaller on-device student model until performance plateaus. We compare four LLMs in this teacher role (Claude Opus 4.5, GPT 5.2 Codex, Gemini 3 Pro, and DeepSeek V3.2) on SMS spam/smishing detection with two student SLMs (Qwen2.5-0.5B and SmolLM2-135M). Our results show that performance varies substantially depending on the teacher LLM, with the best configuration achieving 94.31% accuracy and 96.25% recall. We also compare against a Direct Preference Optimisation (DPO) baseline that uses the same synthetic knowledge and LoRA setup but without iterative feedback or targeted refinement; agentic knowledge distillation substantially outperforms it (e.g. 86-94% vs 50-80% accuracy), showing that closed-loop feedback and targeted refinement are critical. These findings demonstrate that agentic knowledge distillation can rapidly yield effective security classifiers for edge deployment, but outcomes depend strongly on which teacher LLM is used.",
+      "authors": [
+        "Adel ElZemity",
+        "Joshua Sylvester",
+        "Budi Arief",
+        "Rogério De Lemos"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR"
+      ],
+      "published": "2026-02-11T13:57:56+00:00",
+      "link": "https://arxiv.org/pdf/2602.10869v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "autonomous teacher LLM iteratively refines student model for threat detection",
+      "llm_evidence_cn": "自主教师大模型迭代优化学生模型用于威胁检测",
+      "llm_evidence": "自主教师大模型迭代优化学生模型用于威胁检测",
+      "canonical_evidence": "自主教师大模型迭代优化学生模型用于威胁检测",
+      "llm_tldr_en": "Introduces Agentic Knowledge Distillation for autonomous, human-free training of security threat detectors.",
+      "llm_tldr_cn": "提出智能体知识蒸馏框架，实现无需人工干预的自主安全威胁检测模型训练。",
+      "llm_tldr": "提出智能体知识蒸馏框架，实现无需人工干预的自主安全威胁检测模型训练。",
+      "llm_tags": [
+        "query:q1"
+      ],
+      "matched_query_tag": "query:q1",
+      "matched_query_text": "self-evolving autonomous agents for information verification",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2602.10633v2",
+      "title": "A Cognitive Distribution and Behavior-Consistent Framework for Black-Box Attacks on Recommender Systems",
+      "abstract": "With the growing deployment of sequential recommender systems in e-commerce and other fields, their black-box interfaces raise security concerns: models are vulnerable to extraction and subsequent adversarial manipulation. Existing black-box extraction attacks primarily rely on hard labels or pairwise learning, often ignoring the importance of ranking positions, which results in incomplete knowledge transfer. Moreover, adversarial sequences generated via pure gradient methods lack semantic consistency with real user behavior, making them easily detectable. To overcome these limitations, this paper proposes a dual-enhanced attack framework. First, drawing on primacy effects and position bias, we introduce a cognitive distribution-driven extraction mechanism that maps discrete rankings into continuous value distributions with position-aware decay, thereby advancing from order alignment to cognitive distribution alignment. Second, we design a behavior-aware noisy item generation strategy that jointly optimizes collaborative signals and gradient signals. This ensures both semantic coherence and statistical stealth while effectively promoting target item rankings. Extensive experiments on multiple datasets demonstrate that our approach significantly outperforms existing methods in both attack success rate and evasion rate, validating the value of integrating cognitive modeling and behavioral consistency for secure recommender systems.",
+      "authors": [
+        "Hongyue Zhang",
+        "Mingming Li",
+        "Dongqin Liu",
+        "Hui Wang",
+        "Yaning Zhang",
+        "Xi Zhou",
+        "Honglei Lv",
+        "Jiao Dai",
+        "Jizhong Han"
+      ],
+      "primary_category": "cs.IR",
+      "categories": [
+        "cs.IR"
+      ],
+      "published": "2026-02-11T08:26:07+00:00",
+      "link": "https://arxiv.org/pdf/2602.10633v2",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "cognitive distribution and behavior-consistent framework for adversarial manipulation",
+      "llm_evidence_cn": "针对对抗性操纵的认知分布与行为一致性框架",
+      "llm_evidence": "针对对抗性操纵的认知分布与行为一致性框架",
+      "canonical_evidence": "针对对抗性操纵的认知分布与行为一致性框架",
+      "llm_tldr_en": "Proposes a framework for black-box attacks on recommenders using cognitive biases like primacy effects.",
+      "llm_tldr_cn": "提出一种利用首因效应等认知偏差对推荐系统进行黑盒攻击的框架。",
+      "llm_tldr": "提出一种利用首因效应等认知偏差对推荐系统进行黑盒攻击的框架。",
+      "llm_tags": [
+        "query:q5"
+      ],
+      "matched_query_tag": "query:q5",
+      "matched_query_text": "detecting cognitive manipulation and psychological influence",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2602.13088v1",
+      "title": "How cyborg propaganda reshapes collective action",
+      "abstract": "The distinction between genuine grassroots activism and automated influence operations is collapsing. While policy debates focus on bot farms, a distinct threat to democracy is emerging via partisan coordination apps and artificial intelligence-what we term 'cyborg propaganda.' This architecture combines large numbers of verified humans with adaptive algorithmic automation, enabling a closed-loop system. AI tools monitor online sentiment to optimize directives and generate personalized content for users to post online. Cyborg propaganda thereby exploits a critical legal shield: by relying on verified citizens to ratify and disseminate messages, these campaigns operate in a regulatory gray zone, evading liability frameworks designed for automated botnets. We explore the collective action paradox of this technology: does it democratize power by 'unionizing' influence (pooling the reach of dispersed citizens to overcome the algorithmic invisibility of isolated voices), or does it reduce citizens to 'cognitive proxies' of a central directive? We argue that cyborg propaganda fundamentally alters the digital public square, shifting political discourse from a democratic contest of individual ideas to a battle of algorithmic campaigns. We outline a research agenda to distinguish organic from coordinated information diffusion and propose governance frameworks to address the regulatory challenges of AI-assisted collective expression.",
+      "authors": [
+        "Jonas R. Kunst",
+        "Kinga Bierwiaczonek",
+        "Meeyoung Cha",
+        "Omid V. Ebrahimi",
+        "Marc Fawcett-Atkinson",
+        "Asbjørn Følstad",
+        "Anton Gollwitzer",
+        "Nils Köbis",
+        "Gary Marcus",
+        "Jon Roozenbeek",
+        "Daniel Thilo Schroeder",
+        "Jay J. Van Bavel",
+        "Sander van der Linden",
+        "Rory White",
+        "Live Leonhardsen Wilhelmsen"
+      ],
+      "primary_category": "cs.CY",
+      "categories": [
+        "cs.CY",
+        "cs.AI"
+      ],
+      "published": "2026-02-13T16:49:26+00:00",
+      "link": "https://arxiv.org/pdf/2602.13088v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Cyborg propaganda combining humans and adaptive algorithmic automation for influence",
+      "llm_evidence_cn": "结合人类与自适应算法自动化的半机械人宣传操纵",
+      "llm_evidence": "结合人类与自适应算法自动化的半机械人宣传操纵",
+      "canonical_evidence": "结合人类与自适应算法自动化的半机械人宣传操纵",
+      "llm_tldr_en": "Explores how AI-driven cyborg propaganda reshapes collective action and evades traditional detection frameworks.",
+      "llm_tldr_cn": "探讨 AI 驱动的半机械人宣传如何重塑集体行动并规避传统的监管检测框架。",
+      "llm_tldr": "探讨 AI 驱动的半机械人宣传如何重塑集体行动并规避传统的监管检测框架。",
+      "llm_tags": [
+        "query:q5"
+      ],
+      "matched_query_tag": "query:q5",
+      "matched_query_text": "detecting cognitive manipulation and psychological influence",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2602.11106v2",
+      "title": "TEGRA: Text Encoding With Graph and Retrieval Augmentation for Misinformation Detection",
+      "abstract": "Misinformation detection is a critical task that can benefit significantly from the integration of external knowledge, much like manual fact-checking. In this work, we propose a novel method for representing textual documents that facilitates the incorporation of information from a knowledge base. Our approach, Text Encoding with Graph (TEG), processes documents by extracting structured information in the form of a graph and encoding both the text and the graph for classification purposes. Through extensive experiments, we demonstrate that this hybrid representation enhances misinformation detection performance compared to using language models alone. Furthermore, we introduce TEGRA, an extension of our framework that integrates domain-specific knowledge, further enhancing classification accuracy in most cases.",
+      "authors": [
+        "Géraud Faye",
+        "Wassila Ouerdane",
+        "Guillaume Gadek",
+        "Sylvain Gatepaille",
+        "Céline Hudelot"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-02-11T18:21:17+00:00",
+      "link": "https://arxiv.org/pdf/2602.11106v2",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "graph and retrieval augmentation for misinformation detection",
+      "llm_evidence_cn": "用于虚假信息检测的图增强与检索增强技术",
+      "llm_evidence": "用于虚假信息检测的图增强与检索增强技术",
+      "canonical_evidence": "用于虚假信息检测的图增强与检索增强技术",
+      "llm_tldr_en": "TEGRA uses graph and retrieval augmentation to improve the accuracy of automated misinformation detection.",
+      "llm_tldr_cn": "TEGRA通过图结构和检索增强技术提升了自动化虚假信息检测的准确性。",
+      "llm_tldr": "TEGRA通过图结构和检索增强技术提升了自动化虚假信息检测的准确性。",
+      "llm_tags": [
+        "query:q1"
+      ],
+      "matched_query_tag": "query:q1",
+      "matched_query_text": "self-evolving autonomous agents for information verification",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2602.13458v1",
+      "title": "MoltNet: Understanding Social Behavior of AI Agents in the Agent-Native MoltBook",
+      "abstract": "Large-scale communities of AI agents are becoming increasingly prevalent, creating new environments for agent-agent social interaction. Prior work has examined multi-agent behavior primarily in controlled or small-scale settings, limiting our understanding of emergent social dynamics at scale. The recent emergence of MoltBook, a social networking platform designed explicitly for AI agents, presents a unique opportunity to study whether and how these interactions reproduce core human social mechanisms.   We present MoltNet, a large-scale empirical analysis of agent interaction on MoltBook using data collected in early 2026. Grounded in sociological and social-psychological theory, we examine behavior along four dimensions: intent and motivation, norms and templates, incentives and behavioral drift, emotion and contagion.   Our analysis revealed that agents strongly respond to social rewards and rapidly converge on community-specific interaction templates, resembling human patterns of incentive sensitivity and normative conformity. However, they are predominantly knowledge-driven rather than persona-aligned, and display limited emotional reciprocity along with weak dialogic engagement, which diverges systematically from human online communities.   Together, these results reveal both similarities and differences between artificial and human social systems and provide an empirical foundation for understanding, designing, and governing large-scale agent communities.",
+      "authors": [
+        "Yi Feng",
+        "Chen Huang",
+        "Zhibo Man",
+        "Ryner Tan",
+        "Long P. Hoang",
+        "Shaoyang Xu",
+        "Wenxuan Zhang"
+      ],
+      "primary_category": "cs.SI",
+      "categories": [
+        "cs.SI",
+        "cs.AI"
+      ],
+      "published": "2026-02-13T21:03:59+00:00",
+      "link": "https://arxiv.org/pdf/2602.13458v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "analyzing intent and motivation in large-scale AI agent social interactions",
+      "llm_evidence_cn": "分析大规模AI智能体社交互动中的意图与动机",
+      "llm_evidence": "分析大规模AI智能体社交互动中的意图与动机",
+      "canonical_evidence": "分析大规模AI智能体社交互动中的意图与动机",
+      "llm_tldr_en": "Studies social behaviors and emergent dynamics in a platform designed for AI agent interactions.",
+      "llm_tldr_cn": "研究专为AI智能体互动的平台中的社交行为和涌现动态。",
+      "llm_tldr": "研究专为AI智能体互动的平台中的社交行为和涌现动态。",
+      "llm_tags": [
+        "query:q7"
+      ],
+      "matched_query_tag": "query:q7",
+      "matched_query_text": "Inferring harmful manipulation intent using autonomous AI agents",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2602.15654v1",
+      "title": "Zombie Agents: Persistent Control of Self-Evolving LLM Agents via Self-Reinforcing Injections",
+      "abstract": "Self-evolving LLM agents update their internal state across sessions, often by writing and reusing long-term memory. This design improves performance on long-horizon tasks but creates a security risk: untrusted external content observed during a benign session can be stored as memory and later treated as instruction. We study this risk and formalize a persistent attack we call a Zombie Agent, where an attacker covertly implants a payload that survives across sessions, effectively turning the agent into a puppet of the attacker.   We present a black-box attack framework that uses only indirect exposure through attacker-controlled web content. The attack has two phases. During infection, the agent reads a poisoned source while completing a benign task and writes the payload into long-term memory through its normal update process. During trigger, the payload is retrieved or carried forward and causes unauthorized tool behavior. We design mechanism-specific persistence strategies for common memory implementations, including sliding-window and retrieval-augmented memory, to resist truncation and relevance filtering. We evaluate the attack on representative agent setups and tasks, measuring both persistence over time and the ability to induce unauthorized actions while preserving benign task quality. Our results show that memory evolution can convert one-time indirect injection into persistent compromise, which suggests that defenses focused only on per-session prompt filtering are not sufficient for self-evolving agents.",
+      "authors": [
+        "Xianglin Yang",
+        "Yufei He",
+        "Shuo Ji",
+        "Bryan Hooi",
+        "Jin Song Dong"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-02-17T15:28:24+00:00",
+      "link": "https://arxiv.org/pdf/2602.15654v1",
+      "tags": [
+        "keyword:智能体检测"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Security risks of self-evolving LLM agents updating internal states via long-term memory",
+      "llm_evidence_cn": "自进化LLM智能体通过长期记忆更新内部状态的安全风险",
+      "llm_evidence": "自进化LLM智能体通过长期记忆更新内部状态的安全风险",
+      "canonical_evidence": "自进化LLM智能体通过长期记忆更新内部状态的安全风险",
+      "llm_tldr_en": "Analyzes how self-evolving agents can be compromised by persistent malicious memory injections.",
+      "llm_tldr_cn": "分析了自进化智能体如何被持久的恶意记忆注入所破坏。",
+      "llm_tldr": "分析了自进化智能体如何被持久的恶意记忆注入所破坏。",
+      "llm_tags": [
+        "query:q1"
+      ],
+      "matched_query_tag": "query:q1",
+      "matched_query_text": "self-evolving autonomous agents for information verification",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2602.11483v1",
+      "title": "Understanding Persuasive Interactions between Generative Social Agents and Humans: The Knowledge-based Persuasion Model (KPM)",
+      "abstract": "Generative social agents (GSAs) use artificial intelligence to autonomously communicate with human users in a natural and adaptive manner. Currently, there is a lack of theorizing regarding interactions with GSAs, and likewise, few guidelines exist for studying how they influence user attitudes and behaviors. Consequently, we propose the Knowledge-based Persuasion Model (KPM) as a novel theoretical framework. According to the KPM, a GSA's self, user, and context-related knowledge drives its persuasive behavior, which in turn shapes the attitudes and behaviors of a responding human user. By synthesizing existing research, the model offers a structured approach to studying interactions with GSAs, supporting the development of agents that motivate rather than manipulate humans. Accordingly, the KPM encourages the integration of responsible GSAs that adhere to social norms and ethical standards with the goal of increasing user wellbeing. Implications of the KPM for research and application domains such as healthcare and education are discussed.",
+      "authors": [
+        "Stephan Vonschallen",
+        "Friederike Eyssel",
+        "Theresa Schmiedel"
+      ],
+      "primary_category": "cs.HC",
+      "categories": [
+        "cs.HC",
+        "cs.AI"
+      ],
+      "published": "2026-02-12T01:53:28+00:00",
+      "link": "https://arxiv.org/pdf/2602.11483v1",
+      "tags": [
+        "keyword:智能体检测",
+        "query:智能体检测"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "theoretical framework for how agents influence user attitudes and behaviors",
+      "llm_evidence_cn": "智能体如何影响用户态度和行为的理论框架",
+      "llm_evidence": "智能体如何影响用户态度和行为的理论框架",
+      "canonical_evidence": "智能体如何影响用户态度和行为的理论框架",
+      "llm_tldr_en": "Proposes a model to study how generative social agents use knowledge to drive persuasive behavior and influence users.",
+      "llm_tldr_cn": "提出了一个模型，研究生成式社交智能体如何利用知识驱动说服行为并影响用户。",
+      "llm_tldr": "提出了一个模型，研究生成式社交智能体如何利用知识驱动说服行为并影响用户。",
+      "llm_tags": [
+        "query:q5"
+      ],
+      "matched_query_tag": "query:q5",
+      "matched_query_text": "detecting cognitive manipulation and psychological influence",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

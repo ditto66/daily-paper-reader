@@ -1,0 +1,407 @@
+Title: Can Thinking Models Think to Detect Hateful Memes?
+
+URL Source: https://arxiv.org/pdf/2603.01225v1
+
+Published Time: Tue, 03 Mar 2026 02:37:31 GMT
+
+Number of Pages: 10
+
+Markdown Content:
+# Can Thinking Models Think to Detect Hateful Memes? 
+
+# Mohamed Bayan Kmainasi 
+
+Qatar University Doha, Qatar mk2314890@qu.edu.qa 
+
+# Mucahid Kutlu 
+
+Qatar University Doha, Qatar mucahidkutlu@qu.edu.qa 
+
+# Ali Ezzat Shahroor 
+
+Qatar Computing Research Institute Doha, Qatar alsh34060@hbku.edu.qa 
+
+# Abul Hasnat 
+
+APAVI.AI France Blackbird.AI USA mhasnat@gmail.com 
+
+# Firoj Alam 
+
+Qatar Computing Research Institute Doha, Qatar fialam@hbku.edu.qa 
+
+## Abstract 
+
+Hateful memes often require compositional multimodal reason-ing: the image and text may appear benign in isolation, yet their interaction conveys harmful intent. Although thinking-based mul-timodal large language models (MLLMs) have recently advanced vision–language understanding, their capabilities remain under-explored for hateful meme analysis. We propose a reinforcement learning–based post-training framework that improves reasoning in thinking-based MLLMs via task-specific rewards and a novel Group Relative Policy Optimization (GRPO) objective. Concretely, we (i) 
+
+conduct a systematic empirical study of off-the-shelf MLLMs for hateful meme understanding, (ii) extend an existing hateful meme dataset by generating weakly/pseudo-supervised chain-of-thought (CoT) rationales via distillation, and (iii) introduce a GRPO-based objective that jointly optimizes meme classification and explanation quality to encourage fine-grained step-by-step reasoning. Experi-ments on the Hateful Memes benchmark show that our approach achieves state-of-the-art results, improving accuracy and F1 by approximately 1% and explanation quality by approximately 3%. We will publicly release our code, data extensions, and evaluation resources to support reproducibility. 1
+
+## CCS Concepts 
+
+• Computing methodologies → Computer vision problems .
+
+## Keywords 
+
+Hateful Meme Detection; Multimodal Large Language Models; Re-inforcement Learning; Multimodal Reasoning 
+
+ACM Reference Format: 
+
+Mohamed Bayan Kmainasi, Mucahid Kutlu, Ali Ezzat Shahroor, Abul Has-nat, and Firoj Alam. 2026. Can Thinking Models Think to Detect Hateful Memes? . In Companion Proceedings of the ACM Web Conference 2026 (WWW Companion ’26), April 13–17, 2026, Dubai, United Arab Emirates. ACM, New York, NY, USA, 10 pages. https://doi.org/10.1145/3774905.3795465  
+
+> 1https://github.com/MohamedBayan/MemeReason
+> This work is licensed under a Creative Commons Attribution 4.0 International License.
+> WWW Companion ’26, Dubai, United Arab Emirates
+> ©2026 Copyright held by the owner/author(s). ACM ISBN 979-8-4007-2308-7/2026/04 https://doi.org/10.1145/3774905.3795465
+
+## 1 Introduction 
+
+Memes, which blend images and text with humor and cultural references, are classic examples of multimodal content. They have become a predominant form of communication on social media, rapidly shaping collective discourse [ 1 , 40 ]. While often harmless, they exhibit a dual nature and can be exploited to spread hate speech, disinformation, and propaganda [ 47 ]. The use of humor and irony in hateful memes may trivialize toxic content, potentially normalizing hostile views [ 40 , 44 ]. Furthermore, memes serve as powerful tools for political communication, effectively conveying complex ideas through simple, emotionally resonant visuals that enable persuasion and manipulation [ 1, 37 ]. Given the pervasive role of social media, timely and accurate detection and moderation of hateful content are therefore crucial to ensuring safer online environments. Motivated by these challenges, this research aims to improve hateful meme detection by leveraging recent advances in multimodal large language models (MLLMs) .Recently, MLLMs have significantly advanced vision–language understanding, demonstrating strong generalization capabilities across a wide range of multimodal tasks [ 49 , 53 ]. Beyond strong representation learning, these models increasingly exhibit emer-gent abilities such as instruction following, cross-modal grounding, and robust transfer to tasks with limited task-specific supervision, making them attractive foundations for challenging content un-derstanding problems. Thinking-based MLLMs represent the latest advances in multimodal reasoning, exhibiting an enhanced abil-ity to integrate visual and textual information through deliberate multi-step inference [ 56 ]. This paradigm is particularly relevant for memes, where meaning is often implicit and depends on image-text interaction rather than unimodal cues. The training of such models emphasizes chain-of-thought (CoT) supervision, in which intermediate reasoning steps are explicitly modeled, and is further optimized through reinforcement learning (RL) techniques [14]. Significant progress has been achieved through diverse approaches for meme understanding, including agentic reasoning frameworks [ 30 , 31 ], few-shot adaptation [ 11 , 18 ], and Supervised fine-tuning (SFT) on multimodal datasets [ 2, 24 ]. However, only very recent or concurrent work [ 36 ] has begun to explore chain-of-thought, supervised training, and reinforcement learning for meme analysis. In addition, thinking-based MLLMs have not yet been explored for hateful meme analysis.  
+
+> arXiv:2603.01225v1 [cs.CL] 1 Mar 2026 WWW Companion ’26, April 13–17, 2026, Dubai, United Arab Emirates Mohamed Bayan Kmainasi, Mucahid Kutlu, Ali Ezzat Shahroor, Abul Hasnat, & Firoj Alam
+
+Figure 1: Overview of the proposed hateful meme analysis framework. Starting from raw memes, we derive binary and fine-grained supervision (protected category and attack type), OCR text, and guidelines to construct instruction-following datasets. Weak supervision from a strong MLLM is used to distill step-by-step CoT rationales. The model is trained via a two-stage post-training pipeline consisting of SFT warm-up followed by GRPO-based reinforcement learning, jointly optimizing classification accuracy and explanation quality. During inference, multiple candidate label–explanation pairs are generated and scored to select the final prediction. Abbreviations: Acc. = accuracy; MET = METEOR; Len = explanation length; Fmt = format compliance. 
+
+To address this research gap, and as illustrated in Figure 1, we in-vestigate this direction and develop an RL-trained approach grounded in the CoT-supervised reasoning paradigm. Specifically, we first study and analyze the impact of CoT on meme analysis using pre-trained thinking-based MLLMs, and subsequently develop a novel method (see Section 4 for more details) to fine-tune thinking-based MLLMs for hateful meme analysis. 
+
+Our contributions are summarized as follows: 
+
+• Empirical study of CoT reasoning: We evaluate recent pre-trained MLLMs for hateful meme understanding under zero-shot and CoT prompting, jointly assessing classification and explanation generation to identify a strong base model. 
+
+• Extended with step-by-step reasoning: We extend an existing hateful meme dataset with distilled step-by-step CoT rationales, obtained via weak/pseudo supervision from a strong commercial MLLM. 
+
+• GRPO optimization objective: We introduce a GRPO-based objective for meme classification with meteor-based reward objective that jointly optimizes label correctness and explanation quality for hateful meme analysis. 
+
+• Two-stage GRPO fine-tuning: We develop a post-training pipeline with SFT warm-up followed by GRPO-based rein-forcement learning for explainable hateful meme detection. Our findings can be summarized as follows: (a) thinking-based pre-trained MLLMs consistently benefit from CoT prompting; (b) 
+
+incorporating fine-grained supervision and distilled CoT rationales further improves both classification and explanation quality under our GRPO-based post-training; and (c) the proposed GRPO objective and RL-based training method achieve state-of-the-art results for hateful meme classification and explanation. 
+
+## 2 Related Work 2.1 Multimodal hateful meme detection 
+
+Early meme detection systems relied on unimodal cues, such as OCR-based text features combined with traditional machine learn-ing algorithms [ 3, 7 ], CNN-based image classifiers and image–text fusion methods [ 48 ]. However, these approaches often struggled to capture the nuanced, context-dependent meanings arising from complex image–text interactions. Most existing research on meme moderation has focused on binary classification, distinguishing between categories such as hateful and non-hateful content [ 9 ]. Several benchmark datasets have been developed to support this line of research, including the Hateful Meme dataset introduced by Kiela et al . [23] and HarMeme, which targets COVID-19 and U.S. political memes [41]. Only a limited number of works have explored fine-grained an-notation. For example, Mathias et al . [34] re-labeled Hateful Memes with fine-grained attributes based on protected categories and at-tack types, while Fersini et al . [16] introduced MAMI, a dataset for misogynistic meme detection that supports both binary and subtype-level classification according to the type of misogyny ex-pressed. More recently, several studies have moved beyond detection to-ward explainability, taxonomic labeling, and enhanced multimodal reasoning. For instance, Grasso et al . [17] augmented multimodal classification with knowledge-graph reasoning using ConceptNet to enrich contextual understanding. The Mod-Hate framework [ 11 ]addressed few-shot hateful meme detection by modularizing LLM components, while Lin et al . [28] proposed a multimodal debate framework in which multiple LLM agents exchange rationales be-fore reaching a final decision. In a related effort, Kmainasi et al .Can Thinking Models Think to Detect Hateful Memes? WWW Companion ’26, April 13–17, 2026, Dubai, United Arab Emirates 
+
+[24] extended FHM by incorporating human-verified rationales, enabling supervised training of explainable MLLMs. Despite these advances, systematic investigations to enhance CoT reasoning over multimodal inputs remain limited. Existing work has explored CoT prompting or structured reasoning in spe-cific settings, such as multi-hop reasoning for misogynistic meme classification [ 25 ], multimodal metaphor detection [ 55 ], and dis-tilled abductive reasoning for harmful meme detection [ 29 ]. How-ever, the use of RL/GRPO for multimodal hateful meme detection remains largely underexplored. To the best of our knowledge, only very recent or concurrent work [ 36 ] has begun to investigate GRPO in the context of meme moderation. Prior research has predomi-nantly relied on supervised or prompting-based paradigms, leaving the potential of RL for improving multimodal reasoning in this domain insufficiently examined. 
+
+## 2.2 RL for MLLMs 
+
+RL is a core paradigm in machine learning where the agent learns to make decisions by interacting with an environment and receiving rewards [ 20 ]. Recent advances in MLLMs have leveraged RL for post-training with dynamic feedback, where reward signals guide model behavior [ 54 ]. Methods such as Reinforcement Learning from Human Feedback (RLHF) have been extensively employed to align and refine the behavior of LLMs [21, 39]. These methods typically utilize optimization algorithms such as Proximal Policy Optimization (PPO) [ 45 ] and Direct Preference Opti-mization (DPO) [ 42 ] to adjust model parameters toward maximizing the expected reward signal. More recently, the DeepSeek-R1 model introduced GRPO [ 14 ], achieving state-of-the-art reasoning perfor-mance. Unlike traditional RLHF approaches that rely on learned evaluation models, GRPO employs a rule-based reward that explic-itly encourages the generation of high-quality chains of thoughts and favors trajectories exhibiting superior reasoning quality. GRPO has been effectively applied across a range of domains, including mathematical reasoning [ 46 ], self-training [ 43 ], and code genera-tion [ 12 ]. In this research, we expand the use of GRPO to hateful meme analysis by optimizing thinking-based MLLMs and studying how CoT supervision interacts with RL-based post-training for improved detection and explanation. 
+
+## 3 Datasets 3.1 Dataset Preparation 
+
+For hateful meme analysis, most prior work has primarily focused on coarse-grained classification [ 9 ]. Recent studies have shown that training models with more detailed supervision can significantly enhance task performance, as such information mimics human-like, step-by-step reasoning when analyzing multimodal inputs and mak-ing final decisions [ 60 ]. Effective training of thinking-based MLLMs requires providing sufficient and structured task-specific informa-tion beyond binary labels. Therefore, we curated existing datasets containing both binary and fine-grained labels and extended the original Hateful Memes dataset with explanations and rationales for the assigned labels, as well as step-by-step CoT reasoning traces. 
+
+3.1.1 Hateful Memes – Original Dataset. Hateful Memes [ 22 ] is one of the most widely used early benchmarks for multimodal hate speech detection, consisting of approximately 12k memes that combine textual and visual content. It was carefully curated to ensure that effective classification requires joint multimodal understanding over both modalities, as neither text nor image alone is sufficient to reliably determine the label. The dataset includes a mixture of synthetically generated memes and real-world examples and maintains a balanced distribution between hateful and non-hateful content. 2 Table 1 summarizes the dataset distribution. 
+
+Class Label Train Dev Test Total 
+
+Non-hateful 5,481 340 1,250 7,071 Hateful 3,019 200 750 3,969 
+
+Total 8,500 540 2,000 11,040 
+
+Table 1: Distribution of labels in the dataset. 
+
+3.1.2 Explanation/Reasoning. We utilize the rationales introduced in the recently released MemeIntel work [ 24 ], which provides human-verified explanations corresponding to the binary labels. 
+
+3.1.3 Fine-Grained Labels. To obtain fine-grained annotations for the original dataset, we leverage publicly available annotations pro-vided by Mathias et al. [ 33 ], which categorize each hateful instance according to protected categories (religion, race, sex, disability, and nationality) and attack types (dehumanizing, inferiority, inciting violence, mocking, contempt, slurs, and exclusion). 
+
+## 3.2 Step-by-Step Reasoning – Our Extension 
+
+The final extension for the dataset introduces step-by-step rea-soning rationales, which are essential for training thinking-based MLLMs. However, collecting high-quality reasoning traces from hu-man annotators is a highly time-consuming and labor-intensive pro-cess. Meanwhile, recent advances in commercial reasoning-oriented models have demonstrated strong and reliable reasoning capabili-ties in practice [ 13 , 26 ]. Motivated by these observations, we adopt a distillation-based approach to generate step-by-step reasoning traces, referred to as the chain-of-thought distillation (CoTD). We use GPT-4.1 to generate intermediate step-by-step reasoning traces conditioned on the meme image, extracted text, annotation guidelines, and both binary and fine-grained labels. These private reasoning sequences are used exclusively to supervise MLLMs dur-ing training and are not exposed during inference. Our approach follows prior work on CoTD for improving model reasoning per-formance [ 60 ]. To prevent label leakage, the model is explicitly prompted to reason independently, without copying or paraphras-ing the reference explanations. The prompting templates are re-leased in the GitHub repository. 
+
+CoT Evaluation with LLM-as-a-Judge. We evaluate the quality of the CoTD using an LLM-as-a-judge protocol, following the work of Kmainasi et al. [ 24 ]. We employ strong vision–language models as automated judges to enable scalable and consistent evaluation. Each sample is assessed along four dimensions: Informativeness ,measuring the use of salient visual and textual evidence; Clarity ,assessing logical structure and ease of interpretation; Plausibility ,                     
+
+> 2In this work, we focus on the unseen splits, as these were augmented with explanations in [24]. WWW Companion ’26, April 13–17, 2026, Dubai, United Arab Emirates Mohamed Bayan Kmainasi, Mucahid Kutlu, Ali Ezzat Shahroor, Abul Hasnat, & Firoj Alam
+> Metric InternVL3.5 Phi-3.5 Agreement
+> Faithfulness 4.782 4.557 0.944 Clarity 4.733 4.537 0.943 Plausibility 4.608 4.241 0.934 Informativeness 4.399 4.097 0.942 Average 4.631 4.358 0.940
+
+Table 2: Train+Dev averaged LLM-as-a-judge scores (1–5) and agreement indices. InternVL3.5 = OpenGVLab InternVL3.5-8B, Phi-3.5 = Phi-3.5-Vision-Instruct. Agreement denotes inter-judge agreement. 
+
+evaluating whether the reasoning provides a coherent interpreta-tion aligned with human judgment; and Faithfulness , measuring grounding in observable meme content without hallucinated or unsupported claims. We use two strong vision–language models, InternVL3.5 and 
+
+Phi-3.5 , as independent judges, scoring each dimension on a 5-point Likert scale. Table 2 reports the resulting scores together with inter-judge agreement. Agreement on ordinal ratings is quantified using the 𝑟 ∗   
+
+> 𝑤𝑔 (𝑗 )
+
+index [ 19 ], which contrasts the observed rating variance with the maximum variance under complete disagreement: 
+
+𝑟 ∗   
+
+> 𝑤𝑔 (𝑗 )
+
+= 1 − 𝑆 2
+
+> 𝑋
+
+𝜎 2
+
+> mv
+
+,
+
+where 𝑆 2 
+
+> 𝑋
+
+denotes the variance between judges and 𝜎 2 
+
+> mv
+
+is the maxi-mum possible variance for a 5-point scale. Higher values indicate a stronger consensus. As shown in Table 2, agreement scores are con-sistently high across all dimensions, indicating reliable and stable LLM-based judgments. The complete evaluation assets are released in the supplementary material. Both judges assign average scores above 4.0, indicating a strong overall explanation quality. Faithfulness and Clarity receive the highest scores from both InternVL3.5 and Phi-3.5, suggesting that the generated reasoning traces are well grounded in observable meme content and are logically structured and easy to follow. 
+
+## 4 Methodology 
+
+In this section, we present our proposed RL-based method for hate-ful meme analysis using thinking-based MLLMs, which is shown in Figure 1. Our approach is designed to jointly train MLLMs to perform classification, explanation generation, and step-by-step reasoning through a structured output format and a multi-stage training process. 
+
+Framework Overview. As illustrated in Figure 1, we propose an end-to-end hateful meme analysis framework that integrates fine-grained supervision, CoT reasoning, and RL-based post-training. Given a raw meme consisting of an image and embedded text, we first construct instruction-following training examples by combin-ing multiple supervision signals, including a binary hateful/non-hateful label, fine-grained annotations specifying the protected category and attack type, OCR-extracted text, and classification guidelines. This unified representation encourages the model to jointly reason over visual and textual cues while grounding its predictions in established hate taxonomies. To enable step-by-step reasoning, we adopt a weakly supervised CoT distillation strategy, in which a strong commercial MLLM is used to generate private reasoning traces conditioned on the meme content, labels, and guidelines. These distilled CoT rationales are used exclusively during training. Model optimization follows a two-stage post-training pipeline. First, supervised SFT aligns the model with the structured output format, gold labels, explanations, and distilled CoT supervision. Second, GRPO further refines the model by sampling multiple candidates (private CoT + label + ex-planation/rationale) per meme and reinforcing those that achieve higher relative rewards, jointly optimizing label correctness, format compliance, and explanation quality. During inference, the model performs internal reasoning and outputs a predicted label together with a supporting rationale. In the following subsections, we first formalize the task. We then describe the MLLM optimization procedure in multiple steps. Finally, we provide the detailed setup for training and evaluation. 
+
+## 4.1 Task Formulation 
+
+Given a meme 𝑥 consisting of an image and extracted text, the task is to predict whether the meme is hateful and to generate a natural language rationale that justifies the decision. Formally, given an instruction-style prompt 𝑐 (𝑥 ), the model produces a structured output 𝑦 of the form: 
+
+𝑦 = <think> 𝑡 </think> Label: ˆℓ Explanation: ˆ𝑒 ,
+
+where 𝑡 denotes a private CoT reasoning trace, ˆℓ represents the predicted class label, and ˆ𝑒 is a natural language explanation that justifies the predicted label. Let 𝐷 represent the labeled dataset as: 
+
+D = {( 𝑥 𝑖 , 𝑦 ★ 
+
+> 𝑖
+
+)} 𝑁 𝑖 =1,
+
+where 𝑦 ★ 
+
+> 𝑖
+
+contains the gold label, explanation, and distilled teacher reasoning. 𝑖 denotes sample number and 𝑁 is the total number of samples in 𝐷 .
+
+## 4.2 Training thinking-based MLLMs 
+
+Our training procedure consists of two steps: first initializing the MLLM parameters via SFT and next applying GRPO. Below we provide brief details of the training procedure. 
+
+4.2.1 SFT warm-up. We initialize the MLLM via SFT on D. Let 
+
+𝜋 𝜃 denote the conditional autoregressive model parameterized by 
+
+𝜃 . Given an instruction-style prompt 𝑐 (𝑥 ) that encodes the meme image and OCR-extracted text, the model is trained to generate the structured target output 𝑦 ★. Parameters 𝜃 are optimized by minimizing the negative log-likelihood loss: 
+
+LSFT (𝜃 ) = E(𝑐,𝑦 ★ )∼D 
+
+− log 𝜋 𝜃 (𝑦 ★ | 𝑐 ) (1) 
+
+E(𝑐,𝑦 ★ )∼D denotes the empirical expectation over the training set (approximated by minibatch averages), i.e., we average the negative log-likelihood of the target output 𝑦 ★ conditioned on the prompt 
+
+𝑐 . This stage aligns the model with gold labels, explanations, and distilled reasoning traces, providing a strong initialization for sub-sequent GRPO-based optimization. After the MLLM is initialized, we select the best checkpoint (for the next step) based on the evaluation loss on a held-out validation set. Can Thinking Models Think to Detect Hateful Memes? WWW Companion ’26, April 13–17, 2026, Dubai, United Arab Emirates 
+
+4.2.2 GRPO Optimization. GRPO optimizes the model by contrast-ing multiple sampled outputs per input and reinforcing reasoning trajectories that outperform their peers, enabling stable and ef-fective reasoning-centric post-training. It optimizes the MLLM to improve reasoning and explanation quality. In this stage, the MLLM is treated as a stochastic policy 𝜋 𝜃 ,which generates outputs conditioned on the prompt 𝑐 (𝑥 ). For each input, we sample a group of 𝐾 candidate outputs {𝑦 1, . . . , 𝑦 𝐾 } from 
+
+𝜋 𝜃 and compute a scalar reward for each completion. The overall reward function is defined as a weighted combination of multiple components: 
+
+𝑅 (𝑦 ) = 𝛼 fmt 𝑅 fmt (𝑦 ) + 𝛼 lbl 𝑅 lbl (𝑦 )+ 𝛼 len 𝑅 len (𝑦 ) + 𝛼 met 𝑅 met (𝑦 ), (2) with weights 𝛼 fmt = 0.5, 𝛼 lbl = 0.4, 𝛼 len = 0.05 and 𝛼 met = 0.05 ,which are set empirically. The individual components of 𝑅 (𝑦 ) are: 
+
+• Rfmt (y) (format) : encourages structurally consistent out-puts with explicit reasoning, prediction, and explanation components. 
+
+• Rlbl (y) (label correctness ): rewards selecting the correct class compared to the gold annotation, ensuring the reason-ing is anchored to the right decision. 
+
+• Rlen (y) (length regularization ): softly encourages ratio-nales to be near the target length (about 100 words, match-ing [ 24 ] gold rationales), discouraging overly short or ex-cessively verbose explanations: 𝑅 len (𝑦 ) = exp 
+
+
+
+− (𝐿 −100 )2
+
+> 2𝜎 2
+
+
+
+.We choose 𝜎 = 20 so that the length reward acts as a soft regularizer, gently discouraging extreme deviations from the target length without dominating the GRPO objective. 
+
+• Rmet (y) (semantic similarity ): rewards explanations that are semantically close to the gold rationale via METEOR score [ 5 ], 3 encouraging higher-quality justifications beyond label accuracy. 
+
+Objective function. GRPO uses the group-average reward ¯𝑅 as a baseline to compute normalized advantages: 
+
+¯𝑅 = 1
+
+𝐾 
+
+> 𝐾
+
+∑︁ 
+
+> 𝑘 =1
+
+𝑅 𝑘 , 𝐴 𝑘 = 𝑅 𝑘 − ¯𝑅 
+
+std ({ 𝑅 𝑗 }) + 𝜀 
+
+Let 𝜋 𝜃 old denote the policy before the update. For each generated token 𝑎 𝑘,𝑡 at state ℎ𝑘,𝑡 , the importance ratio is as follows. 
+
+𝑟 𝑘,𝑡 = 𝜋 𝜃 (𝑎 𝑘,𝑡 | ℎ𝑘,𝑡 )
+
+𝜋 𝜃 old (𝑎 𝑘,𝑡 | ℎ𝑘,𝑡 )
+
+The GRPO objective maximizes the clipped surrogate with KL regularization: 
+
+JG (𝜃 ) = E
+
+" 𝐾 ∑︁ 
+
+> 𝑘 =1
+
+∑︁ 𝑡 
+
+min 
+
+
+
+𝑟 𝑘,𝑡 𝐴 𝑘 ,
+
+clip (𝑟 𝑘,𝑡 , 1 − 𝜖, 1 + 𝜖 )𝐴 𝑘 
+
+
+
+− 𝛽 KL  𝜋 𝜃 (· | ℎ𝑘,𝑡 ) 𝜋 ref (· | ℎ𝑘,𝑡 ) #
+
+(3) where 𝜖 denotes the PPO-style clipping threshold, 𝛽 controls the contribution of the KL regularization term, and 𝜋 ref is a fixed ref-erence policy initialized from the SFT checkpoint. The KL term 
+
+> 3We choose METEOR because it can be computed efficiently during training.
+
+constrains the updated policy to remain close to the reference model, improving training stability and preventing reward over-optimization. Overall, this optimization encourages higher-reward reasoning trajectories while stabilizing updates via clipping and KL regular-ization. 
+
+## 5 Experimental Setup 5.1 Models 
+
+For our experiments, we use both open- and closed-weight mul-timodal LLMs. Our open-weight baselines include Llama-3.2-11B, Llama-4-Scout-17B [ 15 ], Qwen3-VL-8B [ 27 ] and Gemma-3-12B [ 50 ]. As a representative closed-weight model, we use GPT-4.1 [ 38 ]. For CoT experiments, we use Qwen3-VL-8B-Thinking [ 4], a reasoning-enhanced checkpoint released with the Qwen3-VL family, which enables controlled CoT ablations in an open-weight setting and is reported in [ 27 ] to perform strongly on multimodal reasoning benchmarks such as MMMU [58] and MathVista [32]. Overall, we select these models because their technical reports and model cards report strong results on established vision–language benchmarks, making them competitive baselines for multimodal understanding tasks. Our experiments include both thinking and instruction-tuned models. 
+
+## 5.2 Zero-shot and CoT Inference 
+
+We benchmark the open- and closed-weight MLLMs described above, including both instruction-tuned and explicit “thinking” vari-ants, under zero-shot and CoT prompting. For fairness, we disable the internal thinking mode for thinking-enabled models in non-CoT settings. This setup assesses the reasoning capabilities of pretrained MLLMs without task-specific fine-tuning, serving as a reference point for understanding how much performance can be achieved from general-purpose multimodal reasoning alone. 
+
+## 5.3 SFT warm-up 
+
+Prior work has demonstrated that performing SFT before RL-based optimization improves both training stability and downstream per-formance in reasoning-oriented LLMs [ 46 , 51 ]. Motivated by these findings, we introduce an SFT warm-up stage prior to GRPO to inject task-specific knowledge and to bootstrap the structured rea-soning format required for fine-grained hateful meme analysis. 
+
+SFT without explicit CoT. We consider two SFT variants that do not include explicit CoT supervision. The first variant is trained on a mixture of binary classification labels (hateful vs. non-hateful), fine-grained annotations (protected category and attack type), and human-written explanations, denoted SFT warm-up (Cls + FG + Exp, No-CoT) . The second variant excludes fine-grained labels and is trained only on binary labels and explanations, denoted SFT warm-up (Cls + Exp, No-CoT) . In both settings, the model is initialized from a pretrained thinking-based backbone. To preserve its reasoning capability and maintain output-format consistency, empty <think></think> tags are included as a prefix to the assis-tant output during training and excluding them from loss calcula-tion. WWW Companion ’26, April 13–17, 2026, Dubai, United Arab Emirates Mohamed Bayan Kmainasi, Mucahid Kutlu, Ali Ezzat Shahroor, Abul Hasnat, & Firoj Alam 
+
+SFT with distilled CoT. To study the effect of explicit reasoning su-pervision during SFT, we further fine-tune the SFT warm-up (Cls + FG + Exp, No-CoT) checkpoint using GPT-4.1 generated step-by-step reasoning traces placed inside the <think>...</think> block (See section 3.2). This variant, denoted SFT warm-up (Cls + FG + Exp, CoTD) , exposes the model to fine-grained reasoning signals during SFT while preserving the same output structure. Although explicit CoT supervision is absent in some SFT variants, the model can still generate internal reasoning at inference time due to its pretrained thinking-based initialization. Overall, the SFT warm-up stage primarily aligns the model with task supervision and output structure, while GRPO further refines reasoning and explanation quality. 
+
+5.3.1 Supervised GRPO. We apply supervised GRPO using multi-ple initialization checkpoints to analyze the effect of different SFT warm-up strategies. As a baseline, we initialize GRPO directly from the pretrained thinking-based backbone, denoted Qwen3-VL-8B-Thinking + GRPO . In addition, we initialize GRPO from each SFT warm-up variant: SFT warm-up (Cls + FG + Exp, No-CoT) , SFT warm-up (Cls + Exp, No-CoT) , and SFT warm-up (Cls + FG + Exp, Distilled CoT) . All models are optimized using supervised GRPO on the labeled hateful meme dataset. As described in Sec-tion 4.2.2, GRPO samples 𝐾 candidate completions per input and updates the policy using a composite reward function that promotes structurally valid outputs, correct predictions, and high-quality ex-planations, while supporting stable optimization. 
+
+## 5.4 Training Setup 
+
+All models are trained using full-parameter optimization with Deep-Speed ZeRO-3 on 4 NVIDIA H200 GPUs. SFT is performed for 3 epochs, with the best checkpoint selected based on development-set loss and evaluation conducted after each epoch. The SFT (Cls + FG + Exp, Distilled CoT) 4 model is initialized from the corresponding 
+
+SFT (Cls + FG + Exp, No-CoT) checkpoint and further fine-tuned for an additional 3 epochs. For SFT, the per-device batch size is set to 4 with gradient accumulation steps fixed to 1. Optimization is carried out using AdamW with 𝛽 1 = 0.9, 𝛽 2 = 0.95 , 𝜖 = 1 × 10 −8,weight decay 0.1, and gradient clipping at 1.0. A cosine learning-rate scheduler with a Warm-up ratio of 0.05 is used throughout, and model selection is based on development loss. GRPO is initialized from the corresponding SFT checkpoints and uses the same optimization, scheduler, and infrastructure set-tings, except that the per-device batch size is reduced to 2 due to increased memory demands. GRPO-specific hyperparameters include a KL-divergence coefficient 𝛽 = 0.04 , PPO clip range 0.2,value loss coefficient 0.1, and GAE parameter 𝜆 = 0.95 . During policy optimization, we sample 16 generations per input with a maximum completion length of 4096 tokens, temperature 1.0, and top-𝑝 sampling set to 0.85. All experiments are run with a fixed random seed of 42. 
+
+## 5.5 Evaluation Setup and Metrics 
+
+We follow the evaluation protocol of [ 24 ]. For classification, we report Accuracy (Acc) , Weighted F1 (W-F1) , and Macro F1 (M-F1) .
+
+> 4Cls: class labels; FG: fine-grained labels; Exp: explanation.
+
+Explanation quality is evaluated using BERTScore (BS) [59 ] and METEOR (MET) [6]. 
+
+## 6 Results and Analysis 6.1 Comparison with State-of-the-Art 
+
+Table 3 presents the quantitative comparison, showing that our proposed approach achieves the strongest accuracy and comparable explanation quality 5.Specifically, it attains 81.2% Accuracy, 0.81 Weighted F1, and 0.79 Macro F1 for classification. In addition, our model achieves a BERTScore of 0.78 and a METEOR score of 0.52, which are compara-ble to or higher than the strongest baseline (i.e., [ 24 ]). These results highlight the effectiveness of the proposed thinking-based MLLM 
+
+and the GRPO-based optimization strategy for both classification and explanation-generation tasks. 
+
+Model Acc. W-F1 M-F1 BS MET 
+
+[22] 69.47 ±2.06 – – – –[10] 72.98 ±1.09 – – – –[52] 76.4 – – – –[57] 77.2 – – – –[8] 77.7 – – – –[35] 78.8 – – – –[24] 79.9 0.80 0.79 0.78 0.49 
+
+Proposed 81.2 0.81 0.79 0.78 0.52 Table 3: Comparison with SOTA and our results. 
+
+6.1.1 Zero-shot and CoT Inference. Table 4 reports the results of the experiments described in Section 5.2. It benchmarks both open-and closed-source thinking-based pretrained MLLMs using clas-sification and explanation-generation metrics. The results show that no single model consistently achieves the highest performance across all metrics . Specifically, L4-Scout attains the highest accu-racy and BERTScore, the commercial model GPT-4.1 with CoT prompting achieves the best F1 scores, while Qwen perform best on the METEOR score. Notably, despite being state-of-the-art, neither non-commercial thinking-based models nor CoT-based approaches uniformly dominate across evaluation criteria. 
+
+Impact of CoT prompting. Across all evaluated models, CoT prompt-ing exhibits a systematic and asymmetric effect on classification versus explanation metrics. On the one hand, CoT improves clas-sification performance for most models, yielding consistent gains in Weighted and Macro F1 (up to +4.5 points for Qwen-T). A finer-grained error analysis reveals that these improvements are primar-ily driven by a reduction in false negatives, indicating that CoT helps models better identify subtle or implicit hateful content that is often missed under direct prompting. On the other hand, CoT con-sistently degrades explanation quality as measured by BERTScore, and in most cases also by METEOR. This degradation is observed across all architectures, including both open-source and commercial models, with BERTScore drops ranging from −1.6 to −12 .5. This pattern suggests that while CoT enhances internal reasoning for  
+
+> 5All baseline results are reported as stated in the original papers and are not re-implemented or re-evaluated. Can Thinking Models Think to Detect Hateful Memes? WWW Companion ’26, April 13–17, 2026, Dubai, United Arab Emirates
+
+Model Acc. W-F1 M-F1 BS Met. 
+
+Llama +CoT 60.0 0.606 0.592 0.600 0.165 Llama 64.2 0.599 0.547 0.660 0.234 
+
+Δ -4.2 +0.007 +0.045 -0.060 -0.069 Qwen-I +CoT 65.3 0.658 0.652 0.646 0.263 
+
+Qwen-I 63.0 0.630 0.630 0.662 0.216 
+
+Δ +2.3 +0.028 +0.022 -0.016 +0.047 Qwen-T +CoT 70.2 0.706 0.694 0.581 0.202 Qwen-T 65.6 0.661 0.652 0.659 0.215 
+
+Δ +4.6 +0.045 +0.042 -0.078 -0.013 Gemma +CoT 65.5 0.659 0.655 0.621 0.135 Gemma 65.2 0.654 0.652 0.664 0.215 
+
+Δ +0.3 +0.005 +0.003 -0.043 -0.080 L4-Scout +CoT 75.4 0.687 0.545 0.596 0.111 L4-Scout 77.0 0.710 0.580 0.653 0.252 
+
+Δ -1.6 -0.023 -0.035 -0.057 -0.141 GPT-4.1 +CoT 74.1 0.739 0.719 0.470 0.072 GPT-4.1 71.3 0.715 0.700 0.595 0.159 
+
+Δ +2.8 +0.024 +0.019 -0.125 -0.087 
+
+Table 4: Performance of pretrained MLLMs. Llama = Llama-3.2-11B; L4-Scout = Llama-4-Scout-17B; Qwen-I/T = Qwen3-VL-8B (Instruct/Thinking); Gemma = Gemma-3-12B. Δ de-notes (CoT − no-CoT). Acc.: Accuracy; W-F1: weighted F1; M-F1: macro F1; BS: BERTScore; Met.: METEOR. 
+
+decision making, it shifts the output distribution away from the concise, annotation-style explanations used as references. 
+
+Model-dependent CoT behavior. The magnitude and direction of CoT effects vary substantially across model families. Reasoning-oriented models such as Qwen-T benefit the most from CoT, achiev-ing the largest accuracy gains, which suggests a favorable alignment between CoT prompting and their pretraining objectives. In con-trast, Llama-based models show weaker or even negative accuracy changes, indicating that explicit CoT may interfere with their im-plicit reasoning mechanisms. Interestingly, large frontier models such as GPT-4.1 exhibit improved classification performance with CoT but suffer the largest drops in explanation quality, highlighting a pronounced trade-off between decision accuracy and explanation calibration. 
+
+Model selection. These observations highlight the need for fur-ther investigation into how to effectively exploit open-source thinking-based MLLMs that are trainable under realistic computational bud-gets and allow reproducible post-training experiments. Based on overall performance and ease of implementation (possible to train on commonly available GPUs), we select the Qwen model as the base MLLM for our subsequent experiments. 
+
+6.1.2 Analysis of RL Post-Training. Table 5 summarizes the impact of SFT warm-up and supervised GRPO on both classification perfor-mance and explanation quality. SFT warm-up alone already yields consistent improvements over cold-start (no warm-up) GRPO. In particular, SFT warm-up (Cls + FG + Exp) achieves 78.1% ac-curacy and macro-F1 of 0.77, outperforming the variant trained 
+
+Model Acc. W-F1 M-F1 BS Met. SFT warm-up 
+
+SFT (Cls+Exp) 77.0 0.77 0.75 0.77 0.48 SFT (Cls+FG+Exp) 78.1 0.78 0.77 0.77 0.48 SFT (Cls+FG+Exp, CoTD) 79.2 0.79 0.78 0.78 0.50 
+
+RL / GRPO 
+
+GRPO (Cold Start) 76.8 0.77 0.75 0.73 0.47 SFT-Cls+Exp → GRPO 80.4 0.80 0.78 0.76 0.50 SFT-Cls+FG+Exp → GRPO 81.1 0.81 0.79 0.77 0.52 
+
+SFT-Cls+FG+Exp-CoTD → GRPO 81.2 0.81 0.79 0.78 0.52 Table 5: Effect of SFT warm-up and GRPO post-training on Hateful Memes. Cls = classification label; FG = fine-grained labels; Exp = explanation; CoTD = chain-of-thought distilla-tion 
+
+without fine-grained supervision (77.0% accuracy and 0.75 macro-F1). This result indicates that incorporating fine-grained labels im-proves decision consistency even in the absence of explicit reasoning supervision. Adding distilled CoT supervision during SFT leads to further gains. SFT warm-up (Cls + FG + Exp, CoTD) attains the strongest warm-up performance, reaching 79.2% accuracy and 0.78 macro-F1, while also improving explanation quality, with BERTScore in-creasing from 0.77 to 0.78 and METEOR from 0.48 to 0.50. These improvements suggest that explicit reasoning supervision during SFT primarily enhances explanation fidelity in addition to classification performance .When combined with supervised GRPO, all SFT-initialized mod-els substantially outperform both prior SFT-only models and the cold-start (no warm-up) GRPO-trained model. This result demon-strates that GRPO without proper warm-up or initialization yields limited benefits , as the cold-start variant achieves only 76.8% ac-curacy and 0.75 macro-F1, along with noticeably weaker explana-tion quality (BERTScore 0.73), underscoring the importance of SFT warm-up. In contrast, initializing GRPO from SFT warm-up con-sistently improves performance: both SFT-Cls+Exp → GRPO and 
+
+SFT-Cls+FG+Exp → GRPO improves accuracy (from 77.0% to 80.4% and from 78.1% to 81.1%), macro-F1 (from 0.75 to 0.78 and from 0.77 to 0.79), and METEOR score (from 0.48 to 0.50 and from 0.48 to 0.52). We next analyze the influence of distilled CoT supervision for GRPO. Consistent with our observations from SFT-only models, where the highest accuracy (79.2%) is achieved when CoT super-vision is used, CoT also yields the strongest and most consistent performance across all metrics for GRPO-based fine-tuned models. More specifically, models initialized from checkpoints trained with CoT supervision consistently achieve the best performance after GRPO optimization , highlighting the complementary role of CoT distilla-tion and reinforcement learning in enhancing both classification and explanation quality. WWW Companion ’26, April 13–17, 2026, Dubai, United Arab Emirates Mohamed Bayan Kmainasi, Mucahid Kutlu, Ali Ezzat Shahroor, Abul Hasnat, & Firoj Alam 
+
+Figure 2: GRPO training dynamics under different initial-izations, showing mean group reward (left axis) and mean completion length (right axis). Moving average smoothing with window size of 1000 is applied. 
+
+## 6.2 GRPO Training Dynamics under Different Initialization Regimes 
+
+Figure 2 compares GRPO reward trajectories and mean completion length across initialization regimes (length is the average generated tokens per sample). Table 5 reports the corresponding end-task metrics. Overall, GRPO benefits strongly from SFT warm-up: warm-start runs show smoother reward increases and yield markedly better final accuracy and explanation quality than cold-start GRPO. 
+
+Cold-start GRPO struggles without prior alignment. When initialized directly from the pretrained backbone, GRPO exhibits noisier reward curves with only modest gains and largely sta-ble completion length. This indicates that RL alone has difficulty simultaneously learning the required output structure and the task-specific decision boundary, which is reflected in the weak-est BS/MET scores in Table 5. 
+
+SFT warm-up lets GRPO refine behavior instead of learn-ing the format. Initializing GRPO from SFT (Cls+Exp) yields large gains over SFT-only (e.g., 77.0 →80.4 Acc), suggesting that once the model is aligned to the target schema and supervision distribu-tion, GRPO can focus on improving label correctness and rationale quality. 
+
+Fine-grained supervision increases the ceiling. Warm-up with protected-category and attack-type labels (Cls+FG+Exp) leads to stronger outcomes after GRPO (81.1 Acc, 0.52 Met), implying that fine-grained supervision improves decision consistency and supports better explanations beyond binary labels alone. 
+
+CoTD warm-up improves metrics but reveals CoT collapse. 
+
+The CoTD-initialized run attains the best overall performance af-ter GRPO (81.2 Acc, 0.78 BS, 0.52 MET), but Figure 2 shows a pronounced drop in completion length during optimization. This suggests an RL shortcut where the policy boosts reward by com-pressing the <think> segment rather than consistently enriching reasoning, i.e., reward-driven CoT collapse . In moderation settings, shorter generations may still preserve label reward while reducing verbosity-related risks. 
+
+Implication. These dynamics motivate reward designs that ex-plicitly control the internal reasoning budget (e.g., adding 𝑅 think-len 
+
+or a target-range constraint) to discourage collapse and prevent the model from exploiting length shortcuts. 
+
+## 7 Conclusions 
+
+We studied the extent to which thinking-based MLLMs can improve hateful meme understanding when explicitly optimized for both prediction and explanation quality. To this end, we introduced an RL-based post-training method with a GRPO objective that jointly rewards correct classification, structurally valid outputs, and se-mantically aligned explanations. We additionally constructed an extended dataset with weakly/pseudo-supervised distilled chain-of-thought rationales to provide fine-grained reasoning supervision. Across experiments on the Hateful Memes benchmark, our ap-proach improves both classification performance and explanation quality, achieving state-of-the-art results and demonstrating the value of reinforcement post-training for multimodal hate analy-sis. Future work includes (i) evaluating generalizability on addi-tional hateful meme and multimodal toxicity benchmarks, including multilingual settings; (ii) assessing transfer across a broader set of thinking-enabled MLLMs and prompting regimes; (iii) extend-ing the framework to weakly/pseudo-labeled training at scale to leverage large collections of unlabeled memes; and (iv) exploring self-supervised GRPO objectives for unlabeled data. Beyond scaling and transfer, our training-dynamics analysis suggests several RL-specific directions: (v) designing section-wise rewards that explicitly control the internal reasoning budget to mitigate reward-driven thought collapse. 
+
+## 8 Limitations 
+
+Our results are based on the Hateful Memes benchmark and may not generalize across domains or languages. Weakly supervised CoT distillation from commercial MLLMs can introduce bias and un-faithful reasoning. GRPO increases computational cost and reliance on closed models may affect reproducibility. Explanation quality is assessed using automatic metrics that only partially reflect human judgment. 
+
+## Acknowledgments 
+
+The work of A. E. Shahroor and F. Alam was supported by NPRP grant 14C-0916-210015 from the Qatar National Research Fund, part of the Qatar Research Development and Innovation Council (QRDI). The findings reported herein are solely the responsibility of the authors. Can Thinking Models Think to Detect Hateful Memes? WWW Companion ’26, April 13–17, 2026, Dubai, United Arab Emirates 
+
+## References 
+
+[1] Mohammad Awad AlAfnan. 2025. The role of memes in shaping political dis-course on social media. Studies in Media and Communication 13, 2 (2025), 1–10. [2] Firoj Alam, Abul Hasnat, Fatema Ahmad, Md. Arid Hasan, and Maram Hasanain. 2024. ArMeme: Propagandistic Content in Arabic Memes. In Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing , Yaser Al-Onaizan, Mohit Bansal, and Yun-Nung Chen (Eds.). Association for Compu-tational Linguistics, Miami, Florida, USA, 21071–21090. doi:10.18653/v1/2024. emnlp-main.1173 [3] Amalia Amalia, Amer Sharif, Fikri Haisar, Dani Gunawan, and Benny B Nasution. 2018. Meme opinion categorization by using optical character recognition (OCR) and naïve bayes algorithm. In 2018 third international conference on informatics and computing (ICIC) . IEEE, 1–5. [4] Shuai Bai, Yuxuan Cai, Ruizhe Chen, Keqin Chen, Xionghui Chen, Zesen Cheng, Lianghao Deng, Wei Ding, Chang Gao, Chunjiang Ge, Wenbin Ge, Zhifang Guo, Qidong Huang, Jie Huang, Fei Huang, Binyuan Hui, Shutong Jiang, Zhaohai Li, Mingsheng Li, Mei Li, Kaixin Li, Zicheng Lin, Junyang Lin, Xuejing Liu, Jiawei Liu, Chenglong Liu, Yang Liu, Dayiheng Liu, Shixuan Liu, Dunjie Lu, Ruilin Luo, Chenxu Lv, Rui Men, Lingchen Meng, Xuancheng Ren, Xingzhang Ren, Sibo Song, Yuchong Sun, Jun Tang, Jianhong Tu, Jianqiang Wan, Peng Wang, Pengfei Wang, Qiuyue Wang, Yuxuan Wang, Tianbao Xie, Yiheng Xu, Haiyang Xu, Jin Xu, Zhibo Yang, Mingkun Yang, Jianxin Yang, An Yang, Bowen Yu, Fei Zhang, Hang Zhang, Xi Zhang, Bo Zheng, Humen Zhong, Jingren Zhou, Fan Zhou, Jing Zhou, Yuanzhi Zhu, and Ke Zhu. 2025. Qwen3-VL Technical Report. arXiv preprint arXiv:2511.21631 (2025). https://arxiv.org/abs/2511.21631 [5] Satanjeev Banerjee and Alon Lavie. 2005. METEOR: An automatic metric for MT evaluation with improved correlation with human judgments. In Proceedings of the acl workshop on intrinsic and extrinsic evaluation measures for machine translation and/or summarization . 65–72. [6] Satanjeev Banerjee and Alon Lavie. 2005. METEOR: An Automatic Metric for MT Evaluation with Improved Correlation with Human Judgments. In Proceedings of the ACL Workshop on Intrinsic and Extrinsic Evaluation Measures for Machine Translation and/or Summarization , Jade Goldstein, Alon Lavie, Chin-Yew Lin, and Clare Voss (Eds.). Association for Computational Linguistics, Ann Arbor, Michigan, 65–72. https://aclanthology.org/W05-0909/ [7] Sravani Boinepelli, Manish Shrivastava, and Vasudeva Varma. 2020. Sis@ iiith at semeval-2020 task 8: An overview of simple text classification methods for meme analysis. In Proceedings of the Fourteenth Workshop on Semantic Evaluation .1190–1194. [8] Giovanni Burbi, Alberto Baldrati, Lorenzo Agnolucci, Marco Bertini, and Alberto Del Bimbo. 2023. Mapping memes to words for multimodal hateful meme clas-sification. In Proceedings of the IEEE/CVF International Conference on Computer Vision . 2832–2836. [9] Rui Cao, Ming Shan Hee, Adriel Kuek, Wen-Haw Chong, Roy Ka-Wei Lee, and Jing Jiang. 2023. Pro-cap: Leveraging a frozen vision-language model for hateful meme detection. In Proceedings of the 31st ACM international conference on multimedia .5244–5252. [10] Rui Cao, Roy Ka-Wei Lee, Wen-Haw Chong, and Jing Jiang. 2022. Prompting for Multimodal Hateful Meme Classification. In Proceedings of the 2022 Conference on Empirical Methods in Natural Language Processing , Yoav Goldberg, Zornitsa Kozareva, and Yue Zhang (Eds.). Association for Computational Linguistics, Abu Dhabi, United Arab Emirates, 321–332. doi:10.18653/v1/2022.emnlp-main.22 [11] Rui Cao, Roy Ka-Wei Lee, and Jing Jiang. 2024. Modularized networks for few-shot hateful meme detection. In Proceedings of the ACM Web Conference 2024 .4575–4584. [12] Jiajun Chen and Yik-Cheung Tam. 2025. Predicate-Guided Generation for Math-ematical Reasoning. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing . 9097–9110. [13] Gheorghe Comanici, Eric Bieber, Mike Schaekermann, Ice Pasupat, Noveen Sachdeva, Inderjit Dhillon, Marcel Blistein, Ori Ram, Dan Zhang, Evan Rosen, et al . 2025. Gemini 2.5: Pushing the frontier with advanced reasoning, multi-modality, long context, and next generation agentic capabilities. arXiv preprint arXiv:2507.06261 (2025). [14] DeepSeek-AI, Daya Guo, Dejian Yang, Haowei Zhang, Junxiao Song, Ruoyu Zhang, Runxin Xu, Qihao Zhu, Shirong Ma, Peiyi Wang, Xiao Bi, Xiaokang Zhang, Xingkai Yu, Yu Wu, Z. F. Wu, Zhibin Gou, Zhihong Shao, Zhuoshu Li, Ziyi Gao, Aixin Liu, Bing Xue, Bingxuan Wang, Bochao Wu, Bei Feng, Chengda Lu, Chenggang Zhao, Chengqi Deng, Chenyu Zhang, Chong Ruan, Damai Dai, Deli Chen, Dongjie Ji, Erhang Li, Fangyun Lin, Fucong Dai, Fuli Luo, Guangbo Hao, Guanting Chen, Guowei Li, H. Zhang, Han Bao, Hanwei Xu, Haocheng Wang, Honghui Ding, Huajian Xin, Huazuo Gao, Hui Qu, Hui Li, Jianzhong Guo, Jiashi Li, Jiawei Wang, Jingchang Chen, Jingyang Yuan, Junjie Qiu, Junlong Li, J. L. Cai, Jiaqi Ni, Jian Liang, Jin Chen, Kai Dong, Kai Hu, Kaige Gao, Kang Guan, Kexin Huang, Kuai Yu, Lean Wang, Lecong Zhang, Liang Zhao, Litong Wang, Liyue Zhang, Lei Xu, Leyi Xia, Mingchuan Zhang, Minghua Zhang, Minghui Tang, Meng Li, Miaojun Wang, Mingming Li, Ning Tian, Panpan Huang, Peng Zhang, Qiancheng Wang, Qinyu Chen, Qiushi Du, Ruiqi Ge, Ruisong Zhang, Ruizhe Pan, Runji Wang, R. J. Chen, R. L. Jin, Ruyi Chen, Shanghao Lu, Shangyan Zhou, Shanhuang Chen, Shengfeng Ye, Shiyu Wang, Shuiping Yu, Shunfeng Zhou, Shuting Pan, S. S. Li, Shuang Zhou, Shaoqing Wu, Shengfeng Ye, Tao Yun, Tian Pei, Tianyu Sun, T. Wang, Wangding Zeng, Wanjia Zhao, Wen Liu, Wenfeng Liang, Wenjun Gao, Wenqin Yu, Wentao Zhang, W. L. Xiao, Wei An, Xiaodong Liu, Xiaohan Wang, Xiaokang Chen, Xiaotao Nie, Xin Cheng, Xin Liu, Xin Xie, Xingchao Liu, Xinyu Yang, Xinyuan Li, Xuecheng Su, Xuheng Lin, X. Q. Li, Xiangyue Jin, Xiaojin Shen, Xiaosha Chen, Xiaowen Sun, Xiaoxiang Wang, Xinnan Song, Xinyi Zhou, Xianzu Wang, Xinxia Shan, Y. K. Li, Y. Q. Wang, Y. X. Wei, Yang Zhang, Yanhong Xu, Yao Li, Yao Zhao, Yaofeng Sun, Yaohui Wang, Yi Yu, Yichao Zhang, Yifan Shi, Yiliang Xiong, Ying He, Yishi Piao, Yisong Wang, Yixuan Tan, Yiyang Ma, Yiyuan Liu, Yongqiang Guo, Yuan Ou, Yuduan Wang, Yue Gong, Yuheng Zou, Yujia He, Yunfan Xiong, Yuxiang Luo, Yuxiang You, Yuxuan Liu, Yuyang Zhou, Y. X. Zhu, Yanhong Xu, Yanping Huang, Yaohui Li, Yi Zheng, Yuchen Zhu, Yunxian Ma, Ying Tang, Yukun Zha, Yuting Yan, Z. Z. Ren, Zehui Ren, Zhangli Sha, Zhe Fu, Zhean Xu, Zhenda Xie, Zhengyan Zhang, Zhewen Hao, Zhicheng Ma, Zhigang Yan, Zhiyu Wu, Zihui Gu, Zijia Zhu, Zijun Liu, Zilin Li, Ziwei Xie, Ziyang Song, Zizheng Pan, Zhen Huang, Zhipeng Xu, Zhongyu Zhang, and Zhen Zhang. 2025. DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning. arXiv:2501.12948 [cs.CL] https://arxiv.org/abs/2501.12948 [15] Abhimanyu Dubey, Abhinav Jauhri, Abhinav Pandey, Abhishek Kadian, Ahmad Al-Dahle, Aiesha Letman, Akhil Mathur, Alan Schelten, Amy Yang, Angela Fan, et al . 2024. The Llama 3 herd of models. arXiv preprint arXiv:2407.21783 (2024). [16] Elisabetta Fersini, Francesca Gasparini, Giulia Rizzi, Aurora Saibene, Berta Chulvi, Paolo Rosso, Alyssa Lees, and Jeffrey Sorensen. 2022. SemEval-2022 Task 5: Multi-media Automatic Misogyny Identification. In Proceedings of the 16th International Workshop on Semantic Evaluation (SemEval-2022) , Guy Emerson, Natalie Schluter, Gabriel Stanovsky, Ritesh Kumar, Alexis Palmer, Nathan Schneider, Siddharth Singh, and Shyam Ratan (Eds.). Association for Computational Linguistics, Seattle, United States, 533–549. doi:10.18653/v1/2022.semeval-1.74 [17] Biagio Grasso, Valerio La Gatta, Vincenzo Moscato, and Giancarlo Sperlì. 2024. Kermit: Knowledge-empowered model in harmful meme detection. Information Fusion 106 (2024), 102269. [18] MS Hee, A Kumaresan, and RKW Lee. [n. d.]. Bridging Modalities: Enhanc-ing Cross-Modality Hate Speech Detection with Few-Shot In-Context Learning (2024). [19] Lawrence R James, Robert G Demaree, and Gerrit Wolf. 1984. Estimating within-group interrater reliability with and without response bias. Journal of applied psychology 69, 1 (1984), 85. [20] L. P. Kaelbling, M. L. Littman, and A. W. Moore. 1996. Reinforcement Learning: A Survey. arXiv:cs/9605103 [cs.AI] https://arxiv.org/abs/cs/9605103 [21] Timo Kaufmann, Paul Weng, Viktor Bengs, and Eyke Hüllermeier. 2024. A survey of reinforcement learning from human feedback. (2024). [22] Douwe Kiela, Hamed Firooz, Aravind Mohan, Vedanuj Goswami, Amanpreet Singh, Pratik Ringshia, and Davide Testuggine. 2020. The hateful memes chal-lenge: Detecting hate speech in multimodal memes. Advances in neural informa-tion processing systems 33 (2020), 2611–2624. [23] Douwe Kiela, Hamed Firooz, Aravind Mohan, Vedanuj Goswami, Amanpreet Singh, Pratik Ringshia, and Davide Testuggine. 2021. The Hateful Memes Chal-lenge: Detecting Hate Speech in Multimodal Memes. arXiv:2005.04790 [cs.AI] https://arxiv.org/abs/2005.04790 [24] Mohamed Bayan Kmainasi, Abul Hasnat, Md Arid Hasan, Ali Ezzat Shahroor, and Firoj Alam. 2025. MemeIntel: Explainable Detection of Propagandistic and Hateful Memes. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing , Christos Christodoulopoulos, Tanmoy Chakraborty, Carolyn Rose, and Violet Peng (Eds.). Association for Computational Linguistics, Suzhou, China, 30251–30267. doi:10.18653/v1/2025.emnlp-main.1539 [25] Gitanjali Kumari, Kirtan Jain, and Asif Ekbal. 2024. M3hop-cot: Misogynous meme identification with multimodal multi-hop chain-of-thought. arXiv preprint arXiv:2410.09220 (2024). [26] Ehsan Latif, Yifan Zhou, Shuchen Guo, Yizhu Gao, Lehong Shi, Matthew Nyaaba, Arne Bewerdorff, Xiantong Yang, Xiaoming Zhai, et al . 2025. Comparative evaluation of OpenAI O1 and human performance in higher order cognition. 
+
+Scientific Reports (2025). doi:10.1038/s41598-025-33629-9 [27] Mingxin Li, Yanzhao Zhang, Dingkun Long, Keqin Chen, Sibo Song, Shuai Bai, Zhibo Yang, Pengjun Xie, An Yang, Dayiheng Liu, et al . 2026. Qwen3-VL-Embedding and Qwen3-VL-Reranker: A Unified Framework for State-of-the-Art Multimodal Retrieval and Ranking. arXiv preprint arXiv:2601.04720 (2026). [28] Hongzhan Lin, Ziyang Luo, Wei Gao, Jing Ma, Bo Wang, and Ruichao Yang. 2024. Towards explainable harmful meme detection through multimodal debate between large language models. In Proceedings of the ACM Web Conference 2024 .2359–2370. [29] Hongzhan Lin, Ziyang Luo, Jing Ma, and Long Chen. 2023. Beneath the Surface: Unveiling Harmful Memes with Multimodal Reasoning Distilled from Large Language Models. In Findings of the Association for Computational Linguistics: EMNLP 2023 , Houda Bouamor, Juan Pino, and Kalika Bali (Eds.). Association for Computational Linguistics, Singapore, 9114–9128. doi:10.18653/v1/2023.findings-emnlp.611 WWW Companion ’26, April 13–17, 2026, Dubai, United Arab Emirates Mohamed Bayan Kmainasi, Mucahid Kutlu, Ali Ezzat Shahroor, Abul Hasnat, & Firoj Alam 
+
+[30] Ziyan Liu, Chunxiao Fan, Haoran Lou, Yuexin Wu, and Kaiwei Deng. 2025. MIND: A Multi-agent Framework for Zero-shot Harmful Meme Detection. arXiv preprint arXiv:2507.06908 (2025). [31] Junyu Lu, Bo Xu, Xiaokun Zhang, Haohao Zhu, Kaichun Wang, Liang Yang, and Hongfei Lin. 2025. Is Having Rationales Enough? Rethinking Knowledge Enhancement for Multimodal Hateful Meme Detection. In Proceedings of the 48th International ACM SIGIR Conference on Research and Development in Information Retrieval . 559–569. [32] Pan Lu, Hritik Bansal, Tony Xia, et al . 2024. MathVista: Evaluating Mathematical Reasoning of Foundation Models in Visual Contexts. In International Conference on Learning Representations (ICLR) . https://arxiv.org/abs/2310.02255 [33] Lambert Mathias, Shaoliang Nie, Aida Mostafazadeh Davani, Douwe Kiela, Vin-odkumar Prabhakaran, Bertie Vidgen, and Zeerak Talat. 2021. Findings of the WOAH 5 shared task on fine grained hateful memes detection. In Proceedings of the 5th Workshop on Online Abuse and Harms (WOAH 2021) . 201–206. [34] Lambert Mathias, Shaoliang Nie, Aida Mostafazadeh Davani, Douwe Kiela, Vin-odkumar Prabhakaran, Bertie Vidgen, and Zeerak Waseem. 2021. Findings of the WOAH 5 Shared Task on Fine Grained Hateful Memes Detection. In Pro-ceedings of the 5th Workshop on Online Abuse and Harms (WOAH 2021) , Aida Mostafazadeh Davani, Douwe Kiela, Mathias Lambert, Bertie Vidgen, Vinodku-mar Prabhakaran, and Zeerak Waseem (Eds.). Association for Computational Linguistics, Online, 201–206. doi:10.18653/v1/2021.woah-1.21 [35] Jingbiao Mei, Jinghong Chen, Weizhe Lin, Bill Byrne, and Marcus Tomalin. 2024. Improving hateful meme detection through retrieval-guided contrastive learning. In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) . 5333–5347. [36] Jingbiao Mei, Mingsheng Sun, Jinghong Chen, Pengda Qin, Yuhong Li, Da Chen, and Bill Byrne. 2025. ExPO-HM: Learning to Explain-then-Detect for Hateful Meme Detection. arXiv preprint arXiv:2510.08630 (2025). [37] Mihaela-Georgiana Mihăilescu. 2024. Never Mess With the “Memers”: How Meme Creators Are Redefining Contemporary Politics. Social Media+ Society 10, 4 (2024), 20563051241296256. [38] R OpenAI. 2023. GPT-4 technical report. arXiv (2023), 2303–08774. [39] Long Ouyang, Jeffrey Wu, Xu Jiang, Diogo Almeida, Carroll Wainwright, Pamela Mishkin, Chong Zhang, Sandhini Agarwal, Katarina Slama, Alex Ray, et al . 2022. Training language models to follow instructions with human feedback. Advances in neural information processing systems 35 (2022), 27730–27744. [40] Delfina S Martinez Pandiani, Erik Tjong Kim Sang, and Davide Ceolin. 2025. ‘Toxic’memes: A survey of computational perspectives on the detection and explanation of meme toxicities. Online Social Networks and Media 47 (2025), 100317. [41] Shraman Pramanick, Shivam Sharma, Dimitar Dimitrov, Md Shad Akhtar, Preslav Nakov, and Tanmoy Chakraborty. 2021. MOMENTA: A multimodal framework for detecting harmful memes and their targets. arXiv preprint arXiv:2109.05184 
+
+(2021). [42] Rafael Rafailov, Archit Sharma, Eric Mitchell, Christopher D Manning, Stefano Ermon, and Chelsea Finn. 2023. Direct preference optimization: Your language model is secretly a reward model. Advances in neural information processing systems 36 (2023), 53728–53741. [43] Leonardo Ranaldi and Giulia Pucci. 2025. Multilingual Reasoning via Self-training. In Proceedings of the 2025 Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language Technologies (Volume 1: Long Papers) . 11566–11582. [44] Ursula Kristin Schmid. 2025. Humorous hate speech on social media: A mixed-methods investigation of users’ perceptions and processing of hateful memes. 
+
+New Media & Society 27, 3 (2025), 1588–1606. [45] John Schulman, Filip Wolski, Prafulla Dhariwal, Alec Radford, and Oleg Klimov. 2017. Proximal policy optimization algorithms. arXiv preprint arXiv:1707.06347 
+
+(2017). [46] Zhihong Shao, Peiyi Wang, Qihao Zhu, Runxin Xu, Junxiao Song, Xiao Bi, Haowei Zhang, Mingchuan Zhang, Y. K. Li, Y. Wu, and Daya Guo. 2024. DeepSeek-Math: Pushing the Limits of Mathematical Reasoning in Open Language Models. arXiv:2402.03300 [cs.CL] https://arxiv.org/abs/2402.03300 [47] Shivam Sharma, Firoj Alam, Md Shad Akhtar, Dimitar Dimitrov, Giovanni Da San Martino, Hamed Firooz, Alon Halevy, Fabrizio Silvestri, Preslav Nakov, and Tanmoy Chakraborty. 2022. Detecting and understanding harmful memes: A survey. arXiv preprint arXiv:2205.04274 (2022). [48] Ingroj Shrestha and Jonathan Rusert. 2020. NLP_UIOWA at SemEval-2020 Task 8: You’re not the only one cursed with knowledge-multi branch model memotion analysis. In Proceedings of the Fourteenth Workshop on Semantic Evaluation . 891– 900. [49] Li Sun, Chaitanya Ahuja, Peng Chen, Matt D’Zmura, Kayhan Batmanghelich, and Philip Bontrager. 2025. Multi-Modal Large Language Models are Effective Vision Learners. In 2025 IEEE/CVF Winter Conference on Applications of Computer Vision (WACV) . IEEE, 8617–8626. [50] Gemma Team, Aishwarya Kamath, Johan Ferret, Shreya Pathak, Nino Vieillard, Ramona Merhej, Sarah Perrin, Tatiana Matejovicova, Alexandre Ramé, Morgane Rivière, et al . 2025. Gemma 3 technical report. arXiv preprint arXiv:2503.19786 
+
+(2025). [51] Lai Wei, Yuting Li, Chen Wang, Yue Wang, Linghe Kong, Weiran Huang, and Lichao Sun. 2025. First SFT, Second RL, Third UPT: Continual Improving Multi-Modal LLM Reasoning via Unsupervised Post-Training. arXiv:2505.22453 [cs.CL] https://arxiv.org/abs/2505.22453 [52] Fan Wu, Guolian Chen, Junkuo Cao, Yuhan Yan, and Zhongneng Li. 2024. Multi-modal hateful meme classification based on transfer learning and a cross-mask mechanism. Electronics 13, 14 (2024), 2780. [53] Jiannan Wu, Muyan Zhong, Sen Xing, Zeqiang Lai, Zhaoyang Liu, Zhe Chen, Wenhai Wang, Xizhou Zhu, Lewei Lu, Tong Lu, et al . 2024. Visionllm v2: An end-to-end generalist multimodal large language model for hundreds of vision-language tasks. Advances in Neural Information Processing Systems 37 (2024), 69925–69975. [54] Xiaobao Wu. 2025. Sailing by the Stars: A Survey on Reward Models and Learning Strategies for Learning from Rewards. arXiv preprint arXiv:2505.02686 (2025). [55] Yanzhi Xu, Yueying Hua, Shichen Li, and Zhongqing Wang. 2024. Exploring chain-of-thought for multi-modal metaphor detection. In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) . 91–101. [56] An Yang, Anfeng Li, Baosong Yang, Beichen Zhang, Binyuan Hui, Bo Zheng, Bowen Yu, Chang Gao, Chengen Huang, Chenxu Lv, et al . 2025. Qwen3 technical report. arXiv preprint arXiv:2505.09388 (2025). [57] Chuanpeng Yang, Yaxin Liu, Fuqing Zhu, Jizhong Han, and Songlin Hu. 2024. Uncertainty-guided modal rebalance for hateful memes detection. In Proceed-ings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) . 4361–4371. [58] Xiang Yue, Yuansheng Ni, Kai Zhang, et al . 2024. MMMU: A Massive Multi-discipline Multimodal Understanding and Reasoning Benchmark for Expert AGI. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recog-nition (CVPR) . https://arxiv.org/abs/2311.16502 [59] Tianyi Zhang, Varsha Kishore, Felix Wu, Kilian Q. Weinberger, and Yoav Artzi. 2020. BERTScore: Evaluating Text Generation with BERT. arXiv:1904.09675 [cs.CL] https://arxiv.org/abs/1904.09675 [60] Xunyu Zhu, Jian Li, Yong Liu, Can Ma, and Weiping Wang. 2024. Distilling mathematical reasoning capabilities into small language models. Neural Networks 
+
+179 (2024), 106594.

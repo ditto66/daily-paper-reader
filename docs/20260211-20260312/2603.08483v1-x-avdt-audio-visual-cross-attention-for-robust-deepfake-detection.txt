@@ -1,0 +1,562 @@
+Title: X-AVDT: Audio-Visual Cross-Attention for Robust Deepfake Detection
+
+URL Source: https://arxiv.org/pdf/2603.08483v1
+
+Published Time: Tue, 10 Mar 2026 02:46:36 GMT
+
+Number of Pages: 28
+
+Markdown Content:
+# X-AVDT: Audio-Visual Cross-Attention for Robust Deepfake Detection 
+
+## Youngseo Kim Kwan Yun Seokhyeon Hong Sihun Cha Colette Suhjung Koo Junyong Noh Visual Media Lab, KAIST 
+
+## Abstract 
+
+The surge of highly realistic synthetic videos produced by contemporary generative systems has significantly in-creased the risk of malicious use, challenging both hu-mans and existing detectors. Against this backdrop, we take a generator-side view and observe that internal cross-attention mechanisms in these models encode fine-grained speech–motion alignment, offering useful correspondence cues for forgery detection. Building on this insight, we pro-pose X-AVDT , a robust and generalizable deepfake detec-tor that probes generator-internal audio-visual signals ac-cessed via DDIM inversion to expose these cues. X-AVDT extracts two complementary signals: (i) a video compos-ite capturing inversion-induced discrepancies, and (ii) au-dio–visual cross-attention feature reflecting modality align-ment enforced during generation. To enable faithful, cross-generator evaluation, we further introduce MMDF , a new multi-modal deepfake dataset spanning diverse manipula-tion types and rapidly evolving synthesis paradigms, in-cluding GANs, diffusion, and flow-matching. Extensive ex-periments demonstrate that X-AVDT achieves leading per-formance on MMDF and generalizes strongly to external benchmarks and unseen generators, outperforming existing methods with accuracy improved by +13.1% . Our find-ings highlight the importance of leveraging internal au-dio–visual consistency cues for robustness to future gener-ators in deepfake detection. Code is available at X-AVDT. 
+
+## 1. Introduction 
+
+Deepfakes, synthetic or edited portrait videos that ma-nipulate identity, speech, or motion, have become fea-sible with advances in generative video models. These models have evolved from Generative Adversarial Net-works (GANs) [27] to diffusion-based models [34, 71], which push fidelity to unprecedented levels. Recent sys-tems [19, 33, 87] can synthesize photorealistic digital hu-mans from minimal input, lowering production costs for creative media and assistants. However, when misused, the same advances heighten societal and security risks, includ-ing targeted disinformation, real-time impersonation, iden-
+
+Figure 1. Temporally averaged cross-attention maps. For each video, we extract audio–visual cross-attention during DDIM in-version and average the maps over all frames to obtain a single heatmap. Real vs. fake samples exhibit consistent disparities. 
+
+tity theft, and financial fraud [1–3, 17, 23, 28]. These con-cerns have motivated the research community to develop deepfake detection, which aims to reliably authenticate me-dia under rapidly evolving generators. Diffusion models have become central to recent fa-cial forgery generation. Many video generators employ cross-attention [83] to condition visual features on exter-nal signals such as text, motion, or audio [7, 15, 84]. Among these external signals, audio is especially useful as it provides frame synchronous, densely informative super-vision aligned with facial dynamics. In audio-driven diffu-sion models, this conditioning often takes the form of au-dio–visual cross-attention, which ties phonetic content to facial motion and expressiveness. Such architectures are explicitly designed to promote audio-visual alignment via cross-attention in the diffusion U-Net, making their internal features a natural source of correspondence cues for deep-fake detection. Figure 1 presents examples of extracted audio-visual cross attention features, using Hallo [90], an audio-driven talking head diffusion model pretrained on a large corpus of speech videos. It is observed that similar attention patterns recur across different generator frame-works. This indicates that internal audio–visual cross-attention features from diffusion models provide a robust, generator-agnostic discriminative signal for deepfake detec-tion, reinforcing this generality.                                                                    
+
+> arXiv:2603.08483v1 [cs.CV] 9 Mar 2026 Dataset Modality Method Model FS RE TH GAN DF FM Celeb-DF [49] V✓✗✗✓✗✗
+> DF-Platter [61] V✓✓✗✓✗✗
+> KoDF [41] AV ✓✓✓✓✗✗
+> FaceForensics++ [72] AV ✓✓✗✓✗✗
+> DFDC [22] AV ✓✗✗✓✗✗
+> FakeAVCeleb [39] AV ✓✗✓✓✗✗
+> AV-Deepfake1M [10] AV ✗✗✓✓✗✗
+> MMDF (Ours )AV ✓✓✓✓✓✓
+> Table 1. Comparison of deepfake video datasets. FS:Face swap-ping, RE: Self-reenactment, TH: Talking-head generation, DF: Diffusion model, FM: Flow-matching.
+
+Building on this observation, we propose X-AVDT ,an Audio-Visual Cross -Attention framework for robust 
+
+Deepfake de Tection. Our framework leverages the cross-modal interaction of videos by utilizing fine-grained audio-visual diffusion features to generalize across manipulation types and synthesis models. To extract internal signals, we employ an inversion scheme that maps input videos into the diffusion model’s latent space and reconstructs them under the model prior. We further incorporate a latent noise map, reconstructed video, and input-reconstruction residual as complementary spatial cues, motivated by find-ings that pretrained diffusion models more faithfully recon-struct diffusion-generated content than real content [11, 86]. While fully synthetic videos often expose global inconsis-tencies, face-centric manipulations are confined to the fa-cial region, preserve identity, and yield subtle artifacts that are easily obscured, thereby challenging residual-only de-tectors [11, 86]. By augmenting inversion-based discrepan-cies with audio-visual cross-attention and fusing them into a unified representation, X-AVDT provides complementary global and localized evidence that can improve detection re-liability. Existing datasets [22, 45, 49] are largely composed of earlier GAN-generated forgeries, offering limited coverage of contemporary models and manipulation types. As a re-sult, they fail to capture the diversity and realism of contin-uously updated diffusion or flow-based methods, constrain-ing progress toward building detectors that generalize be-yond legacy benchmarks. To further facilitate robust detec-tion of rapidly evolving deepfakes, we introduce MMDF ,a curated Multi-modal, Multi-generator Deep Fake dataset. It is a high-quality dataset of paired real videos and corre-sponding fakes generated by a diverse suite of recent syn-thesis models. MMDF is the first dataset to cover contem-porary diffusion (both U-Net [71] based and transformer [64] based) and flow-matching [52] generators, and it in-cludes audio–visual pairs. The dataset also spans manipu-lation paradigms such as talking-head generation [15, 19], self-reenactment [30, 91], and face swapping [33], making it suitable for real-world, unconstrained deepfake detection. A comparison of MMDF with prior deepfake datasets is provided in Table 1. 
+
+## 2. Related Work 
+
+Deepfake Video Generation. The synthesis and editing of human faces in video, with high realism and temporal co-herence, have been extensively studied. Early innovations in generative modeling were driven by GANs [27] with gains in stability, resolution, and controllability [37, 38, 68], along with basic conditional setups [36, 60, 98]. More re-cently, diffusion and flow-matching models [15, 34, 71] have shown remarkable success in portrait video manipu-lation for deepfakes. In parallel, control signals such as au-dio [19, 87], textual prompts [7, 88], facial landmarks [84, 94], dense motion flow [94], and 3D face priors [51, 65] have significantly enhanced the realism of synthetic videos. Moreover, current manipulation techniques include talking-head generation [15, 19], face reenactment [30, 91], face swapping [33], lip-sync/dubbing [66, 96], and appearance editing [9]. 
+
+Artifact-based Deepfake Detection. Detection methods have evolved alongside deepfake video generation. Early attempts relied on hand-crafted forensic features, including blink detection [48], facial warping artifacts [47], or color inconsistencies [43, 59]. CNN-based classifiers trained on real and fake examples became dominant. Prior studies have demonstrated the effectiveness of deep learning for de-tecting subtle synthesis artifacts [4, 29, 46, 67, 72, 73, 77, 85]. Frequency-domain and fingerprint-based detectors fur-ther improved generalization across different GAN archi-tectures [26, 58]. However, these methods often struggle to generalize beyond their training datasets and remain vulner-able to newer, more sophisticated forgeries. 
+
+Generalizable Deepfake Detection. A principal goal is generalization across unseen generators, manipulation types, and domains. To this end, recent work in-vestigates the semantic characteristics of generated im-ages. DIRE [86] proposes a reconstruction-based detector grounded in the hypothesis that images produced by dif-fusion models can be more accurately reconstructed by a pretrained diffusion model than real images. DRCT [13] extends this idea by synthesizing hard examples via diffu-sion reconstruction and applying contrastive learning to the resulting residuals. FakeInversion [11] leverages features obtained via latent inversion of Stable Diffusion [71]. These methods are built on prior observations that CLIP [69] em-beddings can be predictive of image authenticity [62, 75]. 
+
+Audio-Visual Inconsistencies. Several studies [24, 40, 78, 97] adopt a late-fusion design in which RGB images and au-dio are encoded separately and combined only at the clas-sification head. While this preserves strong per-modality features, the resulting embeddings occupy different latent spaces and are not directly aligned across modalities. Other Figure 2. Input representations with complementary features. (a) video composite ϕ is obtained from video x and audio c by running DDIM inversion and reconstruction, decoding both the noisy and clean latents, and computing the residual. We then concatenate four components channel-wise: x, D(ˆ zT ), D(ˆ z0), and |x − D(ˆ z0)|. (b) AV cross-attention feature ψ is extracted during DDIM inversion from the diffusion U-Net and summarized as a frame-aligned tensor. These complementary cues (a) and (b) capture appearance information and modality alignment, respectively. For clarity, all visual elements shown ( D(ˆ zT ), D(ˆ z0), and |x − D(ˆ z0)|) are decoded images. 
+
+approaches [32, 50, 63] learn audio–visual representations in a self-supervised way, implicitly fusing the modalities by pulling their embeddings together. Such implicit fusion can miss fine-grained semantic misalignment and offers limited interpretability of the cross-modal evidence. In contrast, we focus on internal features from large generative models as explicit, interpretable signals of persistent audio-visual in-consistency. 
+
+## 3. Preliminaries 
+
+Diffusion models [21, 34, 71] are probabilistic generative models that learn a data distribution by progressively de-noising samples. They consist of two complementary pro-cesses. In the forward process, Gaussian noise is gradually injected into a clean image  x0, given by 
+
+xt = √¯αt x0 + √1 − ¯αt ϵ, ϵ ∼ N (0 , I) (1) which maps  x0 to increasingly noisy latents  xt, where  t =0, . . . , T  and  ¯αt = Qtk=1 αk. The reverse process starts from a noisy sample  xT and iteratively produces cleaner states conditioned on an auxiliary vector  c (e.g., audio), us-ing a noise predictor  ϵθ (xt, t, c ). Given the current estimate of the clean image, 
+
+ˆx0(xt, t, c ) = xt − √1 − ¯αt ϵθ (xt, t, c )
+
+√¯αt
+
+, (2) the conditional reverse update can be written as 
+
+xt−1 = √¯αt−1 ˆx0(xt, t, c ) + p1 − ¯αt−1 ϵθ (xt, t, c ). (3) In this work, we rely on a pre-trained audio-conditioned Latent Diffusion Model (LDM) [71], where the diffusion process operates in the latent space of a VAE: z0 = E(x0)
+
+and x0 ≈ D(z0). The denoiser is a 3D U-Net conditioned on external signals and composed of residual blocks, spatial self-attention, temporal self-attention, and cross-attention. Let f ln be the video features at layer l and video frame n,projected to queries qln, keys kln, and values vln. The atten-tion output is given by 
+
+˜f ln = Aln vln, Aln = Softmax 
+
+ qln(kln)⊤
+
+√d
+
+
+
+, (4) where d is the query/key embedding dimension. This en-ables the model to capture global dependencies across space and time in the video. In parallel, cross-attention is com-puted between video queries and the conditioning audio em-bedding, thereby guiding the denoising process toward the target reconstruction. 
+
+## 4. Method 
+
+4.1. Problem Definition 
+
+We train a binary deepfake detector on audio–visual pairs 
+
+Dtrain = {(xm, c m, y m)}Mm=1 , where each example consists of a face video clip xm, its paired audio condition cm, and a label ym ∈ { 0, 1} that indicates whether the video is real or fake. The training set contains M videos. From each input pair, an audio-conditioned LDM extracts two types of features, video composite ϕ(x, c ) and an AV cross-attention feature ψ(x, c ), as illustrated in Figure 2 and discussed in Sec. 4.2. We fuse ϕ and ψ and train a detector Gθ to estimate pθ (y = 1 | x, c ) = σ(Gθ (·)) by optimizing a weighted sum of a binary cross-entropy term and a metric-learning term, which will be defined in Sec. 4.3. 
+
+4.2. Input Representation 
+
+4.2.1. Diffusion Inversion & Reconstruction 
+
+As shown in Figure 2a, given a video x ∈ RN ×3×H×W ,where N denotes the number of frames in the clip and H
+
+and W denote the height and width, respectively, and a Figure 3. The overall framework of X-AVDT. From each audio-visual pair, we form two inputs ϕ and ψ. Two 3D encoders map them to features that are concatenated and passed through the Feature Fusion Decoder to produce a fused feature. A classification head outputs the real/fake score, while an embedding head is trained with a triplet objective to improve robustness. 
+
+paired audio condition c, we operate in the VAE latent space with encoder E and decoder D. We first encode the in-put video frame to z0 = E(x) while conditioning on the wav2vec 2.0 [6] audio embedding c (omitted in the figure for brevity). We then obtain the corresponding latent noise map using the DDIM inversion process ˆzT = Fθ (z0, c ).Subsequently, starting from ˆzT , we run the conditional re-verse diffusion to obtain a clean latent ˆz0 = Rθ (ˆ zT , c ). We then decode ˆz0 to the pixel space to obtain the reconstructed video D(ˆ z0) and compute the residual between the input and the reconstruction r = |x − D(ˆ z0)|.To construct the video composite ϕ for the detector, we use an input formed by channel-wise concatenation of the image x, the decoded latent DDIM noise map D(ˆ zT ), the image D(ˆ z0) reconstructed from the reverse DDIM process, and the reconstruction residual r = |x − D(ˆ z0)|:
+
+ϕ(x, c ) = concat  x, D (ˆ zT ), D (ˆ z0), r  ∈ RN ×12 ×H×W ,
+
+(5) Because DDIM inversion uses a finite number of steps, the mismatch after a forward-reverse pass reflects discretization error, whereas manipulated samples tend to produce smaller discrepancies and thus higher likelihood of forgery under the diffusion model [11]. We use the pattern of this gap as an inversion-induced discrepancy measure for detecting manipulation. 
+
+4.2.2. Audio-Visual Cross-Attention Feature 
+
+As illustrated in Figure 2b, DDIM inversion is performed with a 3D U-Net composed of multiple blocks organized into down, mid and up stages. Each block contains an audio-visual cross-attention layer in which video hidden states serve as queries while the audio encoder’s hidden states provide keys and values. We extract the cross-attention from an up block at a chosen diffusion timestep 
+
+t, conditioned on the input audio. This attention is taken from the same conditioned LDM used to construct the video composite ϕ.Let H(t) be the 3D U-Net hidden state at timestep t. Us-ing the attention output projection, we aggregate the multi-head outputs, reduce the head dimension to C channels, and reshape the result into the per-frame latent grid, yielding a temporally aligned feature ψ(x, c ), which is defined as: 
+
+ψ(x, c ) = CrossAttn( H(t), c ) ∈ RN ×C×h×w, (6) Here, h × w is the latent-space resolution (e.g., 64 × 64 
+
+for 512 × 512 inputs with an 8x downsampling). In our setup, we extract the attention from the last up block at timestep t = 24 and reshape it to a per-frame. The re-sulting ψ provides a compact, temporally aligned descrip-tor of audio–visual correspondence that the detector can exploit to distinguish authentic from manipulated content. Because it captures speech–motion synchrony enforced by the denoiser instead of appearance alone, it is less sensi-tive to purely visual artifacts and thus offers a complemen-tary, model-internal cue that improves robustness. Abla-tion on input representations and attention features appear in Sec. 6.4. 
+
+4.3. Detector Architecture 
+
+Figure 3 presents the X-AVDT framework. X-AVDT pairs two signals extracted from different parts of the conditioned LDM pipeline to improve robustness. Accordingly, the de-tector takes two inputs. Two 3D encoders, Ev for ϕ and Ea
+
+for ψ, produce feature volumes that are aligned in space and time and then fused by a Feature Fusion Decoder (FFD) to yield a logit and an embedding: 
+
+v′ = Ev (ϕ), a′ = Ea(ψ). (7) The tensors v′ and a′ are concatenated along the channel dimension and projected to a shared embedding with a 1×1
+
+convolution to obtain pi. The FFD then applies a self-attention layer over spatial tokens, followed by a series of 
+
+L 3D ResNeXt [89] layers. Then global average pooling (GAP) produces a fused feature vector gi for the i-th sam-ple: 
+
+pi = Proj(concat[ v′
+
+> i
+
+, a′
+
+> i
+
+]) , (8) 
+
+gi = GAP  Conv3D L SelfAttn( pi) . (9) From gi we form two branches: a fully connected layer maps gi to a scalar logit si for the binary classification loss, and an embedding head outputs an ℓ2-normalized vector u(i) for metric learning. With ground-truth labels 
+
+yi ∈ { 0, 1} (real=0, fake=1) and sigmoid σ(·), the binary cross-entropy loss over a mini-batch of size B is defined as follows: 
+
+Lbce = − 1
+
+B
+
+> B
+
+X
+
+> i=1
+
+h
+
+yi log σ(si) + (1 − yi) log  1 − σ(si)i
+
+.
+
+(10) Let u(i) 
+
+> a
+
+, u(i) 
+
+> p
+
+, and u(i) 
+
+> n
+
+denote anchor, positive, and neg-ative embeddings for the i-th triplet, respectively. It tightens same class embeddings and separates different classes. Us-ing the squared ℓ2 distance and a margin m > 0, the triplet loss is 
+
+Ltri = 1
+
+B
+
+> B
+
+X
+
+> i=1
+
+max  0, u(i) 
+
+> a
+
+− u(i)
+
+> p
+> 22
+
+− u(i) 
+
+> a
+
+− u(i)
+
+> n
+> 22
+
++m.
+
+(11) The overall objective minimizes a weighted sum of the two terms, controlled by a balancing parameter λ ∈ [0 , 1] :
+
+Ltotal = (1 − λ) Lbce + λ Ltri . (12) This joint objective allows the model to learn discrimina-tive and mutually informative representations that general-ize across manipulation patterns. Further analysis is pro-vided in Sec. 6.4. 
+
+## 5. Dataset 
+
+The MMDF dataset was constructed from curated real clips paired with their corresponding manipulated versions, re-sulting in a collection of 28.8k clips with a total dura-tion of 41.67 hours. Using Hallo3 dataset [20] as our source, we applied each video clip duration, resolution, and face-presence filters with MediaPipe [56] to retain single-person, frontal-to-quarter views with stable lip motion and speech. We removed clips with scene cuts, strong camera motion, excessive facial motion, or long side facing poses. These videos contain individuals of diverse ages, ethnici-ties, and genders in close-up shots across varied indoor and outdoor backgrounds. MMDF covers three manipulation types, such as talking-head generation, self-reenactment,                        
+
+> Split Generator Model Method #Clips (real/fake) Train Hallo2 [19] Diffusion Talking-Head 4k/4k LivePortrait [30] GAN Self-Reenactment 4k/4k FaceAdapter [33] Diffusion Face Swapping 4k/4k Test HunyuanAvatar [15] Flow Matching Talking-Head 0.8k/0.8k MegActor-Σ[91] Diffusion Transformer Self-Reenactment 0.8k/0.8k AniPortrait [87] Diffusion Talking-Head 0.8k/0.8k
+
+Table 2. Composition of the dataset. This coverage better reflects current synthesis trends than outdated datasets that focus primarily on GANs, and permits assessing cross-generator generalization.                           
+
+> Dataset Sync-C ↑Sync-D ↓LPIPS ↓FVD ↓HFAR ↑
+> FaceForensics++ [72] 3.32 11.06 0.27 370.23 0.22 FakeAVCeleb [39] 5.87 8.38 0.19 170.61 0.34
+> MMDF (Ours )7.36 7.35 0.07 121.39 0.41
+
+Table 3. Audio-visual quality of manipulated videos. Sync-C, Sync-D, LPIPS, and FVD are computational metrics, whereas HFAR denotes the human false acceptance rate measured in a user study. 
+
+and face swapping, produced using GAN, diffusion, and flow-matching generators. Comparative networks were trained on a diverse set of data obtained from commonly used generators and evaluated on unseen ones to assess cross-generator generalization. See Table 2 for details. To quantify the realism of the manipulated videos, we report several metrics values. As shown in Table 3, MMDF exhibits stronger audio–visual synchronization and more favorable perceptual and video statistics than FaceForen-sics++ [72] and FakeAVCeleb [39], indicating temporally coherent, high-quality manipulations suitable for the detec-tion task. In addition, we report Human False Acceptance Rate (HFAR), defined as the proportion of fake clips judged to be real by human evaluators (i.e., False Positive Rate, FPR). A higher HFAR indicates that humans are more likely to perceive fake clips as real, suggesting that the dataset contains more challenging and realistic negative samples. Metric definitions are provided in Sec. 6.1 and MMDF de-tails are in the supplementary material. 
+
+## 6. Experiments 
+
+6.1. Implementation Details 
+
+X-AVDT is implemented and trained with the same config-uration across all evaluation datasets. Training requires 14 hours on a single NVIDIA RTX 3090 GPU. 
+
+Architecture. Hallo [90] is employed as our audio-conditioned latent diffusion backbone, initialized from Sta-ble Diffusion [71]. While we choose Hallo because it pro-vides high-fidelity synthesis and rich internal audio–visual signals that our detector can exploit, other choices can also be possible [16, 53, 87]. See the supplementary material for details. Audio conditioning is provided by wav2vec 2.0 [6] features projected to the U-Net cross-attention embedding AniPortrait [87] MegActor-Σ [91] HunyuanAvatar [15] Average Model AUROC AP Acc@EER Acc AUROC AP Acc@EER Acc AUROC AP Acc@EER Acc AUROC AP Acc@EER Acc                                                                                                                                                                                  
+
+> Official-pretrained
+> LipForensics [31] 79.49 81.45 73.25 74.50 72.17 73.56 65.85 67.11 63.66 56.50 59.91 60.66 74.24 74.54 71.91 72.38 RealForensics [32] 86.31 85.23 78.65 77.56 62.93 61.60 58.79 58.71 64.90 60.30 61.40 60.85 77.65 75.71 72.15 65.70 AVAD [24] 73.25 74.98 66.05 67.49 50.87 56.96 51.26 51.18 75.37 74.54 74.14 74.39 67.47 67.29 64.75 65.29 FACTOR [70] 94.21 93.54 86.29 86.55 75.44 72.83 68.82 69.33 36.69 46.18 38.27 56.15 68.78 70.85 64.46 70.68 LipFD [54] 52.55 50.60 51.74 51.90 51.45 49.89 50.80 50.93 60.38 53.85 57.78 58.30 57.64 51.83 55.37 55.82 AVH-Align [78] 74.88 73.94 68.82 70.03 51.20 47.81 50.86 50.93 34.53 39.96 37.50 36.91 50.34 50.95 49.89 49.98
+> MMDF-retrained (cross-dataset evaluation)
+> RealForensics [32] 97.47 97.22 90.99 90.28 97.60 96.70 92.68 92.45 74.89 72.09 68.38 61.12 92.42 91.39 84.01 81.28 LipFD [54] 49.59 50.26 49.79 49.75 50.32 50.82 50.14 50.18 48.39 50.26 49.10 48.96 53.75 51.29 52.65 52.87 AVH-Align [78] 98.94 98.53 95.94 96.54 67.92 62.36 62.24 63.38 75.92 65.87 69.70 70.94 81.44 76.52 75.59 76.76 Human Evaluation –––83.75 –––74.17 –––58.33 –––71.88
+> X-AVDT (Ours )99.10 98.89 96.54 97.05 90.17 88.05 83.11 84.52 97.79 97.44 97.69 97.91 95.29 94.03 91.15 91.98
+
+Table 4. Quantitative comparison on the MMDF dataset. Detectors are evaluated using the official pretrained checkpoint (first panel) and after retrained on the MMDF training set (Hallo2 [19], LivePortrait [30], and FaceAdapter [33]) (second panel). Best in bold ; second-best underlined. *Note: FACTOR is a zero-shot method, while AVAD and AVH-Align are unsupervised methods.                                                                                                   
+
+> FakeAVCeleb [39] FaceForensics++ [72] Model AUROC AP Acc@EER Acc AUROC AP Acc@EER Acc
+> Official pretrained
+> LipForensics [31] 98.40 98.37 95.00 95.80 98.14 †97.93 †97.00 †98.50 †
+> RealForensics [32] 95.80 96.20 85.99 85.46 99.47 †99.42 †95.49 †95.22 †
+> AVAD [24] 74.96 75.88 66.00 66.79 55.38 53.92 51.50 52.16 FACTOR [70] 88.44 88.22 76.00 80.00 76.33 76.08 68.50 71.00 LipFD [54] 73.17 64.39 66.36 67.16 52.84 †51.01 †50.96 †59.31 †
+> AVH-Align [78] 93.52 93.48 83.00 83.90 37.07 40.43 40.50 41.62
+> MMDF-trained (cross-dataset evaluation)
+> RealForensics [32] 83.67 85.56 71.42 71.42 88.85 87.65 79.39 78.54 LipFD [54] 53.59 51.09 52.37 53.67 52.92 50.21 52.08 51.89 AVH-Align [78] 54.20 53.74 52.00 52.80 36.66 40.03 37.00 39.64 Human Evaluation –––78.75 –––71.25
+> X-AVDT (Ours )99.69 99.74 97.85 98.65 89.55 89.17 87.55 89.77
+
+Table 5. Quantitative comparison on the benchmark dataset. 
+
+Detectors are trained on the MMDF training set and evaluated on FakeAVCeleb and FaceForensics++, respectively. †Indicates that the corresponding benchmark was used during the method’s orig-inal training (train–test overlap). 
+
+dimension. We do not use classifier-free guidance during either DDIM inversion or reconstruction to preserve bijec-tivity and conditioning fidelity. Unless otherwise stated, we extract the audio–visual cross-attention from the last up block of the U-Net at diffusion timestep t = 24 . Both the image encoder Ev (·) and the feature encoder Ea(·) use 3D ResNeXt [89]. The FFD uses an L-layer 3D ResNeXt stack. We fix L = 3 in Eq. (8). In our setup, the video compos-ite ϕ has 12 channels ( x, D(ˆ zT ), D(ˆ z0), residual), and the AV cross-attention feature ψ uses C = 320 channels after collapsing the multi-head dimension and is reshaped with a latent resolution of 64 × 64 .
+
+Training Details. We train the detector for 2 epochs on frames of size 512 ×512 using AdamW [55] with a learning rate of 1 × 10 −4, weight decay of 0.05 , and a batch size of 
+
+8. For the triplet loss Eq. (11), we set the margin m to 0.3,and the balancing parameter λ in the overall objective Eq. (12) is also set to 0.3.
+
+Automatic Metrics. We report the values measured by four detection metrics, AUROC, Average Precision (AP), Accu-racy at Equal Error Rate (Acc@EER), and Accuracy. We obtain Acc@EER by computing the EER threshold from the ROC curve and evaluating accuracy at that threshold. To assess the proposed MMDF dataset, we also report values measured by generation quality metrics including Lip Sync scores (Sync-C and Sync-D) from SyncNet for lip-speech alignment [18], LPIPS for perceptual distance [95], and Fr´ echet Video Distance (FVD) for distributional distance between generated and ground-truth videos [82]. Lower is better for LPIPS and FVD, higher Sync-C and lower Sync-D indicate better synchronization. 
+
+Baselines. We evaluated X-AVDT against open-source baselines, including the video-only LipForensics [31], and audio–visual methods RealForensics [32], AVAD [24], LipFD [54], FACTOR [70], and AVH-Align [78]. We used two variants: (i) the official checkpoint and (ii) models re-trained from scratch on our training sets using the official code. This protocol enables a fair cross-dataset transfer comparison against our MMDF-trained model. Further de-tails are in the supplementary material. 
+
+6.2. Comparison with State-of-the-art 
+
+6.2.1. Comparison on MMDF Dataset 
+
+Table 4 comprises two panels. Official-pretrained reports results from publicly released checkpoints of prior methods, and MMDF-retrained reports the same baselines retrained on our MMDF for cross-dataset evaluation. Baselines are evaluated in both settings, whereas X-AVDT values are re-ported in the MMDF-retrained panel. As the training code for LipForensics [54] and AVAD [24] is unavailable, we re-port results obtained by their official pretrained model only. The pretrained baselines presented in the first panel tended to overfit to earlier synthesis methods and showed limited domain adaptation capability, resulting in poor transfer abil-Cross-Attention Temporal-Attention Spatial-Attention Timestep t AUROC AP Acc@EER AUROC AP Acc@EER AUROC AP Acc@EER                               
+
+> t= 24 91.56 86.90 81.51 83.92 87.08 75.01 64.57 68.00 61.82
+> t= 249 81.30 69.52 77.13 68.25 71.94 64.10 57.42 52.00 56.04
+> t= 499 68.11 57.97 67.44 66.29 66.29 59.30 52.38 53.14 50.02
+
+Table 6. Ablation results for different attention features and diffusion timesteps. As the diffusion timestep t grows, the latent becomes noisier and conditioning weakens. Results at t ∈ { 24 , 249 , 499 } show that cross-attention performs best, and performance degrades as t
+
+increases. 
+
+Figure 4. Comparison of attention features across diffusion timesteps. Red box denote the configuration used in our method. 
+
+ity to unseen manipulations and a persistent generalization gap across datasets. As shown in the bottom row, X-AVDT achieved the highest average AUROC of 95.29, exceeding the performance of the strongest retrained baseline (Real-Forensics [32] 92.42). The margin over prior methods re-mained broadly consistent across generators, resulting in a clear overall lead despite MMDF retraining. 
+
+6.2.2. Comparison on Benchmark Dataset 
+
+We further evaluate X-AVDT on the GAN-based bench-marks FakeAVCeleb [39] and FaceForensics++ [72], fol-lowing the same setup as in Table 4. As summarized in Tables 4 and 5, models trained on MMDF transfer well to these benchmarks. Notably, several pretrained detectors are marked with †, indicating train-test overlap. Even under this favorable condition for the baselines, X-AVDT achieved the best scores on both benchmarks with an AUROC of 99.69 on FakeAVCeleb and 89.55 on FaceForensics++. 
+
+6.3. Human Evaluation 
+
+For human evaluation studies, we use two metrics: Human Evaluation (HE) in Table 4 and Table 5, and HFAR in Ta-ble 3. Both HE and HFAR were obtained from the same user study with 24 participants (balanced in gender, aged between their 20s and 30s), where each participant viewed the videos with audio and answered whether it was real or fake. Across datasets, HE was consistently lower than our detector, indicating the task is challenging for humans, whereas our model remains robust.                          
+
+> Method AUROC AP Acc@EER (a) Ablation on Input Representations
+> w/o AV Cross-Attn ( ψ)88.22 87.25 83.70
+> w/o Video Composite ( ϕ)90.21 90.57 84.32
+> w/o Residual ( |x−D(ˆ z0)|)93.82 92.25 89.00 (b) Ablation on Loss Design
+> w/o Ltri 92.64 92.26 86.32
+> X-AVDT (full )95.29 94.03 91.15
+
+Table 7. Ablation on input representations and loss design. (a) removing any of the input representation degrades performance, 
+
+> (b) adding the triplet term improves the results across all metrics.
+
+6.4. Ablation Study 
+
+Choice of Attention Type and Timestep. We analyze how the choice of attention feature and the diffusion timestep affect detection. Table 6 shows that, among attention fea-tures extracted from the 3D U-Net in Hallo [90], the audio-conditioned cross-attention was consistently the most in-formative, as it explicitly regularizes the representation to-ward audio–visual alignment. Figure 4 further illustrates that temporal coherence and spatial appearance tend to cap-ture global motion and pose changes, making them less dis-criminative. By contrast, cross-attention highlights articu-lators while suppressing background and is inherently less sensitive to scene changes. Moreover, features from earlier diffusion steps were more discriminative than those from later steps, because early denoising retains stronger condi-tioning signals before texture refinement dominates, leaving modality-consistency cues less degraded. 
+
+Complementary Effect of Input Representations. The video composite ϕ encodes inversion-induced discrepan-cies, while the AV cross-attention feature ψ provides cross-modal consistency cues derived from the diffusion model’s internal alignment. Motivated by their complementary na-ture, we combine ϕ and ψ and assess their contributions via an ablation study that removes each component individ-ually. The combined model yields the highest overall per-formance, indicating that the two representations reinforce each other. Table 7a corroborates this with quantitative re-sults across all three metrics. 
+
+Effect of Loss Design. To assess the effect of loss formu-lation, we compared models trained with only the binary cross-entropy loss Lbce against those using the combined Figure 5. Robustness against unseen corruptions. AUROC (%) across five severity levels. Per corruption scales are shown on the x–axes. Average denotes the mean AUROC across all corruptions at each severity level.   
+
+> Figure 6. Grad-CAM visualizations. Red activation indicates regions where our model focuses most (i.e., pixels that make a strong positive contribution to the predicted class), while cooler colors denote weak or no contribution.
+
+objective Lbce + Ltri . The triplet loss Ltri serves as an aux-iliary metric-learning loss, providing an inductive bias to-ward a more discriminative class structure in the embed-ding space that complements the classification signal. See Table 7b for quantitative results. 
+
+Robustness of In-the-Wild Perturbation Attack. We trained X-AVDT on MMDF without augmentation and evaluated robustness on unseen corruptions with five sever-ity levels. For comparison, all baselines used their offi-cial pretrained checkpoints. We report AUROC (%) values in Figure 5. X-AVDT outperformed prior detectors across severity levels, with smaller performance decay than com-parative methods under high-frequency suppressing distor-tions (JPEG/Blur), additive noise, and scale changes due to resizing, as well as under temporal disruptions from frame dropping. Detailed information can be found in the supple-mentary material. 
+
+6.5. Discussion 
+
+To understand how our detector treats real versus forged videos, we applied Grad-CAM [74] to our detector and vi-sualized activation maps on samples from three represen-tative generators (Figure 6). Grad-CAM highlights where the model grounds its decision in each frame, and these ac-tivation maps make the effect of our design explicit. Our method concentrated activation on articulatory regions and maintained this focus across frames in real videos. In con-trast, forgeries elicited scattered, multi-focal responses, re-vealing the absence of consistent audio–visual cues. This behavior was consistent across all generators, indicating that our detector exploits audio–visual consistency as a gen-eral cue, which in turn explains its generalization beyond any single model’s artifacts. See the supplementary mate-rial for details. 
+
+## 7. Conclusion 
+
+We introduce X-AVDT, a simple, robust, and generaliz-able detector that probes internal audio–visual signals in pretrained diffusion models via DDIM inversion. Our ap-proach fuses two complementary representations: a video composite ϕ that surfaces reconstruction-based discrep-ancies and an AV cross-attention feature ψ that encodes speech–motion synchrony. Empirically, we demonstrate that probing intermediate diffusion features during inver-sion yields more discriminative and better calibrated sig-nals than relying solely on end point reconstructions. Evalu-ated on MMDF and external benchmarks, X-AVDT delivers consistent improvements over prior methods and transfers well to unseen generators, achieving superior performance on standard datasets and under perturbed image conditions. We also present MMDF, an audio–visual deepfake bench-mark curated for cross-generator generalization and robust-ness studies. We hope MMDF serves as a strong benchmark suite for advancing detector generalization and real-world robustness, while X-AVDT provides a solid baseline and di-agnostic probe for future work on audio–visual, generator-internal cues. 
+
+Limitations and Future Work Despite strong accuracy and cross-dataset robustness, our method incurs a high com-putational cost, reflecting the inherent expense of inversion. For a 16 frame clip, a full DDIM inversion and reconstruc-tion process with a 40 timestep schedule requires approx-imately one minute end-to-end. Current detectors also re-main imperfect in non-speech segments or multi-speaker scenes, because the approach relies on speech-driven fea-tures. A few promising directions include supplementing our representation with unimodal back-off strategies for weak or missing speech and with speech-agnostic corre-spondence cues beyond phonetics, and pursuing lightweight inversion via distillation. Acknowledgement 
+
+This work was supported by the Institute of Information & Communications Technology Planning & Evalu-ation (IITP) grant funded by the Korea government (MSIT) (No. RS-2024-00439499, Generating Hyper-Realistic to Extremely-stylized Face Avatar with Varied Speech Speed and Context-based Emotional Expression) (50%), and by the Culture, Sports and Tourism R&D Program through the Korea Creative Content Agency (KOCCA) grant funded by the Ministry of Culture, Sports and Tourism in 2024 (RS-2024-00440434) (50%). 
+
+## References 
+
+[1] The state of deepfakes. Technical report, Deeptrace (Sen-sity), 2019. 1 [2] Behind the deepfake: 8% create; 90% concerned. Technical report, The Alan Turing Institute, 2024. [3] Deepfakes: A human challenge. Technical report, WeProtect Global Alliance, 2024. 1 [4] Darius Afchar, Vincent Nozick, Junichi Yamagishi, and Isao Echizen. Mesonet: a compact facial video forgery detection network. In 2018 IEEE international workshop on informa-tion forensics and security (WIFS) , pages 1–7. IEEE, 2018. 2[5] Triantafyllos Afouras, Joon Son Chung, and Andrew Zisser-man. Lrs3-ted: a large-scale dataset for visual speech recog-nition. arXiv preprint arXiv:1809.00496 , 2018. 2 [6] Alexei Baevski, Yuhao Zhou, Abdelrahman Mohamed, and Michael Auli. wav2vec 2.0: A framework for self-supervised learning of speech representations. Advances in neural infor-mation processing systems , 33:12449–12460, 2020. 4, 5, 1 [7] Omer Bar-Tal, Hila Chefer, Omer Tov, Charles Her-rmann, Roni Paiss, Shiran Zada, Ariel Ephrat, Junhwa Hur, Guanghui Liu, Amit Raj, et al. Lumiere: A space-time diffu-sion model for video generation. In SIGGRAPH Asia 2024 Conference Papers , pages 1–11, 2024. 1, 2 [8] Sarah Barrington, Matyas Bohacek, and Hany Farid. The deepspeak dataset. arXiv preprint arXiv:2408.05366 , 2024. 3[9] Tim Brooks, Aleksander Holynski, and Alexei A. Efros. In-structpix2pix: Learning to follow image editing instructions. In CVPR , 2023. 2 [10] Zhixi Cai, Shreya Ghosh, Aman Pankaj Adatia, Munawar Hayat, Abhinav Dhall, Tom Gedeon, and Kalin Stefanov. Av-deepfake1m: A large-scale llm-driven audio-visual deep-fake dataset. In Proceedings of the 32nd ACM International Conference on Multimedia , pages 7414–7423, 2024. 2 [11] George Cazenavette, Avneesh Sud, Thomas Leung, and Ben Usman. Fakeinversion: Learning to detect images from un-seen text-to-image models by inverting stable diffusion. In 
+
+Proceedings of the IEEE/CVF Conference on Computer Vi-sion and Pattern Recognition , pages 10759–10769, 2024. 2, 4, 6 [12] Nuria Alina Chandra, Ryan Murtfeldt, Lin Qiu, Arnab Kar-makar, Hannah Lee, Emmanuel Tanumihardja, Kevin Farhat, Ben Caffee, Sejin Paik, Changyeon Lee, et al. Deepfake-eval-2024: A multi-modal in-the-wild benchmark of deep-fakes circulated in 2024. arXiv preprint arXiv:2503.02857 ,2025. 3 [13] Baoying Chen, Jishen Zeng, Jianquan Yang, and Rui Yang. Drct: Diffusion reconstruction contrastive training towards universal detection of diffusion generated images. In Forty-first International Conference on Machine Learning , 2024. 2[14] Honglie Chen, Weidi Xie, Triantafyllos Afouras, Ar-sha Nagrani, Andrea Vedaldi, and Andrew Zisserman. Audio-visual synchronisation in the wild. arXiv preprint arXiv:2112.04432 , 2021. 2 [15] Yi Chen, Sen Liang, Zixiang Zhou, Ziyao Huang, Yifeng Ma, Junshu Tang, Qin Lin, Yuan Zhou, and Qinglin Lu. Hunyuanvideo-avatar: High-fidelity audio-driven hu-man animation for multiple characters. arXiv preprint arXiv:2505.20156 , 2025. 1, 2, 5, 6, 3, 4, 8, 14 [16] Zhiyuan Chen, Jiajiong Cao, Zhiquan Chen, Yuming Li, and Chenguang Ma. Echomimic: Lifelike audio-driven portrait animations through editable landmark conditions. In Pro-ceedings of the AAAI Conference on Artificial Intelligence ,pages 2403–2410, 2025. 5, 6 [17] Robert Chesney and Danielle Keats Citron. Deep fakes: A looming challenge for privacy, democracy, and national se-curity. California Law Review , 107:1753–1819, 2019. 1 [18] Joon Son Chung and Andrew Zisserman. Out of time: auto-mated lip sync in the wild. In Asian conference on computer vision , pages 251–263. Springer, 2016. 6 [19] Jiahao Cui, Hui Li, Yao Yao, Hao Zhu, Hanlin Shang, Kaihui Cheng, Hang Zhou, Siyu Zhu, and Jingdong Wang. Hallo2: Long-duration and high-resolution audio-driven portrait im-age animation. arXiv preprint arXiv:2410.07718 , 2024. 1, 2, 5, 6, 8, 11 [20] Jiahao Cui, Hui Li, Yun Zhan, Hanlin Shang, Kaihui Cheng, Yuqi Ma, Shan Mu, Hang Zhou, Jingdong Wang, and Siyu Zhu. Hallo3: Highly dynamic and realistic portrait image animation with video diffusion transformer. In Proceedings of the Computer Vision and Pattern Recognition Conference ,pages 21086–21095, 2025. 5, 7, 8 [21] Prafulla Dhariwal and Alexander Nichol. Diffusion models beat gans on image synthesis. Advances in neural informa-tion processing systems , 34:8780–8794, 2021. 3 [22] Brian Dolhansky, Joanna Bitton, Ben Pflaum, Jikuo Lu, Russ Howes, Menglin Wang, and Cristian Canton Ferrer. The deepfake detection challenge (dfdc) dataset. arXiv preprint arXiv:2006.07397 , 2020. 2 [23] Federal Communications Commission. Fcc proposes $6 mil-lion fine for deepfake robocalls around nh primary. https: //www.fcc.gov/document/fcc- proposes- 6-million- fine- deepfake- robocalls- around-nh-primary , 2024. 1 [24] Chao Feng, Ziyang Chen, and Andrew Owens. Self-supervised video forensics by audio-visual anomaly detec-tion. In proceedings of the IEEE/CVF conference on com-puter vision and pattern recognition , pages 10491–10503, 2023. 2, 6 [25] Ronald A Fisher. The use of multiple measurements in tax-onomic problems. Annals of eugenics , 7(2):179–188, 1936. 6[26] Joel Frank, Thorsten Eisenhofer, Lea Sch¨ onherr, Asja Fis-cher, Dorothea Kolossa, and Thorsten Holz. Leveraging fre-quency analysis for deep fake image recognition. In Inter-national conference on machine learning , pages 3247–3258. PMLR, 2020. 2 [27] Ian J Goodfellow, Jean Pouget-Abadie, Mehdi Mirza, Bing Xu, David Warde-Farley, Sherjil Ozair, Aaron Courville, and Yoshua Bengio. Generative adversarial nets. Advances in neural information processing systems , 27, 2014. 1, 2 [28] Haiying Guan, James Horan, and Andrew Zhang. Evaluating analytic systems against ai-generated deepfakes. https:// tsapps.nist.gov/publication/get_pdf.cfm? pub_id=959128 , 2025. 1, 3 [29] David G¨ uera and Edward J Delp. Deepfake video detec-tion using recurrent neural networks. In 2018 15th IEEE in-ternational conference on advanced video and signal based surveillance (AVSS) , pages 1–6. IEEE, 2018. 2 [30] Jianzhu Guo, Dingyun Zhang, Xiaoqiang Liu, Zhizhou Zhong, Yuan Zhang, Pengfei Wan, and Di Zhang. Livepor-trait: Efficient portrait animation with stitching and retarget-ing control. arXiv preprint arXiv:2407.03168 , 2024. 2, 5, 6, 8, 12 [31] Alexandros Haliassos, Konstantinos Vougioukas, Stavros Petridis, and Maja Pantic. Lips don’t lie: A generalisable and robust approach to face forgery detection. In Proceed-ings of the IEEE/CVF conference on computer vision and pattern recognition , pages 5039–5049, 2021. 6, 2, 3 [32] Alexandros Haliassos, Rodrigo Mira, Stavros Petridis, and Maja Pantic. Leveraging real talking faces via self-supervision for robust forgery detection. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 14950–14962, 2022. 3, 6, 7, 2 [33] Yue Han, Junwei Zhu, Keke He, Xu Chen, Yanhao Ge, Wei Li, Xiangtai Li, Jiangning Zhang, Chengjie Wang, and Yong Liu. Face-adapter for pre-trained diffusion models with fine-grained id and attribute control. In European Conference on Computer Vision , pages 20–36. Springer, 2024. 1, 2, 5, 6, 8, 13 [34] Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denoising dif-fusion probabilistic models. Advances in neural information processing systems , 33:6840–6851, 2020. 1, 2, 3 [35] Li Hu. Animate anyone: Consistent and controllable image-to-video synthesis for character animation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 8153–8163, 2024. 1 [36] Phillip Isola, Jun-Yan Zhu, Tinghui Zhou, and Alexei A Efros. Image-to-image translation with conditional adver-sarial networks. In Proceedings of the IEEE conference on computer vision and pattern recognition , pages 1125–1134, 2017. 2 [37] Tero Karras, Timo Aila, Samuli Laine, and Jaakko Lehtinen. Progressive growing of gans for improved quality, stability, and variation. arXiv preprint arXiv:1710.10196 , 2017. 2 [38] Tero Karras, Samuli Laine, and Timo Aila. A style-based generator architecture for generative adversarial networks. In Proceedings of the IEEE/CVF conference on computer vi-sion and pattern recognition , pages 4401–4410, 2019. 2 [39] Hasam Khalid, Shahroz Tariq, Minha Kim, and Simon S Woo. Fakeavceleb: A novel audio-video multimodal deep-fake dataset. arXiv preprint arXiv:2108.05080 , 2021. 2, 5, 6, 7 [40] Marcel Klemt, Carlotta Segna, and Anna Rohrbach. Deep-fake doctor: Diagnosing and treating audio-video fake detec-tion. arXiv preprint arXiv:2506.05851 , 2025. 2 [41] Patrick Kwon, Jaeseong You, Gyuhyeon Nam, Sungwoo Park, and Gyeongsu Chae. Kodf: A large-scale korean deep-fake detection dataset. In Proceedings of the IEEE/CVF international conference on computer vision , pages 10744– 10753, 2021. 2, 3 [42] Seungmi Lee, Kwan Yun, and Junyong Noh. Stylemm: Styl-ized 3d morphable face model via text-driven aligned image translation. In Computer Graphics Forum , page e70234. Wi-ley Online Library, 2025. 4 [43] Haodong Li, Bin Li, Shunquan Tan, and Jiwu Huang. Iden-tification of deep network generated images using disparities in color components. Signal Processing , 174:107616, 2020. 2[44] Junnan Li, Dongxu Li, Silvio Savarese, and Steven Hoi. Blip-2: Bootstrapping language-image pre-training with frozen image encoders and large language models. In In-ternational conference on machine learning , pages 19730– 19742. PMLR, 2023. 3 [45] Lingzhi Li, Jianmin Bao, Hao Yang, Dong Chen, and Fang Wen. Faceshifter: Towards high fidelity and occlusion aware face swapping. arXiv preprint arXiv:1912.13457 , 2019. 2 [46] Lingzhi Li, Jianmin Bao, Ting Zhang, Hao Yang, Dong Chen, Fang Wen, and Baining Guo. Face x-ray for more gen-eral face forgery detection. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition ,pages 5001–5010, 2020. 2 [47] Yuezun Li and Siwei Lyu. Exposing deepfake videos by detecting face warping artifacts. arXiv preprint arXiv:1811.00656 , 2018. 2 [48] Yuezun Li, Ming-Ching Chang, and Siwei Lyu. In ictu oculi: Exposing ai created fake videos by detecting eye blinking. In 
+
+2018 IEEE International workshop on information forensics and security (WIFS) , pages 1–7. Ieee, 2018. 2 [49] Yuezun Li, Xin Yang, Pu Sun, Honggang Qi, and Siwei Lyu. Celeb-df: A large-scale challenging dataset for deep-fake forensics. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 3207– 3216, 2020. 2 [50] Yachao Liang, Min Yu, Gang Li, Jianguo Jiang, Boquan Li, Feng Yu, Ning Zhang, Xiang Meng, and Weiqing Huang. Speechforensics: Audio-visual speech representation learn-ing for face forgery detection. Advances in Neural Informa-tion Processing Systems , 37:86124–86144, 2024. 3, 2 [51] Chen-Hsuan Lin, Jun Gao, Luming Tang, Towaki Takikawa, Xiaohui Zeng, Xun Huang, Karsten Kreis, Sanja Fidler, Ming-Yu Liu, and Tsung-Yi Lin. Magic3d: High-resolution text-to-3d content creation. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition ,pages 300–309, 2023. 2 [52] Yaron Lipman, Ricky TQ Chen, Heli Ben-Hamu, Maximil-ian Nickel, and Matt Le. Flow matching for generative mod-eling. arXiv preprint arXiv:2210.02747 , 2022. 2 [53] Huaize Liu, Wenzhang Sun, Donglin Di, Shibo Sun, Jiahui Yang, Changqing Zou, and Hujun Bao. Moee: Mixture of emotion experts for audio-driven portrait animation. In Pro-ceedings of the Computer Vision and Pattern Recognition Conference , pages 26222–26231, 2025. 5 [54] Weifeng Liu, Tianyi She, Jiawei Liu, Boheng Li, Dongyu Yao, and Run Wang. Lips are lying: Spotting the temporal inconsistency between audio and visual in lip-syncing deep-fakes. Advances in Neural Information Processing Systems ,37:91131–91155, 2024. 6, 2 [55] Ilya Loshchilov and Frank Hutter. Decoupled weight decay regularization. arXiv preprint arXiv:1711.05101 , 2017. 6 [56] Camillo Lugaresi, Jiuqiang Tang, Hadon Nash, Chris Mc-Clanahan, Esha Uboweja, Michael Hays, Fan Zhang, Chuo-Ling Chang, Ming Guang Yong, Juhyun Lee, et al. Medi-apipe: A framework for building perception pipelines. arXiv preprint arXiv:1906.08172 , 2019. 5, 7 [57] Grace Luo, Lisa Dunlap, Dong Huk Park, Aleksander Holyn-ski, and Trevor Darrell. Diffusion hyperfeatures: Search-ing through time and space for semantic correspondence. 
+
+Advances in Neural Information Processing Systems , 36: 47500–47510, 2023. 4 [58] Francesco Marra, Diego Gragnaniello, Luisa Verdoliva, and Giovanni Poggi. Do gans leave artificial fingerprints? In 
+
+2019 IEEE conference on multimedia information process-ing and retrieval (MIPR) , pages 506–511. IEEE, 2019. 2 [59] Scott McCloskey and Michael Albright. Detecting gan-generated imagery using color cues. arXiv preprint arXiv:1812.08247 , 2018. 2 [60] Mehdi Mirza and Simon Osindero. Conditional generative adversarial nets. arXiv preprint arXiv:1411.1784 , 2014. 2 [61] Kartik Narayan, Harsh Agarwal, Kartik Thakral, Surbhi Mit-tal, Mayank Vatsa, and Richa Singh. Df-platter: Multi-face heterogeneous deepfake dataset. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 9739–9748, 2023. 2 [62] Utkarsh Ojha, Yuheng Li, and Yong Jae Lee. Towards uni-versal fake image detectors that generalize across genera-tive models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 24480– 24489, 2023. 2 [63] Trevine Oorloff, Surya Koppisetti, Nicol` o Bonettini, Di-vyaraj Solanki, Ben Colman, Yaser Yacoob, Ali Shahriyari, and Gaurav Bharaj. Avff: Audio-visual feature fusion for video deepfake detection. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition ,pages 27102–27112, 2024. 3 [64] William Peebles and Saining Xie. Scalable diffusion models with transformers. In Proceedings of the IEEE/CVF inter-national conference on computer vision , pages 4195–4205, 2023. 2 [65] Ben Poole, Ajay Jain, Jonathan T Barron, and Ben Milden-hall. Dreamfusion: Text-to-3d using 2d diffusion. arXiv preprint arXiv:2209.14988 , 2022. 2 [66] KR Prajwal, Rudrabha Mukhopadhyay, Vinay P Nambood-iri, and CV Jawahar. A lip sync expert is all you need for speech to lip generation in the wild. In Proceedings of the 28th ACM international conference on multimedia , pages 484–492, 2020. 2 [67] Yuyang Qian, Guojun Yin, Lu Sheng, Zixuan Chen, and Jing Shao. Thinking in frequency: Face forgery detection by min-ing frequency-aware clues. In European conference on com-puter vision , pages 86–103. Springer, 2020. 2 [68] Alec Radford, Luke Metz, and Soumith Chintala. Un-supervised representation learning with deep convolu-tional generative adversarial networks. arXiv preprint arXiv:1511.06434 , 2015. 2 [69] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learning transferable visual models from natural language supervi-sion. In International conference on machine learning , pages 8748–8763. PmLR, 2021. 2 [70] Tal Reiss, Bar Cavia, and Yedid Hoshen. Detecting deep-fakes without seeing any. arXiv preprint arXiv:2311.01458 ,2023. 6, 2 [71] Robin Rombach, Andreas Blattmann, Dominik Lorenz, Patrick Esser, and Bj¨ orn Ommer. High-resolution image synthesis with latent diffusion models. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 10684–10695, 2022. 1, 2, 3, 5 [72] Andreas Rossler, Davide Cozzolino, Luisa Verdoliva, Chris-tian Riess, Justus Thies, and Matthias Nießner. Faceforen-sics++: Learning to detect manipulated facial images. In 
+
+Proceedings of the IEEE/CVF international conference on computer vision , pages 1–11, 2019. 2, 5, 6, 7 [73] Ekraam Sabir, Jiaxin Cheng, Ayush Jaiswal, Wael AbdAl-mageed, Iacopo Masi, and Prem Natarajan. Recurrent convo-lutional strategies for face manipulation detection in videos. 
+
+Interfaces (GUI) , 3(1):80–87, 2019. 2 [74] Ramprasaath R Selvaraju, Michael Cogswell, Abhishek Das, Ramakrishna Vedantam, Devi Parikh, and Dhruv Batra. Grad-cam: Visual explanations from deep networks via gradient-based localization. In Proceedings of the IEEE in-ternational conference on computer vision , pages 618–626, 2017. 8 [75] Zeyang Sha, Zheng Li, Ning Yu, and Yang Zhang. De-fake: Detection and attribution of fake images generated by text-to-image generation models. In Proceedings of the 2023 ACM SIGSAC conference on computer and communications security , pages 3418–3432, 2023. 2 [76] Bowen Shi, Wei-Ning Hsu, Kushal Lakhotia, and Abdelrah-man Mohamed. Learning audio-visual speech representa-tion by masked multimodal cluster prediction. arXiv preprint arXiv:2201.02184 , 2022. 2 [77] Kaede Shiohara and Toshihiko Yamasaki. Detecting deep-fakes with self-blended images. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 18720–18729, 2022. 2 [78] Stefan Smeu, Dragos-Alexandru Boldisor, Dan Oneata, and Elisabeta Oneata. Circumventing shortcuts in audio-visual deepfake detection datasets with unsupervised learning. In 
+
+Proceedings of the Computer Vision and Pattern Recognition Conference , pages 18815–18825, 2025. 2, 6, 3 [79] Joon Son Chung, Andrew Senior, Oriol Vinyals, and Andrew Zisserman. Lip reading sentences in the wild. In Proceed-ings of the IEEE conference on computer vision and pattern recognition , pages 6447–6456, 2017. 2 [80] Nick Stracke, Stefan Andreas Baumann, Kolja Bauer, Frank Fundel, and Bj¨ orn Ommer. Cleandift: Diffusion features without noise. In Proceedings of the Computer Vision and Pattern Recognition Conference , pages 117–127, 2025. 4 [81] Luming Tang, Menglin Jia, Qianqian Wang, Cheng Perng Phoo, and Bharath Hariharan. Emergent correspondence from image diffusion. Advances in Neural Information Pro-cessing Systems , 36:1363–1389, 2023. 4 [82] Thomas Unterthiner, Sjoerd Van Steenkiste, Karol Kurach, Raphael Marinier, Marcin Michalski, and Sylvain Gelly. To-wards accurate generative models of video: A new metric & challenges. arXiv preprint arXiv:1812.01717 , 2018. 6 [83] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszko-reit, Llion Jones, Aidan N Gomez, Łukasz Kaiser, and Illia Polosukhin. Attention is all you need. Advances in neural information processing systems , 30, 2017. 1 [84] Qixun Wang, Xu Bai, Haofan Wang, Zekui Qin, Anthony Chen, Huaxia Li, Xu Tang, and Yao Hu. Instantid: Zero-shot identity-preserving generation in seconds. arXiv preprint arXiv:2401.07519 , 2024. 1, 2 [85] Sheng-Yu Wang, Oliver Wang, Richard Zhang, Andrew Owens, and Alexei A Efros. Cnn-generated images are surprisingly easy to spot... for now. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 8695–8704, 2020. 2 [86] Zhendong Wang, Jianmin Bao, Wengang Zhou, Weilun Wang, Hezhen Hu, Hong Chen, and Houqiang Li. Dire for diffusion-generated image detection. In Proceedings of the IEEE/CVF International Conference on Computer Vision ,pages 22445–22455, 2023. 2 [87] Huawei Wei, Zejun Yang, and Zhisheng Wang. Aniportrait: Audio-driven synthesis of photorealistic portrait animation. 
+
+arXiv preprint arXiv:2403.17694 , 2024. 1, 2, 5, 6, 3, 4, 8, 16 [88] Jay Zhangjie Wu, Yixiao Ge, Xintao Wang, Stan Weixian Lei, Yuchao Gu, Yufei Shi, Wynne Hsu, Ying Shan, Xiaohu Qie, and Mike Zheng Shou. Tune-a-video: One-shot tuning of image diffusion models for text-to-video generation. In 
+
+Proceedings of the IEEE/CVF international conference on computer vision , pages 7623–7633, 2023. 2 [89] Saining Xie, Ross Girshick, Piotr Doll´ ar, Zhuowen Tu, and Kaiming He. Aggregated residual transformations for deep neural networks. In Proceedings of the IEEE conference on computer vision and pattern recognition , pages 1492–1500, 2017. 5, 6, 1 [90] Mingwang Xu, Hui Li, Qingkun Su, Hanlin Shang, Liwei Zhang, Ce Liu, Jingdong Wang, Yao Yao, and Siyu Zhu. Hallo: Hierarchical audio-driven visual synthesis for portrait image animation. arXiv preprint arXiv:2406.08801 , 2024. 1, 5, 7, 6 [91] Shurong Yang, Huadong Li, Juhao Wu, Minhao Jing, Linze Li, Renhe Ji, Jiajun Liang, Haoqiang Fan, and Jin Wang. Megactor-sigma: Unlocking flexible mixed-modal control in portrait animation with diffusion transformer. In Proceed-ings of the AAAI Conference on Artificial Intelligence , pages 9256–9264, 2025. 2, 5, 6, 3, 4, 8, 15 [92] Kwan Yun, Youngseo Kim, Kwanggyoon Seo, Chang Wook Seo, and Junyong Noh. Representative feature extraction during diffusion process for sketch extraction with one ex-ample. arXiv preprint arXiv:2401.04362 , 2024. 4 [93] Junyi Zhang, Charles Herrmann, Junhwa Hur, Luisa Pola-nia Cabrera, Varun Jampani, Deqing Sun, and Ming-Hsuan Yang. A tale of two features: Stable diffusion complements dino for zero-shot semantic correspondence. Advances in Neural Information Processing Systems , 36:45533–45547, 2023. 4 [94] Lvmin Zhang, Anyi Rao, and Maneesh Agrawala. Adding conditional control to text-to-image diffusion models. In 
+
+Proceedings of the IEEE/CVF international conference on computer vision , pages 3836–3847, 2023. 2 [95] Richard Zhang, Phillip Isola, Alexei A Efros, Eli Shecht-man, and Oliver Wang. The unreasonable effectiveness of deep features as a perceptual metric. In Proceedings of the IEEE conference on computer vision and pattern recogni-tion , pages 586–595, 2018. 6 [96] Wenxuan Zhang, Xiaodong Cun, Xuan Wang, Yong Zhang, Xi Shen, Yu Guo, Ying Shan, and Fei Wang. Sadtalker: Learning realistic 3d motion coefficients for stylized audio-driven single image talking face animation. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 8652–8661, 2023. 2 [97] Yipin Zhou and Ser-Nam Lim. Joint audio-visual deepfake detection. In Proceedings of the IEEE/CVF international conference on computer vision , pages 14800–14809, 2021. 2[98] Jun-Yan Zhu, Taesung Park, Phillip Isola, and Alexei A Efros. Unpaired image-to-image translation using cycle-consistent adversarial networks. In Proceedings of the IEEE international conference on computer vision , pages 2223– 2232, 2017. 2 X-AVDT: Audio-Visual Cross-Attention for Robust Deepfake Detection 
+
+# Supplementary Material 
+
+In this supplementary material, we provide expanded details on the proposed model and the data, an extended ablation study, a class separability analysis, and additional visual-izations: • In Section A, we present additional technical details of our training setup, including the inversion procedure, at-tention feature extraction and the model architecture. We also describe how the baselines were trained, and detail the human evaluation. • In Section B, we report the results of experiments on broader deepfake benchmarks, and provide comparative analyses with representative audio-visual baselines. • In Section C, we (i) report the results of an extended ab-lation study that compares inversion conditions (audio-driven, text-driven, and withou inversion), (ii) provide de-tailed results under perturbation attacks, and (iii) analyze attention types and diffusion timesteps. • In Section D, we conduct a class separability analysis us-ing Fisher SNR and LDA margin to quantify the discrim-inability of the learned representations. We also present extended cross-attention robustness analyses, along with attention map visualizations that support these findings. • In Section E, we describe how the MMDF training and evaluation data were obtained and present qualitative ex-amples, including our model’s input representations and sample dataset visualizations. • In Section F, we discuss the limitations of our system. 
+
+## A. Additional Experimental Details 
+
+A.1. Implementation Details of X-AVDT 
+
+A.1.1. Input Representation 
+
+The full procedure of input representation extraction is sum-marized in Algorithm 1. We follow Hallo [90] with a paired ReferenceNet [35] to encode identity features from the source portrait frame. During DDIM inversion, the de-noising U-Net reads these features via cross-attention. For the cross-attention feature in our detector, we sample at an early diffusion step, setting t⋆ = 24 out of a 1000 step schedule during inversion. We adopt Hallo’s hierarchical audio-visual cross-attention mechanism to handle regional masking. We compute lip, expression, and pose masks, ap-ply them as element-wise gates to the cross-attention fea-tures and then aggregate the gated features with learned weights. We operate clip-wise on non-overlapping 16 frame segments. If the video length is not divisible by 16, we re-peat the last frame to pad to the nearest multiple before fea-ture extraction, and concatenate the per-clip outputs along time. This extraction pipeline is applied identically across all datasets for both training and evaluation. 
+
+Algorithm 1 Audio-driven inversion & reconstruction.                                                                                             
+
+> Input: Video x, Reference frame xref , Audio c,Masks M={M full ,Mface ,Mlip }
+> Output: Video composite ϕ= [ x, D (ˆ zT), D (ˆ z0), r ],AV cross-attention feature ψ= CrossAttn( H(t), c )
+> 1. Encode. z0←VAE enc (x),ea←Audio enc (c)
+> 2. Reference pass. RefFeat ←ReferenceNet( xref )
+> 3. DDIM Inversion. Run the inverse scheduler z0→zT.
+> for t∈T(fine →coarse) do  ˆϵt,ψt
+> ←UNetFwd( zt, e a,M; RefFeat)
+> zt+1 ←DDIMInverseScheduler( zt,ˆϵt)
+> if t=t⋆then
+> ˜ψ←HeadProj( ψt)
+> ψ←P
+> k∈{ full ,face ,lip }wk( ˜ψ⊙ M k)
+> end end for 4. DDIM Reconstruction. Run the forward scheduler zT→z0.
+> for t∈T(coarse →fine) do
+> ˆϵt←UNetFwd(˜ zt, e a,M; RefFeat) ˜zt−1←DDIMScheduler(˜ zt,ˆϵt)
+> end for
+> ˆz0←˜z0,ˆx←D(ˆ z0),u←D(ˆ zT),r← | x−ˆx|,
+> ϕ←[x, u, ˆx, r ]
+> Return (ϕ,ψ)
+
+A.1.2. Conditioning 
+
+We use wav2vec 2.0 [6] as the audio feature encoder to condition our videos. To capture rich semantics informa-tion across different audio layers, we concatenate the au-dio embeddings from the last 12 layers of wav2vec 2.0 net-work. Given the sequential nature of audio, we aggregate a 5-frame local context (t −2. . . t +2) for each video frame before projection. 
+
+A.1.3. Training 
+
+To fuse the video composite ϕ and AV cross-attention fea-ture ψ during training, we proceed as follows. We con-catenate v′ and a′ along the channel dimension and ap-ply a 1×1 convolution, reducing the channels from 2048 
+
+to 1024 to obtain pi. We add fixed 2D positional encod-ings to pi and apply an 8-head self-attention over the HW 
+
+tokens, with LayerNorm and a residual connection. We feed the self-attention outputs into three 3D ResNeXt [89] layers, followed by global average pooling, which yields 
+
+gi ∈ R1024 . We train for 2 epochs by default, as our inputs are structured internal representations extracted from a pre-trained diffusion model, enabling faster convergence than raw RGB. Table A.1.3 reports an ablation result showing that performance quickly converges after a few epochs. Epochs 1 2 (Ours) 5 10 20 AUROC 93.24 95.29 95.01 95.19 95.13  
+
+> Table A.1.3. Effect of training epochs on X-AVDT.
+
+A.2. Details of Baseline Detectors 
+
+A.2.1. LipForensics [31] 
+
+LipForensics is a video-only deepfake detector that oper-ates on mouth crops, targeting the lip region and model-ing temporal inconsistencies in mouth movements to iden-tify manipulation-specific irregularities. We evaluated Lip-Forensics using the official pretrained model that has been trained on FaceForensics++. In addition, we did not retrain it because the training code is not available. 
+
+A.2.2. RealForensics [32] 
+
+RealForensics uses audio-visual pretraining, in which au-dio and visuals exclusively from real samples are used to learn representations that help a classifier discriminate be-tween real and fake videos. We evaluated RealForensics using the official pretrained model that has been trained on FaceForensics++, and we also retrained it on MMDF using the same hyperparameters. 
+
+A.2.3. AVAD [24] 
+
+AVAD first pretrains an audio–visual synchronization model following Chen et al. [14] to learn temporal align-ment between speech and mouth motion. They then use the inferred features to train an anomaly detector, produc-ing a fully unsupervised multi-modal deepfake detector. As an unsupervised method, AVAD is not trained with labels or fake examples. We evaluated AVAD using the official pretrained model that was trained on LRS [79] and did not retrain it because the training code is not available. 
+
+A.2.4. FACTOR [70] 
+
+FACTOR is a training-free deepfake detector that frames detection as fact checking. It uses audio-visual encoders to extract modality-specific features and computes a truth score (cosine similarity) that quantifies the consistency be-tween observed audio-visual evidence and an asserted at-tribute. FACTOR operates in a zero-shot, label-free setting and does not use fake examples. We evaluated FACTOR using the official implementation and pretrained feature ex-tractors. 
+
+A.2.5. LipFD [54] 
+
+LipFD targets lip-syncing forgeries by enforcing audio-visual temporal consistency between lip movements and audio signals. The method operates on mouth crops and combines a global video branch with a lip-region branch in a dual-head design. We evaluated LipFD using the model pretrained on Lip Reading Sentences 3 (LRS3) [5], FaceForensics++, and the Deepfake Detection Challenge Dataset (DFDC) [22]. For retraining on MMDF, we trained LipFD for 25 epochs and otherwise keep the original hyper-parameters. FakeAVCeleb [39] FaceForensics++ [72] FSGAN FaceSwap Wav2Lip Deepfakes FaceSwap Face2Face 99.73 99.79 99.92 99.62 99.24 99.63  
+
+> Table B.1. In-domain AUROC on the benchmark dataset.
+> Cross-manipulation generalization is evaluated by training on two manipulation methods and testing on the remaining one (e.g., train on the first two columns and test on the third columns).
+
+A.2.6. AVH-Align [78] 
+
+AVH-Align addresses dataset shortcuts such as leading si-lence by training only on real data and learning a frame-level audio-video alignment score from AV-HuBERT fea-tures [76]. The training is self-supervised and label-free on real pairs, with no fake examples used. We evaluated AVH-Align using the official pretrained model that has been trained on FakeAVCeleb and AV-Deepfake1M. In addition, we retrained it on MMDF using the same hyperparameters. 
+
+A.3. Human Evaluation 
+
+We conducted a human evaluation study to assess deepfake detection accuracy and to quantify the realism of manip-ulated videos in MMDF, comparing results against Face-Forensics++ and FakeAVCeleb. For each clip, participants responded to two following questions: (i) “Is the video real or fake?” (binary choice), and (ii) ”What did you focus on when deciding whether the video was real or fake?” . For question (ii), 80% of comments cited audio-visual synchro-nization as the primary cue, while the remainder pointed to background artifacts, expression dynamics, and intraoral details, etc. We used 80 videos (60 from the MMDF dataset, 10 from the FakeAVCeleb, and 10 from FaceForensics++), with 24 participants providing responses. We aggregated answers to compute Human Evaluation (HE) accuracy and Human False Acceptance Rate (HFAR), with both metrics derive from the same study. 
+
+## B. Additional Experiments 
+
+B.1. In-domain Evaluation 
+
+Table B.1 summarizes the in-domain performance of X-AVDT on each benchmark dataset (FakeAVCeleb [39] and FaceForensics++ [72]), where the model is trained and tested on the same dataset ( ∼ Official-pretrained ). X-AVDT achieved high AUROC across manipulation types (higher than the scores obtained by the prior methods pre-sented in Table 5). Note that Table 5 reports the results for cross-dataset robustness (MMDF → benchmark); while the performances of many MMDF-trained baselines dropped due to domain mismatch, X-AVDT remained strong. 
+
+B.2. Additional Experiments 
+
+In addition to Table 4 in the main paper, we report ad-ditional quantitative results to further evaluate the gen-eralization of SpeechForensics [50]. Table B.2.1 com-pares X-AVDT with SpeechForensics using representative audio-visual baselines on the MMDF dataset. Although AniPortrait [87] MegActor-Σ [91] HunyuanAvatar [15] Average Model AUROC AP Acc@EER AUROC AP Acc@EER AUROC AP Acc@EER AUROC AP Acc@EER SpeechForensics [50] 99.99 99.99 99.88 98.69 98.82 94.46 92.12 91.98 82.90 96.93 96.93 92.41                                
+
+> X-AVDT (Ours )99.10 98.89 96.54 90.17 88.05 83.11 97.79 97.44 97.69 95.29 94.03 91.15
+> Table B.2.1. Additional quantitative comparison results on the MMDF dataset.
+> Dataset AUROC AP Acc@EER Acc DeepSpeak v1.0 [8] 94.29 95.06 95.39 94.94 KoDF [41] 93.07 92.88 91.13 91.87 Deepfake-Eval2024 [12] 75.02 72.73 71.68 71.36
+> Table B.2.2. Additional quantitative results for X-AVDT.
+
+X-AVDT performed worse than SpeechForensics on Ani-Portrait and MegActor-Σ, it yielded a clear improvement on HunyuanAvatar, where SpeechForensics attained com-paratively lower scores. Overall, the results indicate com-plementary strengths of the two methods across generators and suggest that generator-internal audio-visual consistency cues can be particularly helpful in challenging settings such as HunyuanAvatar, whose high-fidelity, temporally coher-ent, audio-driven synthesis can suppress overt artifact-based cues. Table B.2.2 summarizes results on additional in-the-wild deepfake benchmarks, such as DeepSpeak v1.0 [8], KoDF [41], and Deepfake-Eval2024 [28]. X-AVDT main-tained high performance on DeepSpeak v1.0 and KoDF, but its performance dropped on Deepfake-Eval2024, due to a challenging domain shift in content and compression conditions. Nevertheless, the method remained well above chance across all three datasets, indicating non-trivial gen-eralization in settings with MMDF. 
+
+## C. Additional Ablation Study 
+
+C.1. Inversion Condition 
+
+In Table C.1, we compare three input settings for the video composite ϕ. The settings are: text-driven condi-tioning; original-frame only, which uses only the original RGB frames without the decoded latent DDIM noise map 
+
+D(ˆ zT ), the reconstruction D(ˆ z0), the residual r = |x −
+
+D(ˆ z0)|, or attention features; and audio-driven condition-ing (Ours). For text-driven conditioning, we use the BLIP-2, OPT-2.7b [44] model to caption frames before inversion. The text-conditioned inversion is based on Stable Diffusion 1.5 [71], the same backbone as Hallo. This ablation rep-resents the core designing principle of X-AVDT leverag-ing internal features of large generative models, specifically audio-visual cross-attention features for deepfake detection. The audio-driven setting consistently yielded the strongest results, validating that audio conditioned cross-attention of-fers richer, temporally aligned cues than text conditioning. Such alignment is particularly important for facial-editing videos that hinge on subtle mouth and expression edits. 
+
+C.2. Robustness of Perturbation Attack 
+
+We conducted an additional ablation study to evaluate the robustness of X-AVDT exploiting audio–visual alignment signals against diverse image perturbations. We assessed performance under five scenarios, with severity 0 denot-ing the unmodified original. All experiments were run on a subset of MMDF. The baselines (LipForensics [31], Re-alForensics [32], and AVH-Align [78]) were evaluated with their official pretrained checkpoints. • JPEG Compression : Lossy re-encoding is applied with quality levels of 90, 70, 50, and 30. Lower quality yields stronger high-frequency suppression. • Blur : Gaussian blur with radius of 0.5, 1.0, 2.0, and 3.0, modeling defocus and motion smoothing. • Noise : Additive Gaussian noise with standard deviation (pixel scale) of 5, 10, 20, and 35. • Resizing : Downscale and then upscale using bilinear in-terpolation with percentage of 75%, 60%, 50%, and 40%. The frame is reduced and then upsampled back to the original size, simulating resolution loss. • Frame Drop : Randomly remove frames with probabili-ties of 0.05, 0.10, 0.20, and 0.30, creating temporal dis-continuities. We do not duplicate frames in this setting. These experiments were conducted with the same dataset used in Table 4 and Table 5. The quantitative results for AP (%) and Acc@EER (%) are presented in Figure C.2.1. As shown in the results, X-AVDT caused only minor per-formance degradation across various perturbation methods, while consistently surpassed competing baselines [31, 32, 78], demonstrating strong robustness. 
+
+Audio Perturbation Attack. We evaluates the robustness of X-AVDT under two audio perturbations: Audio Desyn-chronization and Audio Codec Artifacts. For desynchro-nization, we apply a temporal offset τ ∈ {− 0.5, +0 .5}
+
+seconds, where a positive offset delays speech by prefix-ing |τ | seconds of silence, while a negative offset advances audio by trimming the first |τ | seconds. For codec arti-facts, we re-encode audio with a bitrate cap b ∈ { 8, 32 }
+
+kbps to introduce compression distortions. As shown in Table C.2.2, compared to the clean setting ( τ = 0 , orig-inal audio), desynchronization induced only modest per-formance drops (within 2.4-3.2 points across metrics) at 
+
+τ = ±0.5s. Similarly, compared to no re-encoding, codec artifacts caused limited degradation (within 0.5-7.8 points across metrics) under b ∈ {8, 32 } kbps. These results suggest that the learned audio-visual consistency cues re-main stable under temporal misalignment and compression-induced distortions. AniPortrait [87] MegActor-Σ [91] HunyuanAvatar [15] Average Method AUROC AP Acc@EER AUROC AP Acc@EER AUROC AP Acc@EER AUROC AP Acc@EER                                       
+
+> w/o Inversion 73.55 67.56 69.95 63.18 63.69 59.81 41.81 46.36 43.55 62.22 61.07 56.69 Text-driven 90.22 90.85 81.56 76.15 75.25 69.91 49.01 49.00 50.51 74.48 76.94 65.75
+> Audio-driven (Ours )96.55 98.83 90.20 89.87 89.25 83.86 97.71 97.04 90.94 94.71 95.04 88.33
+
+Table C.1. Ablation on video composite ϕ. When training, we fix the backbone and vary only the conditioning signal used during inversion. Audio-driven setting ranked first across datasets, while removing inversion cues yielded the weakest composite. 
+
+Figure C.2.1. Robustness to unseen corruptions. AP (%) is shown in the first row and Acc@EER (%) is shown in the second row across five severity levels. Per corruption scales are shown on the x–axes. Average denotes the mean AP in the top row and Acc@EER in the bottom row, respectively, across all corruptions at each severity level.                          
+
+> Audio Desynchronizaiton Audio Codec Artifacts Metric -0.5 sec 0+0.5 sec 08k 32k AUROC 90.90 93.70 91.31 93.70 91.80 90.17 AP 91.10 94.30 91.74 94.30 88.80 86.51 Acc@EER 83.40 86.40 83.97 86.40 85.90 81.56
+
+Table C.2.2. Robustness to unseen audio perturbations. Perfor-mance under audio desynchronization (temporal offsets) and audio codec artifacts (low-bitrate re-encoding) at varying severity levels. 
+
+C.3. Choice of Attention Type and Timestep 
+
+We present additional visual examples across different at-tention types and DDIM inversion timesteps t in Fig-ure C.3. In a diffusion model trained with T = 1000 
+
+steps, we perform inversion with a 40 step sampling sched-ule and conducted an ablation study over cross-attention, spatial-attention, and temporal-attention, comparing three representative timesteps at t ∈ {24 , 249 , 499 }. Audio-visual cross-attention consistently concentrated on articu-lators (e.g., lips, jaw), while suppressing the background. Furthermore, as t increased, cross-attention maintained the highest performance at every timestep, outperforming both temporal and spatial attention, indicating that it is the most robust component (see Table 6). 
+
+Analysis on Chosen Timestep. As reported in Table 6 of the main paper, the performance of X-AVDT consistently improved as the timestep decreased, across cross-attention, temporal-attention, and spatial-attention. This tendency likely arises because features become more informative in earlier diffusion steps (i.e., as t → 0), while features in later steps are more heavily corrupted by noise and thus less discriminative. This observation aligns with prior find-ings [42, 57, 80, 81, 92, 93], which show that mid-to-early diffusion features provide stronger signals for correspon-dence, stylization, and segmentation due to reduced noise perturbation and richer structural detail. Therefore we did not conducted experiments on t > 500 , following the pre-vious research. 
+
+## D. Analysis 
+
+This section complements our method by analyzing the overall detection pipeline, and visualizing the internal audio-visual cross-attention maps from the diffusion back-bone. We compared our method against a visual-only baseline [11]. For the visualization, we present attention heatmaps for the source and representative generators. 
+
+D.1. Fisher SNR and LDA Margin 
+
+We hypothesize that internal audio-visual cross-attention features from large generative models provide a strong dis-criminative signal for deepfake detection. As shown in Fig-Figure C.3. Visualization of attention features across diffusion timesteps.   
+
+> Figure D.1. PCA embeddings with a shared LDA decision boundary. Embeddings are extracted from the baseline and from the independently trained X-AVDT, without any fine-tuning.
+
+ure D.1, our method produced noticeably better real/fake separation than a visual only baseline [11]. For a fair com-parison, we fit a single linear discriminant analysis (LDA) classifier in the embedding space and project both meth-ods to two dimensions, using the same decision bound-ary across panels. Measured by Fisher signal-to-noise ra-tio (SNR) [25] and the LDA margin, performance im-proves from 1.95dB and 5.29 (baseline) to 7.53dB and 8.75 
+
+(ours). This gap suggests that cross-attention captures sta-ble audio-visual correspondence and exposes inconsisten-cies that generative models fail to reproduce. 
+
+D.2. Cross-Attention Robustness 
+
+Figure D.2 quantifies the top-q attention mass coverage within the face ROI: real videos concentrate the top-q mass in a smaller ROI, whereas synthesized videos consistently require coverage of a larger ROI coverage (left). More-over, the ∆ attention maps reveal a coherent spatial con-trast pattern: attention for real videos is concentrated on the mouth and background, while attention for fake videos is more broadly distributed along the face boundary (right). This pattern persists across two different inversion sources, Hallo [90], our backbone generator, and Echomimic [16]. 
+
+D.3. Attention Map Visualization 
+
+To complement our quantitative results, we visualize in-ternal audio-visual cross-attention maps from the diffusion backbone. As shown in Figure D.3, for each video we extract cross-attention during DDIM inversion, normalize the weights per frame, and average them over time to ob-tain a single heatmap. We compare the source clip deep-fake results from with three representative generators that span different synthesis frameworks: LivePortrait (GAN-based) [30], AniPortrait (diffusion-based) [87], and Hun-yuanAvatar (flow-matching-based) [15]. Empirically, sim-ilar cross-attention patterns are observed across the results from different generator frameworks, indicating that large generative models already provide strong and efficient self-supervised representations well suited for detection. Note that our detector is trained and evaluated on attention fea-tures, not on visualized maps, which are provided solely for Figure D.2. Top-q Attention Mass Coverage within the Face ROI (Left) and ∆ Cross-Attention Maps (Right). In the ∆ maps, red indicates regions with higher fake cross-attention than real ( ∆ > 0), and blue indicates the opposite ( ∆ < 0).  
+
+> Figure D.3. Temporally averaged cross-attention heatmaps.
+
+interpretability. Averaging and normalization for display can introduce information loss, whereas feature vectors are stable. 
+
+## E. MMDF Dataset 
+
+E.1. MMDF Construction and Split Protocol 
+
+The filtering in MMDF construction corresponds to stan-dard face-detection preprocessing [56] that is widely adopted across facial video datasets and generation pipelines. We only removed clips with inaccurate face tracking to ensure reliable ground-truth pairs, thereby re-ducing confounding failure cases across all compared de-tectors rather than favoring X-AVDT. This reduced the can-didate set by 6.93% (2,001 clips removed). MMDF is inten-tionally designed as a strict cross-generator generalization benchmark. Because our goal is to detect forgeries from unseen generation mechanisms, we enforce disjoint gener-ation methods between train and test to avoid overfitting to generator-specific artifacts. We also incorporate a vari-ety of generators, model families, and synthesis methods to maximize the diversity of train-test combinations under this cross-setting. 
+
+E.2. Details of Fake Generators 
+
+As mentioned in the main paper, we adopt the Hallo3 dataset released by its authors [20] as the source corpus and employ a curated subset as our real set (see Figure E.1). Then the generators described below synthesize the paired fakes. During preprocessing, all videos are sampled at 25fps to obtain the reference images, and the generated se-quences are temporally aligned to their sources for one-to-one pairing, and resized to 512 × 512 . All fakes are pro-duced by inference only, without any additional training, using the authors’ default parameters. Figure E.1. Statistics of the MMDF dataset. 
+
+E.2.1. Hallo2 [19] 
+
+Hallo2 is a diffusion-based, audio-driven portrait image an-imation model. For the fake samples in the MMDF training set, we use the first video frame as the single reference im-age and feed the clip’s corresponding audio as the driving signal to generate an audio-synchronized talking-head se-quence. 
+
+E.2.2. LivePortrait [30] 
+
+LivePortrait is a GAN-based portrait animation method that warps a single reference image according to a driving sig-nal to perform self-reenactment. For the fake samples in the MMDF training set, we use the first frame as the ref-erence image and animate it using the remaining frames as driving images. Note that LivePortrait operates as an image-to-video model without audio driving (i.e., motion is driven solely by image frames). 
+
+E.2.3. FaceAdapter [33] 
+
+FaceAdapter is a face-editing adapter for pretrained diffu-sion models, targeting face swapping. For the fake sam-ples in the MMDF training set, we randomly select a source identity and a target identity. Leveraging its image-to-image design, we generate swapped frames for the target clip and then pair the synthesized frames with the source audio to produce the final video, thereby preserving the source iden-tity and speech. 
+
+E.2.4. HunyuanAvatar [15] 
+
+HunyuanAvatar is a flow-matching-based audio-driven hu-man animation method. For the fake samples in the MMDF evaluation set, we use the first frame as the source input. We then feed the clip’s corresponding audio together with a text prompt generated from the first frame by BLIP-2, OPT-2.7b model, producing an audio-synchronized, text-conditioned talking head sequence. 
+
+E.2.5. MegActor-Σ [91] 
+
+MegActor-Σ is a diffusion-transformer (DiT)–based por-trait animation method with mixed-modal conditioning. For the fake samples in the MMDF evaluation set, we use the first frame as the source input, and feed the source video together with its corresponding audio to generate a self-reenactment sequence. 
+
+E.2.6. Aniportrait [87] 
+
+Aniportrait is a diffusion-based, audio-driven portrait ani-mation method. For the fake samples in the MMDF evalua-tion set, we use the first video frame as the single reference image and feed the clip’s corresponding audio as the driv-ing signal to generate an audio-synchronized talking-head sequence. 
+
+E.3. Input Representation Visualization 
+
+Figure D.2.1 and Figure D.2.2 contain samples from our model’s input representation, video composite ψ and AV cross-attention feature ψ utilized by our detector. From top to bottom, we show the audio-visual cross-attention feature 
+
+ψ, the original video x, the decoded latent DDIM noise map 
+
+D(ˆ zT ), the reconstructed video D(ˆ z0), and the reconstruc-tion residual r = |x−D(ˆ z0)| of the video composite ϕ. The supplementary video with audio further illustrates temporal dynamics and audio-visual synchronization patterns. 
+
+E.4. MMDF Dataset Visualization 
+
+Figures D.3.1–D.3.6 present samples from the curated MMDF dataset used in our experiments. For each iden-tity, the real frames were taken from the source dataset [20] and the fake videos were generated by respective genera-tors. The supplementary video with audio further illustrates temporal dynamics and audio-visual synchronization pat-terns. 
+
+## F. Limitations  
+
+> Figure F. Speed-accuracy trade-off with DDIM inversion steps.
+
+Figure F indicates a potential limitation of our approach in real-world applications. Performance depends on the num-ber of DDIM inversion timestep schedule k used to extract 
+
+ϕ and ψ. While larger k yields more faithful inversion fea-tures and improves AUROC, it increases runtime and com-putational cost. Conversely, smaller k reduces latency but degrades detection accuracy. The incurred cost can be mit-igated in future work by adopting fewer step schedules or model distillation. Figure D.2.1. Qualitative visualization of the input representations ϕ and ψ.Figure D.2.2. Qualitative visualization of the input representations ϕ and ψ.Figure D.3.1. Qualitative comparison of real and fake videos generated by Hallo2 [19] in the MMDF. Figure D.3.2. Qualitative comparison of real and fake videos generated by LivePortrait [30] in the MMDF. Figure D.3.3. Qualitative comparison of real and fake videos generated by FaceAdater [33] in the MMDF. Figure D.3.4. Qualitative comparison of real and fake videos generated by HunyuanAvatar [15] in the MMDF. Figure D.3.5. Qualitative comparison of real and fake videos generated by MegActor-Σ [91] in the MMDF. Figure D.3.6. Qualitative comparison of real and fake videos generated by AniPortrait [87] in the MMDF.
