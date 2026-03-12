@@ -1,0 +1,576 @@
+Title: Active Zero: Self-Evolving Vision-Language Models through Active Environment Exploration
+
+URL Source: https://arxiv.org/pdf/2602.11241v1
+
+Published Time: Fri, 13 Feb 2026 01:06:34 GMT
+
+Number of Pages: 16
+
+Markdown Content:
+# Active Zero: Self-Evolving Vision-Language Models through Active Environment Exploration 
+
+Jinghan He 1 2 Junfeng Fang 3 Feng Xiong Zijun Yao 4 Fei Shen 3 Haiyun Guo 1 2 
+
+Jinqiao Wang 1 2 5 Tat-Seng Chua 3
+
+## Abstract 
+
+Self-play has enabled large language models to au-tonomously improve through self-generated chal-lenges. However, existing self-play methods for vision-language models rely on passive interac-tion with static image collections, resulting in strong dependence on initial datasets and inef-ficient learning. Without the ability to actively seek visual data tailored to their evolving capabili-ties, agents waste computational effort on samples that are either trivial or beyond their current skill level. To address these limitations, we propose 
+
+Active-Zero , a framework that shifts from passive interaction to active exploration of visual environ-ments. Active-Zero employs three co-evolving agents: a Searcher that retrieves images from open-world repositories based on the model’s ca-pability frontier, a Questioner that synthesizes calibrated reasoning tasks, and a Solver refined through accuracy rewards. This closed loop en-ables self-scaffolding auto-curricula where the model autonomously constructs its learning tra-jectory. On Qwen2.5-VL-7B-Instruct across 12 benchmarks, Active-Zero achieves 53.97 average accuracy on reasoning tasks (5.7% improvement) and 59.77 on general understanding (3.9% im-provement), consistently outperforming existing self-play baselines. These results highlight active exploration as a key ingredient for scalable and adaptive self-evolving vision-language systems. 
+
+## 1. Introduction 
+
+Self-play has emerged as a powerful paradigm for agent improvement, where systems bootstrap their capabilities 
+
+> 1
+
+Foundation Model Research Center, Institute of Automation, Chinese Academy of Sciences 2School of Artificial Intelligence, University of Chinese Academy of Sciences 3National Univer-sity of Singapore 4Tsinghua University 5Wuhan AI Research. Email: hejinghan2022@ia.ac.cn. Code: https://github. com/jinghan1he/Active-Zero .High Value!                   
+
+> High Variance!
+> Informative !
+> Questioner
+> Solver
+> For Q 1:
+> A1 : Three.
+> A2 : Three .
+> Uninformative !
+> For Q2:
+> A1 : Green Ball .
+> A2 :Gray Cube .
+> Searcher
+> A1 :Since Sin (y) = 8 / 16 = 1 / 2, So
+> we can directly infer that y = 30.
+> A2 : A = x / 2 * 8 = 4 x, A = 1 / 2 * 16
+> x * sin (y) = 8 x sin(y). Then we have
+> x = 8, y = 45.
+> Open -World
+> Environment
+> Active Explore
+> Solver
+> Static Image Gallery
+> Passive
+> Query: Estimate the visual angle
+> of a diagonal line across a rec -
+> tangle using length proportions.
+> Questioner
+> (a) (b) (c)
+> (a )Q1: How many mobile
+> phones are in picture? (Easy)
+> (b )Q2 : What is to the left of
+> the golden cylinder? (Hard )Q: Find the value of angle y.
+
+Figure 1. Comparison between Passive Approaches (left) and Active-Zero (right). Unlike traditional methods limited by fixed data boundaries, Active-Zero actively explores open-world envi-ronments. It employs a Searcher to retrieve high-value images, forming a closed-loop auto-curriculum with the Questioner and Solver to scale VLM reasoning. 
+
+by iteratively competing or collaborating with versions of themselves (Gao et al., 2025). Originally demonstrated in game-playing domains (Silver et al., 2018), self-play enables agents to discover novel strategies and transcend their initial training data without human supervision. This principle of autonomous improvement has recently found new application in large language models (LLMs) (Chen et al., 2024b; Wu et al., 2024). Recent work has combined self-play with reinforcement learning with verifiable re-ward (RLVR) (Lambert et al., 2024), enabling LLMs to self-generate challenging tasks that push the boundaries of their own capabilities. Rather than relying solely on fixed datasets, these models autonomously create reasoning problems, attempt to solve them, and use the outcomes for self-improvement (Zhao et al., 2025; Huang et al., 2025). Building on this success in language models, self-play is now extending into the multimodal domain, where vision-language models (VLMs) stand to benefit immensely from self-evolution given the vast visual corpora available on the internet (Radford et al., 2021). Despite these advances, the transition from LLMs to VLMs introduces unique complexi-ties: while LLMs operate in a self-contained symbolic space, 1
+
+> arXiv:2602.11241v1 [cs.CV] 11 Feb 2026 Active Zero: Self-Evolving Vision-Language Models through Active Environment Exploration
+
+VLMs must ground their reasoning in external visual envi-ronments (Wang et al., 2025b), requiring careful curation of visual experiences to enable effective self-evolution. Current approaches address this by employing self-play over pre-collected image sets (He et al., 2025; Thawakar et al., 2025), synthesizing reasoning tasks from static visual galleries. While demonstrating initial promise, these frame-works operate in a fundamentally passive mode : they lack the ability to actively curate or explore visual data based on their evolving mastery. As illustrated in Figure 1 (a), this passivity creates two critical bottlenecks. First, it creates a 
+
+strong dependency on the initial image collection —the quality and diversity of self-generated tasks are inherently bounded by the pre-selected visual data, regardless of the model’s growing capabilities. Second, it leads to learning inefficiency in open-world scenarios . Without the ability to seek out images tailored to their current capability, agents expend computational effort on samples that are either trivial or beyond their skill level. To overcome these bottlenecks, we propose a shift from passive interaction with static image galleries to active ex-ploration of open-ended visual environments. As shown in Figure 1 (b), we realize this through Active-Zero , a tri-agent framework that closes the loop between data acquisition and reasoning enhancement via a three-stage training protocol. Our approach centers on the iterative optimization of three specialized agents, each addressing a distinct aspect of au-tonomous evolution. The cycle begins with the Searcher ,which generates strategic queries to retrieve images from open-world repositories. By optimizing the Searcher to maximize the learning potential of retrieved data, we trans-form image selection from a static preprocessing step into a dynamic process driven by the model’s evolving capa-bilities. The Questioner then formulates reasoning tasks calibrated to the frontier of the model’s current abilities, en-suring the training signal remains neither trivial nor beyond reach. Finally, the Solver is refined via accuracy rewards to deepen its reasoning on these curated challenges. Through this iterative cycle, Active-Zero enables a self-scaffolding auto-curriculum where the model autonomously constructs its own learning trajectory, paving the way for more scalable and adaptive VLM reasoning. We evaluate Active-Zero across a comprehensive suite of benchmarks spanning 6 reasoning-intensive tasks and 6 general visual understanding. Active-Zero consistently outperforms self-play baselines, demonstrating that ac-tive environment exploration enables more effective auto-curriculum learning. On reasoning-intensive benchmarks, 
+
+Active-Zero achieves 53.97 average accuracy on Qwen2.5-VL-7B-Instruct (a 5.7% improvement), surpassing both Vis-Play and EvolMM. These gains extend beyond narrow rea-soning tasks–on general VLM benchmarks, Active-Zero 
+
+achieves an average score of 59.77 (+3.9%), compared to 57.51 for the base model. These results demonstrate that by dynamically selecting visual experiences aligned with its evolving capabilities, Active-Zero achieves simultaneous gains in both reasoning depth and general visual understand-ing. Our contributions are summarized as follows: • We fundamentally shift VLM self-play from passive in-teraction with static visual data to active exploration of visual environments, enabling agents to dynamically cu-rate training data aligned with their capability frontier. • We propose Active-Zero , a tri-agent framework that co-evolves a Searcher, Questioner, and Solver via iterative optimization, establishing a closed loop between open-world data discovery and reasoning improvement. • Comprehensive evaluation demonstrates Active-Zero 
+
+outperforms existing self-play baselines on both reason-ing and general vision-language benchmarks. 
+
+## 2. Related Work 
+
+2.1. Self-Evolving LLMs 
+
+Recent work aims to remove the human-data bottleneck by enabling LLMs to self-generate training signals via self-play and verifiable rewards. Absolute Zero couples task proposal and solving in an RLVR loop grounded by exe-cutable environments, where tasks are programmatically validated against environment-derived ground truth (Zhao et al., 2025). R-Zero extends this to domains lacking ex-plicit verifiers by replacing external verification with in-ternal self-consistency: a Challenger generates questions targeting 50% Solver agreement, while the Solver trains on difficulty-filtered majority-vote labels, creating an emer-gent curriculum that tracks the capability frontier (Huang et al., 2025). Beyond zero-data regimes, grounded self-play leverages external corpora to provide novelty and anchor-ing. SPELL enables long-context reasoning by cycling through questioner, responder, verifier roles, using semantic-equivalence verification and progressive length curricula for continual improvement (Yang et al., 2025). SPICE generates question–answer pairs from documents, training a reasoner with variance-shaped rewards that track the capability fron-tier (Liu et al., 2025b). Complementary directions include self-rewarding frameworks that bootstrap RL from limited supervision (Fang et al., 2025), game-theoretic alignment via iterative self-play (Wu et al., 2024), and curriculum-centric post-training that optimizes task selection for reason-ing improvement (Chen et al., 2025b). 
+
+2.2. Active Data Curation 
+
+Active data curation differs from conventional subset selec-tion in that the learner acts to decide what data to obtain next, 2Active Zero: Self-Evolving Vision-Language Models through Active Environment Exploration 
+
+rather than sampling from a fixed pool. In vision-language settings, active learning variants select images or prompts us-ing model-conditioned signals such as uncertainty or neigh-borhood structure to maximize improvement per labeled example (Safaei & Patel, 2025; Udandarao et al., 2025). Closer to open-world acquisition, target-driven dataset ac-quisition cast data collection as a planned process where an agent generates queries to retrieve task-suitable training data from external repositories (Berkane et al., 2025). A com-plementary direction studies adaptive curricula that reorder or schedule training data according to model-dependent dif-ficulty, emphasizing that useful data changes as the model evolves (Zhang et al., 2025). Our work aligns with the active side of this literature: rather than reweighting a static dataset, 
+
+Active-Zero optimizes a Searcher to acquire challenging visual data from open-world repositories, then integrates acquisition with task synthesis and solving to form a closed-loop curriculum. 
+
+2.3. Self-Evolving LVLMs 
+
+Self-evolving LVLMs extend LLM self-play to visually grounded settings by generating tasks and rewards over im-ages. VisPlay performs self-play on unlabeled images by co-training an image-conditioned Questioner and Reasoner with RL updates and difficulty-diversity shaping (He et al., 2025). EvoLMM advances a similar Proposer–Solver loop but emphasizes continuous self-reward through consistency-based signals to drive improvement without external su-pervision (Thawakar et al., 2025). Vision-zero reframes multimodal self-improvement as strategic, gamified self-play to better control task difficulty and mitigate plateaus (Wang et al., 2025a). Moving toward co-adaptation, C2-Evo explicitly co-evolves multimodal data complexity and model capability in a closed loop, targeting reasoning domains like multimodal math and geometry (Chen et al., 2025a). While these methods demonstrate the viability of self-play for VLMs, they operate over static image collections, treating the visual environment as fixed. In contrast, Active-Zero in-troduces active environment exploration: a learned Searcher dynamically retrieves images from open-world repositories based on the model’s evolving capabilities, transforming the training environment into a controllable variable. 
+
+## 3. Method 
+
+3.1. Preliminary 
+
+Group Relative Policy Optimization (GRPO) (Shao et al., 2024) is an efficient reinforcement learning algorithm that optimizes models by eliminating the need for a separate value-function critic. For each input q, the old policy πθold 
+
+generates a group of G independent responses {oi}Gi=1 ,where oi = {oi, 1, · · · , o i,T i } is a token sequence. Each response oi receives a reward ri. The policy πθ is updated with a clipped objective at each token step t:
+
+Lclip i,t (θ) = min 
+
+
+
+ri,t (θ) ˆAi, clip (ri,t (θ), ϵ low , ϵ high ) ˆAi
+
+
+
+,
+
+(1) where the importance ratio ri,t (θ) and the advantage ˆAi are: 
+
+ri,t (θ) = πθ (oi,t |q, o i,<t )
+
+πθold (oi,t |q, o i,<t ) , ˆAi = ri − mean ({rk}Gk=1 )
+
+std ({rk}Gk=1 ) .
+
+(2) In our framework, all three specialized agents are iteratively optimized using this mechanism to identify and bridge rea-soning gaps. 
+
+3.2. Framework Overview 
+
+We introduce Active-Zero , a self-play framework that auton-omizes the evolution of visual reasoning in VLMs through active environment exploration. Unlike passive approaches that rely on static image collections, Active-Zero actively explores open-world visual environments to construct its own training curriculum. The system comprises three spe-cialized agents—the Searcher (S), Questioner (Q), and 
+
+Solver (V)—all initialized from a single base model but optimized for distinct roles. As illustrated in Figure 2, the framework operates through a co-evolutionary cycle parti-tioned into three synergistic stages: • Active Environment Exploration (Stage 1): S navi-gates an expansive visual environment Denv to retrieve images at the edge of the Solver’s current capabili-ties—scenarios where the Solver is uncertain but not overwhelmed, ensuring high informational value. • Adaptive Task Synthesis (Stage 2): Q transforms re-trieved images into complex, multi-step reasoning ques-tions x calibrated to maximize the Solver’s uncertainty, converting visual contexts into instructional curricula. • Reasoning Optimization (Stage 3): V is optimized on the synthesized curriculum Dtrain , through consensus-based reinforcement learning, bridging current reasoning gaps and raising the bar for subsequent iterations. All three agents are optimized using GRPO, which employs a group-based advantage mechanism to filter noise and pro-mote self-consistent reasoning trajectories. This unified RL backbone enables Active-Zero to autonomously scale reasoning complexity without exhaustive human annotation. 
+
+3.3. Stage 1: Active Environment Exploration 
+
+The Searcher S identifies visual scenarios that expose the Solver’s current limitations. Formally, S is a policy πS (q|P )
+
+that generates semantic retrieval queries q conditioned on a domain-specific prompt P . Each query interacts with a retrieval function to fetch an image I = Ret (q, Denv ).3Active Zero: Self-Evolving Vision-Language Models through Active Environment Exploration Active Environment 
+
+Exploration 
+
+> Generated
+> Query
+> Searcher
+> Model
+> Retrieved
+> Images
+> Repetition Penalty
+
+Adaptive Task 
+
+Synthesis 
+
+> Optimized
+> Searcher
+> Image Set
+> Uncertainty Reward
+> Questioner
+> Model
+> Generated
+> Question
+> Image
+> Optimized
+> Questioner
+> VL Tasks
+> Solver
+> Model
+> Output
+> Answer
+> Image
+> Question
+
+Reasoning 
+
+Optimization  
+
+> Iterative Process
+> Uncertainty Reward Accuracy Reward
+> Repetition Penalty
+
+Figure 2. Overview of the Active-Zero framework. The system facilitates an iterative, three-stage self-play cycle to enhance VLM reasoning: (Stage 1) The Searcher (S) is optimized to retrieve informative images from the environment by balancing a challenge reward (targeting the Solver’s uncertainty) and a repetition penalty. (Stage 2) The Questioner (Q) synthesizes complex, multi-step questions from the curated images to maximize instructional utility. (Stage 3) The Solver (V) is trained on the generated tasks to improve reasoning accuracy and consensus via reinforcement learning. The entire process is iterative, allowing the agents to co-evolve as the Solver’s capability frontier shifts. 
+
+Reward Formulation. To prioritizes informative sam-ples, we optimize S toward the frontier of the Solver’s capabilities. Following (Huang et al., 2025), we define a challenge reward Rchal based on the Solver’s predictive uncertainty. For a retrieved image I, we sample a probe question x ∼ Q (·| I) and execute m independent reasoning passes through V to obtain an answer set {y1, . . . , y m}. The Solver’s empirical accuracy is then computed as: Acc (V, I, x ) = 1
+
+m
+
+> m
+
+X
+
+> j=1
+
+I[yj = ˆ y], (3) where ˆy denotes the majority-voted consensus. The chal-lenge reward peaks at maximum uncertainty: 
+
+Rchal (q) = Ex ∼ Q (·| I)
+
+
+
+1 − 2 Acc (V, I, x ) − 12
+
+
+
+.
+
+(4) Maximizing Rchal compels the Searcher to identify visual contexts at the Solver’s capability frontier—tasks just be-yond its deterministic grasp yet within its latent reasoning potential. 
+
+Diversity Control. To prevent the policy from converg-ing on narrow query sets, we implement a dual-modality repetition penalty Prep . For each batch Q = {qi}ni=1 with retrieved images I = {Ii}ni=1 , we quantify pairwise similar-ity in both text and visual spaces. 
+
+dtxt ij = 1 − BLEU (qi, q j ),dvis ij = 1 − cos( ϕ(Ii), ϕ (Ij )) , (5) where ϕ(·) represents a frozen image encoder. We cluster a batch of samples into Ctxt and Cvis based on sensitivity thresholds τtxt and τvis . The penalty for query-image pair 
+
+(qi, I i) is then proportional to neighborhood density: 
+
+Prep (qi, I i) = |Ctxt (qi)|
+
+n + |Cvis (Ii)|
+
+n . (6) The final reward is RS = max(0 , R chal − P rep ), encour-aging the agent to explore diverse coordinates across the visual-semantic manifold. 
+
+Domain-Conditioned Exploration. To maintain a bal-anced curriculum across heterogeneous tasks, we parti-tion the search space into N semantic domains: C =
+
+{c1, c 2, · · · , c N }. Each domain is governed by a specialized prompt template Pc that constrains πS to relevant visual-logical properties. To prevent the model from ignoring chal-lenging domains in favor of easier ones with higher absolute rewards, we utilize the group-relative nature of GRPO. For a group of G queries within domain c, the advantage ˆA is normalized strictly against domain-specific peers: 
+
+ˆA(qi,c ) = RS (qi,c ) − μc
+
+σc
+
+. (7) 4Active Zero: Self-Evolving Vision-Language Models through Active Environment Exploration 
+
+This ensures that the Searcher seeks the most informa-tive data within every domain, sustaining a robust auto-curriculum across the multi-modal spectrum. 
+
+3.4. Stage 2: Adaptive Task Synthesis 
+
+Following optimization of the search policy, we deploy π∗S
+
+to curate an active visual dataset Dactive = {Ij }Mj=1 . The Questioner πQ(x|I, T cot ) synthesizes complex reasoning tasks x from these images. We employ a Chain-of-Thought (CoT) template Tcot to guide the Questioner to deconstruct visual-logical constraints prior to question formulation. 
+
+Reward Formulation. Similar to the Searcher, the Ques-tioner aims to maximize the instructional utility of the gener-ated questions by targeting the Solver’s current weaknesses. The reward RQ for question xi generated from image I is: 
+
+RQ(xi) = max(0 , R chal (xi|I) − P rep (xi)) , (8) where Rchal (xi|I) is the challenge reward from Equa-tion (4) for question xi, and Prep is a linguistic repetition penalty preventing collapse into repetitive question struc-tures. By maximizing Rchal , the Questioner generates tasks that avoid both trivial consensus and complete randomness, cre-ating a curriculum that bridges the Solver’s current state and higher-order reasoning capabilities. 
+
+3.5. Stage 3: Reasoning Optimization Training Set Construction. In the final stage, we deploy the optimized policy π∗Q over Dactive to construct an initial training pool Dtrain = {(Ij , x j )}Mj=1 . For each task, we compute a silver-standard consensus answer ˆa by majority vote over K sampled reasoning trajectories from πV . To focus on informative samples, we filter the pool to retain tasks where empirical accuracy Acc (V, I, x ) falls within dif-ficulty window (τlow , τ high ), yielding curated subset D∗
+
+> train
+
+.This ensures the Solver optimize trajectories that are neither trivially solved nor beyond its current capacity. 
+
+Reward Formulation. The Solver is optimized via GRPO to maximize the accuracy reward signal against pseudo-labels. For each task (I, x ) ∈ D ∗
+
+> train
+
+, we sample a group of 
+
+G independent reasoning trajectories {τ1, . . . , τ G}, where each τi consists of a CoT path and final answer ai. The reward for a trajectory τi is defined as: 
+
+RV (τi) = 
+
+(
+
+1, if ai = ˆ a, 
+
+0, otherwise . (9) This process ultimately enhances the Solver’s ability to nav-igate the complex visual reasoning challenges synthesized by the preceding agents. 
+
+## 4. Experiments 
+
+4.1. Implementation Details Visual Environment Setup. To facilitate efficient and re-producible training, we construct a diverse visual environ-ment Denv by aggregating the image from The Cauldron (Lauren c¸ on et al., 2024), a comprehensive collection of 50 vision-language datasets, and three geometry-focused datasets: Geo3K (Lu et al., 2021), UniGeo (Chen et al., 2022), and GeoQA+ (Cao & Xiao, 2022). The resulting 
+
+Denv contains 1.6M images, providing a controlled testbed for analyzing the Searcher’s behavior and while ensuring re-producibility without the temporal stochasticity and latency of real-time web APIs. 
+
+Retrieval Infrastructure. The Searcher S interfaces with the environment via a vector retrieval system. We use SigLIP-2 (Tschannen et al., 2025) to generate visual embed-dings for all images in Denv , indexed using FAISS (Douze et al., 2025) for sub-millisecond search. When the Searcher generates query q, the retrieval function Ret (q, Denv ) com-putes the cosine similarity between the query embedding and the visual index to return the top-k candidate. 
+
+System Scalability. While our implementation operates on this pre-indexed local structure for computational efficiency, the Searcher’s query-based interface is backend-agnostic. This architecture enables seamless transition to real-time web exploration or specialized domain-specific databases by swapping the retrieval backend. The million-level lo-cal repository provides sufficient diversity to challenge the Searcher’s discovery capabilities while maintaining stability required for iterative optimization. 
+
+Optimization Hyperparameters. All three agents are opti-mized using GRPO (Shao et al., 2024) with a group size of 
+
+G = 8 . Clustering thresholds are τtxt = 0 .5 and τvis = 0 .1.To construct Dactive , we sample 6000 queries from πS and retrieve the top 5 images per query from Denv , followed by a deduplication. For each image in Dactive , one question is generated from πQ to form Dtrain . The difficulty filtering thresholds are τlow = 0 .3 and τhigh = 0 .8. Training is con-ducted on 16 NVIDIA H20 GPUs using the EasyR1 library (Zheng et al., 2025). Additional Details are in Section A. 
+
+Evaluation Protocol. We use a consistent CoT prompt for all models and report greedy decoding results. Predefined format-matching rules are used to extract final answers from model responses. To avoid limitations of rigid string match-ing, we use DeepSeek-V3.2 (Liu et al., 2025a) as an auto-mated evaluator. The LLM receives the question, ground truth, and extracted answer to judge semantic and logical consistency, ensuring that correct reasoning is not penalized for formatting variations. We provide the benchmark details in Section A and evaluation prompts in Section B. 5Active Zero: Self-Evolving Vision-Language Models through Active Environment Exploration 
+
+Table 1. Comparison of Active-Zero against state-of-the-art baselines on reasoning-intensive benchmarks. 
+
+Method MathVista MathVision WeMath MathVerse LogicVista DynaMath Averge 
+
+Qwen2.5-VL-3B-Instruct 
+
+Base Model 57.80 22.27 53.51 30.84 37.28 46.33 41.34 VisPlay 58.10 +0.30 22.43 +0.16 58.16 +4.65 34.58 +3.74 39.29 +2.01 50.02 +3.69 43.76 +2.42 
+
+Active-Zero 60.20 +2.40 23.62 +1.35 61.21 +7.70 35.09 +4.25 40.62 +3.34 51.24 +4.91 45.33 +3.99 
+
+Qwen2.5-VL-7B-Instruct 
+
+Base Model 69.40 25.95 64.48 45.11 43.08 58.26 51.05 VisionZero-CLEVR 70.20 +0.80 24.67 -1.28 66.90 +2.42 45.05 -0.06 41.29 -1.79 58.70 +0.44 51.14 +0.09 
+
+VisionZero-Chart 68.20 -1.20 25.16 -0.79 64.66 +0.18 46.57 +1.46 46.21 +3.13 58.40 +0.14 51.53 +0.48 
+
+VisionZero-RealWorld 69.20 -0.20 26.12 +0.17 65.40 +0.92 45.62 +0.51 48.44 +5.36 58.62 +0.36 52.23 +1.18 
+
+VisPlay 69.40 +0.00 27.04 +1.09 67.99 +3.51 43.59 -1.52 45.09 +2.01 58.98 +0.72 52.02 +0.97 
+
+EvoLMM 69.80 +0.40 24.11 -1.84 64.89 +0.41 44.80 -0.31 46.65 +3.57 58.06 -0.20 51.39 +0.34 
+
+Active-Zero 72.60 +3.20 26.18 +0.23 69.60 +5.12 48.16 +3.05 48.21 +5.13 59.04 +0.78 53.97 +2.92 
+
+Table 2. Comparison of Active-Zero against state-of-the-art baselines on general visual understanding and knowledge-based benchmarks. 
+
+Method VisNum RealWorld MMStar MMMU MMMU Pro Hallusion Averge 
+
+Qwen2.5-VL-3B-Instruct 
+
+Base Model 34.71 61.70 52.80 44.69 41.99 60.04 49.32 VisPlay 37.32 +2.61 59.48 -2.22 51.60 -1.20 44.80 +0.11 42.43 +0.44 64.88 +4.84 50.09 +0.77 
+
+Active-Zero 41.51 +6.80 60.00 -1.70 53.80 +1.00 49.16 +4.47 46.70 +4.71 64.14 +4.10 52.55 +3.23 
+
+Qwen2.5-VL-7B-Instruct 
+
+Base Model 44.85 63.66 61.53 53.52 52.61 68.87 57.51 VisionZero-CLEVR 43.13 -1.72 66.41 +2.75 62.07 +0.54 56.98 +3.46 52.17 -0.44 69.51 +0.64 58.38 +0.87 
+
+VisionZero-Chart 44.54 -0.31 64.05 +0.39 62.27 +0.74 53.07 -0.45 51.67 -0.94 69.09 +0.22 57.45 -0.06 
+
+VisionZero-RealWorld 44.17 -0.68 65.36 +1.70 62.27 +0.74 53.30 -0.22 52.29 -0.32 68.56 -0.31 57.66 +0.15 
+
+VisPlay 45.22 +0.37 63.27 -0.39 62.93 +1.40 52.51 -1.01 51.98 -0.63 68.56 -0.31 57.41 -0.10 
+
+EvoLMM 45.01 +0.16 61.44 -2.22 61.53 +0.00 55.31 +1.79 51.60 -1.01 69.72 +0.85 57.44 -0.07 
+
+Active-Zero 47.94 +3.09 67.58 +3.92 64.00 +2.47 56.42 +2.90 54.62 +2.01 68.03 -0.84 59.77 +2.26 
+
+Table 3. Ablation study on Active-Zero components. 
+
+Method Reasoning Avg. General Avg Active-Zero 45.33 52.55 
+
+Searcher Effectiveness 
+
+⊢ Base Searcher 44.75 -0.58 51.03 -1.52 
+
+⊢ Random Sampling 43.88 -1.45 51.86 -0.69 
+
+Ablations 
+
+⊢ w/o Domain-Conditioned 44.93 -0.40 50.73 -1.82 
+
+⊢ w/o Visual Penalty 44.89 -0.44 51.62 -0.93 
+
+4.2. Main Results 
+
+We evaluate Active-Zero across a comprehensive suite of benchmarks. As shown in Tables 1 and 2, we compare our framework against the Base Model and recent self-play baselines, including VisionZero (Wang et al., 2025a), Vis-Play (He et al., 2025), and EvolMM (Thawakar et al., 2025). 
+
+Reasoning-Intensive Benchmarks. As shown in Table 1, 
+
+Active-Zero delivers the strongest overall results at both model scales. It raises the average score on Qwen2.5-VL-3B-Instruct from 41.34 to 45.33 (+3.99) and on Qwen2.5-VL-7B-Instruct from 51.05 to 53.97 (+2.92). Improvements are consistent across all six benchmarks. For the 7B model, the largest gains come from LogicVista (48.21 vs. 43.08) and WeMath (69.60 vs. 64.48). Notably, Active-Zero also outperforms all prior self-play methods on the 7B setting, reaching a 53.97 average versus 52.02 for VisPlay and 51.39 for EvolMM, highlighting the benefit of uncertainty-driven retrieval and task synthesis over existing curricula. 
+
+General Visual Understanding. In Table 2, Active-Zero 
+
+also improves general VLM performance, reaching the best average on Qwen2.5-VL-7B-Instruct (59.77 vs. 57.51 for the base model). Improvements are consistent across Vis-Num, RealWorldQA, MMStar, MMMU, and MMMU-Pro (e.g., 47.94 on VisNum and 67.58 on RealWorldQA), while Hallusion remains comparable but slightly lower than the base model (68.03 vs. 68.87). On Qwen2.5-VL-3B-Instruct, 
+
+Active-Zero similarly increases the average from 49.32 to 52.55, with particularly strong performance on VisNum (41.51) and MMMU-Pro (46.70). 6Active Zero: Self-Evolving Vision-Language Models through Active Environment Exploration           
+
+> (a) Solver Accuracy (b) Searcher Reward (c) Searcher Diversity
+> Figure 3. Co-evolution of Solver and Searcher. Active-Zero shows superior accuracy scaling in (a), driven by the Searcher’s ability to maximize uncertainty (b) while maintaining high sample diversity (c) through RL-based optimization.
+> Figure 4. Consensus-score distribution of generated VL tasks
+> under Active-Zero and Random Sampling across training versions (v1–v3). The consensus score measures agreement among multiple Solver rollouts on the same question.
+
+4.3. Effectiveness of Active Environment Exploration 
+
+We study the contribution of the Searcher S using the 3B setting as a controlled baseline (Table 3). 
+
+Searcher vs. Random Sampling. Replacing Active-Zero 
+
+with random image retrieval reduces the reasoning average from 45.33 to 43.88. This drop (1.45 points) indicates that actively selecting informative samples is substantially more effective than uniform sampling from Denv for improving reasoning. A similar degradation is observed in general performance (52.55 → 51.86), suggesting that informed retrieval benefits both reasoning-specific and broader visual understanding objectives. 
+
+Effect of RL Optimization. Disabling RL optimization in the Searcher leads to a consistent degradation, with rea-soning dropping to 44.75 and general performance to 51.03. Compared to the full method (45.33 / 52.55), this suggests that RL-based selection better matches the Solver’s learning needs than heuristic or unoptimized retrieval. Notably, the random variant attains a higher general average (51.86) than the unoptimized Searcher (51.03), implying that without RL, the Searcher may over-focus on samples that benefit reasoning at the expense of broad coverage. 
+
+4.4. Ablation Study 
+
+We further validate two key design choices in the lower section of Table 3. 
+
+Domain-Conditioned Exploration. Removing domain conditioning decreases both reasoning (45.33 →44.93) and general performance (52.55 →50.73). The larger drop on general benchmarks suggests that domain-aware partition-ing helps maintain a balanced curriculum across heteroge-neous domains, preventing skewed exploration. 
+
+Visual Redundancy Control. We ablate the visual rep-etition penalty Prep while keeping other components un-changed. Removing it reduces the reasoning average to 44.89 and the general average to 51.62. This supports the role of visual diversity control in preventing the Searcher from repeatedly sampling near-duplicate images, thereby improving coverage of the visual-semantic space needed for robust reasoning. 
+
+4.5. Training Dynamics 
+
+To better understand the self-play process, we visualize the co-evolution of the Solver, the Searcher, and the reward signals during training in Figure 3. 
+
+Solver evolution and the benefit of active sampling. In Figure 3a, Active-Zero consistently achieves higher valida-tion accuracy than the random-retrieval baseline, with the gap becoming more apparent in later training steps. This trend suggests that uncertainty-driven sample selection pro-vides a stronger curriculum than uniform sampling, espe-cially as the Solver becomes capable of benefiting from harder but still learnable examples. 
+
+Searcher learning signal across phases. Figure 3b shows that the uncertainty reward rises across both training phases 7Active Zero: Self-Evolving Vision-Language Models through Active Environment Exploration     
+
+> Figure 5. Category distribution of Searcher-retrieved images. Pie charts show the percentage of retrieved images in each task category for Active-Zero v1 and v2, with (left) and without (right) domain conditioning. Categories are identified based on source datasets in Denv .
+
+(v1 and v2), suggesting the Searcher increasingly retrieves examples informative for the current Solver. Meanwhile, Figure 3c shows the diversity penalty drops early and then stabilizes, indicating the Searcher avoids collapsing onto near-duplicate high-uncertainty images. Overall, it main-tains broad coverage while improving the reward signal, balancing informativeness and diversity. 
+
+4.6. Discussion Active exploration yields healthier difficulty distribution. 
+
+To diagnose how exploration reshapes the curriculum, we analyze the consensus distribution of generated questions in Figure 4. The consensus score measures agreement among multiple Solver rollouts. Low consensus indicates unsta-ble or overly difficult questions, high consensus reflects reliably solved questions, and intermediate consensus corre-sponds to moderately challenging samples near the Solver’s capability frontier. Compared to Random Sampling, Active-Zero shifts mass away from the lowest-consensus bin and increases mid-to-high consensus questions across versions (v1–v3). Random Sampling concentrates heavily in the minimum-consensus bin, indicating that uniform retrieval often produces noisy or weakly grounded questions with inconsistent training signals. This validates that active re-trieval better supports coherent, learnable questions. 
+
+Active exploration yields naturally diverse curricula. As illustrated in Figure 5, Active-Zero Searcher distributes retrievals across diverse task categories: Diagrams/Geom-etry (43%), Text/OCR (12.7-14.3%), Visual Reasoning (9.4-11.9%), and multiple others, demonstrating that ac-tive retrieval naturally discovers varied visual reasoning challenges. Domain-conditioned exploration (left) further stabilizes this balance, while its removal (right) causes grad-ual concentration toward easier categories, validating the robustness of the active exploration framework. 
+
+Query evolution reflects adaptive curriculum construc-tion. We analyze how the Searcher’s retrieval strategy  
+
+> Figure 6. Query Distribution Shift Across Searcher Versions.
+> Word clouds visualizing the query tokens with increased frequency from Searcher v1 to v2. Larger font sizes indicate larger relative frequency gains.
+
+evolves by tracking query token frequency changes across training versions (Figure 6). From v1 to v2, the Searcher progressively adopts more structural and process-oriented vocabulary, with increased use of terms like field , direc-tion , diagram , forces , folded , magnetic . This shift indicates movement from generic visual descriptors toward images en-coding spatial relationships, physical properties, and multi-component structures that demand integrative reasoning. The emergence of technical and relational terminology sug-gests the Searcher adapts queries in response to the Solver’s learning progress, increasingly targeting images with richer structural information. This qualitative evolution aligns with the consensus analysis in Figure 4, where active ex-ploration reduces unstable samples and concentrates toward more learnable questions at the Solver’s capability frontier, demonstrating that the framework constructs increasingly sophisticated curricula as training progresses. 
+
+## 5. Conclusion 
+
+We presented Active-Zero , a self-play framework that re-thinks how vision-language models improve in open-world settings. Rather than passively training on static image col-lections, Active-Zero enables models to actively explore visual environments and autonomously construct curricula aligned with their evolving capabilities. By closing the 8Active Zero: Self-Evolving Vision-Language Models through Active Environment Exploration 
+
+loop between data acquisition, task generation, and reason-ing optimization, the proposed Searcher–Questioner–Solver tri-agent system transforms self-play into a dynamic, self-scaffolding learning process. Extensive experiments across 12 benchmarks demonstrate that active environment explo-ration leads to consistent and complementary gains in both reasoning-intensive tasks and general visual understanding, paving the way for more adaptive VLM reasoning. 
+
+## Impact Statement 
+
+This paper advances vision-language model reasoning through self-play and active exploration. The primary bene-fit is enabling more capable multimodal AI systems that can autonomously improve without extensive human annotation, potentially democratizing access to high-quality models. We acknowledge potential risks: active exploration sys-tems querying open-world repositories could inadvertently amplify biases or access inappropriate content, and self-improvement without human oversight raises alignment concerns. While our implementation uses curated datasets, future deployments to live web retrieval would require con-tent filtering, bias mitigation, and safety guardrails. We encourage practitioners to implement appropriate oversight mechanisms when adopting active exploration paradigms. 
+
+## References 
+
+Bai, S., Chen, K., Liu, X., Wang, J., Ge, W., Song, S., Dang, K., Wang, P., Wang, S., Tang, J., et al. Qwen2. 5-vl technical report. arXiv preprint arXiv:2502.13923 , 2025. Berkane, T., Charpignon, M.-L., and Majumder, M. S. LLM-based web data collection for research dataset creation. In Christodoulopoulos, C., Chakraborty, T., Rose, C., and Peng, V. (eds.), Findings of the Asso-ciation for Computational Linguistics: EMNLP 2025 ,pp. 12610–12622, Suzhou, China, November 2025. As-sociation for Computational Linguistics. ISBN 979-8-89176-335-7. doi: 10.18653/v1/2025.findings-emnlp. 674. URL https://aclanthology.org/2025. findings-emnlp.674/ .Cao, J. and Xiao, J. An augmented benchmark dataset for geometric question answering through dual parallel text encoding. In Calzolari, N., Huang, C.-R., Kim, H., Puste-jovsky, J., Wanner, L., Choi, K.-S., Ryu, P.-M., Chen, H.-H., Donatelli, L., Ji, H., Kurohashi, S., Paggio, P., Xue, N., Kim, S., Hahm, Y., He, Z., Lee, T. K., Santus, E., Bond, F., and Na, S.-H. (eds.), Proceedings of the 29th International Conference on Computational Linguis-tics , pp. 1511–1520, Gyeongju, Republic of Korea, Oc-tober 2022. International Committee on Computational Linguistics. URL https://aclanthology.org/ 2022.coling-1.130/ .Chen, J., Li, T., Qin, J., Lu, P., Lin, L., Chen, C., and Liang, X. Unigeo: Unifying geometry logical reasoning via reformulating mathematical expression. arXiv preprint arXiv:2212.02746 , 2022. Chen, L., Li, J., Dong, X., Zhang, P., Zang, Y., Chen, Z., Duan, H., Wang, J., Qiao, Y., Lin, D., et al. Are we on the right way for evaluating large vision-language models? 
+
+Advances in Neural Information Processing Systems , 37: 27056–27087, 2024a. Chen, X., Hu, W., Li, H., Zhou, J., Chen, Z., Cao, M., Zeng, Y., Zhang, K., Yuan, Y.-J., Han, J., et al. C2-evo: Co-evolving multimodal data and model for self-improving reasoning. arXiv preprint arXiv:2507.16518 , 2025a. Chen, X., Lu, J., Kim, M., Zhang, D., Tang, J., Pich ´e, A., Gontier, N., Bengio, Y., and Kamalloo, E. Self-evolving curriculum for llm reasoning. arXiv preprint arXiv:2505.14970 , 2025b. Chen, Z., Deng, Y., Yuan, H., Ji, K., and Gu, Q. Self-play fine-tuning converts weak language models to strong lan-guage models. arXiv preprint arXiv:2401.01335 , 2024b. Douze, M., Guzhva, A., Deng, C., Johnson, J., Szilvasy, G., Mazar ´e, P.-E., Lomeli, M., Hosseini, L., and J ´egou, H. The faiss library. IEEE Transactions on Big Data , 2025. Fang, W., Liu, S., Zhou, Y., Zhang, K., Zheng, T., Chen, K., Song, M., and Tao, D. Serl: Self-play reinforcement learn-ing for large language models with limited data. arXiv preprint arXiv:2505.20347 , 2025. Gao, H.-a., Geng, J., Hua, W., Hu, M., Juan, X., Liu, H., Liu, S., Qiu, J., Qi, X., Wu, Y., et al. A survey of self-evolving agents: On path to artificial super intelligence. arXiv preprint arXiv:2507.21046 , 2025. Guan, T., Liu, F., Wu, X., Xian, R., Li, Z., Liu, X., Wang, X., Chen, L., Huang, F., Yacoob, Y., et al. Hallusionbench: an advanced diagnostic suite for entangled language hal-lucination and visual illusion in large vision-language models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pp. 14375– 14385, 2024. He, Y., Huang, C., Li, Z., Huang, J., and Yang, Y. Visplay: Self-evolving vision-language models from images. arXiv preprint arXiv:2511.15661 , 2025. Huang, C., Yu, W., Wang, X., Zhang, H., Li, Z., Li, R., Huang, J., Mi, H., and Yu, D. R-zero: Self-evolving reasoning llm from zero data. arXiv preprint arXiv:2508.05004 , 2025. 9Active Zero: Self-Evolving Vision-Language Models through Active Environment Exploration 
+
+Lambert, N., Morrison, J., Pyatkin, V., Huang, S., Ivison, H., Brahman, F., Miranda, L. J. V., Liu, A., Dziri, N., Lyu, S., et al. Tulu 3: Pushing frontiers in open language model post-training. arXiv preprint arXiv:2411.15124 ,2024. Lauren c¸ on, H., Tronchon, L., Cord, M., and Sanh, V. What matters when building vision-language models?, 2024. Liu, A., Mei, A., Lin, B., Xue, B., Wang, B., Xu, B., Wu, B., Zhang, B., Lin, C., Dong, C., et al. Deepseek-v3. 2: Pushing the frontier of open large language models. 
+
+arXiv preprint arXiv:2512.02556 , 2025a. Liu, B., Jin, C., Kim, S., Yuan, W., Zhao, W., Kulikov, I., Li, X., Sukhbaatar, S., Lanchantin, J., and Weston, J. Spice: Self-play in corpus environments improves reasoning. 
+
+arXiv preprint arXiv:2510.24684 , 2025b. Lu, P., Gong, R., Jiang, S., Qiu, L., Huang, S., Liang, X., and Zhu, S.-C. Inter-gps: Interpretable geometry problem solving with formal language and symbolic reasoning. 
+
+arXiv preprint arXiv:2105.04165 , 2021. Lu, P., Bansal, H., Xia, T., Liu, J., Li, C., Hajishirzi, H., Cheng, H., Chang, K.-W., Galley, M., and Gao, J. Mathvista: Evaluating mathematical reasoning of foundation models in visual contexts. arXiv preprint arXiv:2310.02255 , 2023. Qiao, R., Tan, Q., Dong, G., MinhuiWu, M., Sun, C., Song, X., Wang, J., Gongque, Z., Lei, S., Zhang, Y., et al. We-math: Does your large multimodal model achieve human-like mathematical reasoning? In Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , pp. 20023–20070, 2025. Radford, A., Kim, J. W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., et al. Learning transferable visual models from natural language supervision. In International conference on machine learning , pp. 8748–8763. PmLR, 2021. Safaei, B. and Patel, V. M. Active learning for vision-language models. In 2025 IEEE/CVF Winter Conference on Applications of Computer Vision (WACV) , pp. 4902– 4912. IEEE, 2025. Shao, Z., Wang, P., Zhu, Q., Xu, R., Song, J., Bi, X., Zhang, H., Zhang, M., Li, Y., Wu, Y., et al. Deepseekmath: Push-ing the limits of mathematical reasoning in open language models. arXiv preprint arXiv:2402.03300 , 2024. Silver, D., Hubert, T., Schrittwieser, J., Antonoglou, I., Lai, M., Guez, A., Lanctot, M., Sifre, L., Kumaran, D., Grae-pel, T., et al. A general reinforcement learning algorithm that masters chess, shogi, and go through self-play. Sci-ence , 362(6419):1140–1144, 2018. Thawakar, O., Venkatraman, S., Thawkar, R., Shaker, A., Cholakkal, H., Anwer, R. M., Khan, S., and Khan, F. Evolmm: Self-evolving large multimodal models with continuous rewards. arXiv preprint arXiv:2511.16672 ,2025. Tschannen, M., Gritsenko, A., Wang, X., Naeem, M. F., Alabdulmohsin, I., Parthasarathy, N., Evans, T., Beyer, L., Xia, Y., Mustafa, B., et al. Siglip 2: Multilingual vision-language encoders with improved semantic under-standing, localization, and dense features. arXiv preprint arXiv:2502.14786 , 2025. Udandarao, V., Parthasarathy, N., Naeem, M. F., Evans, T., Albanie, S., Tombari, F., Xian, Y., Tonioni, A., and H ´enaff, O. J. Active data curation effectively distills large-scale multimodal models. In Proceedings of the Computer Vision and Pattern Recognition Conference , pp. 14422–14437, 2025. Wang, K., Pan, J., Shi, W., Lu, Z., Ren, H., Zhou, A., Zhan, M., and Li, H. Measuring multimodal mathematical reasoning with math-vision dataset. Advances in Neural Information Processing Systems , 37:95095–95169, 2024. Wang, Q., Liu, B., Zhou, T., Shi, J., Lin, Y., Chen, Y., Li, H. H., Wan, K., and Zhao, W. Vision-zero: Scalable vlm self-improvement via strategic gamified self-play. arXiv preprint arXiv:2509.25541 , 2025a. Wang, Z., Guo, X., Stoica, S., Xu, H., Wang, H., Ha, H., Chen, X., Chen, Y., Yan, M., Huang, F., et al. Perception-aware policy optimization for multimodal rea-soning. arXiv preprint arXiv:2507.06448 , 2025b. Weng, T., Wang, J., Jiang, W., and Ming, Z. Visnumbench: Evaluating number sense of multimodal large language models. arXiv preprint arXiv:2503.14939 , 2025. Wu, Y., Sun, Z., Yuan, H., Ji, K., Yang, Y., and Gu, Q. Self-play preference optimization for language model alignment. arXiv preprint arXiv:2405.00675 , 2024. xAI. Grok-1.5 vision preview, April 2024. URL https: //x.ai/news/grok-1.5v . Introduces the Real-WorldQA benchmark and dataset (accessed 2026-01-28). Xiao, Y., Sun, E., Liu, T., and Wang, W. Logicvista: Multi-modal llm logical reasoning benchmark in visual contexts. 
+
+arXiv preprint arXiv:2407.04973 , 2024. Yang, Z., Shen, W., Li, C., Chen, R., Wan, F., Yan, M., Quan, X., and Huang, F. Spell: Self-play reinforcement learn-ing for evolving long-context language models. arXiv preprint arXiv:2509.23863 , 2025. Yue, X., Ni, Y., Zhang, K., Zheng, T., Liu, R., Zhang, G., Stevens, S., Jiang, D., Ren, W., Sun, Y., et al. Mmmu: A 10 Active Zero: Self-Evolving Vision-Language Models through Active Environment Exploration 
+
+massive multi-discipline multimodal understanding and reasoning benchmark for expert agi. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pp. 9556–9567, 2024. Yue, X., Zheng, T., Ni, Y., Wang, Y., Zhang, K., Tong, S., Sun, Y., Yu, B., Zhang, G., Sun, H., et al. Mmmu-pro: A more robust multi-discipline multimodal understanding benchmark. In Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , pp. 15134–15186, 2025. Zhang, R., Jiang, D., Zhang, Y., Lin, H., Guo, Z., Qiu, P., Zhou, A., Lu, P., Chang, K.-W., Qiao, Y., et al. Math-verse: Does your multi-modal llm truly see the diagrams in visual math problems? In European Conference on Computer Vision , pp. 169–186. Springer, 2024. Zhang, X., Liangyu, X., Duan, F., Zhou, Y., Wang, S., Weng, R., Wang, J., and Cai, X. Preference curriculum: Llms should always be pretrained on their preferred data. In 
+
+Findings of the Association for Computational Linguis-tics: ACL 2025 , pp. 21181–21198, 2025. Zhao, A., Wu, Y., Yue, Y., Wu, T., Xu, Q., Lin, M., Wang, S., Wu, Q., Zheng, Z., and Huang, G. Absolute zero: Reinforced self-play reasoning with zero data. arXiv preprint arXiv:2505.03335 , 2025. Zheng, Y., Lu, J., Wang, S., Feng, Z., Kuang, D., and Xiong, Y. Easyr1: An efficient, scalable, multi-modality rl train-ing framework. https://github.com/hiyouga/ EasyR1 , 2025. Zou, C., Guo, X., Yang, R., Zhang, J., Hu, B., and Zhang, H. Dynamath: A dynamic visual benchmark for evaluating mathematical reasoning robustness of vision language models. arXiv preprint arXiv:2411.00836 , 2024. 11 Active Zero: Self-Evolving Vision-Language Models through Active Environment Exploration 
+
+## A. Exeriment Setup 
+
+A.1. Evaluation Benchmarks. 
+
+We evaluate models on two groups of benchmarks: (i) reasoning-intensive visual math/logic suites and (ii) general visual understanding + knowledge suites. Below we introduce each benchmark in the order shown in our tables. • MathVista (Lu et al., 2023) is a consolidated benchmark for mathematical reasoning in a visual context. It aggregates problems from many prior multimodal math datasets and also includes newly created subsets, targeting fine-grained perception (reading plots/diagrams/tables) and multi-step reasoning. Evaluation is conducted on testmini split, with 1,000 samples. • MathVision (MATH-Vision) (Wang et al., 2024) is a curated set of competition-style math problems with visual context, designed to expand subject coverage and difficulty beyond earlier visual-math benchmarks. It spans multiple math disciplines and difficulty levels to stress robust multimodal math reasoning. Evaluation is conducted on the test split, with 3,040 samples. • WeMath (WE-MATH) (Qiao et al., 2025) focuses on process-level visual mathematical reasoning. Besides end accuracy, it emphasizes diagnosing how models solve problems by organizing questions along hierarchical knowledge concepts and finer-grained skill layers. Evaluation is conducted on the testmini split, with 1,740 samples. • MathVerse (Zhang et al., 2024) is a holistic visual-math benchmark with curated diagram-based problems. A key feature is that each problem can be presented in multiple “versions” with different modality/information availability, enabling controlled analysis of whether models truly use the diagram and how multimodal information contributes to solving. We use the Vision Dominant + Vision Intensive variants filtered from the testmini split, comprising 1,576 samples, which emphasize solving with strong dependence on the image content. • LogicVista (Xiao et al., 2024) targets general logical reasoning in visual contexts (beyond math), with multiple-choice an-notated questions spanning several categories of reasoning skills (e.g., inductive/deductive/spatial/numerical/mechanical-style reasoning). Evaluation is conducted on the test split, with 448 samples. • DynaMath (Zou et al., 2024) evaluates robustness in multimodal mathematical reasoning under dynamic visual/textual variations. It represents seed questions as programs to automatically generate diverse instantiations, testing stability under perturbations rather than performance on a single static set. Evaluation is conducted on all splits, with 5,010 samples. • VisNum (VisNumBench) (Weng et al., 2025) measures visual number sense: estimating/counting/comparing quantities and other numerical attributes from images, using both synthetic and real-world scenarios to probe how well models ground numeric reasoning in perception. Evaluation is conducted on the test split, with 1,913 samples. • RealWorld (RealWorldQA) (xAI, 2024) is designed to test basic real-world spatial understanding from everyday photos (e.g., relative positions, simple spatial relations) with straightforward, verifiable answers—often easy for humans but challenging for models. Evaluation is conducted on the test split, with 765 samples. • MMStar (Chen et al., 2024a) is an elite vision-indispensable multimodal benchmark built via careful human selection to reduce spurious shortcuts and ensure visual dependency. It evaluates multiple core capability axes and is commonly used as a general diagnostic of LVLM multimodal competence. Evaluation is conducted on the val split, with 1,500 samples. • MMMU (Yue et al., 2024) is a large-scale, multi-discipline benchmark drawn from college-level exams/quizzes/textbooks, requiring subject knowledge and deliberate reasoning over diverse visual formats (e.g., diagrams, tables, charts). It is widely used to assess knowledge-intensive multimodal understanding. Evaluation is conducted on the test set with 895 samples. • MMMU Pro (Yue et al., 2025) is a more robust variant of MMMU designed to better isolate genuine multimodal understanding (e.g., reducing text-only solvable items and strengthening evaluation settings so models must integrate vision and text). We use the standard (4 options) test split (filtered to single-image questions), comprising 1,591 samples. • Hallusion (HallusionBench) (Guan et al., 2024) evaluates hallucination and visual illusion failures in vision-language models via expert-written question sets with control-style structure, stressing consistency and grounded image-context reasoning beyond simple object hallucination checks. Evaluation is conducted on the test split, with 951 samples. 12 Active Zero: Self-Evolving Vision-Language Models through Active Environment Exploration 
+
+A.2. Implementation Details 
+
+In our iterative self-play setup, we conduct three full cycles. Within each iteration, we train the Searcher and Questioner for 10 optimization steps and the Solver for 30 optimization steps. We report results from the second iteration, which yields the best performance. We use a batch size of 512 with a PPO minibatch size of 128. The sampling temperature is 1.0, and the maximum generation length is 2048 tokens. To produce reliable pseudo-labels, we sample K = 9 trajectories and apply majority voting. To compute uncertainty-based rewards for the Searcher and Questioner, we perform m = 10 rollouts. 
+
+A.3. Models and baselines 
+
+As the foundational backbone of our framework, we employ the Qwen2.5-VL series (Bai et al., 2025), specifically the 3B-Instruct and 7B-Instruct variants. For baselines, we compare with recent self-play methods developed for VLMs. For VisPlay (He et al., 2025), we reproduce the results closely following the official open-source repository and the training procedures provided by the authors. For Vision-Zero (Wang et al., 2025a) and EvoLMM (Thawakar et al., 2025), we directly evaluate the publicly released model weights. 
+
+## B. Prompt Templates 
+
+Solver Prompt Template 
+
+Please reason step by step carefully based on the question: {question } and the image. After completing your reasoning, you MUST output the final, clean, and concise answer strictly inside \boxed {} . The final answer MUST appear inside \boxed {} , and nowhere else. If there is no boxed answer, your response is considered incorrect. 
+
+Searcher Prompt Template 
+
+You are an AI Data Engineer. Your task is to generate a unique and concise image retrieval query. 
+
+Target Category: {category }
+
+Focus on: {query sample }
+
+Diversity Requirements: Vary the Subject: Do not use common examples. Explore different specific objects within the focus area. 
+
+Output Format: 
+
+<type> {category }</type> <query>[Concise description emphasizing structure and key markers based on the focus keywords]</query> 
+
+Example (Reference only, DO NOT COPY): 
+
+<type> {category }</type> <query> {query sample }</query> 
+
+LLM Judge Prompt Template 
+
+System Message: 
+
+You are an answer evaluation assistant. Your task is to judge whether two answers are substantially equivalent. When evaluating, you should ignore superficial differences such as format, spaces, punctuation, case, etc., and focus on whether they are consistent in core content, logical meaning and information expression. The judgment criteria should be lenient and inclusive, as long as the expressed meaning is basically the same, it is considered equivalent. 
+
+User Message: 
+
+Given the question {question }, please judge whether the following two answers express the same meaning. Please only answer ”correct” or ”incorrect”. Correct answer: {ground truth answer }. Answer to be judged: 
+
+{predicted answer }. Judgment result (only answer ”correct” or ”incorrect”). You don’t need to reason, just answer ”correct” or ”incorrect”. Don’t say anything else. Only answer ”correct” or ”incorrect” directly without thinking. 
+
+13 Active Zero: Self-Evolving Vision-Language Models through Active Environment Exploration 
+
+Questioner Prompt Template 
+
+You are an Expert Visual Reasoning Specialist. Your task is to analyze the image, identify core constraints, and generate a high-quality reasoning question that requires multi-step derivation. 
+
+Requirements: 
+
+• The Analysis Phase must contain: 
+
+– Visible Elements: List specific labels, numbers, objects, and spatial markers. 
+
+– Constraints: Identify explicit or implicit rules (e.g., parallel lines, gravity, total percentages in a chart). 
+
+– Step-by-Step Solution: Solve your intended question entirely using only the image data to ensure it is mathematically/logically sound. • No Simple Description: Do NOT ask questions that can be answered by simple object identification, color naming, or simple counting. • Logical Depth: The question must require interpreting intent, calculating based on visual cues, spatial transforma-tions, or inferring cause-and-effect. 
+
+Question Type: 
+
+1. short answer : Requires a short phrase based on logical inference. 2. numeric value : Requires a calculation or estimation. Provide only the pure number. 
+
+Output Format: 
+
+<think> A</think> <type> X</type> <question> Y</question> <answer> Z</answer> 
+
+Strict Rules: 
+
+• A must be the analysis phase. • X must be one of: short answer or numeric value .• Z must be the minimal correct value (phrase or number). • Do not add any extra text, labels, or explanations. 
+
+Examples of Reasoning-based Questions: 
+
+<think> Visible Elements: A balanced scale shows 3 circles on the left and 2 squares on the right. Constraints: Balanced means equal total weight. Step-by-Step Solution: 3c = 2 s ⇒ s = 1 .5c, so a square is heavier than a circle. </think> <type> short answer </type> <question> Which is heavier: one square or one circle? </question> <answer> square </answer> <think> Visible Elements: A triangle with base labeled y, left side labeled 12, right side labeled x, base angles labeled 
+
+30 ◦ (left) and 60 ◦ (right), and a right-angle marker at the top indicating 90 ◦. Constraints: A 30 ◦-60 ◦-90 ◦ triangle has side ratios 1 : √3 : 2 (opposite 30 ◦, 60 ◦, 90 ◦ respectively). Step-by-Step Solution: The side 12 is opposite 60 ◦, so 
+
+12 = √3k ⇒ k = 12 √3 = 4 √3. The hypotenuse is y = 2 k = 8 √3.</think> <type> numeric value </type> <question> Find y. </question> <answer> 8√3</answer> 
+
+14 Active Zero: Self-Evolving Vision-Language Models through Active Environment Exploration 
+
+Table 4. Comparison of Active-Zero against state-of-the-art baselines on reasoning-intensive benchmarks.                                                                      
+
+> Method MathVista MathVision WeMath MathVerse LogicVista DynaMath Average
+> Qwen2.5-VL-3B-Instruct
+> Base Model 57.80 22.27 53.51 30.84 37.28 46.33 41.34
+> Active-Zero (Iter1) 59.20 23.06 60.06 33.88 39.96 50.30 44.41
+> Active-Zero (Iter2) 60.20 23.62 61.21 35.09 40.62 51.24 45.33
+> Active-Zero (Iter3) 59.00 22.20 61.09 33.88 40.40 51.00 44.60
+> Qwen2.5-VL-7B-Instruct
+> Base Model 69.40 25.95 64.48 45.11 43.08 58.26 51.05
+> Active-Zero (Iter1) 71.60 26.97 68.16 46.76 46.21 59.54 53.21
+> Active-Zero (Iter2) 72.60 26.18 69.60 48.16 48.21 59.04 53.97
+> Active-Zero (Iter3) 72.30 26.61 69.94 45.88 47.54 58.52 53.47
+
+Table 5. Comparison of Active-Zero against state-of-the-art baselines on general visual understanding and knowledge-based benchmarks.                                                                      
+
+> Method VisNum RealWorld MMStar MMMU MMMU Pro Hallusion Averge
+> Qwen2.5-VL-3B-Instruct
+> Base Model 34.71 61.70 52.80 44.69 41.99 60.04 49.32
+> Active-Zero (Iter1) 40.93 61.44 53.20 47.93 46.64 64.25 52.40
+> Active-Zero (Iter2) 41.51 60.00 53.80 49.16 46.70 64.14 52.55
+> Active-Zero (Iter3) 41.51 60.26 52.80 48.27 45.69 63.72 52.04
+> Qwen2.5-VL-7B-Instruct
+> Base Model 44.85 63.66 61.53 53.52 52.61 68.87 57.51
+> Active-Zero (Iter1) 45.53 66.01 62.40 54.30 53.30 69.61 58.53
+> Active-Zero (Iter2) 47.94 67.58 64.00 56.42 54.62 68.03 59.77
+> Active-Zero (Iter3) 48.35 67.45 64.33 54.75 51.60 69.51 59.33
+
+## C. Detailed Results 
+
+Table 4 and Table 5 present a comprehensive comparison of Active-Zero against strong baselines across both reasoning-intensive and general visual understanding benchmarks, evaluated at two model scales (Qwen2.5-VL-3B-Instruct and Qwen2.5-VL-7B-Instruct) and over multiple self-play iterations. 
+
+Reasoning-Intensive Benchmarks On reasoning-intensive tasks, Active-Zero consistently improves performance over the base model across all six benchmarks and both model sizes, demonstrating the effectiveness and robustness of the proposed training strategy. For Qwen2.5-VL-3B-Instruct, the base model achieves an average score of 41.34. After applying Active-Zero , performance increases substantially, peaking at 45.33 (+3.99) in Iter2. Gains are broad and systematic: MathVista (+2.40), WeMath (+7.70), MathVerse (+4.25), LogicVista (+3.34), and DynaMath (+4.91) all see notable improvements. Iter3 shows a slight regression relative to Iter2, suggesting diminishing returns or mild overfitting with continued iterations at this scale. For Qwen2.5-VL-7B-Instruct, Active-Zero yields great and stable improvements. The average score increases from 51.05 (base) to 53.97 (+2.92) at Iter2, with Iter3 remaining competitive at 53.47. The most pronounced gains are observed on LogicVista (43.08 → 48.21, +5.13) and WeMath (64.48 → 69.60, +5.12), highlighting Active-Zero ’s effectiveness on benchmarks that require multi-step logical reasoning and mathematical abstraction. Improvements are also consistent on MathVista, MathVision, and MathVerse, indicating that the method generalizes across diverse reasoning formats rather than targeting a narrow task type. Overall, these results show that Active-Zero not only improves average performance but does so uniformly across benchmarks, reinforcing its advantage over static or manually designed curricula. 
+
+General Visual Understanding and Knowledge-Based Benchmarks 
+
+Table 5 examines whether improvements on reasoning-intensive tasks trade off against general visual understanding or factual knowledge. Overall, Active-Zero preserves—and often strengthens—performance on these complementary benchmarks. For Qwen2.5-VL-3B-Instruct, the average score rises from 49.32 to 52.55 (+3.23) at Iter2. The largest gains come from VisNum (+6.80), MMMU (+4.47), and MMMU Pro (+4.71), indicating better numerical and multidisciplinary reasoning. While RealWorld drops slightly compared to the base model, improvements on the remaining benchmarks more than offset 15 Active Zero: Self-Evolving Vision-Language Models through Active Environment Exploration 
+
+Table 6. Ablation Study of Active-Zero on reasoning-intensive benchmarks.                                                  
+
+> Method MathVista MathVision WeMath MathVerse LogicVista DynaMath Average
+> Qwen2.5-VL-3B-Instruct
+> Base Model 57.80 22.27 53.51 30.84 37.28 46.33 41.34
+> Active-Zero 60.20 23.62 61.21 35.09 40.62 51.24 45.33 Base Chanllenger 59.30 21.88 61.32 34.39 40.40 51.18 44.75 Random Sampling 58.60 23.16 56.72 34.96 39.06 50.80 43.88 w/o Domain-Condition 59.20 22.43 62.41 35.15 39.73 50.68 44.93 w/o Visual Penalty 59.40 22.20 62.24 33.88 40.18 50.72 44.89
+
+Table 7. Ablation Study of Active-Zero on general visual understanding and knowledge-based benchmarks.                                                  
+
+> Method VisNum RealWorld MMStar MMMU MMMU Pro Hallusion Averge
+> Qwen2.5-VL-3B-Instruct
+> Base Model 34.71 61.70 52.80 44.69 41.99 60.04 49.32
+> Active-Zero 41.51 60.00 53.80 49.16 46.70 64.14 52.55 Base Challenger 40.51 57.91 52.53 47.37 44.75 63.09 51.03 Random Sampling 37.69 63.53 53.27 47.82 44.06 64.77 51.86 w/o Domain-Condition 40.04 57.39 52.20 47.71 45.13 61.93 50.73 w/o Visual Penalty 41.82 59.61 54.13 47.15 44.88 62.15 51.62
+
+this decline, yielding a clear net gain. For Qwen2.5-VL-7B-Instruct, Active-Zero increases the average from 57.51 to 59.77 (+2.26) at Iter2, with the most pronounced gains on RealWorld (+3.92), VisNum (+3.09), and MMMU (+2.90). Although Iter3 shows mild regressions on MMMU Pro and Hallusion relative to Iter2, results remain consistently above the base model, suggesting that additional iterations do not meaningfully erode general capabilities. 
+
+Iterative Behavior and Scaling Trends 
+
+Across both tables, Iter2 consistently emerges as the strongest iteration, striking a balance between exploration and stability. Iter3 often yields marginal regressions, particularly on smaller models, suggesting that excessive self-play iterations may introduce noise or reduce data diversity. Importantly, the gains from Active-Zero persist and scale well from 3B to 7B models, demonstrating that the method is not tied to a specific model capacity. 16

@@ -1,0 +1,442 @@
+Title: Self-Correction Inside the Model: Leveraging Layer Attention to Mitigate Hallucinations in Large Vision Language Models
+
+URL Source: https://arxiv.org/pdf/2603.00437v1
+
+Published Time: Tue, 03 Mar 2026 01:29:18 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+# Self-Correction Inside the Model: Leveraging Layer Attention to Mitigate Hallucinations in Large Vision–Language Models 
+
+## April Fu Independent Researcher 
+
+fq.april@gmail.com 
+
+## Abstract 
+
+Although Large Vision-Language Models (LVLMs) have made substantial progress, hallucination, where generated text is not grounded in the visual input, remains a challenge. As LVLMs become stronger, previously reported hallucina-tion patterns, such as linguistic bias and “overthinking” phenomenon, become far less consistent, making the cor-responding mitigation techniques substantially less effec-tive. In this paper, we introduce an Internal self-Correction mechanism utilizing Layer Attention ( ICLA ) that operates directly on hidden states during generation. Each layer selectively retrieves information from all preceding layers through a diagonal cross-layer attention mechanism, en-abling self-refinement without any external correction sig-nals. With introducing and training only 0.2M and 0.1M ad-ditional parameters on LLaVA1.5-7B and Qwen2.5-VL-7B, 
+
+ICLA consistently improves visual grounding across multi-ple hallucination benchmarks, demonstrating its effective-ness for more advanced LVLMs. 
+
+## 1. Introduction 
+
+Large Vision-Language Models (LVLMs) [1, 19, 25, 28, 48] have significantly advanced the capabilities of multimodal learning in broad tasks that require joint reasoning over textual and visual information, including image captioning and visual question answering (VQA) [8, 10, 24, 42]. De-spite these advancements, hallucination remains a persistent challenge in most LVLMs. This phenomenon refers to cases where the generated text is not grounded in the visual input, often describing objects, or relationships that do not exist in the image [20, 45]. Several studies have investigated the causes of halluci-nation in LVLMs. One major factor is modality imbal-ance, where the model tends to over-rely on linguistic pri-ors while underutilizing visual evidence—particularly when images are ambiguous, cluttered, or lack informative con-tent [21, 36, 45, 47]. In addition, LVLMs often exhibit a Vanilla DoLA VCD DeCo VDD DAMO   
+
+> 1680
+> 1682
+> 1684
+> 1686
+> 1688
+> 1690
+> 1692
+> 1694
+> MME  1689
+> MME LLaVA-Bench MMMU
+> 50
+> 60
+> 70
+> 80
+> 90
+> LLaVA-Bench / MMMU 87.0
+> 67.5
+
+Figure 1. Performance degradation of existing methods on Qwen2.5-VL-7B, where DoLA exhibits a significant drop, while the performance drop of MME exceeds the plot range and is not shown in the figure. 
+
+phenomenon termed as “overthinking”, in which the model captures the correct information in early layers but progres-sively suppresses visual cues in deeper layers. This over-processing can inadvertently give rise to hallucinated con-tent during text generation [4, 5, 20, 35]. Many approaches have been proposed to address this limitation. Training-based methods aim to enhance ground-ing by leveraging supervised fine-tuning (SFT) or rein-forcement learning from human feedback (RLHF) on high-quality data [21, 36]. Prompt engineering strategies, such as self-correction [17, 39] and self-consistency [3, 38], further improve model reliability by iteratively refining outputs or aggregating multiple generations to reduce hallucinations. More recently, contrastive decoding (CD) has emerged as an effective strategy, improving grounding by first gener-ating referring logits conditioned on hallucinated visual or textual inputs, and then contrasting the hallucinated logits from the logits with normal input to obtain the final log-its [18, 27, 29, 32, 37, 45–47]. In addition, several stud-ies have sought to mitigate the “overthinking” phenomenon through accumulative decoding (AD), which propagates in-formation from earlier layers that retain visual semantics to later layers, thereby reducing the emergence of hallucinated content [4, 33, 35, 41]. 1
+
+> arXiv:2603.00437v1 [cs.CV] 28 Feb 2026
+
+However, with the advancement of training strategies and the availability of high-quality multimodal data, we find that these previously observed hallucination patterns, such as over-reliance on linguistic priors and the “overthink-ing” phenomenon, are no longer clearly present in recent LVLMs. Through an in-depth analysis of a large number of erroneous cases from Qwen2.5-VL-7B [2], including the inspection of its internal probability dynamics during infer-ence, we observe no consistent or significant hallucination trends as reported in earlier works. Moreover, as shown in Figure 1, when evaluating representative methods designed to mitigate these issues on Qwen2.5-VL-7B, we observe that most of them lead to a noticeable performance drop, while only a few perform comparably to the vanilla model, bringing no observable improvements overall. These observations motivate us to design a more adaptive and scalable paradigm for hallucination mitigation in mod-ern advanced LVLMs, independent of any specific halluci-nation pattern. In this paper, we propose an Internal self-
+
+Correction mechanism utilizing Layer Attention ( ICLA )that operates within the model’s hidden states during gen-eration. Specifically, each layer can actively retrieve infor-mation from all preceding layers, self-correcting its hidden state representation according to its current context, thereby mitigating potential hallucinations iteratively. We formulate this process as a cross-layer attention operation, where the hidden state of the current layer serves as the query, and those from all preceding layers serve as keys and values. This design makes ICLA particularly suitable for address-ing hallucinations in more advanced models where no clear patterns are observable. Furthermore, to prevent information leakage and cross-position contamination, we apply a diagonal attention mask along the token dimension, ensuring that each hidden state at the current layer can only attend to the hidden states of the same position from all preceding layers, and not to any hidden state of other positions. The aggregated cross-layer attention output information is then integrated back into the hidden state of current layer, refining its representation and reinforcing visual grounding. We apply ICLA on LLaVA1.5-7B and Qwen2.5-VL-7B, where most prior hallucination patterns and method eval-uations were conducted on LLaVA1.5-7B, and Qwen2.5-VL-7B represents a more advanced LVLM. By introduc-ing and training only 0.2M and 0.1M additional parameters on LLaVA1.5-7B and Qwen2.5-VL-7B, respectively, ICLA 
+
+achieves strong performance across multiple hallucination benchmarks on both models, demonstrating its effective-ness in mitigating hallucinations. Notably, ICLA attains excellent results on Qwen2.5-VL-7B, further highlighting its suitability for complex and advanced LVLMs. The main contributions of this paper are summarized as follows: • We reveal that previously observed hallucination patterns and corresponding mitigation methods are no longer ef-fective for more advanced LVLMs. • We propose ICLA , an internal self-correction mechanism utilizing layer attention, in which each hidden state can adaptively retrieve information from preceding layers and refine itself accordingly. • Extensive experiments on LLaVA1.5-7B and Qwen2.5-VL-7B demonstrate the effectiveness of ICLA . Notably, 
+
+ICLA achieves state-of-the-art performance on Qwen2.5-VL-7B, highlighting its suitability for complex and ad-vanced LVLMs. 
+
+## 2. Related Work 
+
+2.1. Causes of Hallucination in LVLMs 
+
+Modality Imbalance. Modality imbalance refers to the tendency of LVLMs to over-rely on language priors while underutilizing visual information [11, 12, 16, 22, 31, 37]. This issue primarily stems from the model architecture, where a visual encoder is typically connected to a pre-trained large language model (LLM). As a result, the lin-guistic component often dominates multimodal reasoning. For instance, VCD [45] attributes hallucinations to the strong statistical biases inherent in language models, par-ticularly when visual cues are weak or ambiguous. Simi-larly, IBD [47] observes that LVLMs tend to overlook fine-grained visual details, producing linguistically plausible but visually ungrounded responses. 
+
+“Overthinking”. Beyond modality imbalance, LVLMs also tend to “overthink” [4, 33, 35, 41], a phenomenon where the model initially inferences the correct informa-tion but subsequently modifies or overrides it in later lay-ers. For example, DeCo [4] finds that visual features cap-tured in early layers are progressively suppressed in deeper layers, weakening visual grounding. DAMO [35] further demonstrates that, although LVLMs encode accurate visual cues, unstable activations in later layers reduce the probabil-ities of correct tokens, leading to hallucinations. Similarly, DCLA [33] confirms this trend, showing that hallucinations primarily emerge during the later decoding stages, consis-tent with DAMO’s findings. 
+
+2.2. Methods of Hallucination Mitigation in LVLMs 
+
+Training-based Methods. Training-based approaches aim to improve visual grounding by fine-tuning LVLMs on high-quality data or leveraging reinforcement learning from human feedback (RLHF) [5, 9, 13, 21, 36, 37, 40]. For instance, RLHF-V [36] and POVID [21] construct pairs of hallucinated and non-hallucinated outputs to fine-tune models via Direct Preference Optimization (DPO) algo-rithm [30], penalizing hallucinated generations. HIO [40], on the other hand, employs a contrastive loss to help the 2model distinguish grounded visual context from halluci-nated text, thereby reinforcing alignment between visual in-puts and generated outputs. 
+
+Non-Training-based Methods. Since training-based methods require substantial computational resources and high-quality curated data for fine-tuning, non-training-based methods have recently gained increasing attention for hallucination mitigation. These approaches primarily focus on analyzing and leveraging the internal probability dynamics of LVLMs to reduce hallucinations. For exam-ple, contrastive decoding (CD) contrasts logits between original and perturbed visual or textual inputs to alleviate hallucinations by reducing the model’s over-reliance on linguistic priors [15, 18, 26, 27, 29, 32, 37, 44–47]. In addition, to address the “overthinking” limitation, accu-mulative decoding (AD) has been proposed. AD operates on the hidden states during generation in an accumulative manner, complementing visual information from earlier layers to later ones, thereby preserving visual grounding and mitigating the suppression of visual cues in deeper layers [4, 33, 35, 41]. 
+
+2.3. Layer Attention 
+
+Layer attention has been explored in earlier studies on deep convolutional neural networks (DCNNs) as a way to im-prove information flow across depth. For instance, DI-ANet [14] employs a shared LSTM to capture inter-layer dependencies, and subsequent works [6, 7, 34] further de-velop more sophisticated mechanisms for propagating and refining information across layers. These approaches, al-though primarily designed for smaller models and general feature enhancement, provide valuable insight into the ben-efits of cross-layer communication. Inspired by this line of research, our work revisits cross-layer interaction in the context of LVLMs, leveraging it for adaptive refinement, thereby iteratively mitigating hallucination. 
+
+## 3. Method 
+
+We begin by reviewing the information flow in LVLMs to highlight the transformation of hidden states. Subsequently, we introduce the overall architecture of our proposed In-ternal Self-Correction via Layer Attention ( ICLA ) in de-tail. Finally, we elaborate the Cross-Layer Attention (CLA) module, which is the key component in ICLA .
+
+3.1. Preliminaries 
+
+LVLMs process multimodal inputs through a stack of trans-former layers that iteratively refine token representations. Let the multimodal input be x = ( x1, . . . , x T ), where each 
+
+xi denotes either a visual or textual token embedding. The  
+
+> Figure 2. Overall architecture of ICLA .
+
+model maintains a sequence of hidden states across L lay-ers, defined as: 
+
+hl = ( hl
+
+> 1
+
+, . . . , h lT ), l = 0 , . . . , L, (1) where hli ∈ Rd represents the hidden state of token xi at the 
+
+l-th layer, and d denotes the dimensionality of the hidden states. By definition, the initial hidden state h0 corresponds to the input embeddings x.Within the model, the hidden states are iteratively up-dated through transformer layers along with the residual connetion: 
+
+hl+1 = fl+1 (hl) + hl, (2) where fl+1 (·) denotes the transformation function of the 
+
+(l + 1) -th layer, typically consisting of multi-head self-attention and feed-forward submodules. For brevity, we omit the normalization here. After the final layer, the hidden states hL are used to predict the next-token distribution: 
+
+P (yt | x, y <t ) = Softmax( Wo · hLt ), (3) where hLt is the final-layer hidden state of the t-th token, 
+
+Wo is the output projection matrix. 
+
+3.2. Internal Self-Correction via Layer Attention 
+
+To address hallucinations in advanced LVLMs, where pre-viously observed patterns and mitigation strategies fail to generalize, we propose ICLA , which enables each hidden state to adaptively retrieve informative representations from preceding layers, thereby dynamically and iteratively refin-ing its own representation and self-correcting the potential hallucinations. The overall architecture of ICLA is shown in Figure 2. 3Specifically, at the l-th layer, we first store the hidden states from the k0-th to the l-th layer, forming a hidden state cache for the subsequent cross-layer attention mechanism: 
+
+Hk0: l = {hk}lk=k0 ∈ R(l−k0+1) ×T ×d, (4) where k0 serves as the starting layer for hidden state re-finement as modifying early layers may destroy the normal inference context [33, 35, 41]. After obtaining the hidden state cache, cross-layer attention is applied to retrieve rele-vant information from previous layers: 
+
+Ol = CLA( Hk0: l ), (5) where CLA denotes the cross-layer attention module (de-tailed in Section 3.3) and Ol ∈ RT ×d represents the atten-tion output. Finally, the attention output is scaled and used to refine the current hidden states: 
+
+hl := hl + α · RMSNorm( Ol), (6) where α is the scaling factor controlling the refinement strength. Here, RMSNorm refers to root mean square nor-malization, which normalizes the hidden state along the fea-ture dimension to stabilize training and preserve the scale of activations. Then the refined hidden states hl are used to compute the next layer’s hidden states hl+1 for iterative update according to Equation 2. 
+
+3.3. Cross-Layer Attention 
+
+In this section, we describe the Cross-Layer Attention (CLA) module, which differs from standard self-attention and cross-attention by processing information across trans-former layers rather than within a single layer or modality. Given the hidden state cache Hk0: l , we first compute the query, key, and value projections as follows: 
+
+
+
+ql = Wq · hl
+
+Kl = WK · Hk0: l
+
+V l = WV · Hk0: l ,
+
+(7) where hl is the last element in Hk0: l , representing the cur-rent hidden state. Wq , WK , and WV are learnable linear layers with a bottleneck: we first reduce the hidden dimen-sion from d to latent hidden dimension d′ = d/r for im-proving training and inference efficiency and r serves as the reduction ratio, similar to [14, 34]. Then, the obtained query, key, and value are used to com-pute the attention output. To ensure that each token at the 
+
+i-th position in the current l-th layer only attends to rep-resentations from previous layers at the same i-th position, we extract the diagonal of the attention matrix over the to-ken dimension: 
+
+Algorithm 1: Internal Self-Correction via Layer Attention ( ICLA )
+
+Input: Multimodal input x = ( x1, . . . , x T ); total layers L
+
+Output: Refined hidden states hL 
+
+> 1
+
+Initialization: h0 ← x ; // Input embeddings  
+
+> 2
+
+for l = 1 to L do  
+
+> 3
+
+hl ← fl(hl−1) + hl−1 ; // Standard transformer update  
+
+> 4
+
+if l > k 0 then  
+
+> 5
+
+Hk0: l = {hk}lk=k0 ; // Cache recent hidden states  
+
+> 6
+
+Cross-Layer Attention:  
+
+> 7
+
+ql = Wq · hl, Kl = WK · Hk0: l ,
+
+V l = WV · Hk0: l 
+
+> 8
+
+αl = diag 
+
+
+
+softmax 
+
+ ql·(Kl)⊤
+
+> √d′
+
+  
+
+> 9
+
+Ol = Wout ·Plk=k0 αlk · V lk 
+
+> 10
+
+hl ← hl + α · RMSNorm( Ol) ;
+
+// Refine current states  
+
+> 11
+
+return hL
+
+
+
+αl = diag softmax ql · (Kl)⊤
+
+√d′
+
+!! 
+
+Ol = Wout ·
+
+> l
+
+X
+
+> k=k0
+
+αlk · V lk ,
+
+(8) where αl denotes the attention weights, and Wout 
+
+projects the attention output from the latent dimension d′
+
+back to the original hidden dimension d. This design en-ables the attention mechanism to be performed in the la-tent space, efficiently reducing computational cost. The diagonal-only formulation ensures that each token aggre-gates information vertically across layers without interact-ing with other token positions. Notably, the CLA module is parameter-shared across the whole network to reduce the introduced parameters and enhance the training efficiency. The detailed algorithm is shown in Algorithm 1. 
+
+## 4. Experiments 
+
+4.1. Experimental Setup 
+
+Models and Baselines. We implement our ICLA on two popular LVLMs—LLaVA1.5-7B and Qwen2.5-VL-7B—for comprehensive evaluation. We compare our 
+
+ICLA with several strong hallucination mitigation base-lines. Vanilla serves as the base model (LLaVA1.5-7B [25] 4Model LLaVA1.5-7B Qwen2.5-VL-7B 
+
+Method MME LLaVA-Bench MMMU MME LLaVA-Bench MMMU Vanilla 1484 59.6 35.3 1689 87.0 67.5 DoLA 1485 60.5 35.7 1403 66.2 60.8 VCD 1469 60.6 35.8 1689 88.7 68.3 DeCo 1456 57.0 33.9 1681 86.8 62.5 POVID 1483 60.2 35.3 - - -VDD 1484 59.4 34.9 1689 87.2 65.8 DAMO 1495 57.7 34.4 1681 87.4 65.8 
+
+ICLA (Ours) 1499 61.9 35.9 1711 90.2 69.2   
+
+> Table 1. Experimental results on MME (total perception score), LLaVA-Bench (overall accuracy), and MMMU (accuracy) for LLaVA1.5-7B and Qwen2.5-VL-7B. The best results are highlighted in bold with light blue shading.
+
+or Qwen2.5-VL-7B [2]). VCD [45] mitigates hallucinations by contrasting outputs from original and distorted visual in-puts. VDD [45] extends VCD with post-hoc debiasing and debiased sampling. DoLA [5] contrasts logits across trans-former layers to mitigate hallucinations. POVID [21] em-ploys Direct Preference Optimization (DPO) to align the model and reduce hallucinations. DeCo [4] fuses infor-mation from selected preceding layers into the final decod-ing layer. DAMO [35] introduces momentum-based decod-ing to maintain inter-layer consistency and enhance factual grounding. For all experiments, the temperature is set to 0 for greedy decoding to ensure fair comparison. 
+
+Benchmarks and Metrics. We evaluate ICLA on four es-tablished hallucination benchmarks: POPE [23], MME [8], MMMU [43], and LLaVA-Bench [25]. POPE measures hal-lucination resistance on MSCOCO and A-OKVQA datasets under adversarial, random, and popular settings, reporting both accuracy and F1 scores. MME evaluates perception-related hallucinations, using the total perception score. MMMU tests multimodal reasoning ability with official accuracy. LLaVA-Bench adopts GPT-4o-based evaluation over perception, reasoning, and dialogue, providing both overall scores. 
+
+Training Details. We train ICLA using a lightweight tun-ing strategy with positive samples from the POVID train-ing set, which consists of 17K examples randomly sampled from LLaVA-Instruct-150K. Notably, all data overlap with those used in the official LLaVA training, so no additional knowledge is introduced. All model parameters are frozen except for those in the ICLA module. The key hyperparam-eters are set as default: learning rate lr = 2 e − 5, starting layer k0 = 16 , reduction ratio r = 128 , and scaling factor 
+
+α = 0 .02 , training epochs epoch = 3 .
+
+4.2. Experimental Results 
+
+Results on LLaVA1.5-7B. As shown in Table 1 and Ta-ble 2, ICLA consistently outperforms all other baselines on LLaVA1.5-7B. On the MME benchmark, ICLA achieves a 15-point improvement over the Vanilla LLaVA baseline and further surpasses contrastive decoding methods such as VCD and VDD by 30 and 15 points, respectively. On both LLaVA-Bench and MMMU, ICLA also attains the best per-formance. In particular, on LLaVA-Bench, ICLA reaches an accuracy of 61.9%, representing a 2.3% improvement over the Vanilla baseline. Compared to DAMO and DeCo, which also operate on hidden states during inference, ICLA 
+
+further outperforms them by 4.9% and 4.2%, respectively. On the POPE benchmark, ICLA achieves the highest F1 and accuracy scores across both two datasets (MSCOCO and A-OKVQA) under all three settings, demonstrating that the flexible self-correction of ICLA is stronger than the cu-rated methods for observed hallucination patterns. 
+
+Results on Qwen2.5-VL-7B. As shown in Table 1, 
+
+ICLA also achieves outstanding results on Qwen2.5-VL-7B across the MME, LLaVA-Bench, and MMMU bench-marks. On the MME benchmark, we observe an interest-ing phenomenon: most baseline methods perform on par with or even worse than the Vanilla Qwen2.5-VL-7B. For example, only VCD and VDD achieve comparable scores to the baseline, while all other methods yield lower results, suggesting that these approaches may not generalize well to more advanced LVLMs. In contrast, ICLA achieves a remarkable 22-point improvement over the Vanilla model, demonstrating both its effectiveness and strong adaptabil-ity. ICLA also attains the best performance on the MMMU benchmark, surpassing all baselines. As shown in Table 2, ICLA further delivers strong results on the POPE benchmark. Specifically, it achieves the best F1 and accuracy across all three settings on the MSCOCO and A-OKVQA datasets. These results collectively demon-strate that ICLA is particularly effective and well-suited for more advanced LVLMs such as Qwen2.5-VL-7B. As shown in Table 3, we provide a fine-grained compar-ison across three tasks on LLaVA-Bench using Qwen2.5-5Setting Method LLaVA1.5-7B Qwen2.5-VL-7B MSCOCO A-OKVQA MSCOCO A-OKVQA 
+
+## F1 Acc F1 Acc F1 Acc F1 Acc Adversarial Vanilla 81.76 79.77 76.12 69.37 80.72 83.40 80.73 79.53 DoLA 81.69 79.73 76.22 69.53 77.44 80.63 80.91 76.57 VCD 80.50 78.33 75.05 67.97 81.13 77.77 80.73 72.03 DeCo 81.14 78.37 74.93 67.03 80.86 83.47 80.93 80.10 POVID 81.88 80.03 76.18 69.47 – – – –DAMO 81.65 79.53 75.96 68.97 80.84 83.47 81.09 80.30 
+
+## ICLA (Ours) 81.90 80.13 76.32 69.73 81.50 83.97 81.60 80.93 
+
+## Popular Vanilla 86.82 86.23 83.22 80.30 81.03 83.73 85.32 85.83 DoLA 86.84 86.30 83.33 80.47 77.70 80.97 84.66 83.00 VCD 84.80 83.97 81.02 77.43 81.02 77.67 85.48 74.37 DeCo 85.90 84.73 81.39 77.47 81.24 83.90 85.45 86.20 POVID 86.78 86.23 83.32 80.53 - - - -DAMO 86.84 86.20 83.04 79.97 81.25 83.90 85.56 86.27 
+
+## ICLA (Ours) 86.91 86.43 83.39 80.57 81.92 84.37 86.37 87.07 
+
+## Random Vanilla 89.71 89.60 88.52 87.33 81.58 84.37 87.06 87.63 DoLA 89.77 89.70 88.55 87.37 78.02 81.57 85.91 84.43 VCD 87.60 87.37 86.52 85.00 81.64 79.17 87.86 80.77 DeCo 89.29 88.83 86.53 84.67 81.78 84.50 87.27 88.10 POVID 89.56 89.50 88.29 87.07 - - - -DAMO 89.69 89.53 87.93 86.53 81.83 84.57 87.32 88.13 
+
+## ICLA (Ours) 89.95 89.93 88.80 87.70 82.59 85.10 88.28 89.03       
+
+> Table 2. Results on the POPE benchmark. Comparison between LLaVA1.5-7B and Qwen2.5-VL-7B . We report F1 Score (%) and Accuracy (%) on the MSCOCO and A-OKVQA datasets under Adversarial, Popular, and Random settings. The best results are highlighted in bold blue .
+
+Method Vanilla DoLA VCD DeCo VDD DAMO ICLA (Ours) 
+
+Complex Reasoning (%) 95.8 66.5 98.6 95.2 94.8 96.3 93.3 Conversation (%) 82.4 65.0 86.1 83.7 85.0 82.0 89.4 
+
+Detail Description (%) 76.0 66.9 74.4 75.8 76.4 77.7 85.5 
+
+All (%) 87.0 66.2 88.7 86.8 87.2 87.4 90.2   
+
+> Table 3. Comparison of LLaVA-Bench performance for various baselines with backbone Qwen2.5-VL-7B. The best results are highlighted in bold blue.
+
+7B-VL as the backbone to demonstrate the effectiveness of ICLA in generalized hallucination mitigation. From an overall perspective, most baselines achieve performance comparable to vanilla Qwen2.5-VL-7B (87.0%), whereas 
+
+ICLA unexpectedly reaches 90.2%, yielding a substantial 3.2% improvement. Examining the task-level results, ICLA 
+
+delivers particularly strong gains on Conversation and De-tailed Description, with improvements of 7% and 9.5%, respectively. These significant increases further demon-strate the robustness and general applicability of our method across diverse hallucination scenarios. 6Adversarial Popular Random           
+
+> 75.0
+> 77.5
+> 80.0
+> 82.5
+> 85.0
+> 87.5
+> (a)
+> k0= 8
+> k0= 16
+> k0= 24
+> =0.005 =0.01 =0.02 =0.05
+> 35.0
+> 35.2
+> 35.4
+> 35.6
+> 35.8
+> 36.0
+> (b)
+> MMMU MME
+> r=64 r=128 r=256
+> 35.00
+> 35.25
+> 35.50
+> 35.75
+> 36.00
+> 36.25
+> 36.50
+> (c)
+> MMMU MME
+> 1440
+> 1460
+> 1480
+> 1500
+> 1520
+> 1450
+> 1460
+> 1470
+> 1480
+> 1490
+> 1500
+> 1510
+
+Figure 3. (a) Ablation results for starting layer k0 on POPE benchmark. (b) Ablation results for reduction ratio r on MMMU and MME benchmarks; (c) Ablation results on scaling factor α on MMMU and MME benchmarks. 
+
+Figure 4. Case study comparing Vanilla and ICLA based on Qwen2.5-VL-7B. The example is sampled from LLaVA-Bench. 
+
+4.3. Case Study 
+
+We present a case study to qualitatively illustrate the effec-tiveness of ICLA in mitigating hallucinations. The underly-ing model is Qwen2.5-VL-7B, and the example is sampled from LLaVA-Bench. As shown in Figure 4, when given the textual prompt “What is the name of the man in the photo?” along with an image showing Elon Musk hold-ing a dog—but with the body replaced by that of an an-imal—the scene introduces significant confusion. In this case, the vanilla Qwen model incorrectly identifies the man in the photo as “Shiba Inu.” In contrast, ICLA , correctly recognizes the person as Elon Musk despite the misleading visual cues. This demonstrates that ICLA can effectively and systematically reduce hallucinations in multimodal rea-soning. 
+
+4.4. Ablation Studies 
+
+Hyperparameter Studies. To evaluate the robustness and generalizability of ICLA , we conduct comprehensive abla-tion studies on the POPE, MME, and MMMU benchmarks using LLaVA1.5-7B. In each experiment, we vary a single key hyperparameter while keeping the others fixed at their default values. Specifically, we analyze the effects of the starting layer k0, the reduction ratio r, and the scaling factor 
+
+α. As shown in Figure 3(a), (b), and (c), the default settings yield the best performance. Moreover, the results exhibit only minor fluctuations as the parameters vary, demonstrat-ing that ICLA is robust and relatively insensitive to hyper-parameter changes. 
+
+ICLA in Each Layer. To further assess the effectiveness of ICLA , we conduct ablation studies comparing different variants of the mechanism. The first variant applies layer attention only at the final layer, where the final hidden state serves as the query to retrieve information from all preced-ing layers. The second variant employs random aggrega-tion, in which skip connections are added randomly, allow-ing certain layers to receive information from previous lay-ers in a non-deterministic manner. As shown in Table 4, the full ICLA consistently outperforms all other variants, fur-ther demonstrating the importance of structured, layer-wise attention in effectively integrating cross-layer information and mitigating hallucinations. 
+
+Method Random Adversarial 
+
+F1 Acc F1 Acc Vanilla 88.52 87.33 76.12 69.37 
+
+ICLA (Last) 88.29 87.40 76.18 69.47 Random Agg. 88.55 87.37 76.18 69.47 
+
+ICLA 88.80 87.70 76.32 69.73 
+
+Table 4. Comparison of different ICLA variants on the POPE benchmark (A-OKVQA dataset) using LLaVA1.5-7B. Random Add. denotes the Random Aggregation. 
+
+4.5. Analysis and Discussion 
+
+Training and Inference Efficiency. ICLA is highly training-efficient. Training is performed on two RTX 4090 GPUs for 3 epochs with a learning rate of 2e-5 for each 7model, taking approximately 3 hours. As detailed in the Ap-pendix, ICLA introduces only 277K and 105K additional parameters for LLaVA1.5-7B and Qwen2.5-VL-7B, respec-tively. This is because the parameters for each CLA mod-ule are shared within the whole network and we operate the cross-layer attention in the latent hidden space. The average inference-time computational overhead under different to-ken length is also minimal, accounting for only 0.37% and 0.07% of the total computation in LLaVA and Qwen2.5-VL-7B, respectively. 
+
+Layer Attention Pattern Analysis. As mentioned earlier, there is no consistent hallucination trend across more ad-vanced models. To address this, we design a more scalable architecture that enables each hidden state to adaptively se-lect and integrate information from previous layers for self-correcting, thereby mitigating hallucination. While this ap-proach proves effective, in this section we try to interpret and uncover deeper insights into the underlying attention dynamics. We analyze the layer-wise attention behavior on sam-ples from the POPE benchmark (MSCOCO dataset), where the vanilla Qwen2.5-VL-7B initially produces incorrect an-swers but ICLA successfully corrects them. For each layer l
+
+(as the query), we record and visualize the average attention weights over the preceding layers from k0 to l.As shown in Figure 5, we identify two prominent regions of attention concentration in Qwen2.5-VL-7B. First, layers 19–21 exhibit strong attention, suggesting that intermediate layers play a crucial role in reasoning. This indicates that emphasizing these representations may contribute to miti-gating hallucinations. Second, the later layers, particularly 24–25, also show high cross-layer retrieval, implying that both intermediate and deeper layers jointly facilitate rea-soning and self-correction. In contrast, three regions—layers 16–18, 22–23, and, surprisingly, 26–28—receive almost no attention. This suggests that the model largely ignores information from these layers during self-correction. Notably, the final layer (28-th), responsible for next-token prediction, primarily re-trieves information from layers 21, 24, and 25 when mak-ing decisions. This observation further supports the idea that referencing earlier informative layers, rather than rely-ing solely on the final representations, enhances the model’s ability to refine its outputs. Interestingly, these attended and unattended regions al-ternate throughout the network, forming an interleaved pat-tern. Such alternation reflects a dynamic balance between information consolidation and abstraction across depth, highlighting that not all layers contribute equally to reason-ing or correction. 
+
+Broader Applicability. We further conduct a similar layer-wise attention analysis on LLaVA-1.5-7B to exam-
+
+> Figure 5. Visualization of average attention weights in ICLA using Qwen for selected samples
+
+ine whether the observed patterns generalize across models. Interestingly, the attention distribution in LLaVA1.5-7B dif-fers entirely from that of Qwen2.5-VL-7B, showing no con-sistent concentration regions or interleaved structures. This discrepancy indicates that the curated hallucination mitiga-tion strategies specifically designed for LLaVA may not di-rectly transfer to Qwen2.5-VL-7B (As our preliminary ex-periments in Figure 1). Consequently, our proposed method is not only effective for alleviating hallucinations but also serves as a general analytical tool for identifying key layers in more advanced models where traditional hallucination patterns become less observable. From the perspective of attention-weight distribution, our approach provides a prin-cipled way to investigate how higher-level models internally allocate reasoning focus across depth. 
+
+## 5. Conclusion 
+
+In this paper, we reveal that previously observed halluci-nation patterns and their corresponding mitigation methods are no longer effective for more advanced LVLMs. With the use of higher-quality data and more sophisticated train-ing strategies, no consistent hallucination trends can be ob-served in these models. To address this limitation, we propose ICLA , an internal self-correction mechanism that leverages layer-wise attention to dynamically retrieve and refine information from preceding hidden states during gen-eration. Extensive experiments across multiple benchmarks and models, including LLaVA1.5-7B and Qwen2.5-VL-7B, demonstrate that ICLA consistently outperforms other strong baselines, effectively mitigating hallucinations. Our results highlight the potential of adaptive, cross-layer mech-anisms for improving the reliability of advanced LVLMs, even in scenarios where no clear hallucination patterns are observable. 8References 
+
+[1] Jean-Baptiste Alayrac, Jeff Donahue, Pierre Luc, Antoine Miech, Ishan Barr, Yossi Hasson, Smaine Milani, Sebastian Borgeaud, Arthur Mensch, Serkan Cabi, et al. Flamingo: a visual language model for few-shot learning. arXiv preprint arXiv:2204.14198 , 2022. 1 [2] Shuai Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, Sibo Song, Kai Dang, Peng Wang, Shijie Wang, Jun Tang, et al. Qwen2. 5-vl technical report. arXiv preprint arXiv:2502.13923 , 2025. 2, 5 [3] Xinyun Chen, Renat Aksitov, Uri Alon, Jie Ren, Ke-fan Xiao, Pengcheng Yin, Sushant Prakash, Charles Sut-ton, Xuezhi Wang, and Denny Zhou. Universal self-consistency for large language model generation. arXiv preprint arXiv:2311.17311 , 2023. 1 [4] Yuxian Chen, Xiaolong Han, Yichong Zhang, and Minlie Tan. Mllm can see? dynamic correction decoding for hallu-cination mitigation. arXiv preprint arXiv:2410.11779 , 2024. 1, 2, 3, 5 [5] Yung-Sung Chuang, Yujia Xie, Hongyin Luo, Yoon Kim, James Glass, and Pengcheng He. Dola: Decoding by con-trasting layers improves factuality in large language models. 
+
+arXiv preprint arXiv:2309.03883 , 2023. 1, 2, 5 [6] William Claster, Suhas KM, and Dhairya Gundechia. Adap-tive integrated layered attention (aila). arXiv preprint arXiv:2503.22742 , 2025. 3 [7] Yanwen Fang, Yuxi Cai, Jintai Chen, Jingyu Zhao, Guangjian Tian, and Guodong Li. Cross-layer retro-spective retrieving via layer attention. arXiv preprint arXiv:2302.03985 , 2023. 3 [8] Chaoyou Fu, Peixian Chen, Yunhang Shen, Yulei Qin, Mengdan Zhang, Xu Lin, Jinrui Yang, Xiawu Zheng, Ke Li, Xing Sun, Yunsheng Wu, and Rongrong Ji. MME: A com-prehensive evaluation benchmark for multimodal large lan-guage models. arXiv preprint arXiv:2306.13394 , 2023. 1, 5[9] Zorik Gekhman, Gal Yona, Roee Aharoni, Matan Eyal, Amir Feder, Roi Reichart, and Jonathan Herzig. Does fine-tuning llms on new knowledge encourage hallucinations? arXiv preprint arXiv:2405.05904 , 2024. 2 [10] Yash Goyal, Tejas Khot, Douglas Summers-Stay, Dhruv Ba-tra, and Devi Parikh. Making the v in vqa matter: Elevating the role of image understanding in visual question answer-ing. In Proceedings of the IEEE conference on computer vision and pattern recognition , pages 6904–6913, 2017. 1 [11] Tianrui Guan, Fuxiao Liu, Xiyang Wu, Ruiqi Xian, Zongxia Li, Xiaoyu Liu, Xijun Wang, Lichang Chen, Furong Huang, Yaser Yacoob, et al. Hallusionbench: an advanced diagnos-tic suite for entangled language hallucination and visual il-lusion in large vision-language models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 14375–14385, 2024. 2 [12] Yudong Han, Liqiang Nie, Jianhua Yin, Jianlong Wu, and Yan Yan. Visual perturbation-aware collaborative learning for overcoming the language prior problem. arXiv preprint arXiv:2207.11850 , 2022. 2 [13] Minda Hu, Bowei He, Yufei Wang, Liangyou Li, Chen Ma, and Irwin King. Mitigating large language model hallucination with faithful finetuning. arXiv preprint arXiv:2406.11267 , 2024. 2 [14] Zhongzhan Huang, Senwei Liang, Mingfu Liang, and Haizhao Yang. Dianet: Dense-and-implicit attention net-work. In Proceedings of the AAAI conference on artificial intelligence , pages 4206–4214, 2020. 3, 4 [15] Fushuo Huo, Wenchao Xu, Zhong Zhang, Haozhao Wang, Zhicheng Chen, and Peilin Zhao. Self-introspective de-coding: Alleviating hallucinations for large vision-language models. arXiv preprint arXiv:2408.02032 , 2024. 3 [16] Prannay Kaul, Zhizhong Li, Hao Yang, Yonatan Duk-ler, Ashwin Swaminathan, CJ Taylor, and Stefano Soatto. Throne: An object-based hallucination benchmark for the free-form generations of large vision-language models. In 
+
+Proceedings of the IEEE/CVF Conference on Computer Vi-sion and Pattern Recognition , pages 27228–27238, 2024. 2 [17] Aviral Kumar, Vincent Zhuang, Rishabh Agarwal, Yi Su, John D Co-Reyes, Avi Singh, Kate Baumli, Shariq Iqbal, Colton Bishop, Rebecca Roelofs, et al. Training language models to self-correct via reinforcement learning. arXiv preprint arXiv:2409.12917 , 2024. 1 [18] Yi-Lun Lee, Yi-Hsuan Tsai, and Wei-Chen Chiu. Delve into visual contrastive decoding for hallucination mitiga-tion of large vision-language models. arXiv preprint arXiv:2412.06775 , 2024. 1, 3 [19] Junnan Li, Kailan Li, Silvio Savarese, and Juan Carlos Niebles. Blip-2: Bootstrapping language-image pre-training with frozen image encoders and large language models. 
+
+arXiv preprint arXiv:2301.12597 , 2023. 1 [20] Shuo Li, Minghao Li, Bing Li, and Jie Xu. Opera: Al-leviating hallucination in multi-modal large language mod-els via over-trust penalty and retrospection-allocation. arXiv preprint arXiv:2311.17911 , 2023. 1 [21] Shuo Li, Xiaoxuan Zheng, Jie Xu, Bing Li, and Jing Lin. Aligning modalities in vision large language models via pref-erence fine-tuning. arXiv preprint arXiv:2402.11411 , 2024. 1, 2, 5 [22] Xiang Lisa Li, Ari Holtzman, Daniel Fried, Percy Liang, Jason Eisner, Tatsunori Hashimoto, Luke Zettlemoyer, and Mike Lewis. Contrastive decoding: Open-ended text gen-eration as optimization. arXiv preprint arXiv:2210.15097 ,2022. 2 [23] Yifan Li, Yifan Du, Kun Zhou, Jinpeng Wang, Wayne Xin Zhao, and Ji-Rong Wen. Evaluating object hallucina-tion in large vision-language models. arXiv preprint arXiv:2305.10355 , 2023. 5 [24] Tsung-Yi Lin, Michael Maire, Serge Belongie, James Hays, Pietro Perona, Deva Ramanan, Piotr Doll´ ar, and C Lawrence Zitnick. Microsoft coco: Common objects in context. In 
+
+Computer vision–ECCV 2014: 13th European conference, zurich, Switzerland, September 6-12, 2014, proceedings, part v 13 , pages 740–755. Springer, 2014. 1 [25] Haotian Liu, Chunyuan Li, Qingyang Wu, and Yong Jae Lee. Visual instruction tuning. Advances in Neural Information Processing Systems , 36:34892–34916, 2023. 1, 4, 5 
+
+9[26] Xinyu Lyu, Beitao Chen, Lianli Gao, Hengtao Shen, and Jingkuan Song. Alleviating hallucinations in large vision-language models through hallucination-induced optimiza-tion. Advances in Neural Information Processing Systems ,37:122811–122832, 2024. 3 [27] Avshalom Manevich and Reut Tsarfaty. Mitigating hallucinations in large vision-language models (lvlms) via language-contrastive decoding (lcd). arXiv preprint arXiv:2408.04664 , 2024. 1, 3 [28] OpenAI. Gpt-4 technical report. arXiv preprint arXiv:2303.08774 , 2023. 1 [29] Yeji Park, Deokyeong Lee, Junsuk Choe, and Buru Chang. Convis: Contrastive decoding with hallucination visualiza-tion for mitigating hallucinations in multimodal large lan-guage models. In Proceedings of the AAAI Conference on Artificial Intelligence , pages 6434–6442, 2025. 1, 3 [30] Rafael Rafailov, Archit Sharma, Eric Mitchell, Christo-pher D Manning, Stefano Ermon, and Chelsea Finn. Direct preference optimization: Your language model is secretly a reward model. Advances in neural information processing systems , 36:53728–53741, 2023. 2 [31] Rico Sennrich, Jannis Vamvas, and Alireza Mohammad-shahi. Mitigating hallucinations and off-target machine translation with source-contrastive and language-contrastive decoding. arXiv preprint arXiv:2309.07098 , 2023. 2 [32] Wei Suo, Lijun Zhang, Mengyang Sun, Lin Yuanbo Wu, Peng Wang, and Yanning Zhang. Octopus: Alleviating hal-lucination via dynamic contrastive decoding. In Proceedings of the Computer Vision and Pattern Recognition Conference ,pages 29904–29914, 2025. 1, 3 [33] Kai Tang, Jinhao You, Xiuqi Ge, Hanze Li, Yichen Guo, and Xiande Huang. Mitigating hallucinations via inter-layer con-sistency aggregation in large vision-language models. arXiv preprint arXiv:2505.12343 , 2025. 1, 2, 3, 4 [34] Kaishen Wang, Xun Xia, Jian Liu, Zhang Yi, and Tao He. Strengthening layer interaction via dynamic layer attention. 
+
+arXiv preprint arXiv:2406.13392 , 2024. 3, 4 [35] Kaishen Wang, Hengrui Gu, Meijun Gao, and Kaixiong Zhou. Damo: Decoding by accumulating activations mo-mentum for mitigating hallucinations in vision-language models. In The Thirteenth International Conference on Learning Representations , 2025. 1, 2, 3, 4, 5 [36] Liu Wang, Xin Zheng, Shuo Li, Jie Xu, and Lei Lin. Rlhf-v: Towards trustworthy mllms via behavior alignment from fine-grained correctional human feedback. arXiv preprint arXiv:2312.00849 , 2023. 1, 2 [37] Lei Wang, Jiabang He, Shenshen Li, Ning Liu, and Ee-Peng Lim. Mitigating fine-grained hallucination by fine-tuning large vision-language models with caption rewrites. In Inter-national Conference on Multimedia Modeling , pages 32–45. Springer, 2024. 1, 2, 3 [38] Xuezhi Wang, Jason Wei, Dale Schuurmans, Quoc Le, Ed Chi, Sharan Narang, Aakanksha Chowdhery, and Denny Zhou. Self-consistency improves chain of thought reason-ing in language models. arXiv preprint arXiv:2203.11171 ,2022. 1 [39] Zhenyu Wu, Qingkai Zeng, Zhihan Zhang, Zhaoxuan Tan, Chao Shen, and Meng Jiang. Large language models can self-correct with key condition verification. arXiv preprint arXiv:2405.14092 , 2024. 1 [40] Chen Xu, Yuchen Liu, and Lei Lin. Alleviating hallucina-tions in large vision-language models through hallucination-induced optimization. arXiv preprint arXiv:2405.15356 ,2024. 2 [41] Le Yu, Kaishen Wang, Jianlong Xiong, Yue Cao, and Tao He. Hallurnn: Mitigating hallucinations via recurrent cross-layer reasoning in large vision-language models. arXiv preprint arXiv:2506.17587 , 2025. 1, 2, 3, 4 [42] Weihao Yu, Zhengyuan Yang, Linjie Li, Jianfeng Wang, Kevin Lin, Zicheng Liu, Xinchao Wang, and Lijuan Wang. Mm-vet: Evaluating large multimodal models for integrated capabilities. arXiv preprint arXiv:2308.02490 , 2023. 1 [43] Xiang Yue, Yuansheng Ni, Kai Zhang, Tianyu Zheng, Ruoqi Liu, Ge Zhang, Samuel Stevens, Dongfu Jiang, Weiming Ren, Yuxuan Sun, et al. Mmmu: A massive multi-discipline multimodal understanding and reasoning benchmark for ex-pert agi. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 9556– 9567, 2024. 5 [44] Ce Zhang, Zifu Wan, Zhehan Kan, Martin Q Ma, Si-mon Stepputtis, Deva Ramanan, Russ Salakhutdinov, Louis-Philippe Morency, Katia Sycara, and Yaqi Xie. Self-correcting decoding with generative feedback for mitigat-ing hallucinations in large vision-language models. arXiv preprint arXiv:2502.06130 , 2025. 3 [45] Rui Zhang, Yuan Wang, Xiao Li, Xiaodong Zhang, and Yang Zhao. Mitigating object hallucinations in large vision-language models through visual contrastive decoding. arXiv preprint arXiv:2311.16922 , 2023. 1, 2, 5 [46] Yi-Fan Zhang, Weichen Yu, Qingsong Wen, Xue Wang, Zhang Zhang, Liang Wang, Rong Jin, and Tieniu Tan. De-biasing multimodal large language models. arXiv preprint arXiv:2403.05262 , 2024. [47] Yihe Zhou, Huikai Lin, Zhixiang Xie, Qicheng Wang, and Yifan Liu. Ibd: Alleviating hallucinations in large vision-language models via image-biased decoding. arXiv preprint arXiv:2402.18476 , 2024. 1, 2, 3 [48] Ding Zhu, Xu Lin, Yu Hu, and Zhiqiang Lin. Minigpt-4: En-hancing vision-language understanding with advanced large language models. arXiv preprint arXiv:2304.10592 , 2023. 1 
+
+10 Appendix 
+
+## A. Detailed Results 
+
+We present the detailed results shown in Table 1. Ex-perimental results for MME evaluated on Qwen2.5-VL-7B are shown in Table 5, results for MMMU evaluated on Qwen2.5-VL-7B are shown in Table 6, results for LLaVA-Bench evaluated on LLaVA1.5-7B are shown in Table 7. 
+
+## B. Further Evaluation 
+
+To further evaluate the effectiveness of ICLA , we also ap-ply ICLA in more advanced model, Qwen3-VL-8B. We compare ICLA with various decoding strategies on MME, LLaVA-Bench, and MMMU benchmarks. As shown in Ta-ble 8, ICLA consistently outperforms all other baselines across these three benchmarks, further demonstrating the effectiveness of ICLA in mitigating hallucinations in more advanced model. We believe the further experiments prove that ICLA is more adaptive and scalable for mitigating hal-lucination in LVLMs. 
+
+## C. Additional Attention Pattern 
+
+In addition to the attention pattern analysis for Qwen2.5-VL-7B in the main paper, we further present the attention pattern for LLaVA1.5-7B. As shown in Figure 6, the at-tention pattern in LLaVA shows that only intermediate lay-ers are frequently retrieved, showcasing totally different at-tention pattern from Qwen2.5-VL-7B. This observation is consistent with previous researches that intermediate lay-ers contribute more to hallucination mitigation in LLaVA. We further argue the broader applicability for ICLA , which provides a principled way to investigate how higher-level models internally allocate reasoning focus across depth. 
+
+## D. Efficiency of ICLA 
+
+We further provide the efficiency of ICLA . As shown in Table 9 and Table 10, we present the extra FLOPs and the introduced parameters for ICLA in LLaVA1.5-7B and Qwen2.5-VL-7B, respectively. The results show that ICLA 
+
+introduces small number of computation overhead and pa-rameters, demonstrating the efficiency of ICLA .  
+
+> Figure 6. Visualization of average attention weights in ICLA using LLaVA1.5-7B for selected samples
+
+1Method OCR Artwork Celebrity Color Count Existence Landmark Position Posters Scene Total Vanilla 181 138 157 194 154 199 184 159 169 154 1689 DoLA 165 115 87 184 118 174 121 154 146 139 1403 VCD 181 138 157 194 154 199 184 159 169 154 1689 DeCo 181 138 153 194 154 199 181 159 168 154 1681 VDD 181 138 157 194 154 199 184 159 169 154 1689 DAMO 181 138 153 194 154 199 181 159 168 154 1681 
+
+ICLA (Ours) 179 149 159 194 154 199 189 159 173 156 1711 
+
+Table 5. Comparison on the MME benchmark (Perception) across various baselines with backbone Qwen2.5-VL-7B. The best results are highlighted in bold .
+
+# Method Vanilla DoLa VCD DeCo VDD DAMO ICLA (Ours) 
+
+# Overall Accuracy(%) 67.5 60.8 68.3 62.5 65.8 65.8 69.2 
+
+Table 6. Comparison on overall accuracy of the MMMU benchmark across various baselines with backbone Qwen2.5-VL-7B. The best results are highlighted in bold .
+
+Method Vanilla DoLa VCD DeCo POVID VDD DAMO ICLA (Ours) 
+
+Complex reasoning (%) 72.1 70.5 70.7 66.8 69.4 71.9 65.1 70.4 Conversation (%) 50.6 53.7 55.0 52.7 55.0 52.3 55.0 59.6 
+
+Detail description (%) 48.8 50.0 49.3 45.0 50.4 45.7 48.0 50.0 All (%) 59.6 60.5 60.6 57.0 60.2 59.4 57.7 61.9 
+
+Table 7. Comparison of LLaVA-Bench performance for various baselines. The best results are highlighted in bold .
+
+Method MME LLaVA-Bench MMMU Vanilla 1726 98.8 57.1 DoLA 1705 99.8 58.0 VCD 1726 106.7 57.1 DeCo 1734 60.6 57.2 VDD 1720 106.3 56.5 DAMO 1704 102.8 56.9 
+
+ICLA (Ours) 1740 106.8 58.3 
+
+Table 8. Experimental results on MME (total perception score), LLaVA-Bench (overall accuracy), and MMMU (accuracy) for Qwen3-VL-8B. The best results are highlighted in bold .
+
+Token Length Total FLOPs (TFLOPs) ICLA FLOPs (GFLOPs) Overhead (%) Params Added 
+
+128 5.12 18.8 0.37 277K 256 10.29 37.8 0.37 512 13.86 50.6 0.37 
+
+Table 9. Computation overhead of ICLA compared to vanilla LLaVA1.5-7B under different token lengths. 
+
+Token Length Total FLOPs (TFLOPs) ICLA FLOPs (GFLOPs) Overhead (%) Params Added 
+
+128 2.12 1.48 0.07 105K 256 4.36 2.98 0.07 512 7.99 5.94 0.07 
+
+Table 10. Computation overhead of ICLA compared to vanilla Qwen2.5-VL-7B under different token lengths. 
+
+2

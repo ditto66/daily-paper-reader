@@ -1,0 +1,289 @@
+Title: When Visibility Outpaces Verification: Delayed Verification and Narrative Lock-in in Agentic AI Discourse
+
+URL Source: https://arxiv.org/pdf/2602.11412v1
+
+Published Time: Fri, 13 Feb 2026 01:16:39 GMT
+
+Number of Pages: 9
+
+Markdown Content:
+# When Visibility Outpaces Verification: Delayed Verification and Narrative Lock-in in Agentic AI Discourse 
+
+# Hanjing Shi 
+
+hasa23@lehigh.edu Lehigh University Bethlehem, Pennsylvania, USA 
+
+# Dominic DiFranzo 
+
+djd219@lehigh.edu Lehigh University Bethlehem, Pennsylvania, USA 
+
+## Abstract 
+
+Agentic AI systems—capable of autonomous planning and execu-tion—pose distinctive challenges for trust calibration. Long before direct interaction, users’ expectations are shaped by public dis-course on social platforms. However, platform-visible engagement signals (e.g., upvotes) may inadvertently create a "credibility proxy" that hinders critical evaluation. In this paper, we investigate the relationship between social proof and verification timing in online discussions of agentic AI. We ana-lyze Reddit data from two distinct communities, operationalizing verification cues through reproducible lexical rules and modeling "time-to-first-verification" using right-censoring techniques. Our findings reveal a systemic "Popularity Paradox": discussions with high visibility experience significantly delayed or entirely ab-sent verification cues compared to low-visibility threads. This lag creates a window of "Narrative Lock-in," where early, unverified claims crystallize into collective cognitive biases before evidence-seeking behaviors emerge. We discuss the implications of this "credibility-by-visibility" effect for AI safety and propose design in-terventions to introduce "epistemic friction" in engagement-driven platforms. 
+
+## 1 Introduction 
+
+Agentic AI systems—artificial intelligence systems that autonomously plan, decide, and execute multi-step tasks—are rapidly moving from research prototypes toward public-facing ecosystems [ 4, 15 ]. Along-side this shift, public attention and concern are increasingly visi-ble, including discourse about autonomy, safety, and responsibility [16 , 18 ]. Unlike earlier interactive systems, agentic AI is explicitly designed to act on users’ behalf with limited oversight. As a result, questions of trust, verification, and responsibility become central: when, why, and on what basis should such systems be relied upon [15, 21]? Crucially, trust in agentic AI often forms before direct inter-action occurs. For many potential users, expectations about sys-tem capability, safety, and reliability are shaped through mediated exposure—news, social media posts, and online discussion forums [ 16 , 25 , 33 ]. Public discourse thus functions as a pre-interaction layer of trust calibration, where early impressions can guide later reliance even as direct experience becomes available [ 21 ]. This is especially consequential for emerging, weakly understood systems: early narratives can harden into community “common sense” before robust evidence is available. In this paper, we examine how public discussions of agentic AI on Reddit evolve under the influence of platform-visible engage-ment signals such as post score and comment activity. We focus on evidence-seeking behavior—explicit requests for sources, links, or verification—and ask whether and when such behavior appears in highly visible discussions. Prior work shows that visible popu-larity shapes attention and evaluation, producing social influence bias and increasing vulnerability to unverified information [ 3 , 24 ]. Building on this, we shift the question from whether verification happens to when it happens in the lifecycle of a discussion. 
+
+Research questions. We ask: 
+
+• (RQ1) When a thread about agentic AI becomes highly visible, does evidence-seeking occur earlier in the thread lifecycle, or does it arrive later (or not at all) after discussion has already accumulated? 
+
+• (RQ2) Does this visibility–verification relationship vary across communities with different discourse norms (exploratory vs. operational)? 
+
+Rather than measuring individual trust directly, we study the informational conditions under which trust is formed. We opera-tionalize verification timing as a structural property of discussion threads and analyze how it varies with platform visibility. We argue that delayed or absent verification in high-engagement threads is consistent with a form of collective cognitive bias: under novelty and epistemic uncertainty, groups substitute social proof for sub-stantiation, implicitly delegating verification to the crowd [ 21 , 24 ]. This paper contributes (1) a minimal, fully reproducible oper-ationalization of thread-level verification cues and time-to-first-verification in public discourse; (2) an in-the-wild analysis showing that high visibility is associated with delayed or absent verification, characterizing a pre-interaction trust environment where credibil-ity can be inferred from engagement before evidence is introduced; and (3) an account of how discourse context modulates this pattern, highlighting the role of community norms in shaping epistemic behavior around emerging AI. 
+
+## 2 Related Work 
+
+Our investigation intersects several established streams of research across human-computer interaction, cognitive science, and social computing. We situate our findings within the literature on trust in AI, the dynamics of misinformation and social proof, the role of community norms in shaping online behavior, and the use of design friction. Across these areas, prior work has largely examined 
+
+what people believe or how they evaluate information; we focus on a complementary axis: when evidence-seeking appears (or fails to appear) as public discourse unfolds, and how this timing differs under platform-visible engagement. 
+
+## 2.1 Public Discourse and Trust in Agentic AI 
+
+Trust is a fundamental determinant of human reliance on automated systems [ 21 ]. However, the emergence of agentic AI introduces new 
+
+> arXiv:2602.11412v1 [cs.CY] 11 Feb 2026 Hanjing Shi and Dominic DiFranzo
+
+Figure 1: Conceptual mechanism (not a quantitative result). We study how platform-visible engagement (operationalized by score ≥ 𝑄 0.75 vs. lower) relates to the time-to-first-verification cue in Reddit threads about agentic AI. Verification cues are identified using a high-precision lexical rule set; threads with no cue during the observation window are treated as right-censored. The figure illustrates a plausible pathway consistent with our findings: higher visibility can encourage credibility-by-visibility as a proxy, which can delay or suppress early evidence-seeking, creating a window where early narratives stabilize before substantiation appears. 
+
+challenges for trust calibration, as these systems autonomously plan and execute multi-step tasks [ 15 ]. Recent scholarship emphasizes that trust in such systems is strongly influenced by conversational styles [ 5] and the perceived autonomy of the agents, which often exhibit complex collective behaviors [ 8 ]. Crucially, public percep-tions and expectations of AI are rapidly negotiated in online forums and social media platforms long before widespread direct adoption [4 , 16 , 18 ]. Analyzing large-scale Reddit discussions reveals shifting public attitudes toward LLMs, moving from novelty to functional evaluation [25, 33]. Our work builds on this line of research by treating public dis-course as part of a pre-interaction trust environment : a setting where participants often lack direct access to ground truth and where credibility judgments may be made before hands-on experience is possible [ 21 ]. Rather than measuring trust attitudes directly, we operationalize a structural precursor to trust calibration—the tim-ing and presence of explicit evidence-seeking—to characterize how early expectations can stabilize in agentic AI communities. 
+
+## 2.2 Social Proof, Verification, and the Timing of Corrections 
+
+When encountering novel information, users frequently rely on so-cial heuristics. The presence of platform-visible engagement metrics serves as a powerful form of social proof, significantly increasing vulnerability to unverified information [ 3 , 24 ]. The rapid dissemina-tion of unverified claims—often manifesting as rumor cascades—can sometimes be mitigated when visible verification links are injected into the discourse [ 13 ]. Yet, cognitive science demonstrates that the timing of such interventions is critical. Misinformation often exerts a continued influence even after credible corrections are issued [ 22 ]. Consequently, prebunking and accuracy nudges are generally more effective at improving truth discernment than post-hoc debunking [6, 27]. We connect these findings to public discourse about agentic AI by focusing on the temporal organization of evidence-seeking. Prior work often evaluates whether corrections exist or whether people accept them; we ask whether verification appears early enough to shape the discussion trajectory in the first place. Methodologically, we treat threads without verification as a substantively important outcome rather than a missing case, motivating a right-censoring When Visibility Outpaces Verification: Delayed Verification and Narrative Lock-in in Agentic AI Discourse 
+
+formulation that preserves the prevalence of “never-verified” dis-course when analyzing time-to-first-verification. 
+
+## 2.3 Community Norms, Moderation, and Vulnerability 
+
+The verification dynamics we study are embedded in socio-technical environments where norms shape what counts as appropriate par-ticipation and accountability [ 11 , 12 , 26 ]. Prior work shows that these norms and expectations strongly condition how communi-ties respond to vulnerability, privacy, and sensitive disclosures [ 2, 31 , 32 ]. Some communities also develop norms and practices to support psychologically safe participation for members with constrained resources [ 1, 19 , 23 ]. Separately, platform policies and algorithmic classification systems can impose rigid categories that disproportionately burden marginalized identities, creating addi-tional constraints on who is believed and what counts as legitimate evidence [ 9 , 14 , 28 ]. Communities therefore rely on moderation practices and governance architectures to sustain safety and legiti-macy [7, 20, 29]. We extend this line of work by focusing on epistemic norms : how discourse environments support or fail to support timely evidence-seeking in high-visibility threads about emerging AI. This emphasis matters for agentic AI because capability claims are often difficult to verify through shared benchmarks or reproducible demonstrations [ 15 ]. In such settings, community norms and platform affordances jointly shape whether evidence is demanded early, deferred until later, or never requested at all. 
+
+## 2.4 Design Friction as an Epistemic Intervention 
+
+To counteract the adverse effects of delayed verification, we draw upon the concept of design friction. In online safety and qualitative AI research, introducing deliberate friction has been shown to miti-gate harm, reduce trauma, and improve the human decision-making process by shifting users from automatic to reflective cognitive states [ 10 , 17 , 30 ]. We propose that integrating similar frictional elements into platform architectures could prompt earlier evidence-seeking behaviors, effectively disrupting collective reliance on en-gagement as a proxy for credibility. This framing treats verification timing as a design-relevant out-come: if platforms can shift when evidence is requested (and whether it appears at all), they may alter the pre-interaction trust envi-ronment in which agentic AI narratives form, without requiring platforms to adjudicate truth at the point of posting. 
+
+## 3 Methods 3.1 Data Sources and Collection 
+
+We study public Reddit discussions related to agentic AI —AI sys-tems described as capable of autonomously planning and execut-ing tasks—using two subreddits with contrasting discourse norms: 
+
+r/moltbook and r/openclaw . These communities were selected through exploratory inspection because both focus explicitly on agentic or autonomous AI systems, yet differ substantially in how such systems are discussed. 
+
+r/moltbook primarily hosts exploratory and interpretive discus-sions, including speculation about agent capabilities, personal expe-riences, and broader questions of autonomy and trust. In contrast, 
+
+r/openclaw emphasizes operational and implementation-oriented discourse, such as deployment details, tooling, debugging, and veri-fication practices. This contrast allows us to examine whether ver-ification timing under platform-visible engagement varies across discourse contexts while holding the topic domain constant. Data were collected programmatically using the Reddit API over a fixed observation window from January 1 to February 6, 2026. For each subreddit, we retrieved all posts created during this window and all comments associated with each post at the time of collection (i.e., the full comment tree available via the API snapshot). We treat each post together with its comment tree as a discussion thread. Posts or comments whose bodies were unavailable (e.g., [deleted] 
+
+or [removed] ) were excluded from cue matching and timing. Such unavailable items may still be reflected in raw API-level comment counters, but they are not part of the retained text corpus analyzed here. Comments were de-duplicated. If a comment identifier was available, we de-duplicated by (post_id, comment_id) ; other-wise we used the deterministic fallback key (post_id, author, timestamp, text) . The fallback is required because a small subset of exported records lacked comment identifiers. Comment hierarchy (top-level vs. nested) is not available in these CSV exports, so all comments are treated at the thread level. This does not affect our primary timing estimand, which depends only on the earliest timestamp of any verification cue within a thread. After preprocessing and de-duplication, the retained dataset used for cue matching and timing consisted of: 
+
+• r/moltbook : 448 discussion threads (posts), 930 retained comments; 
+
+• r/openclaw : 417 discussion threads (posts), 938 retained comments. All timestamps were normalized to UTC and represented as Unix epoch seconds. Engagement metadata (e.g., post score) reflects the value observed in the frozen API snapshot at the end of collection; because scores can evolve over time, we treat these quantities as snapshot measurements rather than stable properties. The dataset was frozen prior to analysis to ensure reproducibility, and no con-tent outside the predefined observation window was included. 
+
+## 3.2 Thread Construction 
+
+Our unit of analysis is the discussion thread. Formally, we define a thread 𝑇 𝑖 as a root post together with all retained comments associated with that post: 
+
+𝑇 𝑖 = {𝑝 𝑖 , 𝑐 𝑖 1, 𝑐 𝑖 2, . . . , 𝑐 𝑖𝑛 𝑖 },
+
+where 𝑝 𝑖 denotes the original post and 𝑐 𝑖 𝑗 denotes the 𝑗 -th retained comment in the thread. Each post and comment is associated with a creation timestamp. For each thread, we record the post creation time 𝑡 (0) 
+
+> 𝑖
+
+, the post score 𝑠 𝑖 (a platform-visible engagement signal), and the number of retained comments after de-duplication. Threads with zero re-tained comments are retained for prevalence analyses (e.g., whether a thread contains any verification cue). For timing analyses, such Hanjing Shi and Dominic DiFranzo 
+
+threads only contribute as right-censored observations in the censored-lag view. 
+
+## 3.3 Verification Cues 
+
+We operationalize verification using a conservative, rule-based lexi-con that captures explicit requests for substantiation and evidence-providing behavior. The lexicon includes word-boundary patterns and phrase-level regular expressions such as: source(s) , citation(s) ,
+
+evidence , proof , link , explicit URLs ( https?:// ), and phrases indicat-ing checking or attribution (e.g., I checked , according to , here is , can you link , verify , verified , where’s the source/citation/proof/evidence ,
+
+show (me) the source/citation/proof/evidence ). Matching is case-insensitive and uses regex word boundaries to reduce substring false positives. A match is registered if any pattern appears anywhere in the comment body. Multiple matches within a comment are treated as a single match; multiple matches within a thread are collapsed to the earliest matched comment for timing. For each comment 𝑐 𝑖 𝑗 , we define a binary indicator 
+
+𝑣 𝑖 𝑗 =
+
+(
+
+1, if 𝑐 𝑖 𝑗 matches a verification cue ,
+
+0, otherwise .
+
+A thread is considered to contain verification if Í𝑗 𝑣 𝑖 𝑗 ≥ 1.
+
+## 3.4 Verification Timing and Right-Censoring 
+
+For threads that contain verification cues, we define the time-to-first-verification as the elapsed time between post creation and the first verification cue: 
+
+𝜏 𝑖 = min  
+
+> 𝑗 :𝑣 𝑖 𝑗 =1
+
+(𝑡 𝑖 𝑗 − 𝑡 (0) 
+
+> 𝑖
+
+),
+
+where 𝑡 𝑖 𝑗 is the timestamp of comment 𝑐 𝑖 𝑗 . We report timing in hours by converting seconds to hours. If a matched comment has a missing timestamp, it contributes to verification presence (Í𝑗 𝑣 𝑖 𝑗 ≥ 1) but is excluded from timing. When a matched comment appears with a timestamp earlier than the post timestamp, it is ignored for timing as a negative-lag anomaly; the earliest non-negative matched comment is used to define 𝜏 𝑖 . If no valid (timestamped, non-negative) matched comment exists, 
+
+𝜏 𝑖 is undefined and the thread is excluded from conditional lag summaries, but remains part of prevalence tests. For a supplementary right-censored view that incorporates threads where verification never appears, threads without a valid verifi-cation timestamp are treated as right-censored at the end of the observation window. For each subreddit 𝑠 , let the dataset end time be the maximum timestamp observed in that subreddit’s frozen snapshot across all posts and retained comments: 
+
+𝑡 (end ) 
+
+> 𝑠
+
+= max 
+
+
+
+{𝑡 (0) 
+
+> 𝑖
+
+}𝑖 ∪ { 𝑡 𝑖 𝑗 }𝑖,𝑗 
+
+
+
+.
+
+We define the censored time variable as 
+
+˜𝜏 𝑖 = min (𝜏 𝑖 , 𝑡 (end ) 
+
+> 𝑠
+
+− 𝑡 (0) 
+
+> 𝑖
+
+),
+
+with censoring indicator 
+
+𝛿 𝑖 =
+
+(
+
+1, if 𝑇 𝑖 contains a verification cue with a valid timestamp ,
+
+0, otherwise (right-censored) .
+
+This corresponds to the computation of censored_lag_hours in the analysis code. Because this censored estimand includes threads without verification, it summarizes a different quantity than condi-tional lag medians, which are computed only among 𝛿 𝑖 = 1 threads. 
+
+## 3.5 Social Proof Grouping 
+
+Platform-visible social proof is operationalized using post score. Within each subreddit, we compute the empirical score distribution under the frozen snapshot and define the high-visibility group as threads whose score lies at or above the 75th percentile: 
+
+𝐺 𝑖 =
+
+(
+
+High , if 𝑠 𝑖 ≥ 𝑄 0.75 (𝑠 ),
+
+Low , otherwise ,
+
+where 𝑄 0.75 (𝑠 ) is computed using linear interpolation on sorted values with position pos = (𝑛 − 1)𝑞 . Under the frozen snapshot used for analysis, the 𝑄 0.75 thresholds were 5.25 for r/moltbook 
+
+and 3.00 for r/openclaw .
+
+## 3.6 Statistical Analysis 
+
+We compare verification prevalence and verification timing across visibility groups using non-parametric statistics. For prevalence (whether a thread ever contains a verification cue), we use Fisher’s exact test and report odds ratios. For numerical stability, odds ratios are computed using the Haldane–Anscombe correction (+0.5 to each cell). For timing, we focus on the distribution of time-to-first-verification conditional on a valid verification timestamp (i.e., 𝛿 𝑖 = 1). We report group medians and IQRs and use permutation tests on the median difference. Specifically, we compute the observed median differ-ence between groups and randomly permute group labels across threads within each subreddit for 𝑁 perm = 5000 iterations to obtain a two-sided 𝑝 -value: 
+
+𝑝 = #{| Δperm | ≥ | Δobs |} + 1
+
+𝑁 perm + 1 .
+
+Permutation tests are deterministic given a fixed seed. Effect sizes are reported using Cliff’s delta, computed by pairwise comparisons of all observations across groups. We do not fit regression models; all analyses are descriptive and focus on robust co-variation patterns rather than causal estimation. 
+
+## 3.7 Audit and Reproducibility 
+
+To assess lexicon precision, we manually audited matched com-ments. For the verification lexicon, we randomly sampled up to 25 matched comments per subreddit (using a fixed seed) and coded whether each match represented an unambiguous evidence-seeking or evidence-providing move (e.g., requesting a link/source, provid-ing a link as substantiation). When fewer than 25 matches were available, we audited all matches; precision is reported with the labeled sample size. We also audited additional cue families used in exploratory anal-yses (e.g., correction cues). When a cue family produced very few matches in a subreddit during the observation window, we audited all available matches up to 25. All analyses are deterministic and reproducible; no machine learning models are trained, and all pa-rameters are explicitly specified. When Visibility Outpaces Verification: Delayed Verification and Narrative Lock-in in Agentic AI Discourse 
+
+## 3.8 Ethical Considerations 
+
+All data analyzed in this study were publicly available Reddit posts and comments. We report only aggregate statistics at the thread level and do not attempt to identify, track, or profile individual users. Our analyses focus on the prevalence and timing of verification cues rather than on evaluating the truthfulness of specific users’ claims. 
+
+## 4 Results 
+
+We report results in the order of figures. Throughout this section, we emphasize descriptive patterns and distributional differences rather than causal effects, and interpret findings in terms of verification timing and discussion structure rather than individual beliefs. 
+
+## 4.1 Delayed verification in high-visibility threads (Figure 2) 
+
+Figure 2 shows the distribution of time-to-first-verification for dis-cussion threads. Threads without any verification cue during the observation window are treated as right-censored at dataset end, so the figure jointly represents (a) delayed verification among threads that eventually contain verification and (b) complete absence of verification within the observation window. Across both subreddits, high-visibility threads (top quartile by post score within each community) differ systematically from lower-visibility threads in verification timing. In r/moltbook , high-visibility threads exhibit markedly longer lags and a larger share of long-delay cases, producing an overall right-shifted distribution relative to low visibility. This separation is also visible when summarizing early verification coverage: among threads that contain verification cues, only 27% of high-visibility r/moltbook cases show verifi-cation within 1 hour (ECDF ≤1ℎ = 0.27 ), compared to 72% in the low-visibility group; similarly, ECDF ≤6ℎ is 0.57 (high) vs. 0.87 (low), and ECDF ≤24 ℎ is 0.81 (high) vs. 0.93 (low). These ECDF points make the same qualitative claim as the boxplots: when visibility is high, verification is less likely to happen early, and more likely to be delayed into later phases of the thread lifecycle. In r/openclaw , many threads receive verification extremely quickly, resulting in a heavy mass at near-zero lag across both visibility groups. Even in this operational community, high visibil-ity is associated with a longer-tailed delay distribution (Table 1). This is consistent with the broader pattern that high engagement can coincide with deferred evidence-seeking rather than earlier verification. Importantly, these results do not imply that highly visible threads are less accurate, nor that participants are categorically less skep-tical. Instead, they indicate a shift in the temporal organization of evidence-seeking: when platform-visible engagement is high, veri-fication is more likely to be deferred, allowing early narratives to circulate before substantiation is introduced. 
+
+Table 1: Verification occurrence and delay by visibility group (score ≥ 𝑄 0.75 ). Occurrence uses Fisher’s exact test with odds ratio (OR). Delay is conditional on verification occurring; we report median (IQR) hours, a permutation test on median difference, and Cliff’s 𝛿 .                      
+
+> r/moltbook r/openclaw
+> High-visibility verification rate 33.0% (37/112) 54.2% (64/118) Low-visibility verification rate 16.1% (54/336) 35.1% (105/299) Fisher 𝑝 ; OR 2.18 ×10 −4; 2.57 3.96 ×10 −4; 2.18 Lag (High), median (IQR), h 4.21 (0.93–16.81) 0.00 (0.00–3.98) Lag (Low), median (IQR), h 0.34 (0.19–1.28) 0.00 (0.00–0.09) Permutation 𝑝 ; Cliff’s 𝛿 4.00 ×10 −4; 0.47 0.005; 0.29
+
+## 4.2 High-visibility threads attract verification more often, but later (conditional on occurring) 
+
+Figure 2 characterizes when verification appears (including right-censored threads). Here we separately quantify (1) whether verifica-tion occurs at all and (2) how late it arrives, conditional on occurring. Table 1 summarizes these comparisons for both subreddits. Across both communities, high-visibility threads are more likely to contain at least one verification cue. In r/moltbook , 33.0% of high-visibility threads (37/112) contain verification cues compared to 16.1% of low-visibility threads (54/336), yielding Fisher’s exact test 𝑝 = 2.18 × 10 −4 and odds ratio (OR) = 2.57 . In r/openclaw ,54.2% of high-visibility threads (64/118) contain verification cues compared to 35.1% (105/299), with Fisher 𝑝 = 3.96 × 10 −4 and OR = 2.18 . Interpreting OR in this setting, high visibility roughly doubles the odds that a thread will receive at least one explicit evidence-seeking move during the observation window. However, increased likelihood of verification does not imply ear-lier verification. Conditional on verification occurring, r/moltbook 
+
+shows a substantial timing shift: high-visibility threads have a me-dian lag of 4.21h (IQR 0.93–16.81), whereas low-visibility threads have a median lag of 0.34h (IQR 0.19–1.28). A permutation test on median lag yields 𝑝 = 4.00 × 10 −4, and Cliff’s 𝛿 = 0.47 indicates that the high-visibility distribution is overall right-shifted relative to low visibility. Put plainly, when verification happens in r/moltbook , it tends to arrive substantially later in high-visibility discussions. In r/openclaw , both groups have a median conditional lag of 0.00h because many threads contain immediate verification cues. Nonetheless, the dispersion differs sharply: the high-visibility group has a much wider IQR (0.00–3.98h) than the low-visibility group (0.00–0.09h). This difference is statistically detectable (permutation 
+
+𝑝 = 0.005 ; Cliff’s 𝛿 = 0.29 ) and indicates a heavier right tail in high-visibility threads. This is a case where the median alone is not informative: while many high-visibility threads are verified immediately, a non-trivial subset experiences substantially delayed verification, producing a longer-tailed delay profile than the low-visibility group. Taken together, these results support a consistent qualitative pattern across both communities: high-visibility threads attract verification more often, but verification tends to occur later (and Hanjing Shi and Dominic DiFranzo 
+
+Figure 2: Time-to-first-verification by platform visibility. The distribution of time from post creation to the first verification cue (e.g., source, evidence, link) for each subreddit. Threads without any verification cue during the observation window are treated as right-censored at dataset end. High-visibility threads correspond to the top quartile of post score within each subreddit. 
+
+sometimes not at all within the window), meaning evidence-seeking is present yet temporally displaced. 
+
+## 4.3 Verification timing differs by discourse context 
+
+While the visibility–verification relationship appears in both sub-reddits, its magnitude and shape vary by discourse context. In 
+
+r/openclaw , where operational norms make evidence-seeking and troubleshooting more common, verification frequently appears im-mediately, compressing both groups toward near-zero lags and shifting the visibility signal into the distribution tail (Table 1). In contrast, r/moltbook exhibits both larger differences in conditional central tendency and lower early-verification coverage, consistent with a setting in which exploratory and interpretive discussion can proceed for longer periods before participants introduce explicit substantiation requests. 
+
+## 4.4 Self-narration cues and comment activity (Figure 3) 
+
+Figure 3 presents an exploratory comparison of thread comment activity for posts containing self-narration cues versus those that do not. Self-narration cues are rare in both subreddits, and the small number of cue-present threads limits inferential interpretation. Across both communities, cue-present threads do not exhibit systematically higher comment counts. We include this analysis to probe a simple alternative explanation: that the observed verifica-tion delay in high-visibility threads is primarily driven by emotive or story-like discourse that independently increases engagement. Instead, the observed pattern in Figure 2 aligns more directly with platform-visible social proof and verification timing, suggesting that the temporal displacement of verification is not reducible to narrative style differences alone. In summary, platform-visible engagement is associated with a shift in the temporal structure of evidence-seeking in public dis-cussions of agentic AI. Highly visible threads are more likely to attract verification eventually, but verification tends to occur later, often after early narratives have already gained traction. Rather than directly measuring individual trust, these results characterize a pre-interaction trust environment in which credibility can be inferred from engagement before evidence is introduced. 
+
+## 5 Discussion 
+
+This work examines how public discussions of agentic AI unfold under platform-visible engagement signals, and how the timing of verification shapes the informational conditions under which trust is formed. Rather than evaluating the accuracy of claims or measuring individual trust directly, we focus on verification timing as a structural property of discourse. This perspective connects our findings to broader theories of social proof, collective cognition, and trust calibration in novel sociotechnical systems [3, 21, 24]. We focus this discussion on two implications that follow di-rectly from our results: (1) platform-visible engagement can bias the pre-interaction trust environment by shifting users toward credibility-by-visibility, and (2) late-arriving evidence can be struc-turally disadvantaged because timing shapes whether and how corrections update beliefs. 
+
+## 5.1 From evidence-seeking to credibility-by-visibility 
+
+A central finding is that high-visibility discussions exhibit delayed or absent verification early in the thread lifecycle. This matters be-cause, in pre-interaction settings, users often lack direct experience with the systems being discussed and cannot easily evaluate claims through personal testing. Under these conditions, platform-visible When Visibility Outpaces Verification: Delayed Verification and Narrative Lock-in in Agentic AI Discourse 
+
+Figure 3: Comment activity and self-narration cues. Thread-level comment counts (log1p) for posts with and without self-narration cues. Self-narration cues capture affective or personal language co-occurring with references to agentic AI. Due to the small number of cue-present threads, results are descriptive. 
+
+engagement becomes a salient proxy for credibility [ 3]. Social influ-ence bias further implies that visible popularity can shift judgments and attention even when underlying quality is held constant [24]. Our results suggest that this proxy is not only associated with 
+
+what people attend to, but with when they decide evidence is nec-essary. If a thread appears “already validated” by attention, partici-pants may reasonably infer that verification has been performed by others, reducing the perceived need for immediate evidence-seeking. This is a diffusion of epistemic responsibility: verification is implicitly delegated to the crowd. In this sense, engagement signals can shape a pre-interaction trust ecology that favors credibility-by-visibility rather than credibility-by-evidence, which is precisely the type of miscalibration risk highlighted in trust-in-automation research [21]. This mechanism is consistent with a narrative lock-in interpreta-tion. Early claims can structure attention and interpretation before substantiation is visible, and later contributions may be forced to respond within the frame set by the early narrative. Importantly, narrative lock-in here does not assume that participants are naive or unskeptical. Instead, skepticism becomes temporally displaced. Ver-ification can still occur, but it tends to arrive later, after the thread has already accumulated attention and conversational momentum. Two clarifications are important for keeping this interpretation within the limits of what our data support. First, we do not claim that high visibility causes reduced scrutiny; we show that high visibility is associated with a different temporal organization of scrutiny. Second, our operationalization captures explicit evidence-seeking (e.g., requests for sources, links, or “I checked” statements). High-visibility threads may also contain implicit skepticism, technical disagreement, or sarcasm that does not trigger our lexicon. In that sense, the pattern we report should be interpreted as a conservative lower bound on delayed explicit verification rather than a complete accounting of all critical engagement. 
+
+## 5.2 Why timing matters: late evidence may update less 
+
+A second implication follows from the combination of delayed verification and established timing effects in correction and misin-formation research. Work on the continued influence effect shows that misinformation can persist even after corrections appear [ 22 ]. Empirical evidence also indicates that timing matters: later cor-rections can be less effective than earlier interventions [ 6 ], while proactive accuracy prompts can improve truth discernment [ 27 ]. These findings imply that, even when verification eventually arrives, its capacity to revise beliefs and interpretations can be constrained by what has already become salient and coherent in the thread. Our contribution is to show how platform-visible engagement can make “late evidence” more likely in the first place. When verification is structurally delayed in high-visibility threads, the discourse environment increases the chance that participants en-counter a narrative before they encounter substantiation. Even if evidence appears later, its informational role is different. It must compete with an already-established conversational trajectory, and it may be treated as a post-hoc addendum rather than a foundational constraint. In practical terms, delayed verification shifts evidence-seeking from early sorting to late repair, which prior work suggests is often disadvantaged [6, 22, 27]. This framing also clarifies why we do not need to claim a direct causal effect on individual trust to make the argument meaningful. Even without measuring trust outcomes, shifting when and whether evidence is requested changes the informational environment in which trust calibration is likely to occur [ 21 ]. In other words, ver-ification timing is a property of the environment that conditions subsequent judgments, rather than a direct measurement of those judgments. Hanjing Shi and Dominic DiFranzo 
+
+## 5.3 Implications for agentic AI and platform design 
+
+Our findings suggest actionable directions for both agentic AI de-velopers and platform designers. For agentic AI developers, public discourse should be treated as part of the system’s trust surface. Expectations formed through online discussion can influence adoption, reliance, and oversight behaviors. Supporting early verification cues in public-facing doc-umentation and demos, such as clear provenance, reproducible claims, and links to independent benchmarks, may reduce reliance on engagement as a stand-in for credibility and support more ap-propriate reliance [ 21 ]. A practical implication is that “capability claims” should be packaged with verifiable artifacts that are easy to cite in discussion threads (e.g., stable links, minimal reproduc-tion steps, and explicit caveats), because the presence of shareable evidence can lower the friction of early verification. For platform designers, the results highlight an epistemic risk of engagement-driven ranking: visibility can outpace verification. De-sign friction offers plausible, lightweight interventions that preserve participation while encouraging reflective evaluation [ 10 , 17 , 30 ]. To make these implications concrete in the Reddit-like setting we study, interventions can be specified as small interface changes with explicit triggers and user actions, for example: (1) a “source prompt” that appears when a post about agentic AI capability exceeds a visibility threshold, asking the author to optionally add a link or label the claim as speculative; (2) a verification-status badge (e.g., “evidence requested” vs. “evidence linked”) that becomes salient in high-traction threads; and (3) surfacing unanswered verification requests near the top of the thread so that late-arriving readers see epistemic gaps before they see the most upvoted narrative. Im-portantly, the goal is not to suppress discussion, but to rebalance incentives so that visibility is less likely to function as a substitute for evidence. 
+
+## 5.4 Limitations and future work 
+
+This study has several limitations. We analyze discussions from two Reddit communities, which may not generalize to other platforms or cultural contexts. Our lexical approach prioritizes precision over recall and may miss subtler forms of verification. In particular, it can undercount (1) implicit skepticism that is expressed without explicit “source/evidence/link” language, (2) sarcasm or rhetorical doubt, and (3) technical verification embedded in implementation talk that does not use our cue terms. Because our signal is intentionally conservative, our findings should be interpreted as a lower bound on delays in explicit evidence-seeking. Additionally, our analyses are descriptive; we do not estimate causal effects of visibility on verification timing. A clear next step is a participant study that tests whether the timing patterns we observed translate into differences in trust cal-ibration, belief updating, and memory of the discussion. Our re-sults motivate two experimental manipulations that directly oper-ationalize the mechanisms implied by the observational findings: (1) platform-visible social proof (high vs. low apparent popular-ity), and (2) verification timing (early vs. late vs. absent verification cues). A minimal 2 × 3 design can present participants with realistic, Reddit-like threads about agentic AI capability claims where the claim content is held constant but the thread metadata and evidence timing vary. Primary outcomes should map to the conceptual claims of this paper. First, trust calibration and reliance intentions : perceived cred-ibility of the claim, willingness to adopt or recommend the system, and perceived need for personal verification [ 21 ]. Second, belief updating : participants provide an initial judgment after seeing the post and early comments, then re-rate after the verification cue ap-pears (or does not), allowing estimation of how much late evidence shifts beliefs relative to early evidence. Third, episodic summary and recall : immediately and after a delay, participants summarize “what happened” in the thread and answer questions about what evidence was provided, enabling tests of whether high-visibility narratives dominate the remembered gist when evidence arrives late. These outcomes directly connect the timing mechanism to the literature on continued influence and correction timing [ 6, 22 , 27 ]. To connect the experiment tightly to our field measures, the stimuli can be parameterized using the empirical lag distributions from our data (e.g., selecting early/late verification timings that correspond to typical lower-visibility vs. high-visibility lags). This allows direct translation between the observational timing gaps and the experimental manipulation magnitudes. If the hypothesized mechanism holds, we would expect high social proof to reduce early evidence-seeking intentions and to attenuate belief updating when verification arrives late, consistent with the idea that late evidence is structurally disadvantaged [6, 22, 27]. Beyond vignette studies, a complementary next step is an in-tervention study that evaluates whether lightweight friction or provenance prompts can shift verification earlier in high-traction threads. Such interventions can be assessed using the same time-to-first-verification and right-censoring framework used here, en-abling direct comparability between observational measurement and intervention effects [ 10 , 17 , 30 ]. Together, these follow-ups would clarify whether the timing patterns we document are merely descriptive correlations or whether they causally shape trust forma-tion and correction effectiveness in public discourse about agentic AI. 
+
+## 6 Conclusion 
+
+This paper examined how public discussions of agentic AI evolve under platform-visible engagement signals, and how verification timing shapes the informational conditions in which trust is formed. Using Reddit discussions as an in-the-wild setting, we showed that highly visible threads systematically differ in evidence-seeking behavior: verification is more likely to occur eventually, but tends to be delayed or absent during the early stages of discussion. As a result, early narratives can gain traction and structure collective understanding before substantiation is introduced. We interpret this pattern as consistent with collective cogni-tive bias under conditions of novelty and epistemic uncertainty. In such contexts, platform-visible engagement can function as a salient proxy for credibility, encouraging participants to delegate verification to the crowd rather than initiating it themselves [ 3, 24 ]. Importantly, this does not imply reduced skepticism or irrationality; rather, it reflects a shift in verification timing: evidence-seeking When Visibility Outpaces Verification: Delayed Verification and Narrative Lock-in in Agentic AI Discourse 
+
+is more likely to occur after discussion has already accumulated, rather than near the start of the thread. By focusing on verification timing rather than content accuracy or individual attitudes, this work contributes a complementary per-spective to existing research on misinformation and social proof [ 22 , 27 ]. It also extends trust-in-AI and trust calibration work by characterizing a pre-interaction information environment where credibility is inferred from visibility before evidence appears [ 21 ]. Our findings highlight that trust in agentic AI is shaped not only by system behavior or user experience, but also by the structure of pub-lic discourse that precedes direct interaction. Designing platforms and AI systems that support timely and visible verification may help preserve epistemic agency and promote more calibrated trust as autonomous AI becomes increasingly integrated into everyday life. 
+
+## References 
+
+[1] Nazanin Andalibi and Andrea Forte. 2018. Responding to Sensitive Disclosures on Social Media: A Decision-Making Framework. ACM Transactions on Computer-Human Interaction (TOCHI) 25, 6 (2018). [2] Nazanin Andalibi, Oliver L. Haimson, Munmun De Choudhury, and Andrea Forte. 2016. Understanding Social Media Disclosures of Sexual Abuse Through the Lenses of Support Seeking and Anonymity. In Proceedings of the 2016 CHI Conference on Human Factors in Computing Systems (CHI ’16) . ACM, 3906–3918. [3] Mihai Avram, Nicholas Micallef, Sameer Patil, and Filippo Menczer. 2020. Expo-sure to social engagement metrics increases vulnerability to misinformation. Har-vard Kennedy School Misinformation Review 1, 5 (2020). doi:10.37016/mr-2020-033 [4] Nikola Balic. 2025. Will Agents Replace Us? Perceptions of Autonomous Multi-Agent AI. arXiv preprint arXiv:2506.02055 (2025). [5] Milica Belosevic and Hendrik Buschmeier. 2024. Calibrating Trust and Enhancing User Agency in LLM-Based Chatbots through Conversational Styles. In CUI@CHI ’24: Proceedings of the CUI@CHI Workshop on Conversational User Interfaces . ACM, Honolulu, HI, USA. https://dl.acm.org/doi/10.1145/3640544.3664213 Workshop held in conjunction with CHI 2024. [6] Nadia M. Brashier, Gordon Pennycook, Adam J. Berinsky, and David G. Rand. 2021. Timing matters when correcting fake news. Proceedings of the National Academy of Sciences 118, 5 (2021), e2020043118. doi:10.1073/pnas.2020043118 [7] Eshwar Chandrasekharan, Umashanthi Pavalanathan, Anirudh Srinivasan, Adam Glynn, Jacob Eisenstein, and Eric Gilbert. 2017. You Can’t Stay Here: The Efficacy of Banning Reddit’s Most Toxic Communities. In Proceedings of the ACM on Human-Computer Interaction , Vol. 1. ACM. [8] Huiru Chen, Zhenhua Wang, and Ming Ren. 2025. Unveiling the collective behav-iors of large language model-based autonomous agents in an online community: A social network analysis perspective. Data and Information Management 10, 1 (2025), 100107. doi:10.1016/j.dim.2025.100107 [9] Michael Ann DeVito, Ashley Marie Walker, and Jeremy Birnholtz. 2021. "Too Gay for Facebook": Presenting LGBTQ+ Identity in Contextually Collapsed Spaces. In Proceedings of the ACM on Human-Computer Interaction , Vol. 5. ACM. [10] Verena Distler. 2020. Design Friction and Digital Nudging: Impact on the Human Decision-Making Process. In New Security Paradigms Workshop (NSPW 2020) .[11] Brianna Dym and Casey Fiesler. 2018. Vulnerable and Online: Fandom’s Case for Stronger Privacy Norms and Tools. In Companion of the 2018 ACM Conference on Computer Supported Cooperative Work and Social Computing . ACM. [12] Brianna Dym and Casey Fiesler. 2020. Social Norm Vulnerability and its Conse-quences for Privacy and Safety in an Online Community. In Proceedings of the ACM on Human-Computer Interaction , Vol. 4. ACM, 1–24. doi:10.1145/3415226 [13] Adrien Friggeri, Lada Adamic, Dean Eckles, and Justin Cheng. 2014. Rumor Cascades. In Proceedings of the 8th International AAAI Conference on Weblogs and Social Media (ICWSM) , Vol. 8. 101–110. doi:10.1609/icwsm.v8i1.14559 [14] Oliver L. Haimson, Jed R. Brubaker, Lynn Dombrowski, and Gillian R. Hayes. 2015. Disclosure, Stress, and Support During Gender Transition on Facebook. In Proceedings of the 18th ACM Conference on Computer Supported Cooperative Work & Social Computing (CSCW ’15) . ACM, 1176–1190. [15] Gaole He, Gianluca Demartini, and Ujwal Gadiraju. 2025. Plan-Then-Execute: An Empirical Study of User Trust and Team Performance When Using LLM Agents As A Daily Assistant. In Proceedings of the CHI Conference on Human Factors in Computing Systems (CHI ’25) . ACM. arXiv:2502.01390 [cs.HC] doi:10. 1145/3706598.3713218 Conditionally Accepted. [16] D. Heaton, E. Nichele, J. Clos, and J. E. Fischer. 2024. “ChatGPT says no”: Agency, trust, and blame in Twitter discourses after the launch of ChatGPT. AI and Ethics 
+
+(2024). doi:10.1007/s43681-023-00414-1 [17] Manoel Horta Ribeiro, Robert West, Ryan Lewis, and Sanjay Kairam. 2023. Post Guidance for Online Communities: Friction as an Intervention for Safety. In 
+
+Proceedings of the ACM on Human-Computer Interaction , Vol. 7. ACM. [18] Tatum Hunter. 2026. A bots-only social network triggers fears of an AI uprising. 
+
+The Washington Post (3 February 2026). https://www.washingtonpost.com/ technology/2026/02/03/ai-bots-social-network-moltbook/ [19] Aarti Israni and Tawanna R. Dillahunt. 2025. Designing Psychologically Safe Online Spaces: Supporting Aspiring Entrepreneurs in Financially-Constrained Communities. In Proceedings of the ACM Conference on Designing Interactive Systems (DIS ’25) . ACM. [20] Shagun Jhaver, Darren Scott Appling, Eric Gilbert, and Amy Bruckman. 2019. "Did You Suspect the Post Would be Removed?": Understanding User Reactions to Content Removals on Reddit. In Proceedings of the ACM on Human-Computer Interaction , Vol. 3. ACM. [21] John D. Lee and Katrina A. See. 2004. Trust in automation: Designing for appro-priate reliance. Human Factors 46, 1 (2004), 50–80. doi:10.1518/hfes.46.1.50.30392 [22] Stephan Lewandowsky, Ullrich K. H. Ecker, Colleen M. Seifert, Norbert Schwarz, and John Cook. 2012. Misinformation and Its Correction: Continued Influence and Successful Debiasing. Psychological Science in the Public Interest 13, 3 (2012), 106–131. doi:10.1177/1529100612451018 [23] Lisa Mekioussa Malki, Ina Kaleva, Dilisha Patel, Mark Warner, and Ruba Abu-Salma. 2024. Exploring Privacy Practices of Female mHealth Apps in a Post-Roe World. In Proceedings of the CHI Conference on Human Factors in Computing Systems (CHI ’24) . ACM. [24] Lev Muchnik, Sinan Aral, and Sean J. Taylor. 2013. Social Influence Bias: A Randomized Experiment. Science 341, 6146 (2013), 647–651. doi:10.1126/science. 1240466 [25] Shwe Zin Su Naing and Piyachat Udomwong. 2024. Public Opinions on ChatGPT: An Analysis of Reddit Discussions by Using Sentiment Analysis, Topic Modeling, and SWOT Analysis. Data Intelligence 6, 2 (2024), 344–374. doi:10.1162/dint_a_ 00250 [26] Helen Nissenbaum. 2011. A Contextual Approach to Privacy Online. Daedalus 
+
+140, 4 (2011), 32–48. [27] Gordon Pennycook, Ziv Epstein, Mohsen Mosleh, Antonio A. Arechar, Dean Eckles, and David G. Rand. 2021. Shifting attention to accuracy can reduce misinformation online. Nature 592 (2021), 590–595. doi:10.1038/s41586-021-03344-2 [28] Morgan Klaus Scheuerman, Jacob M. Paul, and Jed R. Brubaker. 2019. How Computers See Gender: An Evaluation of Gender Classification in Commercial Facial Analysis and Image Labeling Services. In Proceedings of the ACM on Human-Computer Interaction , Vol. 3. ACM. [29] Joseph Seering. 2020. Reconsidering Self-Moderation: The Role of Research in Supporting Community-Based Models for Online Content Moderation. In 
+
+Proceedings of the ACM on Human-Computer Interaction , Vol. 4. ACM. [30] Emily Tseng et al . 2025. Mitigating Trauma in Qualitative AI Research: Design Friction and the Trust Pause. In Proceedings of the 2025 ACM Conference on Computer-Supported Cooperative Work and Social Computing . ACM. [31] Jessica Vitak, Pamela Wisniewski, and Xinru Page. 2015. The Future of Networked Privacy: Challenges and Opportunities. In CSCW ’15 Companion . ACM. [32] Pamela Wisniewski. 2018. The Privacy Paradox of Adolescent Online Safety: A Matter of Risk Prevention or Risk Resilience? IEEE Security and Privacy Magazine 
+
+16, 2 (2018), 86–90. [33] Z. Xu, Q. Fang, Y. Huang, and M. Xie. 2024. The public attitude towards ChatGPT on reddit: A study based on unsupervised learning from sentiment analysis and topic modeling. PLOS ONE 19, 5 (2024), e0302502. doi:10.1371/journal.pone. 0302502

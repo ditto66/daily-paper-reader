@@ -1,0 +1,514 @@
+Title: World-Model-Augmented Web Agents with Action Correction
+
+URL Source: https://arxiv.org/pdf/2602.15384v1
+
+Published Time: Wed, 18 Feb 2026 01:27:13 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+# World-Model–Augmented Web Agents with Action Correction 
+
+Zhouzhou Shen * 1 Xueyu Hu * 1 Xiyun Li 2 Tianqing Fang 2 Juncheng Li 1 Shengyu Zhang 1
+
+## Abstract 
+
+Web agents based on large language models have demonstrated promising capability in automating web tasks. However, current web agents strug-gle to reason out sensible actions due to the lim-itations of predicting environment changes, and might not possess comprehensive awareness of execution risks, prematurely performing risky ac-tions that cause losses and lead to task failure. To address these challenges, we propose WAC, a web agent that integrates model collaboration, consequence simulation, and feedback-driven ac-tion refinement. To overcome the cognitive isola-tion of individual models, we introduce a multi-agent collaboration process that enables an ac-tion model to consult a world model as a web-environment expert for strategic guidance; the action model then grounds these suggestions into executable actions, leveraging prior knowledge of environmental state transition dynamics to en-hance candidate action proposal. To achieve risk-aware resilient task execution, we introduce a two-stage deduction chain. A world model, special-ized in environmental state transitions, simulates action outcomes, which a judge model then scru-tinizes to trigger action corrective feedback when necessary. Experiments show that WAC achieves absolute gains of 1.8% on VisualWebArena and 1.3% on Online-Mind2Web. 
+
+## 1. Introduction 
+
+Large language models (LLMs), with powerful understand-ing and generation capabilities, have become the foundation of popular intelligent applications, including web agents (Shi et al., 2017; Kim et al., 2023) for web task automation. Some efforts, such as ReAct (Yao et al., 2023), attempt to construct a paradigm in which a web agent’s reasoning and execution are interleaved. This paradigm relies on a single model to perform reasoning, propose actions, and ex-
+
+> *
+
+Equal contribution 1Zhejiang University 2Tencent AI Lab. Correspondence to: Shengyu Zhang <sy zhang@zju.edu.cn >.
+
+Preprint. February 18, 2026. 
+
+ecute those actions, and has shown initial success on certain web-based tasks. VisualWebArena  
+
+> Mind2Web 2
+> BearCubs
+> WebArena
+> Benchmarks
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Task Success Rate (%)
+> 88.7
+> 54.0
+> 84.7
+> 78.2
+> 19.8
+> 28.0
+> 65.8
+> 71.6
+> Human Web Agent
+
+Figure 1. Human and web agent task success rates across represen-tative web benchmarks. Despite recent progress, state-of-the-art web agents still substantially underperform humans. 
+
+Despite these advances, web agents still achieve substan-tially lower task success rates than humans on challenging benchmarks such as VisualWebArena (Koh et al., 2024a), as shown in Figure 1. Empirical evaluations reveal that web agents relying on single models frequently suffer from sys-tematic reasoning limitations and may execute inadequate actions, leading to irreversible deviations in task trajectories. Motivated by the limitations of existing web agents, we identify two key challenges that hinder their performance in complex web environments. (C1) Cognitive limitations of single-model decision making. Most existing web agents rely on a single model to simultaneously perceive the en-vironment, reason about task progress, and generate ex-ecutable actions. However, the knowledge coverage and reasoning capacity of an individual model are inherently limited. Agents may not adequately leverage complemen-tary expertise or alternative perspectives during decision making, often leading to inadequate reasoning and subop-timal action proposals. Such limitations can lead to error accumulation over time, which in turn significantly degrades overall success rates of web tasks. (C2) Lack of explicit pre-execution risk awareness and correction. Current web agents typically select and execute an action once it is proposed, without explicitly evaluating its potential con-sequences or associated risks. Although some recent ap-proaches incorporate outcome simulation to estimate action effects, they often lack mechanisms to reject or revise inade-1
+
+> arXiv:2602.15384v1 [cs.AI] 17 Feb 2026 World-Model–Augmented Web Agents with Action Correction
+
+quate actions before execution. When none of the candidate actions are satisfactory, the agent is still forced to commit to one, which can result in irreversible deviations in task trajectories. To address these challenges, we introduce WAC, short for 
+
+World-model–augmented Action Correction, a web agent designed for collaboratively grounded action generation and risk-aware pre-execution action refinement. To address C1, we equip WAC with a multi-agent collaboration process that supports collaborative reasoning between two special-ized models. Specifically, a world model endowed with extensive web environment state-transition knowledge acts as an environment expert, providing strategic guidance for single-step planning. This guidance is then integrated by an action model, which combines it with its own observa-tions to deliberate and generate executable action proposals. Furthermore, to avoid unnecessary overhead from exces-sive collaboration, we introduce a collaboration-on-demand strategy. Collaboration is selectively triggered based on a confidence score, allowing the agent to invoke multi-agent reasoning only when needed and thereby improving both ef-ficiency and action proposal quality. To tackle C2, we design a world-model-centered deduction chain for pre-execution risk evaluation and closed-loop action correction. The same world model described in C1 is reused here in a different role: it simulates the potential outcomes of candidate actions to assess their effects and associated risks prior to execution. Based on these simulated outcomes, we introduce a closed-loop feedback mechanism that evaluates the feasibility of candidate actions and provides immediate corrective signals when the proposed actions are deemed inadequate. Upon re-ceiving such feedback, the agent re-initiates action proposal and deduction, allowing decisions to be iteratively refined before execution. We evaluate WAC on two widely used benchmarks, Visual-WebArena and Online-Mind2Web (Deng et al., 2023; Xue et al., 2025), which feature diverse web environments and complex tasks. Across both benchmarks, WAC consistently outperforms prior state-of-the-art decision-making work-flows, achieving success rates of 24.5% and 16.0%, respec-tively. In addition, ablation studies and targeted analyses demonstrate that the collaboration process and the deduction chain effectively address the challenges corresponding to C1 and C2, respectively. In summary, our contributions are three-fold: • We propose a novel web agent framework that in-tegrates collaboratively grounded action generation and world-model-centered action deduction. By en-abling on-demand model collaboration and a feedback-driven, closed-loop action refinement mechanism, our approach effectively mitigates the cognitive isolation of individual models (C1) and reduces premature com-mitment to risky or misaligned actions (C2). • We conduct extensive experiments on VisualWebArena and Online-Mind2Web, demonstrating that our method consistently outperforms strong baselines. In particu-lar, WAC achieves absolute improvements of 1.8% on VisualWebArena and 1.3% on Online-Mind2Web, val-idating its effectiveness in enhancing action generation and refinement for web-based tasks. • We provide comprehensive analyses, including abla-tion studies, cross-model generalization, and qualita-tive case studies, to better understand the behavior of our agent. These analyses reveal how collaborative action generation and feedback-driven refinement con-tribute to improved robustness. 
+
+## 2. Related Work 
+
+2.1. LLM-Based Web Agent 
+
+LLM–based web agents have seen rapid development re-cently. Early works like RCI (Kim et al., 2023), We-bAgent (Gur et al., 2024), and WebGUM (Furuta et al., 2024) demonstrate the potential of language models to solve web-based tasks. SeeAct (Zheng et al., 2024), TRISHUL (Singh et al., 2025), and WEPO (Liu et al., 2025) further improve action grounding by leveraging multimodal vi-sual–semantic alignment, enriched GUI representations, and distance-based preference optimization, respectively. For reasoning and planning, prior works have explored step-level demonstration retrieval (Zhou et al., 2024a), workflow memory (Wang et al., 2024b), dynamic task decomposi-tion (Yang et al., 2025b), subtask-centric benchmarks (Sri-vastava et al., 2025), and inference-time tree search (Koh et al., 2024b) to enhance multi-step decision-making in web agents. To measure progress in web agents, works such as WebArena (Zhou et al., 2024b), VisualWebArena (Koh et al., 2024a) and Online-Mind2Web (Deng et al., 2023; Xue et al., 2025) establish realistic and comprehensive evalua-tion pipelines. These advancements continuously enhance the understanding and decision-making capabilities of web agents. 
+
+2.2. World Model in Web Agent 
+
+World model originally aims to learn a predictive model of environment dynamics, enabling agents to understand how the environment works efficiently without relying solely on real-world interactions (Sutton, 1991; Ha & Schmidhuber, 2018). Therefore, world models are commonly used for sample-efficient learning (Wu et al., 2022; Jeong et al., 2025; Gao et al., 2025). As for web agent, WMA web agent (Chae et al., 2025) and WebDreamer (Gu et al., 2025) introduce world models to simulate action execution for improved action selection. WebEvolver (Fang et al., 2025) introduces 2World-Model–Augmented Web Agents with Action Correction 
+
+a co-evolutionary framework where a world model LLM jointly develops with the agent policy. R-WoM (Mei et al., 2025) augments LLM-based world model simulations with knowledge retrieval, addressing hallucination and outdated training knowledge. Our WAC, in addition to using an LLM-based world model to simulate environment dynamics, further leverages its state-transition knowledge to inform candidate plan generation. 
+
+## 3. WAC 
+
+3.1. Problem Formulation 
+
+Due to the partial observability of underlying webpage states, the stochasticity of web interactions, and the long-horizon sequential decision-making nature of web tasks, we model web agent task execution as a partially observable Markov decision process (POMDP), formally defined as 
+
+(S, A, O, T , Z), where we focus on decision-making and execution under partial observability rather than reward op-timization. At time step t, the environment is in a latent state st ∈ S , which is not directly accessible to the agent. Instead, the agent receives an observation ot ∈ O and se-lects an action at ∈ A . The environment then transitions to a new latent state st+1 ∼ T (· | st, a t), from which the next observation is generated as ot+1 ∼ Z (· | st+1 ). An episode terminates either when the agent explicitly decides to stop, or is passively terminated due to execution errors, excessive repeated actions, or reaching a maximum step limit. 
+
+3.2. Framework Overview 
+
+We present WAC, a multi-agent web agent framework de-signed to support collaborative action generation and risk-aware pre-execution action refinement. Unlike prior ReAct-style (Yao et al., 2023) agents that rely on a single model to both reason and act, WAC decomposes decision-making into complementary stages with specialized model roles. As illustrated in Figure 2, WAC consists of two sequential stages: Action Generation and Action Deduction .In Stage I (Action Generation) , the agent produces a set of candidate actions grounded in the current web observation. To mitigate the limited reasoning capacity of a single model, the action model may collaborate with the world model, which acts as an environment expert to provide strategic guidance for action proposal. This collaboration is triggered on demand when the agent lacks sufficient confidence to generate reliable actions based solely on the action model. In Stage II (Action Deduction) , the agent evaluates the candidate actions prior to execution and performs feedback-driven refinement based on simulated execution outcomes. The world model simulates the potential outcomes of pro-posed actions, which are then assessed by a judge model to provide feedback for pre-execution action refinement. When 
+
+Algorithm 1 Workflow of WAC  
+
+> 1:
+
+Input: Task τ , Initial observation o0 
+
+> 2:
+
+Output: Executed action sequence {a0, a 1, . . . , a T } 
+
+> 3:
+
+Initialize execution history H0 ← ∅ , t ← 0 
+
+> 4:
+
+while termination check() = False do  
+
+> 5:
+
+// Stage I: Action Generation  
+
+> 6:
+
+gt ← ROUTER (ot, τ ) 
+
+> 7:
+
+if gt = 1 then  
+
+> 8:
+
+st ← W guide (ot, τ, Ht) 
+
+> 9:
+
+else  
+
+> 10:
+
+st ← ∅ 
+
+> 11:
+
+end if  
+
+> 12:
+
+˜At ← ACTION MODEL (ot, τ, Ht, s t) 
+
+> 13:
+
+At ← ACTION FILTER ( ˜At) 
+
+> 14:
+
+// Stage II: Action Deduction  
+
+> 15:
+
+Initialize refinement counter k ← 0 
+
+> 16:
+
+repeat  
+
+> 17:
+
+for all a(i) 
+
+> t
+
+∈ A t do  
+
+> 18:
+
+bo(i) 
+
+> t+1
+
+← W sim (ot, a (i) 
+
+> t
+
+) 
+
+> 19:
+
+(c(i), r (i)) ← JUDGE (bo(i)
+
+> t+1
+
+, τ, Ht) 
+
+> 20:
+
+end for  
+
+> 21:
+
+if max i c(i) ≥ θ then  
+
+> 22:
+
+a⋆t ← arg max i c(i) 
+
+> 23:
+
+break  
+
+> 24:
+
+end if  
+
+> 25:
+
+Gt ← { (a(i) 
+
+> t
+
+, r (i)) | c(i) < θ } 
+
+> 26:
+
+At ← REFINE (At, Gt) 
+
+> 27:
+
+k ← k + 1  
+
+> 28:
+
+until k = Kmax  
+
+> 29:
+
+if max i c(i) < θ then  
+
+> 30:
+
+a⋆t ← arg max i c(i) 
+
+> 31:
+
+end if  
+
+> 32:
+
+ot+1 ← EXECUTE (a⋆t ) 
+
+> 33:
+
+Ht+1 ← H t ∪ { (ot, a ⋆t )} 
+
+> 34:
+
+t ← t + 1  
+
+> 35:
+
+end while 
+
+all candidate actions are deemed inadequate or risky, correc-tive feedback is returned to the action generation process, enabling iterative refinement before execution. Algorithm 1 summarizes the overall workflow of WAC, il-lustrating how collaborative action generation and feedback-driven action refinement are integrated into a unified decision-making loop across execution steps. 
+
+3.3. Action Generation 
+
+Existing web agents ( e.g. , ReAct) typically rely on a single model to both reason about the task and to propose exe-cutable actions. In this case, the model’s internal knowledge and reasoning capacity may be insufficient to capture envi-ronment dynamics ( e.g. , navigation rules, state dependen-3World-Model–Augmented Web Agents with Action Correction Task: Find me the cheapest blue kayak on this site.                           
+
+> World Model Action Model
+> Router
+> Is the next step hard to decide?
+> yes no
+> After
+> clicking … the user will likely see … that will
+> allow them to …
+> assist
+> 𝑎𝑎 1
+> Thoughts: …
+> Selected actions: 1,3,4
+> State changes: The search bar will be activated, allowing the user to type a query. The cursor
+> will appear inside the search input field, ready for text entry.
+> 𝑠𝑠𝑠𝑠𝑠𝑠 1
+> simulate
+> judge
+> max( 𝑠𝑠𝑠𝑠𝑠𝑠𝑠𝑠𝑒𝑒 𝑖𝑖 )> threshold
+> Terminate
+> repeat stop
+> Judge Model
+> Let’s think step by step … the next action I will perform is …
+> action proposal
+> 𝑎𝑎 2𝑎𝑎 3𝑎𝑎 4
+> Stage I : Action Generation
+> Action Filter
+> 𝑎𝑎 1𝑎𝑎 3𝑎𝑎 4
+> World Model
+> 𝑠𝑠𝑠𝑠𝑠𝑠 3𝑠𝑠𝑠𝑠𝑠𝑠 4
+> Thoughts: … The proposed action of … is appropriate and aligns with the user's goal. This action will likely lead to … Status: …
+> On the right track to success: …
+> 𝑠𝑠 𝑠𝑠𝑠𝑠 re 1𝑠𝑠 𝑠𝑠𝑠𝑠 re 1𝑠𝑠 𝑠𝑠𝑠𝑠 re 4𝑠𝑠 𝑠𝑠𝑠𝑠 re 3
+> 𝑎𝑎 4
+> argmax yes
+> no
+> execute
+> no yes
+> Stage II : Action Deduction
+> feedback
+
+Figure 2. Overview of WAC. Given the current observation and task, the agent first decides whether world-model assistance is needed for action generation. Candidate actions are then proposed and lightly filtered. Each candidate is simulated by a world model to predict potential state changes, which are evaluated by a judge model to assign confidence scores. If no action exceeds a predefined threshold, feedback derived from low-scoring simulations is used to refine action proposals in a closed loop. Once a high-confidence action is identified, it is executed in the environment, and the process repeats until termination. 
+
+cies), producing inadequate action proposals. Recent multi-agent works endow multiple specialized agents with comple-mentary knowledge and coordination mechanisms, raising a promising solution to the above issue. Inspired by this, we design the Action Generation stage to produce a compact, environment-aware candidate action set At through three steps: (1) collaboration-on-demand with a world model that supplies high-level guidance, (2) initial action proposal, and (3) lightweight action filtering. At each step t of web task execution, a LLM-based gat-ing module determines—based on the current environment observation ot and the user-specified task τ —whether the next action decision should be augmented with assistance from a world model endowed with extensive knowledge of web-environment state transitions. Formally, we denote the gating decision at step t as 
+
+gt = ROUTER (ot, τ ) ∈ { 0, 1}, (1) where gt = 1 indicates that world-model guidance is in-voked. If so, the world model—conditioned on ot, τ , and the interleaved execution trajectory Ht of past actions and web-page screenshots—performs prospective reasoning and out-puts natural-language, actionable suggestions st for the next step. Subsequently, an action model conditions on the task τ ,the current observation ot, the execution history Ht, and the suggestion st (when available) to produce its own reasoning process and a structured action decision. Under probabilis-tic decoding, the action model is sampled multiple times to produce a set of candidate actions ˜At = {a(1)  
+
+> t
+
+, . . . , a (N ) 
+
+> t
+
+}.Following prior work (Gu et al., 2025; Chae et al., 2025), we use a LLM to perform lightweight filtering on ˜At to remove clearly unreasonable candidate actions, yielding At.Leveraging the LLM-based world model to guide action proposal narrows the decision space to affordance-aligned moves and injects transition knowledge directly into the reasoning process. This reduces inadequate proposal and improves goal-directedness in ambiguous execution steps. 
+
+3.4. Action Deduction 
+
+To assess the risks of candidate actions, recent works (Gu et al., 2025; Chae et al., 2025), instead of directly scoring them, leverage a world model to simulate their potential outcomes and select actions based on these simulations. However, when none of the candidate actions are appropri-ate, the agent is still forced to commit to one for execution, which can lead to irreversible consequences or deviations in the task trajectory that are difficult for existing agents to 4World-Model–Augmented Web Agents with Action Correction 
+
+recover from. Given that the task success rates of current web agents remain substantially lower than those of humans, such situations occur frequently in practice. To overcome this issue, we propose a feedback-driven action refinement loop based on simulated execution outcomes. At time step t, the Action Generation stage produces a set of candidate actions At = {a(1)  
+
+> t
+
+, . . . , a (M ) 
+
+> t
+
+} under the current observation ot. To evaluate the potential risks and effec-tiveness of each candidate prior to execution, we employ a world model W to simulate execution outcomes. For each action a(i) 
+
+> t
+
+∈ A t, the world model predicts a hypothetical next observation: 
+
+bo(i) 
+
+> t+1
+
+= W(ot, a (i) 
+
+> t
+
+), (2) where bo(i) 
+
+> t+1
+
+is a natural-language description of the sim-ulated post-execution state. Following WebDreamer (Gu et al., 2025), we set the world model simulation horizon to 1. The simulated outcomes are then assessed by a judge model, which inspects each bo(i) 
+
+> t+1
+
+to produce: (i) a discrete confi-dence score c(i) ∈ { 0, 0.5, 1}, indicating whether the action is judged to fail, partially complete, or successfully com-plete the task; and (ii) a textual rationale r(i) explaining the evaluation. For stability and consistency, the confidence score is obtained by quantifying the judge model’s answers to a set of predefined discrete questions, rather than being directly generated. We denote the judge model as a function producing confidence–rationale pairs (c(i), r (i)) for each simulated outcome. If max i c(i) ≥ θ, where θ is a predefined confidence thresh-old, the agent executes the highest-scoring action a(i⋆) 
+
+> t
+
+with 
+
+i⋆ = arg max i c(i). Otherwise, when all candidate actions are assessed as low-confidence, we activate a feedback-driven action refinement loop. Specifically, we pair inadequate candidate actions with their corresponding rationales to form corrective guidance, which is fed back to the action model as additional context. For-mally, We aggregate low-confidence actions and their ratio-nales into 
+
+Gt = {(a(i) 
+
+> t
+
+, r (i)) | c(i) < θ }, (3) which serves as corrective guidance for action regeneration. The action model then regenerates a refined candidate set under these constraints. To retain relative strong candidates from previous iterations while incorporating newly gener-ated actions, we apply an operator that merges historical and newly proposed actions and selects a compact subset for the next iteration. Formally, let Anew  
+
+> t
+
+denote the candidate actions newly generated by the action model, and let Aprev 
+
+> t
+
+denote the retained action set from previous iterations. We define the operator as: 
+
+Top N
+
+ Aprev 
+
+> t
+
+ ∪ A new  
+
+> t
+
+, (4) where Top N (·) selects the N actions with the highest con-fidence scores assigned by the judge model. This design prevents the refinement loop from completely discarding previous actions, while progressively improving the candi-date set through corrective feedback. This process iterates in a closed loop of proposal → simulation → evaluation , and terminates either when a high-confidence action emerges or when a maximum number of refinement iterations is reached. We cap the refinement loop at Kmax iterations for efficiency. If the loop terminates due to iteration limits, the action with the highest confidence score among all previously evaluated candidates is selected for execution. By preventing premature execution of intent-misaligned or implausible actions and exposing corrective signals before acting, this feedback mechanism improves robustness and reduces error accumulation in complex web tasks. 
+
+## 4. Experiments 
+
+4.1. Experimental Settings 
+
+We evaluate WAC on two widely used web agent bench-marks: VisualWebArena (Koh et al., 2024a) and Online-Mind2Web (Deng et al., 2023; Xue et al., 2025). 
+
+VisualWebArena is a realistic benchmark for multimodal web agents, featuring tasks that require interpreting screen-shots in addition to DOM and textual information. The benchmark is evaluated through execution on functional websites in sandbox environments. It consists of three sub-websites: Classifieds, Shopping, and Reddit. Performance is measured by success rate, defined as the proportion of tasks successfully completed according to the dataset’s evaluation rules. To reduce evaluation cost and maintain consistency with prior work, we evaluate on 233 human-verified tasks selected from the dataset. 
+
+Online-Mind2Web is the online variant of Mind2Web, fea-turing 300 tasks spanning 136 popular real-world websites and designed to evaluate agents directly on the live web. Mind2Web provides the original large-scale task set and schema. This benchmark adopts an LLM-as-a-judge evalua-tion pipeline to determine task success, achieving an 85% agreement rate with human judgments. Performance is mea-sured by success rate, defined as the proportion of tasks judged as successful. To ensure a fair comparison and demonstrate the effective-ness of WAC, we adopt ReAct (Yao et al., 2023) and Web-Dreamer (Gu et al., 2025) as baseline methods and reim-plement them on the selected benchmarks. We include a visual comparison of decision-making behaviors to clarify how these methods differ during action selection, which is not intended to introduce new components beyond those described in Section 3. Figure 3 provides the high-level 5World-Model–Augmented Web Agents with Action Correction Action Model           
+
+> 𝑎𝑎 1𝑎𝑎 2𝑎𝑎 3
+> World Model
+> 𝑠𝑠𝑠𝑠𝑠𝑠 1𝑠𝑠𝑠𝑠𝑠𝑠 2𝑠𝑠𝑠𝑠𝑠𝑠 3
+> Judge Model
+> 𝑠𝑠𝑠𝑠𝑠𝑠𝑠𝑠𝑠𝑠 1𝑠𝑠𝑠𝑠𝑠𝑠𝑠𝑠𝑠𝑠 2𝑠𝑠𝑠𝑠𝑠𝑠𝑠𝑠𝑠𝑠 3
+> Action Filter
+> collaboration
+> feedback
+> execute
+> ReAct
+> WebDreamer
+> WAC (ours)
+> 𝑎𝑎 1
+> argmax
+> 𝑎𝑎 4
+> …
+> 𝑎𝑎 4
+
+Figure 3. Comparison of action generation and pre-execution de-cision processes used by ReAct, WebDreamer, and our method (WAC). While ReAct directly executes a single proposed action and WebDreamer selects among simulated candidates, WAC en-ables collaborative action generation and feedback-driven action re-finement prior to execution, leading to more robust action choices. 
+
+comparison of the action generation and pre-execution de-cision processes used by these methods, highlighting the key behavioral differences that motivate our experimental evaluation. ReAct is a strong reasoning-and-acting base-line that interleaves natural language reasoning with action execution, enabling agents to make decisions step by step based on observations. WebDreamer extends this paradigm by incorporating a world model to simulate the outcomes of candidate actions before execution, allowing the agent to perform lookahead reasoning in web environments. In contrast, WAC further enables collaborative action genera-tion and feedback-driven refinement, allowing suboptimal actions to be corrected before execution. We implement all agents using the toolkit provided by Visu-alWebArena to enable interaction with web environments. To ensure fair comparison with prior work, we faithfully reproduce the ReAct and WebDreamer baselines following their original implementations. All agents are instantiated with the same vision–language model, Qwen-VL-Plus (Bai et al., 2025a;b; Wang et al., 2024a; Bai et al., 2023), and the decoding temperature is fixed to 1 across all experiments. For consistency with prior settings, we set the simulation horizon of the world model to 1, which has been empirically shown to be both effective and efficient. 
+
+4.2. Main Results 
+
+Table 1 reports task success rates on VisualWebArena and Online-Mind2Web using the same backbone model (Qwen3-VL-plus) across methods. Our method, WAC, outperforms both ReAct and WebDreamer on both benchmarks. On VisualWebArena, WAC achieves 24.5% (vs. 22.7% for both ReAct and WebDreamer), corresponding to a 7.9% relative improvement over the two baselines. On Online-Mind2Web, WAC reaches 16.0%, improving upon WebDreamer by 8.8% in relative terms. These results indicate that integrating collaborative action generation, which incorporates complementary suggestions from multiple models, together with feedback-driven pre-execution action refinement based on simulated outcomes, consistently improves decision quality and execution robust-ness across diverse web scenarios. The consistent improve-ments on both benchmarks demonstrate the effectiveness of our approach for web-based decision making, where inadequate actions can lead to hard-to-recover states and thus call for careful action generation together with explicit pre-execution action validation and refinement. 
+
+4.3. Ablation Studies 
+
+Table 2. Ablation study on VisualWebArena Classifieds. 
+
+Model Method SR ↑
+
+Qwen3-VL-Plus ReAct 30.4 WebDreamer 32.1 + Feedback-Driven Action Refinement 33.9 + Collaborative Action Generation 35.7 
+
+To evaluate the impact of Feedback-Driven Action Refine-ment and Collaborative Action Generation on agent per-formance, we conduct comprehensive experiments on the human-verified Classifieds subset of VisualWebArena, as shown in Table 2. We report the task success rates of Re-Act, WebDreamer, and WebDreamer augmented with our proposed modules on 56 tasks from the human-verified Classifieds subset. We observe a consistent improvement in task success rates as our proposed modules are progres-sively incorporated into the agent. During task execution, Feedback-Driven Action Refinement helps correct implausi-ble or intent-misaligned actions before execution, while Col-laborative Action Generation enhances action proposal by incorporating environment-aware guidance from the world model. Together, these components yield an absolute im-provement of 3.6% in task success rate, demonstrating the effectiveness of our methods. 6World-Model–Augmented Web Agents with Action Correction           
+
+> Table 1. Results on VisualWebArena and Online-Mind2Web.
+> Model Method VisualWebArena Online-Mind2Web
+> Qwen3-VL-Plus ReAct 22.7 12.7 WebDreamer 22.7 14.7 WAC (ours) 24.5 16.0
+
+4.4. Further Analysis       
+
+> Table 3. Cross-model generalization results on VisualWebArena Classifieds.
+> Model Method SR ↑
+> GLM-4.5v ReAct 21.4 WebDreamer 33.9 WAC (ours) 37.5
+
+Cross-Model Generalization To assess whether our method generalizes beyond the foundation model used in previous experiments, we conduct a cross-model evaluation on the Classifieds subset of VisualWebArena by replacing the underlying foundation model with GLM-4.5v (Team et al., 2025). All methods are evaluated under identical environment and task settings to ensure a fair comparison. As shown in Table 3, WAC consistently outperforms the baselines under the GLM-4.5v backbone, achieving a task success rate of 37.5, compared to 33.9 for WebDreamer and 21.4 for ReAct. This performance gap suggests that the gains of WAC are not tightly coupled to a specific foun-dation model, but instead arise from the proposed collabo-rative action generation and feedback-driven action refine-ment mechanisms, highlighting its potential applicability in practical web agent systems where model availability and characteristics may vary.       
+
+> Table 4. Cross-model generalization results on VisualWebArena Reddit.
+> Model Method SR ↑
+> GLM-4.6v ReAct 7.9 WebDreamer 12.7 WAC (ours) 14.3
+
+We further evaluate cross-model generalization on the Vi-sualWebArena Reddit subset using the recently released GLM-4.6v backbone. Reddit tasks are widely regarded as more challenging due to dense page layouts, high infor-mation volume, and the need for multi-step interactions, which lead to lower overall success rates for existing web agents. As shown in Table 4, WAC achieves a task suc-cess rate of 14.3, outperforming WebDreamer (12.7) and ReAct (7.9) by a clear margin. Together, these results indi-cate that our method not only generalizes across different foundation models, but also remains effective under more challenging web scenarios, where careful action proposal and pre-execution action validation are especially important.       
+
+> Table 5. Performance of the single-proposal variant of WAC on VisualWebArena Classifieds.
+> Model Method SR ↑
+> Qwen3-VL-Plus WAC 35.7
+> WAC (single-proposal) 35.7
+
+Can Feedback Replace Action Sampling? Existing web agents typically rely on repeated prompting and stochas-tic decoding to obtain a diverse set of candidate actions. While effective, this strategy incurs substantial computa-tional overhead and treats action diversity as a byproduct of sampling rather than structured refinement. In contrast, WAC introduces a feedback-driven refinement loop that iteratively corrects inadequate actions based on simulated execution outcomes. This design raises a natural question: 
+
+Can the feedback mechanism compensate for reduced action sampling? We preliminarily explore this question. Specifi-cally, we initialize At with a single action sampled from the action model, and rely solely on the feedback-driven refine-ment loop to iteratively improve the proposal. As shown in Table 5, despite using only a single initial action proposal, the variant maintains competitive performance, indicating that feedback-driven refinement may partially substitute for explicit action sampling. This result highlights the potential of feedback-driven refinement as a more structured and effi-cient alternative to extensive action sampling, especially in latency- or cost-sensitive settings. 
+
+Effective Case Illustration We present a case study il-lustrating how WAC corrects a inappropriate action at the very first step of task execution through feedback-driven action refinement. For clarity, we omit the collaborative action generation process in the figure and focus on the re-finement dynamics; in this case, the world model does not provide additional guidance at the initial step, and the action is proposed directly by the action model. Given the task and the initial observation, the action model produces only a single candidate action at step t = 1 . Instead of executing this action directly, WAC leverages the environment-aware 7World-Model–Augmented Web Agents with Action Correction Task: 
+
+> I would like to know the author of this image, from one of the top posts in /f/pics. Can you help me send them a dm with "Hello"?
+> Action Model
+> Judge Model
+> click [search bar]
+> The search bar will be activated, allowing the user to type a query.
+> World Model
+> The agent’s proposed action does not align with the task since …
+> Action Model
+> click [Forums]
+> Judge Model
+> This step seems logical as…
+> simulate
+> judge
+> refine
+> simulate then judge
+> execute
+
+Figure 4. An illustrative case where feedback-driven action refinement corrects an initially proposed action at the first execution step. Although only a single candidate action is initially generated, simulated outcome evaluation identifies it as risky, triggering refinement and leading to a revised action that places the agent on a successful trajectory. 
+
+world model to simulate its potential outcome. The simu-lated post-execution state reveals that this action would lead the agent onto an undesirable trajectory that is misaligned with the task objective. Based on this simulated outcome, the judge model provides a rationale indicating the underly-ing issue. Conditioned on this feedback, the action model revises its proposal and generates an alternative action that better respects the task requirements and page structure. Executing this refined action places the agent on a correct execution trajectory, from which the task can be completed successfully. This case highlights that even when action di-versity is minimal and no alternative candidates are initially available, the proposed feedback-driven refinement loop can still intervene effectively. By identifying and correcting a flawed action before execution, WAC prevents early-stage errors that could otherwise propagate and become difficult to recover from in later steps. 
+
+## 5. Limitations 
+
+Despite the promising results achieved by WAC, it still has several limitations: (1) Our approach operates in a tuning-free manner and therefore inherits the limitations of the underlying foundation models. In particular, the agent’s per-formance is influenced by the base model’s knowledge cov-erage, reasoning capability, and perceptual accuracy, which may constrain its effectiveness in certain scenarios. (2) Although WAC incorporates an environment-aware world model to simulate potential outcomes, such simulations are inherently approximate. Discrepancies between predicted and actual web environment dynamics may lead to imper-fect feedback and suboptimal refinements in some cases. In the future, we will try to enhance WAC by incorporating lightweight adaptation or specialization techniques to better align the agent with target web environments while preserv-ing its tuning-free advantages. We also plan to improve the fidelity of outcome simulation by leveraging stronger or dy-namically updated world models to provide more accurate feedback signals. 
+
+## 6. Conclusion 
+
+In this work, we introduce WAC, a web agent that inte-grates collaborative action generation and feedback-driven pre-execution action refinement. By incorporating an environment-aware world model for action generation as-sistance and outcome simulation, together with a feed-back mechanism for pre-execution action refinement, WAC enables more informed action proposals and robust deci-sion making in complex web environments. This design mitigates structural limitations of single-model action rea-soning and provides a closed-loop corrective mechanism that improves both action quality and execution robustness. Extensive experiments on VisualWebArena and Online-Mind2Web show that WAC consistently outperforms strong baselines, achieving task success rates of 24.5% and 16.0%, respectively. We will open-source our code upon publica-tion to facilitate reproducibility and future research in this domain. 8World-Model–Augmented Web Agents with Action Correction 
+
+## Impact Statement 
+
+This paper proposes a web agent framework that improves decision robustness through collaborative action genera-tion and feedback-driven action refinement. The primary goal of this work is to advance research on reliable and generalizable web agents capable of operating in complex, dynamic online environments. From a positive perspective, such agents may assist users in information retrieval, task automation, and accessibility, potentially reducing the cog-nitive and operational burden of interacting with large-scale web systems. By emphasizing pre-execution verification and iterative correction, our approach also promotes safer and more cautious agent behavior compared to directly exe-cuting unverified actions. At the same time, as with other web automation and agentic systems, there is a risk that similar techniques could be misused for large-scale auto-mated interactions or unintended manipulation if deployed irresponsibly. These concerns are not unique to our method and are common to web-based agents in general. We be-lieve that appropriate safeguards, usage policies, and human oversight are essential for real-world deployment. Overall, we do not foresee any novel ethical concerns introduced by this work beyond those already present in existing web agent and automation research. 
+
+## References 
+
+Bai, J., Bai, S., Yang, S., Wang, S., Tan, S., Wang, P., Lin, J., Zhou, C., and Zhou, J. Qwen-vl: A versatile vision-language model for understanding, localization, text read-ing, and beyond. arXiv preprint arXiv:2308.12966 , 2023. Bai, S., Cai, Y., Chen, R., Chen, K., Chen, X., Cheng, Z., Deng, L., Ding, W., Gao, C., Ge, C., Ge, W., Guo, Z., Huang, Q., Huang, J., Huang, F., Hui, B., Jiang, S., Li, Z., Li, M., Li, M., Li, K., Lin, Z., Lin, J., Liu, X., Liu, J., Liu, C., Liu, Y., Liu, D., Liu, S., Lu, D., Luo, R., Lv, C., Men, R., Meng, L., Ren, X., Ren, X., Song, S., Sun, Y., Tang, J., Tu, J., Wan, J., Wang, P., Wang, P., Wang, Q., Wang, Y., Xie, T., Xu, Y., Xu, H., Xu, J., Yang, Z., Yang, M., Yang, J., Yang, A., Yu, B., Zhang, F., Zhang, H., Zhang, X., Zheng, B., Zhong, H., Zhou, J., Zhou, F., Zhou, J., Zhu, Y., and Zhu, K. Qwen3-vl technical report. 
+
+arXiv preprint arXiv:2511.21631 , 2025a. Bai, S., Chen, K., Liu, X., Wang, J., Ge, W., Song, S., Dang, K., Wang, P., Wang, S., Tang, J., Zhong, H., Zhu, Y., Yang, M., Li, Z., Wan, J., Wang, P., Ding, W., Fu, Z., Xu, Y., Ye, J., Zhang, X., Xie, T., Cheng, Z., Zhang, H., Yang, Z., Xu, H., and Lin, J. Qwen2.5-vl technical report. arXiv preprint arXiv:2502.13923 , 2025b. Chae, H., Kim, N., iunn Ong, K. T., Gwak, M., Song, G., Kim, J., Kim, S., Lee, D., and Yeo, J. Web agents with world models: Learning and leveraging environ-ment dynamics in web navigation. In The Thirteenth International Conference on Learning Representations ,2025. URL https://openreview.net/forum? id=moWiYJuSGF .Deng, X., Gu, Y., Zheng, B., Chen, S., Stevens, S., Wang, B., Sun, H., and Su, Y. Mind2web: Towards a generalist agent for the web. In Oh, A., Naumann, T., Globerson, A., Saenko, K., Hardt, M., and Levine, S. (eds.), 
+
+Advances in Neural Information Processing Systems ,volume 36, pp. 28091–28114. Curran Associates, Inc., 2023. URL https://proceedings.neurips. cc/paper_files/paper/2023/file/ 5950bf290a1570ea401bf98882128160-Paper-Datasets_ and_Benchmarks.pdf .Fang, T., Zhang, H., Zhang, Z., Ma, K., Yu, W., Mi, H., and Yu, D. WebEvolver: Enhancing web agent self-improvement with co-evolving world model. In Christodoulopoulos, C., Chakraborty, T., Rose, C., and Peng, V. (eds.), Proceedings of the 2025 Conference on Empirical Methods in Natural Language Process-ing , pp. 8959–8975, Suzhou, China, November 2025. Association for Computational Linguistics. ISBN 979-8-89176-332-6. doi: 10.18653/v1/2025.emnlp-main. 454. URL https://aclanthology.org/2025. emnlp-main.454/ .Furuta, H., Lee, K.-H., Nachum, O., Matsuo, Y., Faust, A., Gu, S., and Gur, I. Multimodal web navigation with instruction-finetuned foundation models. In Kim, B., Yue, Y., Chaudhuri, S., Fragkiadaki, K., Khan, M., and Sun, Y. (eds.), International Confer-ence on Learning Representations , volume 2024, pp. 29528–29558, 2024. URL https://proceedings. iclr.cc/paper_files/paper/2024/file/ 7ef7d8359036afd8c2378d82c21058a4-Paper-Conference. pdf .Gao, Y., Ye, J., Wang, J., and Sang, J. Websynthesis: World-model-guided mcts for efficient webui-trajectory synthe-sis, 2025. URL https://arxiv.org/abs/2507. 04370 .Gu, Y., Zhang, K., Ning, Y., Zheng, B., Gou, B., Xue, T., Chang, C., Srivastava, S., Xie, Y., Qi, P., Sun, H., and Su, Y. Is your llm secretly a world model of the internet? model-based planning for web agents. Transactions on Machine Learning Research , 2025. Gur, I., Furuta, H., Huang, A., Safdari, M., Matsuo, Y., Eck, D., and Faust, A. A real-world webagent with planning, long context understanding, and program synthesis. In Kim, B., Yue, Y., Chaudhuri, S., Fragkiadaki, K., Khan, M., and Sun, Y. (eds.), International Confer-ence on Learning Representations , volume 2024, pp. 9World-Model–Augmented Web Agents with Action Correction 
+
+52690–52717, 2024. URL https://proceedings. iclr.cc/paper_files/paper/2024/file/ e91bf7dfba0477554994c6d64833e9d8-Paper-Conference. pdf .Ha, D. and Schmidhuber, J. World models. 2018. doi: 10.5281/ZENODO.1207631. URL https://zenodo. org/record/1207631 .Jeong, Y., Chun, J., Cha, S., and Kim, T. Object-centric world model for language-guided manipulation, 2025. URL https://arxiv.org/abs/2503.06170 .Kim, G., Baldi, P., and McAleer, S. Language models can solve computer tasks. In Proceedings of the 37th Inter-national Conference on Neural Information Processing Systems , NIPS ’23, Red Hook, NY, USA, 2023. Curran Associates Inc. Koh, J. Y., Lo, R., Jang, L., Duvvur, V., Lim, M. C., Huang, P.-Y., Neubig, G., Zhou, S., Salakhutdinov, R., and Fried, D. Visualwebarena: Evaluating multimodal agents on realistic visual web tasks. ACL , 2024a. Koh, J. Y., McAleer, S., Fried, D., and Salakhutdinov, R. Tree search for language model agents. arXiv preprint arXiv:2407.01476 , 2024b. Liu, J., Hao, J., Zhang, C., and Hu, Z. Wepo: Web element preference optimization for llm-based web navigation. 
+
+Proceedings of the AAAI Conference on Artificial Intel-ligence , 39(25):26614–26622, Apr. 2025. doi: 10.1609/ aaai.v39i25.34863. URL https://ojs.aaai.org/ index.php/AAAI/article/view/34863 .Mei, K., Guo, J., Chang, S., Dong, M., Lee, D., Niu, X., and Jiang, J. R-wom: Retrieval-augmented world model for computer-use agents, 2025. URL https://arxiv. org/abs/2510.11892 .Shi, T., Karpathy, A., Fan, L., Hernandez, J., and Liang, P. World of bits: An open-domain platform for web-based agents. In Precup, D. and Teh, Y. W. (eds.), Proceed-ings of the 34th International Conference on Machine Learning , volume 70 of Proceedings of Machine Learn-ing Research , pp. 3135–3144. PMLR, 06–11 Aug 2017. URL https://proceedings.mlr.press/v70/ shi17a.html .Singh, K., Singh, S., and Khanna, M. Trishul: Towards region identification and screen hierarchy understanding for large vlm based gui agents. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) Workshops , pp. 170–179, June 2025. Srivastava, S., Li, G., Chang, C., Garg, R., Kaur, M., Lee, C. Y., Li, Y., Mao, Y., Cases, I., Xie, Y., and Qi, P. Warc-bench: Web archive based benchmark for gui subtask executions, 2025. URL https://arxiv.org/abs/ 2510.09872 .Sutton, R. S. Dyna, an integrated architecture for learn-ing, planning, and reacting. SIGART Bull. , 2(4): 160–163, July 1991. ISSN 0163-5719. doi: 10. 1145/122344.122377. URL https://doi.org/10. 1145/122344.122377 .Team, V., Hong, W., Yu, W., Gu, X., Wang, G., Gan, G., Tang, H., Cheng, J., Qi, J., Ji, J., Pan, L., Duan, S., Wang, W., Wang, Y., Cheng, Y., He, Z., Su, Z., Yang, Z., Pan, Z., Zeng, A., Wang, B., Chen, B., Shi, B., Pang, C., Zhang, C., Yin, D., Yang, F., Chen, G., Xu, J., Zhu, J., Chen, J., Chen, J., Chen, J., Lin, J., Wang, J., Chen, J., Lei, L., Gong, L., Pan, L., Liu, M., Xu, M., Zhang, M., Zheng, Q., Yang, S., Zhong, S., Huang, S., Zhao, S., Xue, S., Tu, S., Meng, S., Zhang, T., Luo, T., Hao, T., Tong, T., Li, W., Jia, W., Liu, X., Zhang, X., Lyu, X., Fan, X., Huang, X., Wang, Y., Xue, Y., Wang, Y., Wang, Y., An, Y., Du, Y., Shi, Y., Huang, Y., Niu, Y., Wang, Y., Yue, Y., Li, Y., Zhang, Y., Wang, Y., Wang, Y., Zhang, Y., Xue, Z., Hou, Z., Du, Z., Wang, Z., Zhang, P., Liu, D., Xu, B., Li, J., Huang, M., Dong, Y., and Tang, J. Glm-4.5v and glm-4.1v-thinking: Towards versatile multimodal reasoning with scalable reinforcement learning, 2025. URL https://arxiv.org/abs/2507.01006 .Wang, P., Bai, S., Tan, S., Wang, S., Fan, Z., Bai, J., Chen, K., Liu, X., Wang, J., Ge, W., Fan, Y., Dang, K., Du, M., Ren, X., Men, R., Liu, D., Zhou, C., Zhou, J., and Lin, J. Qwen2-vl: Enhancing vision-language model’s perception of the world at any resolution. arXiv preprint arXiv:2409.12191 , 2024a. Wang, Z. Z., Mao, J., Fried, D., and Neubig, G. Agent work-flow memory, 2024b. URL https://arxiv.org/ abs/2409.07429 .Wu, P., Escontrela, A., Hafner, D., Goldberg, K., and Abbeel, P. Daydreamer: World models for physical robot learning. Conference on Robot Learning , 2022. Xue, T., Qi, W., Shi, T., Song, C. H., Gou, B., Song, D., Sun, H., and Su, Y. An illusion of progress? assess-ing the current state of web agents. In Second Con-ference on Language Modeling , 2025. URL https: //openreview.net/forum?id=6jZi4HSs6o .Yang, A., Yang, B., Hui, B., Zheng, B., Yu, B., Zhou, C., Li, C., Li, C., Liu, D., Huang, F., Dong, G., Wei, H., Lin, H., Tang, J., Wang, J., Yang, J., Tu, J., Zhang, J., Ma, J., Xu, J., Zhou, J., Bai, J., He, J., Lin, J., Dang, K., Lu, K., Chen, K., Yang, K., Li, M., Xue, M., Ni, N., Zhang, P., Wang, P., Peng, R., Men, R., Gao, R., Lin, R., Wang, S., Bai, S., Tan, S., Zhu, T., Li, T., Liu, T., Ge, W., Deng, X., Zhou, X., Ren, X., Zhang, X., Wei, X., Ren, X., Fan, 10 World-Model–Augmented Web Agents with Action Correction 
+
+Y., Yao, Y., Zhang, Y., Wan, Y., Chu, Y., Liu, Y., Cui, Z., Zhang, Z., and Fan, Z. Qwen2 technical report. arXiv preprint arXiv:2407.10671 , 2024a. Yang, A., Yang, B., Zhang, B., Hui, B., Zheng, B., Yu, B., Li, C., Liu, D., Huang, F., Wei, H., Lin, H., Yang, J., Tu, J., Zhang, J., Yang, J., Yang, J., Zhou, J., Lin, J., Dang, K., Lu, K., Bao, K., Yang, K., Yu, L., Li, M., Xue, M., Zhang, P., Zhu, Q., Men, R., Lin, R., Li, T., Xia, T., Ren, X., Ren, X., Fan, Y., Su, Y., Zhang, Y., Wan, Y., Liu, Y., Cui, Z., Zhang, Z., and Qiu, Z. Qwen2.5 technical report. 
+
+arXiv preprint arXiv:2412.15115 , 2024b. Yang, A., Li, A., Yang, B., Zhang, B., Hui, B., Zheng, B., Yu, B., Gao, C., Huang, C., Lv, C., Zheng, C., Liu, D., Zhou, F., Huang, F., Hu, F., Ge, H., Wei, H., Lin, H., Tang, J., Yang, J., Tu, J., Zhang, J., Yang, J., Yang, J., Zhou, J., Zhou, J., Lin, J., Dang, K., Bao, K., Yang, K., Yu, L., Deng, L., Li, M., Xue, M., Li, M., Zhang, P., Wang, P., Zhu, Q., Men, R., Gao, R., Liu, S., Luo, S., Li, T., Tang, T., Yin, W., Ren, X., Wang, X., Zhang, X., Ren, X., Fan, Y., Su, Y., Zhang, Y., Zhang, Y., Wan, Y., Liu, Y., Wang, Z., Cui, Z., Zhang, Z., Zhou, Z., and Qiu, Z. Qwen3 tech-nical report. arXiv preprint arXiv:2505.09388 , 2025a. Yang, J., Hou, B., Wei, W., Chang, S., and Bao, Y. Webdart: Dynamic decomposition and re-planning for complex web tasks, 2025b. URL https://arxiv.org/abs/ 2510.06587 .Yao, S., Zhao, J., Yu, D., Du, N., Shafran, I., Narasimhan, K., and Cao, Y. React: Synergizing reasoning and acting in language models. 2023. URL https: //www.scopus.com/inward/record.uri? eid=2-s2.0-85199863002&partnerID=40& md5=7cd72e9c58ecd294bec0f951cfda3ef8 .Cited by: 1069. Zheng, B., Gou, B., Kil, J., Sun, H., and Su, Y. Gpt-4v(ision) is a generalist web agent, if grounded. arXiv preprint arXiv:2401.01614 , 2024. Zhou, R., Yang, Y., Wen, M., Wen, Y., Wang, W., Xi, C., Xu, G., Yu, Y., and Zhang, W. TRAD: Enhancing llm agents with step-wise thought retrieval and aligned decision. In 
+
+Proceedings of the 47th International ACM SIGIR Con-ference on Research and Development in Information Retrieval (SIGIR) , 2024a. Zhou, S., Xu, F. F., Zhu, H., Zhou, X., Lo, R., Sridhar, A., Cheng, X., Ou, T., Bisk, Y., Fried, D., Alon, U., and Neubig, G. Webarena: A realistic web envi-ronment for building autonomous agents. In Kim, B., Yue, Y., Chaudhuri, S., Fragkiadaki, K., Khan, M., and Sun, Y. (eds.), International Conference on Learning Representations , volume 2024, pp. 15585– 15606, 2024b. URL https://proceedings. iclr.cc/paper_files/paper/2024/file/ 4410c0711e9154a7a2d26f9b3816d1ef-Paper-Conference. pdf .11 World-Model–Augmented Web Agents with Action Correction 
+
+## A. Action Space                              
+
+> Table 6. Action space.
+> Action Type Parameters Description
+> click [id] Click on the webpage element specified by the given element id. type [id], [content] Type the provided content into the input field with the spec-ified id. By default, the Enter key is pressed after typing unless disabled. hover [id] Hover the mouse cursor over the webpage element specified by the given id. press [key comb] Simulate pressing a keyboard key or key combination ( e.g. ,Ctrl+V). scroll [up/down] Scroll the webpage vertically in the specified direction. new tab –Open a new, empty browser tab. tab focus [tab index] Switch focus to the browser tab specified by its index. close tab –Close the currently active browser tab. goto [url] Navigate the browser to the specified URL. go back –Navigate to the previously visited webpage. go forward –Navigate to the next webpage if a previous go back action was performed. stop [answer] Terminate the task execution and return the final answer when the task objective is completed.
+
+We summarize the complete action space available to the web agent in Table 6, which is shared across all compared methods. 
+
+## B. Implementation Details 
+
+Benchmarks and Baselines Our implementation is built upon the VisualWebArena (Koh et al., 2024a) codebase, which provides the infrastructure for agent–webpage interaction. Based on this framework, we implement our agent to execute tasks in both the VisualWebArena and Online-Mind2Web (Deng et al., 2023; Xue et al., 2025) benchmarks. For baselines, ReAct (Yao et al., 2023) is implemented using the official implementation provided in the VisualWebArena codebase. WebDreamer (Gu et al., 2025) is reproduced based on the code released by the original authors, and we strictly follow the configurations and design choices described in the original paper to ensure a fair comparison. 
+
+Foundation Models We use Qwen3-VL-Plus (Bai et al., 2025a;b; Wang et al., 2024a; Bai et al., 2023) as the foundation vision–language model for all agents. Since Qwen3-VL-Plus is continuously updated, we specify a time-based snapshot for reproducibility. All experiments in this paper are conducted using the model snapshot released on December 19, 2025. For components in the benchmark evaluation pipeline that require model-based assistance, we adopt different models depending on modality. Specifically, we use Qwen3-Max (Yang et al., 2025a; 2024b;a) for text-only evaluation tasks, and Qwen3-VL-Plus for evaluation steps involving visual inputs. 
+
+Hyperparameters To control computational cost, we set the number of judge model scoring samples to 3 and perform a single rollout per candidate action for world model simulation. All other hyperparameters follow the official settings of VisualWebArena and WebDreamer. For components specific to WAC, we set the maximum number of feedback-driven action refinement iterations to 3. The confidence threshold is set to θ = 0 .4, and at each refinement round we retain the top-3 candidate actions ranked by the judge model’s confidence scores. 12

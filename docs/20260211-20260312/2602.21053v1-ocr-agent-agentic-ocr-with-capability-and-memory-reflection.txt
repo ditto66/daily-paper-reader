@@ -1,0 +1,328 @@
+Title: OCR-Agent: Agentic OCR with Capability and Memory Reflection
+
+URL Source: https://arxiv.org/pdf/2602.21053v1
+
+Published Time: Wed, 25 Feb 2026 02:16:44 GMT
+
+Number of Pages: 8
+
+Markdown Content:
+# OCR-Agent: Agentic OCR with Capability and Memory Reflection 
+
+Shimin Wen 1 Zeyu Zhang 2∗ Xingdou Bian 1 Hongjie Zhu 1
+
+Lulu He 1 Layi Shama 1 Daji Ergu 1 Ying Cai 3†
+
+> 1
+
+Southwest Minzu University 2AI Geeks 
+
+> ∗
+
+Project lead. †Corresponding author: caiying@swun.edu.cn. 
+
+Abstract —Large Vision-Language Models (VLMs) have demonstrated significant potential on complex visual un-derstanding tasks through iterative optimization meth-ods.However, these models generally lack effective self-correction mechanisms, making it difficult for them to indepen-dently rectify cognitive biases. Consequently, during multi-turn revisions, they often fall into repetitive and ineffective attempts, failing to achieve stable improvements in answer quality.To address this issue, we propose a novel iterative self-correction framework that endows models with two key capabilities: Capability Reflection and Memory Reflection. This framework guides the model to first diagnose errors and generate a correc-tion plan via Capability Reflection, then leverage Memory Re-flection to review past attempts to avoid repetition and explore new solutions, and finally, optimize the answer through rigor-ous re-reasoning. Experiments on the challenging OCRBench v2 benchmark show that OCR-Agent outperforms the current open-source SOTA model InternVL3-8B by +2.0 on English and +1.2 on Chinese subsets, while achieving state-of-the-art results in Visual Understanding (79.9) and Reasoning (66.5) — surpassing even larger fine-tuned models. Our method demon-strates that structured, self-aware reflection can significantly enhance VLMs’ reasoning robustness without additional train-ing. Code: https://github.com/AIGeeksGroup/OCR-Agent. 
+
+## 1. Introduction 
+
+Optical Character Recognition (OCR) constitutes a fun-damental technology that bridges the visual and textual do-mains, aiming to extract and interpret text from images into machine-readable formats. Most recently, Large VLMs have demonstrated exceptional promise in OCR-related tasks, exhibiting strong zero-shot abilities that can be further en-hanced through task-specific fine-tuning, as evidenced by models like OlmOCR. However, directly transferring these prompting strategies to VLMs has not yielded satisfactory results [1]—in some question-answering scenarios, performance may even fall short of direct answering. This is largely due to two key challenges: capability hallucination, where models propose actions beyond their executable scope (e.g., image enhance-ment or human proofreading), and refinement stagnation, where models get stuck in repetitive or ineffective correction Capability    
+
+> Reflection
+> Memory
+> Reflection refine Better Answer
+> Images
+> Question
+> VLM Init
+> Answer
+> Figure 1. Overview of OCR-Agent. The model iteratively refines its answer by (1) Capability Reflection to filter infeasible actions (e.g., ”enhance image”), and (2) Memory Reflection to avoid repeating past mistakes, enabling stable, training-free self-correction.
+
+loops. Current research primarily focuses on workarounds such as fine-tuning [2] or reinforcement learning [3], rather than addressing these core reasoning failures.This gap high-lights the need for a reasoning-focused approach that enables models to self-correct within their inherent capabilities. To this end, we demonstrate that carefully designed and properly constrained self-reflection mechanisms can enable CoT prompting to achieve sustained and stable performance improvement, effectively mitigating the limitations of stan-dard CoT in vision-language tasks. We propose OCR-Agent , a novel reflective framework designed to significantly enhance the stability and effec-tiveness of iterative self-correction in VLMs. Our agent architecture incorporates two key mechanisms: multi-turn 
+
+Capability Reflection , which guides the model to diagnose errors and adaptively plan corrective actions, and Memory Reflection , which enables the agent to retain and leverage historical reasoning traces—avoiding redundant attempts while exploring new solution pathways. Experimental results on the OCRBench v2 benchmark show that our method delivers substantial improvements over naive, chain-of-thought (CoT) prompting, and Self-Refine, especially in tasks demanding fine-grained visual-textual alignment and multi-step reasoning.An overview of OCR-Agent is provided in Fig 2. To summarize, our contributions are the following:  
+
+> •
+
+We demonstrate that specific self-reflection mecha-nisms can consistently and effectively enhance the per-formance of VLMs.  
+
+> •
+
+We propose training-free OCR-Agent with two key 
+
+> arXiv:2602.21053v1 [cs.CV] 24 Feb 2026
+
+mechanisms: Capability Reflection and Memory Re-flection . 
+
+> •
+
+We conduct experiments on the OCRBench v2, demon-strating that our method outperforms the open-source SOTA model InternVL3-8B by 2.0 points on the En-glish and 1.2 points on the Chinese subset. 
+
+## 2. Related Work 
+
+Optical Character Recognition (OCR). OCR is a key technology aimed at converting text within images into a machine-readable format. Traditional OCR methods, such as earlier versions of the Tesseract engine [4], typically employ a multi-stage pipeline. In the character recognition stage, these methods often rely on pattern matching (or statistical pattern recognition) to model partial features of characters, and utilize simple contextual rules or statistical associations [5]. To overcome the limitations of traditional methods, re-searchers have gradually shifted towards end-to-end models based on deep learning, with approaches combining com-puter vision (CV) and natural language processing (NLP) becoming mainstream. For instance, the CRNN model [6] employs a Convolutional Neural Network (CNN) for feature extraction and combines it with a Recurrent Neural Network (RNN) for sequence transcription. The computer vision-based approach has enhanced the adaptability of text detec-tion and instance segmentation [7], and has proven effective in modeling the spatial structure of entire documents [8]. Subsequently, Transformer-based models, such as TrOCR [9], leverage their powerful self-attention mechanisms to capture long-range dependencies. In recent years, the rise of large VLMs has propelled OCR technology into a new phase of development. Studies on pretrained VLMs [10] have revealed their remarkable zero-shot OCR capabilities, with further fine-tuning lead-ing to significant performance improvements. For example, Olmocr [11] is fine-tuned based on Alibaba’s Qwen-2.5-7B-Instruct model. However, when confronted with few-shot text and real-world complexities, VLMs still face challenges in handling intricate problems and achieving practical de-ployment [12] [13]. 
+
+Self Reflection. Chain of Thought (CoT) [14] is one of the pioneering works that enables large language models to acquire multi-step reasoning capabilities. Through simple prompting (Zero-shot-CoT) [15] or fine-tuning [16] [17], CoT guides the model to generate a series of intermediate reasoning steps before providing a final answer. Building upon CoT, Self-Refine [18] introduced a more general framework for iterative improvement, and the Re-flexion framework [19] elevates the concept of self-reflection to a new level by structuring the language model as an agent capable of reflecting on task feedback and maintaining its own memory. 
+
+## 3. Method 
+
+3.1. Overview 
+
+We propose an iterative self-reflection framework de-signed specifically for VLMs. This framework extends the paradigm of self-reflection from language models, moving beyond the correction of textual logic to address multi-modal errors caused by visual perception through a unique ’reflection-refinement’ iterative loop. The model first per-forms reflection, tracing and attributing output errors to specific visual features within the image. More critically, we introduce a ”capability constraint” mechanism to govern this process. This mechanism requires the model to be aware of its own capability boundaries when planning corrective steps, proactively filtering out any ”capability hallucina-tions” it cannot execute. Subsequently, in the refinement stage, this reflection which is both visually insightful and practically feasible is converted into an internal directive that guides the model to refocus on and deeply reinterpret the key areas of the image.The framework visualization are shown in Fig 3. 
+
+3.2. Capability Reflection 
+
+We proposed the capability reflection, in which the model’s post-hoc planning is aware of its own capabilities and excludes any infeasible actions. In typical multi-round self-reflection (e.g. for OCR transcription/translation), the model may suggest steps like ”apply image enhancement” or ”add human proofreading” – actions it cannot actually perform. Such suggestions are a form of capability halluci-nation, i.e. requests beyond the model’s abilities [20]. Prior work shows that self-reflection generally improves model outputs [18], [19], [21], but without constraints the model can propose invalid plans. We address this by filtering the chain-of-thought plan so that only model-executable steps remain. By restricting proposals to what the model can execute, capability reflection ensures each refinement step is realistic and grounded in the model’s actual capabilities. Let the previous answer (or transcription) be yprev and let 
+
+P = {a1, a 2, . . . , a n} be the chain-of-thought plan proposed by the model in the reflection step. We define a feasibility indicator ϕ(a) that equals 1 if action a is within the model’s capability set and 0 otherwise. Formally: 
+
+ϕ(a) = 
+
+
+
+1 if a can be executed by the model (e.g., text-based operations) 
+
+0 if a is infeasible (e.g., ”image enhance”) Using this indicator, we obtain the filtered plan 
+
+Pfeas = { a ∈ P : ϕ(a) = 1 }.
+
+Finally, the model’s refinement mechanism R (itself the LLM reasoning function) uses the feasible plan to produce Images question   
+
+> step 1. Get Reflection
+> Documents
+> reflection 1: Previous
+> attempts failed because ...
+> reflection 2 :To address
+> this issue, I need to ...
+
+... 
+
+> step 2. Refinement
+> Co T & refine
+> step 3. Final Answer
+> better answer Reflection
+> Memory
+> Vision-Language
+> Models
+
+OCR-A gent  
+
+> Vision-Language
+> Models
+> Init answer
+> reflection
+> Vision-Language
+> Models
+> question
+> Images
+> prompt
+> Ability filter
+
+Ability: focus area 
+
+Ability: Retake 
+
+picture 
+
+... 
+
+Ability : re-observe 
+
+image Figure 2. Overview of OCR-Agent. 
+
+an improved answer. If x denotes the original input (e.g. the image and any context), the updated answer is 
+
+ynew = R(x, y prev , Pfeas ).
+
+Here R(·) denotes the model’s generation given the input, the previous answer, and only the filtered plan. In effect, we enforce 
+
+Pfeas = {a ∈ P | a is within capability }
+
+ynew = R(x, y prev , Pfeas )
+
+ensuring the refinement only relies on feasible, model-plausible actions. This formalism cleanly captures the step-wise process of capability reflection. 
+
+3.3. Memory Reflection 
+
+We introduced memory reflection, designed to overcome the “refinement stagnation” and “ineffective looping” prob-lems common in conventional iterative correction models. Unlike traditional models that may repeatedly attempt the same flawed strategies, our mechanism explicitly records and leverages a history of reflections. This ensures that each new refinement is informed by the entirety of past experi-ences, thus preventing redundant exploration of incorrect solution paths. This process can be formalized as follows: Let I be the image input, Q be the question, Ai be the answer at iteration i, and Ri be the reflection generated at iteration i. The initial answer, produced by zero-shot inference, is denoted as A0.We define the Reflection Memory Store Mi as the set of all historical reflections prior to iteration i:
+
+Mi = {R1, R 2, . . . , R i−1}
+
+Within iteration i, the mechanism proceeds in the fol-lowing steps: 
+
+Reflection Generation: Conditioned on the image I,question Q, the previous answer Ai−1, and the current memory store Mi, the model generates a new reflection Ri.This reflection aims to identify the inadequacies in Ai−1.
+
+Ri = Reflect (I, Q, A i−1, M i)
+
+Memory Update: The newly generated reflection Ri
+
+is incorporated into the memory store, creating an updated and more comprehensive historical record to guide the final refinement. 
+
+Mi+1 = Mi ∪ { Ri}
+
+Guided Refinement: Instead of directly correcting 
+
+Ai−1, the model generates a new, improved answer Ai
+
+by conditioning on the original inputs and the updated, complete memory store Mi+1 .
+
+Ai = Refine (I, Q, M i+1 )
+
+## 4. Experiments 
+
+4.1. Dataset and Metrics 
+
+Datasets. To comprehensively and systematically eval-uate the effectiveness of our proposed framework, we con-ducted a series of rigorous experiments on the comprehen-sive benchmark, OCRBench v2 [22]. This benchmark was chosen for its exceptional quality and comprehensive chal-lenges: it contains over 10,000 manually verified question-answer pairs, covers both Chinese and English data, and includes a high proportion of difficult samples, enabling an effective assessment of the upper limits of a model’s 读中国主要河湖分布图，结合所学知识判断下列叙述 
+
+正确的是 A. 我国湖泊主要分布在东部平原和青藏高 
+
+原 B. 我国湖泊主要分布在南方地区和西北地区 C. 
+
+北方地区的河流大多流量大，含沙量较小 D. 西北地 
+
+区的河流均为内流河，以夏汛为主 请直接回答所给 
+
+候选答案的选项字母，无需进行解释，注意可能有多 
+
+选。 
+
+Naive: AB( wrong )
+
+CoT: A项与地图相符，正确。 B和D因区域错误和 “均为 ”太绝对 
+
+而排除。 C项考虑北方汛期流量大、治理后含沙量减少，也成立。 
+
+故选 AC (wrong )
+
+Ours: reflection : 在上一次尝试中，我们选择了 A和B作为答案。 
+
+然而，根据地图和地理知识，我们可以发现： A是正确的，因为 
+
+我国的湖泊确实主要分布在东部平原和青藏高原。 B是错误的，因 
+
+为我国的湖泊并不主要分布在南方地区和西北地区。 新的计划： 
+
+1. 重新审视地图上的湖泊分布情况。 2. 确认湖泊的主要分布区域。 
+
+3. 根据地理知识判断其他选项的正确性。 
+
+Answer :根据图像和反思，重新观察湖泊分布情况，确认湖 
+
+泊主要分布在东部平原和青藏高原。同时，重新评估之前的选择， 
+
+确认 B是错误的。根据地理知识，北方地区的河流大多流量小，含 
+
+沙量较大；西北地区的河流并非全部为内流河，如额尔齐斯河为外 
+
+流河。最终答案 : A (correct )
+
+Please use the information from the 
+
+provided image to directly answer the 
+
+mathematical question described in the 
+
+image. 
+
+Naive: B. 36 ° (wrong )
+
+CoT: Assuming ΔABC is isosceles (AB=AC) and ED is the perpendicular     
+
+> bisector of AB. This leads to ∠C = 72 °and DA=DB, so ∠ABD = 36 °.In ΔBDC,
+> ∠DBC is 36 °. Therefore, ∠BDC = 180 °- 72 °- 36 °. A quick calculation results in
+> 82 °. Answer: D (wrong )
+
+Ours: reflection : In my previous attempts, I incorrectly identified the   
+
+> angle BDC as 36 °, which is incorrect. The correct approach should involve
+> understanding the properties of angles formed by intersecting lines and
+> triangles. Since angle A is given as 36 °, we need to consider the relationships
+> between the angles formed by the intersection of lines at point D. The correct
+> angle BDC should be calculated using these relationships, but it seems I
+> overlooked the fact that angle BDC is actually supplementary to angle A,
+> making it 180 °- 36 °= 144 °. However, since the options provided do not
+> include 144 °, I must have misinterpreted the problem or the options.
+
+Answer : The correct answer should be one of the given choices, and upon  
+
+> re-evaluation, I realize that angle BDC is indeed 72 °, as it forms a right angle
+> with another line segment, making it supplementary to the given angle A.
+> Therefore, the correct answer is A. 72 °.(correct )
+
+Figure 3. A visual comparison of results from the Naive, CoT, and our proposed methods. The examples in the ”Ours” column represent the final output after the last round of iteration. 
+
+Algorithm 1 OCR-Agent with Capability and Memory Re-flection 
+
+Require: Image I, Question Q, Initial answer A0, Max iterations T
+
+Ensure: Final refined answer AT
+
+1: Initialize reflection memory: M1 ← ∅ 
+
+2: for i = 1 to T do 
+
+3: Ri ← Reflect (I, Q, A i−1, M i)
+
+4: P ← ExtractPlan (Ri) {Extract CoT plan from reflec-tion }
+
+5: Pfeas ← { a ∈ P | ϕ(a) = 1 } { ϕ(a) = 1 if model can execute a}
+
+6: Ai ← Refine (I, Q, A i−1, Pfeas , M i ∪ { Ri})
+
+7: Mi+1 ← Mi ∪ { Ri}
+
+8: end for 
+
+9: return AT
+
+capabilities. Its task design extends beyond traditional text transcription to complex scenarios requiring deep visuo-textual understanding, such as structured data extraction, visual question answering, and reasoning, which allows for a thorough examination of our framework’s generalization ability across different languages and difficulty levels. 
+
+Metrics. For evaluation, we strictly adhere to its official standards, employing evaluation metrics tailored to six core task types. Specifically, for Parsing tasks, we use the Tree-Edit Distance Similarity (TEDS) to evaluate the quality of conversion to structured formats; for Localization tasks, the Intersection over Union (IoU) is used to measure the accuracy of predicted regions; for Extraction tasks, the F1 score is used to assess the performance of key information extraction and mapping; for Long Reading, we use a combi-nation of BLEU, METEOR, F1 score, and Edit Distance for evaluation; for Counting tasks, we employ a normalized L1 distance to measure the accuracy of the counts; finally, for Basic VQA, we use Exact String Matching, a containment check, and the Average Normalized Levenshtein Similarity (ANLS) for evaluation, depending on the answer’s length and type. 
+
+4.2. Implementation Details 
+
+For each sample in the OCRBench v2 dataset, our method first performs a standard, simple inference to gen-erate an initial baseline answer. Subsequently, the system enters an iterative refinement process, which is fixed for three rounds (N=3). In each iteration i, this process involves two core stages: 1. Reflection Generation: We utilize a ”reflection” prompt template, which integrates the original question, the answer from the previous iteration (i-1), and the accumulated history of reflections, to have the model generate new reflective text. 2. Guided Refinement: We then feed the original question and the updated, complete history of reflections into a ”refinement” prompt template to guide the model in generating the revised answer for iteration i. This answer serves as the input for the next iteration, thereby TABLE 1. P ERFORMANCE OF VLM S ON ENGLISH SUBSETS OF OCRB ENCH V 2 [22]. Method Recognition Referring Spotting Extraction Parsing Calculation Understanding Reasoning Average                                                                                                                                                                                
+
+> Open-source VLMs
+> LLaVA-Next-8B 41.3 18.8 049.5 21.2 17.3 55.2 48.9 31.5 LLaVA-OV-7B 46.0 20.8 0.1 58.3 25.3 23.3 64.4 53.0 36.4 Monkey-8B 35.2 0016.6 16.3 14.4 59.8 42.3 23.1 TextMonkey-8B 39.1 0.7 019.0 12.2 19.0 61.1 40.2 23.9 Molmo-7B 52.4 21.3 0.1 45.5 7.6 28.5 65.3 55.0 34.5 Cambrian-1-8B 45.3 21.5 053.6 19.2 19.5 63.5 55.5 34.7 Pixtran-12B 48.9 21.6 066.3 35.5 29.8 66.9 53.7 40.3 InternVL3-8B 68.6 30.4 8.8 85.3 34.0 27.1 77.5 60.3 49.0 Deepseek-vl-2-Small-16B 62.7 28.0 0.1 77.5 32.7 14.3 77.1 53.9 43.3 MiniCPM-V-2.6-7B 66.9 29.5 0.5 70.8 33.4 31.9 69.9 57.9 45.1 GLM-4V-9B 61.8 22.6 071.7 31.6 22.6 72.1 58.4 42.6 Ovis2-8B 73.2 24.6 0.7 62.4 44.8 40.6 72.7 62.6 47.7 RolmOCR-7B 63.3 25.4 0.1 53.5 12.9 27.8 73.1 51.4 38.4
+> Closed-source VLMs
+> GPT-4o 61.2 26.7 077.5 36.3 43.4 71.1 55.5 46.5 GPT-4o-mini 57.9 23.3 0.6 70.8 31.5 38.8 65.9 55.1 43.0 Gemini-Pro 61.2 39.5 13.5 79.3 39.2 47.7 75.5 59.3 51.9 Claude3.5-sonnet 62.2 28.4 1.3 56.6 37.8 40.8 73.5 60.9 45.2 Step-1V 67.8 31.3 7.2 73.6 37.2 27.8 69.8 58.6 46.7
+> OCR-Agent-7B (Ours) 71.8 27.7 0.7 80.8 39.4 41.3 79.9 66.5 51.0
+> Figure 4. The performance improvement of OCR-Agent in understanding and reasoning as the number of trials increases. (a)&(c) Understanding Scores in English and Chinese: It depicts how the understanding capabilities of CoT only, Self-Refine, and OCR-Agent evolve with increasing trial numbers.
+> (b)&(d) Reasoning Scores in English and Chinese: It shows the reasoning ability changes of these methods as trial numbers proceed.
+
+enabling progressive refinement. The entire inference pro-cess was executed on four NVIDIA 3090 GPUs. 
+
+4.3. Main Results 
+
+We conduct a comprehensive evaluation of the proposed OCR-Agent framework on the highly challenging OCR-Bench v2 benchmark, covering both English and Chinese scenarios across eight core tasks: Recognition, Referring, Spotting, Extraction, Parsing, Calculation, Understanding, and Reasoning. As shown in Tables 1 and 2, our method sig-nificantly outperforms current mainstream open-source and closed-source Vision-Language Models (VLMs) — without requiring any additional training. On the English subset, OCR-Agent achieves an av-erage score of 51.01, surpassing all open-source models and closely approaching the strongest closed-source model, Gemini-Pro (51.9). Notably, it achieves the highest scores on the two most challenging tasks — Visual Understanding (79.9) and Visual Reasoning (66.5) — demonstrating the powerful advantage of our dual-reflection mechanism in handling complex multimodal reasoning. On the Chinese subset, OCR-Agent also delivers out-standing performance, achieving an average score of 54.72, ranking second only to the current top-performing open-source model, Qwen2.5-VL-7B (55.6). It sets new open-source records in Text Recognition (77.0), Information Ex-traction (68.8), and Visual Understanding (65.1). Impor-tantly, while the base RolmOCR-7B model scores only 38.6 on Chinese tasks, OCR-Agent boosts its performance by nearly 16 points, highlighting the framework’s strong generalization and enhancement capability across diverse base models. Overall, OCR-Agent despite its relatively lightweight size (7B parameters) — outperforms larger models such as Pixtral-12B and Deepseek-VL2-16B on multiple key tasks. This convincingly validates the effectiveness of our Capability Reflection and Memory Reflection mechanisms in guiding efficient, grounded, and iterative self-correction. 
+
+4.4. Ablation Study 
+
+To systematically evaluate the contribution of each com-ponent, we conduct a detailed ablation study of OCR-Agent TABLE 2. P ERFORMANCE OF VLM S ON CHINESE SUBSETS OF OCRB ENCH V 2 [22]. Method Recognition Extraction Parsing Understanding Reasoning Average                                                                                                                                                                                       
+
+> Open-source VLMs
+> LLaVA-Next-8B 5.7 2.9 12.2 7.5 17.2 9.1 LLaVA-OV-7B 14.8 15.7 13.7 16.0 28.7 17.8 Monkey-8B 4.6 11.2 8.4 21.5 20.0 13.1 TextMonkey-8B 23.5 14.8 8.4 19.9 12.2 15.8 Molmo-7B 7.1 15.0 9.2 9.0 23.7 12.8 Cambrian-1-8B 5.3 14.9 12.6 8.5 8.1 9.9 Pixtral-12B 13.4 10.9 21.0 7.0 20.7 14.6 InternVL3-8B 68.9 62.0 31.6 57.9 47.3 53.5 Deepseek-VL2-Small-16B 60.9 50.6 28.3 53.0 20.5 42.7 MiniCPM-o-2.6-7B 53.0 49.4 27.1 43.5 32.7 41.1 GLM-4V-9B 24.4 60.6 20.4 52.8 25.2 36.6 Ovis2-8B 72.2 50.8 37.7 47.9 37.4 49.2 RolmOCR-7B 36.5 64.9 15.3 45.4 26.7 37.7
+> Closed-source VLMs
+> GPT-4o 21.6 53.0 29.8 38.5 18.2 32.2 GPT-4o-mini 13.1 38.9 27.2 28.8 16.9 25.0 Gemini-Pro 52.5 47.3 30.9 51.5 33.4 43.1 Claude3.5-sonnet 21.0 56.2 35.2 55.0 30.5 39.6 Step-1V 56.7 41.1 37.6 38.3 39.2 42.6
+> OCR-Agent-7B (Ours) 77.0 69.1 22.9 65.1 39.8 54.7
+> TABLE 3. C OMPARISON OF DIFFERENT METHODS (INCLUDING NAIVE ROLM OCR AND SELF -REFLECTION VARIANTS )ON ENGLISH SUBSETS OF
+> OCRB ENCH V 2. Method Recognition Referring Spotting Extraction Parsing Calculation Understanding Reasoning Average Naive 63.3 25.4 0.1 53.5 12.9 27.8 73.1 51.4 38.4 CoT 64.5 25.1 0.1 76.5 17.8 31.9 73.2 51.9 42.0 Self-Refine 65.4 25.3 0.1 78.3 19.4 33.3 73.3 52.1 43.4 Capability Reflection 67.5 26.1 0.3 79.1 26.1 36.0 75.5 56.9 45.9 Memory Reflection 69.6 26.9 0.5 79.9 32.7 38.6 77.7 61.7 48.4 Capability & Memory 71.8 27.7 0.7 80.8 39.4 41.3 79.9 66.5 51.0
+
+on both the English and Chinese subsets of OCRBench v2. All variants are compared against the standard Self-Refine baseline. As summarized in Tables 3 and 4, OCR-Agent achieves consistent and stable performance gains across both Chinese and English tasks, with particularly pronounced improvement on Understanding and Reasoning tasks as the number of iteration rounds increases. As visualized in Fig 4, the performance curves clearly demonstrate that while baseline methods (CoT, Self-Refine) plateau or fluctuate after the first or second iteration, OCR-Agent continues to improve steadily across all three rounds — especially in high-complexity tasks such as English Reasoning (Fig 4.1) and Chinese Understanding (Fig 4.1). This sustained progression validates the effectiveness of our dual-reflection design in avoiding stagnation and enabling deep iterative refinement. When Capability Reflection and Memory Reflection are combined, the full OCR-Agent achieves peak performance, with average scores of 51.0 (English) and 54.7 (Chinese), demonstrating a clear complementary effect. Notably, on the Chinese Recognition task, performance surges from 37.7 to 77.0, highlighting the framework’s strong task adaptability. In summary, Capability Reflection ensures the feasi-bility of each refinement step, while Memory Reflection enables progressive exploration across iterations. Together, they form an iterative optimization framework that signifi-cantly outperforms traditional self-refinement methods. 
+
+## 5. Limitation and Future Work 
+
+While OCR-Agent demonstrates significant performance improvements through its novel self-correction framework, several limitations remain, pointing towards promising di-rections for future research. 
+
+Computational Overhead : The iterative reflection and refinement process inherently requires multiple calls to the large VLM for a single input, increasing inference time and computational cost compared to single-pass models. This could hinder deployment in real-time applications. Our three-round iteration scheme, while effective, may also be inefficient for simpler problems that require fewer steps and redundant for extremely complex ones that need more. 
+
+Dependence on Base Model Capabilities : The frame-work’s effectiveness is ultimately bounded by the inherent capabilities of the base VLM (e.g., RolmOCR). If the base model fundamentally misperceives a critical visual element or lacks specific knowledge, the reflection process may be unable to recover from this initial error, leading to refine-ment within a wrong context. TABLE 4. C OMPARISON OF DIFFERENT METHODS (INCLUDING NAIVE ROLM OCR AND SELF -REFLECTION VARIANTS ) ON CHINESE SUBSETS OF                                           
+
+> OCRB ENCH V 2. Method Recognition Extraction Parsing Understanding Reasoning Average Naive 36.5 64.9 15.3 45.4 26.7 37.7 CoT 37.1 66.5 14.1 46.9 27.5 38.4 Self-Refine 37.7 68.8 13.7 48.4 28.7 39.4 Capability Reflection 50.8 68.9 16.8 54.0 32.4 44.6 Memory Reflection 63.9 69.0 19.8 59.5 36.1 49.7 Capability & Memory 77.0 69.1 22.9 65.1 39.8 54.7
+
+Future directions include optimizing the framework’s efficiency through dynamic iteration control and model distillation, integrating external tools (e.g., image super-resolution APIs) to overcome inherent model limitations, and extending its application to broader vision-language tasks such as chart understanding and multimodal reasoning. Further enhancements to the memory mechanism, such as structured knowledge storage, and exploring human-in-the-loop refinement for high-stakes scenarios, are also promising avenues. 
+
+## 6. Conclusion 
+
+In this paper, we identified that unconstrained self-reflection often leads to unstable reasoning and ineffective corrections, ultimately impairing model performance. To overcome these limitations, we proposed OCR-Agent , a novel reflection-based framework that incorporates two core mechanisms: Capability Reflection , and Memory Reflection . Together, these components enable more struc-tured and sustainable self-correction, leading to consistent performance improvements without additional fine-tuning. Extensive experiments on the OCRBench v2 benchmark demonstrate that our approach significantly outperforms both direct answering, standard CoT prompting, and simple self-refine strategies, confirming its effectiveness in enhanc-ing VLM robustness in text-rich visual understanding tasks. Our findings affirm that carefully constrained self-reflection can unlock more robust and sustainable reasoning in VLMs, paving the way for more reliable and interpretable multimodal systems. Future work will focus on optimizing the computational efficiency of the reflection process and extending the framework to a broader range of vision-language tasks. References 
+
+[1] Renrui Zhang, Dongzhi Jiang, Yichi Zhang, Haokun Lin, Ziyu Guo, Pengshuo Qiu, Aojun Zhou, Pan Lu, Kai-Wei Chang, Yu Qiao, et al., “Mathverse: Does your multi-modal llm truly see the diagrams in visual math problems?,” in European Conference on Computer Vision .Springer, 2024, pp. 169–186. [2] Kanzhi Cheng, Yantao Li, Fangzhi Xu, Jianbing Zhang, Hao Zhou, and Yang Liu, “Vision-language models can self-improve reasoning via reflection,” arXiv preprint arXiv:2411.00855 , 2024. [3] Haozhe Wang, Chao Qu, Zuming Huang, Wei Chu, Fangzhen Lin, and Wenhu Chen, “Vl-rethinker: Incentivizing self-reflection of vision-language models with reinforcement learning,” arXiv preprint arXiv:2504.08837 , 2025. [4] R. Smith, “An overview of the tesseract ocr engine,” in Ninth International Conference on Document Analysis and Recognition (ICDAR 2007) , 2007, vol. 2, pp. 629–633. [5] Shunji Mori, Ching Y Suen, and Kazuhiko Yamamoto, “Historical review of ocr research and development,” Proceedings of the IEEE ,vol. 80, no. 7, pp. 1029–1058, 1992. [6] Baoguang Shi, Xiang Bai, and Cong Yao, “An end-to-end trainable neural network for image-based sequence recognition and its applica-tion to scene text recognition,” IEEE Transactions on Pattern Analysis and Machine Intelligence , vol. 39, pp. 2298–2304, 2015. [7] Shangbang Long, Jiaqiang Ruan, Wenjie Zhang, Xin He, Wenhao Wu, and Cong Yao, “Textsnake: A flexible representation for detecting text of arbitrary shapes,” in Proceedings of the European conference on computer vision (ECCV) , 2018, pp. 20–36. [8] Anoop Raveendra Katti, Christian Reisswig, Cordula Guder, Se-bastian Brarda, Steffen Bickel, Johannes H¨ ohne, and Jean Baptiste Faddoul, “Chargrid: Towards understanding 2d documents,” arXiv preprint arXiv:1809.08799 , 2018. [9] Minghao Li, Tengchao Lv, Lei Cui, Yijuan Lu, Dinei A. F. Florˆ encio, Cha Zhang, Zhoujun Li, and Furu Wei, “Trocr: Transformer-based optical character recognition with pre-trained models,” ArXiv , vol. abs/2109.10282, 2021. [10] Haotian Liu, Chunyuan Li, Qingyang Wu, and Yong Jae Lee, “Vi-sual instruction tuning,” Advances in neural information processing systems , vol. 36, pp. 34892–34916, 2023. [11] Jake Poznanski, Jon Borchardt, Jason Dunkelberger, Regan Huff, Daniel Lin, Aman Rangapur, Christopher Wilhelm, Kyle Lo, and Luca Soldaini, “olmocr: Unlocking trillions of tokens in pdfs with vision language models,” ArXiv , vol. abs/2502.18443, 2025. [12] Yuliang Liu, Zhang Li, Mingxin Huang, Biao Yang, Wenwen Yu, Chunyuan Li, Xu-Cheng Yin, Cheng-Lin Liu, Lianwen Jin, and Xiang Bai, “Ocrbench: on the hidden mystery of ocr in large multimodal models,” Science China Information Sciences , vol. 67, no. 12, pp. 220102, 2024. [13] Ling Fu, Zhebin Kuang, Jiajun Song, Mingxin Huang, Biao Yang, Yuzhe Li, Linghao Zhu, Qidi Luo, Xinyu Wang, Hao Lu, et al., “Ocr-bench v2: An improved benchmark for evaluating large multimodal models on visual text localization and reasoning,” arXiv preprint arXiv:2501.00321 , 2024. [14] Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Ed H. Chi, F. Xia, Quoc Le, and Denny Zhou, “Chain of thought prompting elicits reasoning in large language models,” ArXiv , vol. abs/2201.11903, 2022. [15] Takeshi Kojima, Shixiang Shane Gu, Machel Reid, Yutaka Matsuo, and Yusuke Iwasawa, “Large language models are zero-shot reason-ers,” Advances in neural information processing systems , vol. 35, pp. 22199–22213, 2022. [16] Seungone Kim, Se June Joo, Doyoung Kim, Joel Jang, Seonghyeon Ye, Jamin Shin, and Minjoon Seo, “The cot collection: Improving zero-shot and few-shot learning of language models via chain-of-thought fine-tuning,” arXiv preprint arXiv:2305.14045 , 2023. [17] Cheng-Yu Hsieh, Chun-Liang Li, Chih-Kuan Yeh, Hootan Nakhost, Yasuhisa Fujii, Alexander Ratner, Ranjay Krishna, Chen-Yu Lee, and Tomas Pfister, “Distilling step-by-step! outperforming larger language models with less training data and smaller model sizes,” arXiv preprint arXiv:2305.02301 , 2023. [18] Aman Madaan, Niket Tandon, Prakhar Gupta, Skyler Hallinan, Luyu Gao, Sarah Wiegreffe, Uri Alon, Nouha Dziri, Shrimai Prabhumoye, Yiming Yang, et al., “Self-refine: Iterative refinement with self-feedback,” Advances in Neural Information Processing Systems , vol. 36, pp. 46534–46594, 2023. [19] Noah Shinn, Federico Cassano, Ashwin Gopinath, Karthik Narasimhan, and Shunyu Yao, “Reflexion: Language agents with verbal reinforcement learning,” Advances in Neural Information Processing Systems , vol. 36, pp. 8634–8652, 2023. [20] Zhelun Shi, Zhipin Wang, Hongxing Fan, Zaibin Zhang, Lijun Li, Yongting Zhang, Zhenfei Yin, Lu Sheng, Yu Qiao, and Jing Shao, “Assessment of multimodal large language models in alignment with human values,” arXiv preprint arXiv:2403.17830 , 2024. [21] Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan, and Yuan Cao, “React: Synergizing reasoning and acting in language models,” in International Conference on Learning Representations (ICLR) , 2023. [22] Ling Fu, Biao Yang, Zhebin Kuang, Jiajun Song, Yuzhe Li, Linghao Zhu, Qidi Luo, Xinyu Wang, Hao Lu, Mingxing Huang, Zhang Li, Guozhi Tang, Bin Shan, Chunhui Lin, Qi Liu, Binghong Wu, Hao Feng, Hao Liu, Can Huang, Jingqun Tang, Wei Chen, Lianwen Jin, Yuliang Liu, and Xiang Bai, “Ocrbench v2: An improved benchmark for evaluating large multimodal models on visual text localization and reasoning,” ArXiv , vol. abs/2501.00321, 2024.

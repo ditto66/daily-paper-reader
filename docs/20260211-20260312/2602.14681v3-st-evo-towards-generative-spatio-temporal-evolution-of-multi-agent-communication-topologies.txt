@@ -1,0 +1,938 @@
+Title: ST-EVO: Towards Generative Spatio-Temporal Evolution of Multi-Agent Communication Topologies
+
+URL Source: https://arxiv.org/pdf/2602.14681v3
+
+Published Time: Wed, 25 Feb 2026 01:26:26 GMT
+
+Number of Pages: 16
+
+Markdown Content:
+## ST-EVO: Towards Generative Spatio-Temporal Evolution of Multi-Agent Communication Topologies 
+
+Xingjian Wu, Xvyuan Liu, Junkai Lu, Siyuan Wang, Xiangfei Qiu, Yang Shu , Jilin Hu , Chenjuan Guo , Bin Yang B
+
+East China Normal University {xjwu, xvyuanliu, jklu, sywang, xfqiu}@stu.ecnu.edu.cn, {yshu, jlhu, cjguo, byang}@dase.ecnu.edu.cn 
+
+Abstract 
+
+LLM-powered Multi-Agent Systems (MAS) have emerged as an effective approach towards collaborative intelligence, and have attracted wide research interests. Among them, “self-evolving” MAS, treated as a more flexible and powerful technical route, can construct task-adaptive workflows or communication topolo-gies, instead of relying on a predefined static structue template. Current self-evolving MAS mainly focus on Spatial Evolving or Tempo-ral Evolving paradigm, which only considers the single dimension of evolution and does not fully incentivize LLMs’ collaborative capabil-ity. In this work, we start from a novel Spatio-Temporal perspective by proposing ST-EVO ,which supports dialogue-wise communication scheduling with a compact yet powerful flow-matching based Scheduler. To make precise Spatio-Temporal scheduling, ST-EVO can also perceive the uncertainty of MAS, and possesses self-feedback ability to learn from accumu-lated experience. Extensive experiments on nine benchmarks demonstrate the state-of-the-art performance of ST-EVO , achieving about 5%–25% accuracy improvement. 
+
+1 Introduction 
+
+LLM-powered agentic systems (Significant Grav-itas, 2023; Inc., 2024; Wu et al.), which integrate LLMs’ reasoning capabilities with external func-tionalities, have exhibited impressive performance and facilitated a surge of practical applications like information search (Li et al., 2025b), data anal-ysis (Wu et al., 2026b), code generation (Zheng et al., 2023), deep research (Zheng et al., 2025) and autonomous driving (Jin et al., 2023). To fur-ther improve the performance and robustness in complex scenarios, multi-agent systems (MAS) are studied to achieve the collaborative intelligence. Generally, multi-agent systems (Ding et al., 2024; Han et al., 2024) are customized for a certain type of task, with a meticulously-designed workflow or Static Spatial Evolving  
+
+> Temporal Evolving Spatio-Temporal Evolving
+> Dialogue Iterations
+> Agent Pool
+> Agent Pool
+> Router
+> Agent Pool
+> Dialogue Iterations
+> Construct
+> Evolve
+> Chain
+> Tree
+> Star
+> Graph
+> AutoGen
+> LangChain
+> LangGraph
+> GPTSwarm, G-Designer
+> ARG-Designer, SafeSieve
+> Construct
+> /Prune
+> ... ...
+> ST-EVO
+> (Ours)
+> SpecReason
+> STEER
+> EvoRoute
+> ...
+
+Figure 1: Existing multi-agent systems. Our proposed 
+
+ST-EVO pioneers the exploration of Spatio-Temporal Evolving multi-agent systems. 
+
+communication topology, focusing on how agents effectively utilize, exchange, and induce informa-tion reciprocally. Classic multi-agent systems often adopt static topologies–see Figure 1 (top left), which orga-nizes agents as sequential workflows (chain) (Wei et al., 2022; Hong et al., 2023), task splitting mode (tree) (Yao et al., 2023, 2022), or task assignment mode (star) (Wu et al.). Since they are all spe-cial cases of graphs, some recent multi-agent sys-tems (Inc., 2024; Wu et al.) adopt graphs as their template structures and demonstrate remarkable performance. However, these task-specific static designs rely on expert intervation, and lack automa-tion and adaptation when scenario changes. There-fore, current research interests gradually shift to-wards dynamic workflow orchestration (Niu et al., 2025; Zhang et al., 2024; Lee et al., 2025) and communication topology design (Zhang et al.; Li et al., 2025a; Zhang et al., 2025b), aiming at task-specific or query-specific automated fine-grained customization, known as “ self-evolving ”MAS (Fang et al., 2025; Wang et al., 2025e). As shown in Figure 1, we categorize existing self-evolving multi-agent systems into “Spatial 
+
+> arXiv:2602.14681v3 [cs.MA] 24 Feb 2026
+
+Evolving” and “Temporal Evolving”. Consider-ing the Spatial Evolving MAS, the mainstream approach is to first formulate the communication topology as a graph, then learn from some cases to train a “designer” (often compact neural networks), which can design topologies for specific tasks (Liu et al., 2023; Zhuge et al., 2024) or queries (Zhang et al.; Li et al., 2025a; Zhang et al., 2025b). How-ever, the designed topologies are fixed throughout the entire conversation process for a query. That means, if a complex query needs multiple dialogue iterations to solve, the communication topology cannot be dynamically tuned during iterations to allocate computing resources and functions among different agent nodes, which leads to low flexibility and robustness, and may cause high token con-sumption. On the other hand, though the Temporal Evolving MAS makes temporal split on workflows, most of them focus on routing single agent in the proper position (Niu et al., 2025; Zhang et al., 2024; Lee et al., 2025), which neglects the potential of collaboration in key temporal iterations. 
+
+The questions in single-dimension evolution posed above can be explicitly summarized as: ❶
+
+Performance. How to fully unleash the collab-orative capabilities of MAS in different dialogue iterations? ❷ Flexibility. How to make elastic tem-poral scheduling to fulfill the changing demand? 
+
+❸ Efficiency. How to ensure efficiency consider-ing the token consumption of MAS and the cost of scheduling? To tackle these problems, we pro-pose ST-EVO , the first MAS with the capability of Spatio-Temporal Evolution, achieving dialogue-wise temporal scheduling for spatial communica-tion topologies. The motivation of ST-EVO is to precisely sched-ule multi-agent collaborations from both temporal and spatial dimensions, preserving performance, flexibility, and efficiency. To achieve this, we be-lieve the core elements lie in: ♣ Appropriate data structures. The structure should be able to well maintain the Spatio-Temporal trajectories, provid-ing the basis for scheduling. ♠ A compact but effective scheduler. The scheduling is frequent, and the demand for accuracy is high, thus calling for a lightweight and powerful scheduler. ♦ System state perception. The scheduler should consider the system state, such as whether it is reliable or not, thus leading to correct scheduling scheme. ♥
+
+Self-feedback ability. The system needs to accu-mulate experience and learn underlying scheduling principles from it. Based on above-mentioned design principles, 
+
+ST-EVO adopts Spatio-Temporal Graph to maintain the scheduling trajectories, which is an important structure in Spatio-Temporal data mining (Wang et al., 2020; Yang et al., 2024), able to characterize the spatial correlations (agent collaboration) at each temporal index (dialogue iteration). Considering the scheduler, we meticulously devise a compact neural network, driven by an MLP-based Flow-Matching (Lipman et al., 2023) module, which pos-sesses strong generative mechanism while keeping lightweight, and can work as a stochastic inter-polant (Wu et al., 2026a) to directly evolve the communication topology temporally. Additionally, to perceive the system state and provide self-feedback ability, we devise mecha-nisms driven by both entropy and experience, then internalize them through preference optimization. First, we supervise the system state with the help of 
+
+Entropy Distribution to evaluate the uncertainty of the MAS, and we internalize it into the scheduler via reinforcement learning. Second, considering the self-feedback ability, we draw inspiration from 
+
+Experience Learning (Zhang et al., 2025a; Tang et al., 2025), and construct a retrieve-augment mod-ule to accumulate successful scheduling trajectories as experience. During training, we also internal-ize the experience, which retrieves corresponding historical scheduling trajectories as reference, and regularizes the current scheduling scheme. Our Contributions can be summarized as: 
+
+❶ We introduce ST-EVO , pioneering the explo-ration of Spatio-Temporal Evolving MAS. It can support dialogue-wise real-time schedul-ing through generative Spatio-Temporal evo-lution of communication topologies. 
+
+❷ We devise a compact generative scheduler driven by Flow-Matching. It can learn under-lying scheduling principles from entropy dis-tribution and historical experience, thus pos-sessing strong query-aware and dialogue-wise scheduling capability. 
+
+❸ Comprehensive experiments on 9 benchmarks from multiple real-world tasks demonstrate the state-of-the-art performance of our pro-posed ST-EVO .
+
+2 Related Works 
+
+2.1 LLM-powered Multi-Agent Systems 
+
+Recent studies introduce a surge of multi-agent sys-tems to incentivize LLMs’ swarm intelligence in complex scenarios. The communication topology occupies a central position in them and includes multiple structures. Among them, non-interactive systems organize agents parallelly without explicit communication, such as Mixture-of-Agents (Wang et al., 2025d) and LLM-Debate (Estornell and Liu, 2024); Chain MAS arranges agents sequentially as a workflow, such as MetaGPT (Hong et al., 2023) and ChatDev (Qian et al., 2024); Tree MAS works in a task-splitting mode with a chief node and hierarchical child nodes (Yao et al., 2023); Star MAS works in a task-assignment mode with a cen-tral node and multiple edge nodes, seen in Auto-Gen (Wu et al.) and MiniGrid (Zhou et al., 2024); Graph MAS, as the most general form, can repre-sent all of above-posed topologies and are widely applied (Inc., 2024; Zhuge et al., 2024; Wu et al.). 
+
+2.2 Self-evolving Multi-Agent Systems 
+
+To improve efficiency, recent research interests shift towards “self-evolving” MAS (Wang et al., 2025e; Fang et al., 2025), which can contribute to fully-automated MAS customization for changing tasks. These studies characterize multi-agent com-munication topologies as graphs (Liu et al., 2023; Zhuge et al., 2024; Zhang et al.) to organize and represent relationships between agents. Compared with conventional static communication topologies, they support task-aware (Liu et al., 2023; Zhuge et al., 2024) or even query-aware (Zhang et al.; Li et al., 2025a; Zhang et al., 2025b) dynamic com-munication topology customization. We categorize them into Spatial Evolving and Temporal Evolv-ing MAS. For Spatial Evolving MAS, they mainly focus on the performance, robustness, efficiency, and redundancy (Zhang et al., 2025b) when cus-tomizing the topology. However, they pay little attention to temporal scheduling which is crucial in MAS with dialogue-wise varying resource de-mands. For Temporal Evolving MAS (Zhang et al., 2024; Niu et al., 2025; Lee et al., 2025), though they consider the temporal scheduling in different iterations, most of them neglect utilizing the col-laborative capability of MAS inside each iteration. In this work, we propose ST-EVO , the first Spatio-Temporal Evolving MAS, which supports temporal scheduling for spatial communication topologies. 
+
+3 Formalization 
+
+In this section, we formalize key concepts in 
+
+ST-EVO from a spatio-temporal perspective, and introduce the notations for clear clarification. 
+
+3.1 Communication Topology 
+
+In ST-EVO , a multi-agent system is modeled as a Spatio-Temporal Graph G = {G t}Tt=1 =
+
+{(V, Et, At)}Tt=1 , where t records the dialogue iter-ation. Note that the total iterations T is flexible and not pre-defined. V = {v1, v 2, · · · , v N } denotes N
+
+agent nodes in MAS: 
+
+vi = {LLM i, Profile i, Tool i, State i}, (1) where each agent vi is instantiated through a LLM with Profile (system prompts) and Tool, and its historical memory is maintained in State. During operation, each agent vt treats Profile i and State i
+
+as a prefix, and receives user prompts or responses from other agents in MAS. In ST-EVO , the communication topology Gt
+
+changes over time, contributing to the varying com-munication link Et, which is described via the ad-jacent matrix At ∈ { 0, 1}N ×N , where At[i, j ] = 1 
+
+denotes the edge et[i, j ] ∈ E t is connected and the information flows from vi to vj , vice versa. 
+
+3.2 Scheduling Pipeline 
+
+Given a query Q, ST-EVO first constructs the com-munication topology G1 from an initial anchor topology G0 for the first dialogue iteration. For simple questions, they can be easily tackled at once. For harder ones, multi-iteration dialogues are executed and fine-grained scheduling is planned through a Scheduler. In the t-th dialogue, the Scheduler considers the problem Q, the iteration t, and the topology from the last iteration Gt−1 to determine the topology of this iteration Gt:
+
+Gt = Scheduler (Q, t, Gt−1) (2) Then the communication topology Gt is compiled into a topological execution order St of the N
+
+agents in MAS: 
+
+St = [ vts1 , v ts2 , · · · , v tsN ], (3) s.t. ∀j > i, v tsj /∈ N in (vtsi ) (4) After ST-EVO executes T iterations, the final solu-tion is formed or partially formed inside the agent states, an aggregation operation like majority vot-ing is applied to summarize for the output. Materials Spatio-Temporal Multi-Agent System 
+
+Construct & Schedule 
+
+Optimize 
+
+... 
+
+> Instantiated by LLMs
+
+... 
+
+Queries 
+
+Agents (LLMs+Roles+Tools) 
+
+...   
+
+> Coder Teacher Analyzer Scientist
+
+Profiles/Roles 
+
+> System prompts used to unleash
+> the expert capabilities of agents
+
+Tools/Plugins   
+
+> Code Compiler/Executor
+> Calculator File Reader
+> Browser OCR
+
+... Other External Tools                     
+
+> Coder
+> Manager
+> Analyzer
+> Mathematician
+> Iteration 1
+> GCN
+> Scheduler
+> Flow-Matching
+> Task
+> Pos
+> Velocity
+> Iteration 2
+> Coder Analyzer
+> Mathematician Manager
+> Node Encoder
+> Instantiated Agents
+> Coder
+> Analyzer
+> Mathematician
+> Manager
+> Embedding
+> Topology �1Topology �2Topology �3
+> Iteration 1 Iteration 2 Iteration 3
+> Temporal
+> Spatial
+> Trajectory
+> Database
+> Query
+> A Reference Spatio-temporal Topology Trajectory
+> Scheduler
+> Scheduler
+> Entropy
+> Distribution
+> �1�2�3
+> Utility Reward
+> Task Q Construct �1
+> Evolve in dialogues
+> Final Answer □
+> Entropy Reward
+> Regular Loss
+> Calculate the circumference,
+> area of a circle, and the
+> surface area, volume of a
+> sphere for each radius in the
+> list [2, 4, 6, 8, 10, 12]. Assume
+> π=3.14159, and output all
+> results with 4 decimal places.
+> Scheduler
+
+Figure 2: The overview of ST-EVO .
+
+4 ST-EVO 
+
+As illustrated in Figure 2, our proposed ST-EVO 
+
+builds multi-agent systems from a spatio-temporal perspective. (1) ST-EVO supports query-aware MAS construction, which builds agents with pro-vided LLMs, profiles and Tools, and generates the initial communication topology based on the query. (2) ST-EVO supports spatio-temporal scheduling, where a generative Scheduler is devised to evolve the dialogue-wise spatial communication topolo-gies. (3) The Scheduler is driven by entropy and experience to perceive the system states and learn from accumulated experience. (4) The Scheduler is optimized on dozens of samples to internalize the state-aware capability and experience, thus sup-porting precise spatio-temporal scheduling. 
+
+4.1 Constructing Multi-agent Systems 
+
+Given a query Q, ST-EVO can adaptively build an effective MAS to handle it. Specifically, it first initializes an anchor MAS with a pre-defined com-munication topology G0 = ( V, E0, A0). It begins by instantiating agents in V. For each agent vi,the base model, profile, and tool are assigned to it, as defined in equation (1). To further character-ize the MAS, we utilize the agents’ descriptions to construct the representative features of the nodes: 
+
+Ti = Text (LLM i + Profile i + Tool i), (5) 
+
+xnode 
+
+i = NodeEncoder (Ti), (6) where Ti is the textual description of agent vi, and 
+
+xnode 
+
+i is the node feature generated by a sentence transformer (Reimers et al., 1908), which can trans-form agents’ descriptions into the fix-length em-beddings. We denote the agent node features as 
+
+Xnode = [ xnode 
+
+1 , x node 
+
+2 , · · · , x node 
+
+N ].We then provide an empirically favorable com-munication topology A0 ∈ { 0, 1}N ×N as the an-chor topology. Take an instance in math reasoning tasks given 4 agents: Manager, Analyzer, Mathe-matician, and Coder. The anchor topology can be organized as a ring, i.e., “Manager → Mathemati-cian → Analyzer → Coder → Manager”, where the Manager assigns the task to Mathematician and Analyzer to identify the essential mathemati-cal problem and conduct a step-by-step analysis, then the Coder solve numerical values through pro-gramming, and finally the Manager summarizes the results. Taking the anchor communication topology 
+
+G0 = ( V, E0, A0) as a good starting point, we then utilize the generative Scheduler to construct the query-adaptive communication topology: 
+
+G1 = Scheduler (Q, t = 1 , G0), (7) where G1 is the generated communication topology for the first iteration of dialogue. We introduce the detailed design of the Scheduler as follows. 
+
+4.2 Generative Scheduler 
+
+As introduced in Section 3, given an initial an-chor topology G0, the Spatio-Temporal Scheduling is to autoregressively plan the future topologies 
+
+[G1, G2, · · · , GT ] for dialogue iterations. And it needs to simultaneously ensure ❶ peformance, ❷
+
+flexibility, and ❸ efficiency. Intuitively, adopting generative mechanisms can ensure the diversity and quality of the scheduling trajectories, and avoid overfitting during training. However, most generative mechanisms like DDPM, GAN, and VAE cannot balance these three aspects. To tackle this, since the scheduling task in ST-EVO 
+
+is Spatio-Temporal Graph Generation, we draw inspiration from spatio-temporal data mining, for which lightweight flow-matching networks (Liu et al., 2025b; Wu et al., 2026a) are competent. Specifically, we devise a compact flow-matching based Scheduler to ensure the ❶ performance and 
+
+❸ efficiency. For ❷ flexibility, we utilize an im-portant property of flow-matching to serve as a stochastic interpolant, which can start from a given point, instead of a random Gaussian noise, bridg-ing the transport path between two arbitrary dis-tributions (Wu et al., 2026a). Its core architecture consists of a GCN (Zhang et al., 2019) and an MLP-based flow-matching network (FM-Net). The FM-Net utilizes the AdaLN (Peebles and Xie, 2023) to integrate the condition Ht. In t-th dialogue, given the query Q and topology Gt−1 = ( V, Et−1, At−1),the condition Ht is: 
+
+Xquery = Embedding (Q), (8) 
+
+Xpos = Sinusoidal (t), (9) 
+
+Ht = Xquery + Xpos ∈ Rd (10) It enables the Scheduler to perceive the task in-formation and the iteration information. Then the flow-matching process occurs in the latent space of graph embeddings, with Gt−1 as the starting point: 
+
+Lt−1 = GCN (Xnode , At−1) + ϵ, (11) 
+
+Lt−(1 −p) = p · Lt + (1 − p) · Lt−1, (12) 
+
+ˆVp = FM-Net (Lt−(1 −p), p, Ht), (13) where Lt−1, L t ∈ RN ×d are the graph embeddings. 
+
+Lt−1 denotes the embedding of the starting point 
+
+Gt−1, and Lt is the expected embedding of the end point Gt (we introduce this in Section 4.3). 
+
+ϵ ∼ N (0, I) is a Gaussian noise to increase the di-versity during training. The goal of Flow-Matching (FM-Net) is: given current position Lt−(1 −p) and condition Ht, fit the velocity field between the start and end points. Note that p ∈ [0 , 1] , we adopt the conditional optimal transport path to model a uni-form velocity field, thus the optimization objective 
+
+Lreg is: 
+
+Ep|| ˆVp · W − (Lt · W − Lt−1 · W )|| 2, (14) where W ∈ Rd×N is the projection matrix to trans-form graph embeddings into adjacent matrices. We also use normalization, and differentiable Bernoulli resampling (Jang et al., 2016) to preserve adjacent matrices ∈ { 0, 1}N ×N . In the inference phase, the sampling process is a discretized integration process–see Algorithm 1. 
+
+Algorithm 1 Graph Flow Matching  
+
+> 1:
+
+Given condition Ht, total steps P ,and Topology Gt−1 = ( Xnode , At−1). 
+
+> 2:
+
+Sample a Gaussian noise ϵ ∼ N (0, I). 
+
+> 3:
+
+∆p = 1 /P, ˆL = GCN (X, At−1) + ϵ 
+
+> 4:
+
+for j in {0, 1 . . . , P − 1} do  
+
+> 5:
+
+for ˆVj ← FM-Net (Lt−(1 −j∆p), j ∆p, Ht) 
+
+> 6:
+
+for ˆL ← ˆL + ˆVj ∆p 
+
+> 7:
+
+end for  
+
+> 8:
+
+Return: ˆAt = Discretize ( ˆLW ) ∈ { 0, 1}N ×N
+
+4.3 Scheduling Multi-agent Systems 
+
+After obtaining the compact generative Scheduler, 
+
+ST-EVO possesses the fundamental infrastructure for spatio-temporal scheduling, while ensuring per-formance, flexibility, and efficiency. The next step is to support state-aware scheduling, and enhance system’s self-feedback ability. To precisely supervise the MAS state, we draw inspiration from uncertainty estimation (MacKay, 1992), measuring the predictive entropy PE of the agent output distribution Y given input x by calcu-lating the conditional entropy Hi = H(xi|x<i ):
+
+Hi = X
+
+> xi
+
+PΘ(xi|x<i ) log P Θ(xi|x<i ), (15) PE = − 1
+
+K
+
+> K
+
+X
+
+> i=1
+
+H(xi|x<i ), (16) where high PE signals high uncertainty. We also consider the VarEntropy (VE), which reflects the internal self-consistence in MAS: VE = −Std Ki=1 (H(xi|x<i )) (17) With the help of PE and VE, we can classify system states into fine-grained categories–see Table 1.           
+
+> PE VE System State Description
+> Low ( ↓)Low ( ↓)High Confidence (Deterministic)
+> High ( ↑)High ( ↑)Conflicting Uncertainty (Branching)
+> High ( ↑)Low ( ↓)Uniform Ignorance (Cluelessness)
+> Low ( ↓)High ( ↑)Overconfident Anomaly (Rare state)
+
+Table 1: Taxonomy of System States based on Predictive Entropy (PE) and VarEntropy (VE). 
+
+Based on the summary in Table 1, we devise a quantitative indicator to evaluate the stability of MAS: 
+
+Rsta = −(α · PE + β · 11 + VE ), (18) where higher Rsta value indicates higher stability. Note that for MAS stability measurement, Rsta 
+
+is calculated over the top 10%–20% high-entropy tokens to prevent the stability signal from being diluted by trivial, high-confidence function words. We also use Rsta as a reward model in training 
+
+ST-EVO to align the preference into the Scheduler. On the other hand, to enhance the self-feedback ability, we devise an experience-driven method. Specifically, it is designed as a retrieve-augment system to store the historical spatio-temporal scheduling trajectories, where the indices are query embeddings: Xquery . The Update strategy relies on Rsta and token consumption, considering the stability and efficiency, to store the successfully executed scheduling trajectories during training. After several cold-start iterations, multiple tra-jectories are stored, and can be used in experience training. In ST-EVO , we retrieve the most sim-ilar scheduling trajectory ˆG with current Xquery ,which can reflect the historical scheduling perfer-ence of the similar task. Empirically, we store the latent graph embeddings [ ˆL1, ˆL2, · · · , ˆLT ], which are convenient to training the flow-matching based Scheduler. Recalling the Equation (14), we surro-gate the Lt with ˆLt as successful experience for reference, regularizing the Scheduler. The full de-tails can be found in Appendix A.2. 
+
+4.4 Optimizing ST-EVO 
+
+The ultimate objective is to achieve an effective few-shot paradigm, which trains ST-EVO on several samples, and efficiently work on numerous down-stream queries. Considering the Spatio-Temporal Scheduling Communication Topologies G for query 
+
+Q, the utility objective is: 
+
+arg max  
+
+> Θ
+
+EΘ∼Ω[u(G(Q))] , (19) where Θ are the parameters of Scheduler, Ω are the parameter space, and u(·) denote the utility. Since Equation (19) is inherently instractable and non-differentiable due to the external API calls for LLMs, we adopt standard approaches (Zhang et al.; Li et al., 2025a; Zhang et al., 2025b) to apply the policy gradient for optimization: 
+
+1
+
+M
+
+> M
+
+X
+
+> m=1
+
+u(Gm(Q)) ∇Θ(P (Gm)) , (20) where Gm are sampled spatio-temporal schedul-ing trajectories, and {G m(Q)}Mm=1 are the outputs. 
+
+P (Gm) is the probability of Gm being sampled and can be calculated through QTj=1 P (Gmj ). The over-all training objective of ST-EVO consists of three parts, where Equation (18), (20) are reward models, and Equation (14) is a regularization loss function. Full details can be found in Appendix A.1. 
+
+5 Experiments 
+
+5.1 Experimental Settings Benchmarks We evaluate ST-EVO on 9 bench-marks: MMLU (Hendrycks et al.) for general reasoning, GSM8K (Cobbe et al., 2021), Mul-tiArith (Roy and Roth, 2015), SVAMP (Patel et al., 2021), and AQuA (Ling et al., 2017) for math reasoning, HumanEval (Chen, 2021) and DS-1000 (Lai et al., 2023) for code generation, Hot-potQA (Yang et al., 2018) for web search, and DDXPlus (Fansi Tchango et al., 2022) for medical reasoning. 
+
+Baselines We compare ST-EVO with static ap-proaches like COT (Wei et al., 2022), Self-Consistence (Wang et al., 2023b), Chain, Tree, Star, Complete Graph, Random Graph, Auto-Gen (Wu et al.), LangGraph (Inc., 2024), LLM-Debate (Du et al., 2023), Spatial Evolving ap-proaches like GPTSwarm (Zhuge et al., 2024), G-Designer (Zhang et al.), ARG-Designer (Li et al., Method MMLU GSM8K MultiArith SVAMP AQuA HumanEval DS-1000 HotpotQA DDXPlus Avg. 
+
+Vanilla 80.47 87.15 93.40 87.25 69.27 73.28 38.40 82.35 56.40 74.22 
+
+Single-Agent Systems 
+
+CoT 81.85 ↑1.38 87.35 ↑0.20 93.60 ↑0.20 87.90 ↑0.65 72.40 ↑3.13 74.05 ↑0.77 42.35 ↑3.95 81.04 ↓1.31 64.22 ↑7.82 76.08 SC 82.95 ↑2.48 87.66 ↑0.51 94.40 ↑1.00 87.40 ↑0.15 71.85 ↑2.58 75.82 ↑2.54 37.66 ↓0.74 82.24 ↓0.11 66.43 ↑10 .03 76.27 
+
+Multi-Agent Systems 
+
+Chain 82.40 ↑1.93 87.23 ↑0.08 92.88 ↓0.52 87.16 ↓0.09 69.85 ↑0.58 73.40 ↑0.12 38.25 ↓0.15 80.77 ↓1.58 65.28 ↑8.88 75.25 Tree 81.55 ↑1.08 86.35 ↓0.80 92.95 ↓0.45 88.25 ↑1.00 71.44 ↑2.17 75.33 ↑2.05 43.50 ↑5.10 81.50 ↓0.85 69.25 ↑12 .85 76.68 Star 79.64 ↓0.83 85.25 ↓1.90 93.25 ↓0.15 87.60 ↑0.35 68.50 ↓0.77 76.28 ↑3.00 41.82 ↑3.42 83.52 ↑1.17 68.25 ↑11 .85 76.01 Complete Graph 82.75 ↑2.28 88.05 ↑0.90 94.73 ↑1.33 88.20 ↑0.95 70.44 ↑1.17 84.25 ↑10 .97 45.05 ↑6.65 83.35 ↑1.00 70.35 ↑13 .95 78.57 Random Graph 83.20 ↑2.73 88.25 ↑1.10 94.80 ↑1.40 87.10 ↓0.15 70.16 ↑0.89 84.14 ↑10 .86 47.48 ↑9.08 84.28 ↑1.93 70.44 ↑14 .04 78.87 AutoGen 83.25 ↑2.78 89.40 ↑2.25 95.05 ↑1.65 88.15 ↑0.90 71.50 ↑2.23 83.50 ↑10 .22 48.55 ↑10 .15 83.25 ↑0.90 71.83 ↑15 .43 79.39 LangGraph 84.10 ↑3.63 88.75 ↑1.60 95.10 ↑1.70 88.03 ↑0.78 71.27 ↑2.00 84.66 ↑11 .38 47.95 ↑9.55 84.92 ↑2.57 72.50 ↑16 .10 79.70 LLM-Debate 83.28 ↑2.81 89.95 ↑2.80 95.45 ↑2.05 88.30 ↑1.05 73.52 ↑4.25 85.24 ↑11 .96 49.26 ↑10 .86 84.55 ↑2.20 71.33 ↑14 .93 80.10 
+
+Spatial Evolving Multi-Agent Systems 
+
+GPTSwarm 83.80 ↑3.33 90.20 ↑3.05 96.28 ↑2.88 87.28 ↑0.03 75.44 ↑6.17 87.14 ↑13 .86 52.35 ↑13 .95 85.40 ↑3.05 75.57 ↑19 .17 81.50 G-Designer 84.63 ↑4.16 93.35 ↑6.20 97.60 ↑4.20 89.52 ↑2.27 76.30 ↑7.03 89.40 ↑16 .12 54.82 ↑16 .42 87.66 ↑5.31 76.42 ↑20 .02 83.30 ARG-Designer 85.04 ↑4.57 94.40 ↑7.25 97.35 ↑3.95 88.95 ↑1.70 79.48 ↑10 .21 88.25 ↑14 .97 55.60 ↑17 .20 86.45 ↑4.10 76.03 ↑19 .63 83.51 SafeSieve 84.65 ↑4.18 93.20 ↑6.05 97.80 ↑4.40 90.10 ↑2.85 80.40 ↑11 .13 90.15 ↑16 .87 53.73 ↑15 .33 87.22 ↑4.87 77.94 ↑21 .54 83.91 
+
+Temporal Evolving Multi-Agent Systems 
+
+AFlow 83.22 ↑2.75 89.50 ↑2.35 94.28 ↑0.88 86.48 ↓0.77 78.20 ↑8.93 89.25 ↑15 .97 46.82 ↑8.42 90.04 ↑7.69 74.25 ↑17 .85 81.34 SpecReason 84.20 ↑3.73 91.40 ↑4.25 95.40 ↑2.00 87.62 ↑0.37 81.36 ↑12 .09 91.22 ↑17 .94 50.08 ↑11 .68 88.29 ↑5.94 76.58 ↑20 .18 82.91 STEER 84.40 ↑3.93 93.50 ↑6.35 95.82 ↑2.42 87.40 ↑0.15 82.66 ↑13 .39 89.02 ↑15 .74 51.34 ↑12 .94 89.35 ↑7.00 75.20 ↑18 .80 83.19 
+
+Spatio-Temporal Evolving Multi-Agent Systems 
+
+ST-EVO (Ours) 89.85 ↑9.38 97.60 ↑10 .45 99.05 ↑5.65 94.72 ↑7.47 86.56 ↑17 .29 94.36 ↑21 .08 58.65 ↑20 .25 92.52 ↑10 .17 82.50 ↑26 .10 88.42 
+
+Table 2: Performance comparison with four types baselines, including Single-Agent Systems, Multi-Agent Systems, Spatial Evolving Multi-Agent Systems, and Temporal Evolving Multi-Agent Systems. All baselines and ST-EVO 
+
+are driven by self-deployed gpt-oss-120b . Red : the best, Blue: the runner-up. 
+
+2025a), and SafeSieve (Zhang et al., 2025b), Tem-poral Evolving approaches like AFlow (Zhang et al., 2024), SpecReason (Damani et al., 2024) and STEER (Lee et al., 2025). 
+
+Implementation Details We run ST-EVO and all baselines with the self-deployed gpt-oss-120b .For Temporal Evolving MAS, we access close-source models like Qwen3-Max and DeepSeek-V3 
+
+through API calls to support model routing. To synthesize dialogue history and generate the final solution, we implement a summarizer agent, main-taining T = 3 across all baseline comparisons. For the Node Encoder and textual embedding, we adopt 
+
+all-MiniLM-L6-v2 with an embedding dimension of D = 384 . For all datasets, we use 40–80 queries for model training. 
+
+5.2 Main Results 
+
+Results in Table 2 demonstrate that ST-EVO 
+
+achieves consistent state-of-the-art performance across nine benchmarks, with average accuracy improvements from 5.65% to 26.10% . Com-pared with Temporal or Spatial Evolving Multi-Agent Systems, ST-EVO possesses more stable performance improvement when faced with het-erogeneous tasks, from simple tasks on Multi-Arith ( 5.65% ↑) and SVAMP ( 7.47% ↑) to hard tasks on DS-1000 ( 20 .25% ↑) and DDXPlus (26 .10% ↑). The larger improvements on harder tasks demonstrate the effectiveness of Spatio-Temporal Scheduling. 
+
+5.3 Model Analysis 84 86 88 90 
+
+> Accuracy (%)
+> 1.2
+> 1.3
+> 1.4
+> 1.5
+> 1.6
+> 1.7
+> 1.8
+> 1.9
+> 2.0
+> Token consumption (10^6)  GPTSwarm
+> (1.9e+06)
+> STEER
+> (1.7e+06)
+> ST-EVO
+> (1.3e+06)
+> G-Designer
+> (1.4e+06)
+> SafeSieve
+> (1.5e+06)
+> ARG-Designer
+> (1.6e+06) AFlow
+> (1.6e+06)
+
+MMLU      
+
+> 86 88 90 92 94
+> Pass@1 (%)
+> 0.28
+> 0.30
+> 0.32
+> 0.34
+> 0.36
+> 0.38
+> Token consumption (10^6)  GPTSwarm
+> (3.8e+05)
+> STEER
+> (2.9e+05) ST-EVO
+> (2.8e+05)
+> G-Designer
+> (3.5e+05)
+> SafeSieve
+> (3.2e+05)
+> ARG-Designer
+> (3.3e+05)
+> AFlow
+> (3.1e+05)
+
+HumanEval     
+
+> 86 88 90 92 94
+> Accuracy (%)
+> 0.8
+> 1.0
+> 1.2
+> 1.4
+> 1.6
+> 1.8
+> 2.0
+> 2.2
+> Token consumption (10^6)  GPTSwarm
+> (2.0e+06)
+> STEER
+> (1.2e+06)
+> ST-EVO
+> (8.7e+05)
+> G-Designer
+> (1.1e+06)
+> SafeSieve
+> (9.1e+05)
+> ARG-Designer
+> (1.6e+06)
+> AFlow
+> (1.8e+06)
+
+SVAMP     
+
+> 90 92 94 96 98
+> Accuracy (%)
+> 1.8
+> 2.0
+> 2.2
+> 2.4
+> 2.6
+> 2.8
+> 3.0
+> 3.2
+> 3.4
+> Token consumption (10^6)  GPTSwarm
+> (3.3e+06)
+> STEER
+> (2.4e+06)
+> ST-EVO
+> (1.8e+06)
+> G-Designer
+> (2.7e+06)
+> SafeSieve
+> (2.1e+06)
+> ARG-Designer
+> (1.9e+06)
+> AFlow
+> (3.1e+06)
+
+GSM8K 
+
+Figure 3: Visualization of performance metrics and token consumption of different multi-agent topologies across MMLU, HumanEval, GSM8K, SVAMP. 
+
+Efficiency Analysis We analyze the efficiency of ST-EVO in Figure 3. When adopting the same number of agents in MAS, ST-EVO outperforms all baselines a lot with less token consumption, showing the capability to fully schedule and uti-lize the computing resources and specific functions in appropriate moments. Compared with previous advanced baseline ARG-Designer and SafeSieve, 
+
+ST-EVO only needs nearly 50% of token consump-tion on MMLU and HumanEval, but with higher accuracy (about 5% ↑). We also consider the scala-bility in Table 5. Results show that the complexities of baselines like GPTSwarm and G-Designer grow linearly as the number of agents increases, while 
+
+ST-EVO has a lower complexity growth rate, since spatio-temporal scheduling can effectively avoid unnecessary communication during execution. 
+
+Robustness Analysis We validate ST-EVO ’s ro-bustness in Figure 4. To demonstrate whether the state-aware scheduling is useful, we first conduct experiments on all 9 benchmarks and report the average results of accuracy and stability eRsta . For approaches, we select G-Designer, ARG-Designer, SafeSieve and ST-EVO since they can be trained using the reward Rsta .G-Designer ARG-Designer SafeSieve ST-EVO              
+
+> 60
+> 65
+> 70
+> 75
+> 80
+> 85
+> 90
+> 95
+> Accuracy (%)  83.3 83.5 83.9
+> 86.3 85.7 86.1 85.3
+> 88.4
+> w/o sta wsta
+> G-Designer ARG-Designer SafeSieve ST-EVO
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> Stability ( e sta )
+> 0.42
+> 0.47
+> 0.39
+> 0.51
+> 0.58
+> 0.68
+> 0.64
+> 0.72
+> w/o sta wsta
+
+Figure 4: We utilize the accuracy (%) and eRsta ∈ [0 , 1] 
+
+to visualize the stability of ST-EVO . Higher values indi-cate better stabilities. 
+
+Observations show that all approaches can be improved on both the accuracy and stability us-ing the reward Rsta . This demonstrates that Rsta 
+
+can effectively reflect the uncertainty of the MAS, and aligning this preference in Scheduler can lead to generalization on unseen downstream queries. Note that ST-EVO has the most improvement, with about 40% stability improvement. We then con-duct experiments to validate whether ST-EVO can fight against external disturbances. Following the experimental settings of prompt injection attack in G-Designer (Zhang et al.), we compare ST-EVO 
+
+with other baselines in Figure 5. Results show that static multi-agent systems like Chain, Star, Tree, and Random Graph, suf-fer significant performance degradation under par-tial system attacks, with drops about 6.5%–12.7% .Among self-evolving multi-agents, G-Designer and STEER benefit from task-adaptive topology de-Chain Star Tree Random           
+
+> Graph
+> G-Designer SafeSieve AFlow STEER ST-EVO
+> 60
+> 65
+> 70
+> 75
+> 80
+> 85
+> 90
+> 75.3 76.0 76.7
+> 78.9
+> 83.3 83.9
+> 81.3
+> 83.2
+> 88.4
+> 62.6 62.8
+> 66.5
+> 72.4
+> 79.6 78.5
+> 74.3
+> 78.0
+> 88.1 before attack after attack
+
+Figure 5: We compare the accuracy (%) of multiple multi-agent systems before and after prompt attacks on all benchmarks, and report the average results. 
+
+sign, only suffer drops under 5%. Thanks to such adaptive topology adjustment, ST-EVO gains excep-tional robustness against adversarial attacks, and can preserve nearly consistent performance before and after the attacks. This advantage can be at-tributed to the query-wise and state-aware schedul-ing mechanism, which adds significant flexibility and robustness to the system. 
+
+Ablation Study We conduct ablation studies on 
+
+ST-EVO –see Table 3: (1) w/o Scheduling, which limits the Scheduler to output a communication topology for the entire query, (2) w/o Rsta , which does not consider the system uncertainty, (3) w/o 
+
+Lreg , which does not rely on the experience, and (4) w/o Node Encoder, which removes the task feature Xquery in scheduling, and using adaptive representations to replace the node features. Variant MMLU HumanEval SVAMP GSM8K                         
+
+> ST-EVO 89.9 94.4 94.7 97.6
+> w/o Scheduling 84.7 89.6 88.6 92.5
+> w/o Rsta 87.3 90.2 91.5 95.8
+> w/o Lreg 84.9 88.2 90.3 93.7
+> w/o Node Encoder 82.0 84.8 87.5 94.8
+
+Table 3: Ablation study tested on MMLU, HumanEval, SVAMP, and GSM8K benchmarks. 
+
+We observe that w/o Scheduing and w/o Node Encoder matters a lot, because the lack of them would break the core query-adaptive Spatio-Temporal Scheduling mechanism of ST-EVO . w/o 
+
+Rsta and w/o Lreg may also make the MAS vulnera-ble to interference, thus degrading the performace. 
+
+6 Conclusion 
+
+In this work, we introduce ST-EVO , the first Spatio-Temporal Evolving MAS, which supports query-aware and dialogue-wise communication topol-ogy scheduling. Comprehensive experiments on 9 benchmarks demonstrate the state-of-the-art perfor-mance of ST-EVO , and it can ensure both efficiency and robustness on complex scenarios. Limitations 
+
+While ST-EVO demonstrates advancement on mul-tiple tasks, it has limitations. Since it follows the few-shot learning paradigm, the Scheduler needs to be trained on a few corresponding samples to rec-ognize the task characteristics. However, in some real-world scenarios with scarce data, this mecha-nism may lose its advantages. In the future, we aim at building a fully zero-shot and effective mech-anism to support construction and scheduling for MAS. 
+
+Ethics Statement 
+
+As for ethical considerations, our study only em-ploys standard public datasets and commonly used open-source frameworks, and we find no obvious ethical issues in this work. 
+
+References 
+
+Mark Chen. 2021. Evaluating large language models trained on code. arXiv preprint arXiv:2107.03374 .Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian, Mark Chen, Heewoo Jun, Lukasz Kaiser, Matthias Plappert, Jerry Tworek, Jacob Hilton, Reiichiro Nakano, and 1 others. 2021. Training verifiers to solve math word problems. arXiv preprint arXiv:2110.14168 .Mehul Damani, Idan Shenfeld, Andi Peng, Andreea Bobu, and Jacob Andreas. 2024. Learning how hard to think: Input-adaptive allocation of lm computation. 
+
+arXiv preprint arXiv:2410.04707 .Han Ding, Yinheng Li, Junhao Wang, and Hang Chen. 2024. Large language model agent in financial trad-ing: A survey. arXiv preprint arXiv:2408.06361 .Yilun Du, Shuang Li, Antonio Torralba, Joshua B Tenen-baum, and Igor Mordatch. 2023. Improving factual-ity and reasoning in language models through multia-gent debate. In Forty-first International Conference on Machine Learning .Andrew Estornell and Yang Liu. 2024. Multi-llm de-bate: Framework, principals, and interventions. Ad-vances in Neural Information Processing Systems ,37:28938–28964. Jinyuan Fang, Yanwen Peng, Xi Zhang, Yingxu Wang, Xinhao Yi, Guibin Zhang, Yi Xu, Bin Wu, Siwei Liu, Zihao Li, and 1 others. 2025. A comprehensive survey of self-evolving ai agents: A new paradigm bridging foundation models and lifelong agentic sys-tems. arXiv preprint arXiv:2508.07407 .Arsene Fansi Tchango, Rishab Goel, Zhi Wen, Julien Martel, and Joumana Ghosn. 2022. Ddxplus: A new dataset for automatic medical diagnosis. Advances in neural information processing systems , 35:31306– 31318. Shanshan Han, Qifan Zhang, Yuhang Yao, Weizhao Jin, and Zhaozhuo Xu. 2024. Llm multi-agent sys-tems: Challenges and open problems. arXiv preprint arXiv:2402.03578 .Dan Hendrycks, Collin Burns, Steven Basart, Andy Zou, Mantas Mazeika, Dawn Song, and Jacob Steinhardt. Measuring massive multitask language understand-ing. In International Conference on Learning Repre-sentations .Sirui Hong, Mingchen Zhuge, Jonathan Chen, Xiawu Zheng, Yuheng Cheng, Jinlin Wang, Ceyao Zhang, Zili Wang, Steven Ka Shing Yau, Zijuan Lin, and 1 others. 2023. Metagpt: Meta programming for a multi-agent collaborative framework. In The twelfth international conference on learning representations .LangChain Inc. 2024. Langgraph. https://github. com/langchain-ai/langgraph .Eric Jang, Shixiang Gu, and Ben Poole. 2016. Categori-cal reparameterization with gumbel-softmax. arXiv preprint arXiv:1611.01144 .Ye Jin, Xiaoxi Shen, Huiling Peng, Xiaoan Liu, Jingli Qin, Jiayang Li, Jintao Xie, Peizhong Gao, Guyue Zhou, and Jiangtao Gong. 2023. Surrealdriver: De-signing generative driver agent simulation framework in urban contexts based on large language model. 
+
+arXiv preprint arXiv:2309.13193 , 5(7):8. Yuhang Lai, Chengxi Li, Yiming Wang, Tianyi Zhang, Ruiqi Zhong, Luke Zettlemoyer, Wen-tau Yih, Daniel Fried, Sida Wang, and Tao Yu. 2023. Ds-1000: A natural and reliable benchmark for data science code generation. In International Conference on Machine Learning , pages 18319–18345. PMLR. Sangmook Lee, Dohyung Kim, Hyukhun Koh, Nakyeong Yang, and Kyomin Jung. 2025. Confidence-guided stepwise model routing for cost-efficient reasoning. arXiv preprint arXiv:2511.06190 .Shiyuan Li, Yixin Liu, Qingsong Wen, Chengqi Zhang, and Shirui Pan. 2025a. Assemble your crew: Auto-matic multi-agent communication topology design via autoregressive graph generation. arXiv preprint arXiv:2507.18224 .Xiaoxi Li, Guanting Dong, Jiajie Jin, Yuyao Zhang, Yujia Zhou, Yutao Zhu, Peitian Zhang, and Zhicheng Dou. 2025b. Search-o1: Agentic search-enhanced large reasoning models. arXiv preprint arXiv:2501.05366 .Wang Ling, Dani Yogatama, Chris Dyer, and Phil Blun-som. 2017. Program induction by rationale genera-tion: Learning to solve and explain algebraic word problems. In Proceedings of the 55th Annual Meet-ing of the Association for Computational Linguistics (Volume 1: Long Papers) , pages 158–167. Yaron Lipman, Ricky T. Q. Chen, Heli Ben-Hamu, Max-imilian Nickel, and Matthew Le. 2023. Flow match-ing for generative modeling. In The Eleventh Inter-national Conference on Learning Representations, ICLR 2023, Kigali, Rwanda, May 1-5, 2023 . Open-Review.net. Xvyuan Liu, Xiangfei Qiu, Xingjian Wu, Zhengyu Li, Chenjuan Guo, Jilin Hu, and Bin Yang. 2025a. Rethinking irregular time series forecasting: Asimple yet effective baseline. arXiv preprint arXiv:2505.11250 .Yong Liu, Guo Qin, Zhiyuan Shi, Zhi Chen, Caiyin Yang, Xiangdong Huang, Jianmin Wang, and Ming-sheng Long. 2025b. Sundial: A family of highly ca-pable time series foundation models. In Forty-second International Conference on Machine Learning .Zijun Liu, Yanzhe Zhang, Peng Li, Yang Liu, and Diyi Yang. 2023. Dynamic llm-agent network: An llm-agent collaboration framework with agent team opti-mization. arXiv preprint arXiv:2310.02170 .Yue Ma, Xiaodong Cun, Yingqing He, Chenyang Qi, Xintao Wang, Ying Shan, Xiu Li, and Qifeng Chen. 2023. Magicstick: Controllable video editing via control handle transformations. arXiv preprint arXiv:2312.03047 .Yue Ma, Kunyu Feng, Zhongyuan Hu, Xinyu Wang, Yucheng Wang, Mingzhe Zheng, Xuanhua He, Chenyang Zhu, Hongyu Liu, Yingqing He, and 1 others. 2025a. Controllable video generation: A sur-vey. arXiv preprint arXiv:2507.16869 .Yue Ma, Kunyu Feng, Xinhua Zhang, Hongyu Liu, David Junhao Zhang, Jinbo Xing, Yinhan Zhang, Ayden Yang, Zeyu Wang, and Qifeng Chen. 2025b. Follow-your-creation: Empowering 4d cre-ation through video inpainting. arXiv preprint arXiv:2506.04590 .Yue Ma, Yingqing He, Xiaodong Cun, Xintao Wang, Siran Chen, Xiu Li, and Qifeng Chen. 2024a. Follow your pose: Pose-guided text-to-video generation us-ing pose-free videos. In Proceedings of the AAAI Conference on Artificial Intelligence , volume 38, pages 4117–4125. Yue Ma, Yingqing He, Hongfa Wang, Andong Wang, Leqi Shen, Chenyang Qi, Jixuan Ying, Chengfei Cai, Zhifeng Li, Heung-Yeung Shum, and 1 others. 2025c. Follow-your-click: Open-domain regional image animation via motion prompts. In Proceed-ings of the AAAI Conference on Artificial Intelligence ,volume 39, pages 6018–6026. Yue Ma, Hongyu Liu, Hongfa Wang, Heng Pan, Yingqing He, Junkun Yuan, Ailing Zeng, Chengfei Cai, Heung-Yeung Shum, Wei Liu, and 1 others. 2024b. Follow-your-emoji: Fine-controllable and ex-pressive freestyle portrait animation. In SIGGRAPH Asia 2024 Conference Papers , pages 1–12. Yue Ma, Yulong Liu, Qiyuan Zhu, Ayden Yang, Kunyu Feng, Xinhua Zhang, Zhifeng Li, Sirui Han, Chenyang Qi, and Qifeng Chen. 2025d. Follow-your-motion: Video motion transfer via efficient spatial-temporal decoupled finetuning. arXiv preprint arXiv:2506.05207 .Yue Ma, Zexuan Yan, Hongyu Liu, Hongfa Wang, Heng Pan, Yingqing He, Junkun Yuan, Ailing Zeng, Chengfei Cai, Heung-Yeung Shum, and 1 others. 2025e. Follow-your-emoji-faster: Towards efficient, fine-controllable, and expressive freestyle portrait animation. arXiv preprint arXiv:2509.16630 .David JC MacKay. 1992. A practical bayesian frame-work for backpropagation networks. Neural compu-tation , 4(3):448–472. Boye Niu, Yiliao Song, Kai Lian, Yifan Shen, Yu Yao, Kun Zhang, and Tongliang Liu. 2025. Flow: Modu-larized agentic workflow automation. arXiv preprint arXiv:2501.07834 .Arkil Patel, Satwik Bhattamishra, and Navin Goyal. 2021. Are nlp models really able to solve simple math word problems? arXiv preprint arXiv:2103.07191 .William Peebles and Saining Xie. 2023. Scalable dif-fusion models with transformers. In Proceedings of the IEEE/CVF international conference on computer vision , pages 4195–4205. Chen Qian, Wei Liu, Hongzhang Liu, Nuo Chen, Yufan Dang, Jiahao Li, Cheng Yang, Weize Chen, Yusheng Su, Xin Cong, and 1 others. 2024. Chatdev: Com-municative agents for software development. In Pro-ceedings of the 62nd Annual Meeting of the Associa-tion for Computational Linguistics (Volume 1: Long Papers) , pages 15174–15186. Xiangfei Qiu, Hanyin Cheng, Xingjian Wu, Jilin Hu, and Chenjuan Guo. 2025a. A comprehensive survey of deep learning for multivariate time series forecast-ing: A channel strategy perspective. arXiv preprint arXiv:2502.10721 .Xiangfei Qiu, Jilin Hu, Lekui Zhou, Xingjian Wu, Jun-yang Du, Buang Zhang, Chenjuan Guo, Aoying Zhou, Christian S. Jensen, Zhenli Sheng, and Bin Yang. 2024. TFB: Towards comprehensive and fair bench-marking of time series forecasting methods. In Proc. VLDB Endow. , pages 2363–2377. Xiangfei Qiu, Xiuwen Li, Ruiyang Pang, Zhicheng Pan, Xingjian Wu, Liu Yang, Jilin Hu, Yang Shu, Xuesong Lu, Chengcheng Yang, Chenjuan Guo, Aoying Zhou, Christian S. Jensen, and Bin Yang. 2025b. EasyTime: Time series forecasting made easy. In ICDE .Xiangfei Qiu, Zhe Li, Wanghui Qiu, Shiyan Hu, Lekui Zhou, Xingjian Wu, Zhengyu Li, Chenjuan Guo, Aoying Zhou, Zhenli Sheng, Jilin Hu, Christian S. Jensen, and Bin Yang. 2025c. Tab: Unified bench-marking of time series anomaly detection methods. In Proc. VLDB Endow. , pages 2775–2789. Xiangfei Qiu, Xingjian Wu, Hanyin Cheng, Xvyuan Liu, Chenjuan Guo, Jilin Hu, and Bin Yang. 2025d. DBLoss: Decomposition-based loss function for time series forecasting. In NeurIPS .Xiangfei Qiu, Xingjian Wu, Yan Lin, Chenjuan Guo, Jilin Hu, and Bin Yang. 2025e. DUET: Dual cluster-ing enhanced multivariate time series forecasting. In 
+
+SIGKDD , pages 1185–1196. Xiangfei Qiu, Yuhan Zhu, Zhengyu Li, Hanyin Cheng, Xingjian Wu, Chenjuan Guo, Bin Yang, and Jilin Hu. 2025f. Dag: A dual causal network for time series forecasting with exogenous variables. arXiv preprint arXiv:2509.14933 .Nils Reimers, I Sentence-BERT Gurevych, and 1 others. 1908. Sentence embeddings using siamese bert-networks. arxiv 2019. arXiv preprint arXiv:1908.10084 , 10. Subhro Roy and Dan Roth. 2015. Solving general arith-metic word problems. In Proceedings of the 2015 conference on empirical methods in natural language processing , pages 1743–1752. Significant Gravitas. 2023. Autogpt. https://github. com/Significant-Gravitas/AutoGPT .Xiangru Tang, Tianyu Hu, Muyang Ye, Yanjun Shao, Xunjian Yin, Siru Ouyang, Wangchunshu Zhou, Pan Lu, Zhuosheng Zhang, Yilun Zhao, and 1 others. 2025. Chemagent: Self-updating library in large lan-guage models improves chemical reasoning. arXiv preprint arXiv:2501.06590 .Hao Wang, Haoxuan Li, Xu Chen, Mingming Gong, Zhichao Chen, and 1 others. 2025a. Optimal trans-port for time series imputation. In The Thirteenth International Conference on Learning Representa-tions .Hao Wang, Lichen Pan, Yuan Shen, Zhichao Chen, Degui Yang, Yifei Yang, Sen Zhang, Xinggao Liu, Haoxuan Li, and Dacheng Tao. 2025b. Fredf: Learn-ing to forecast in the frequency domain. In The Thir-teenth International Conference on Learning Repre-sentations .Hao Wang, Licheng Pan, Zhichao Chen, Xu Chen, Qingyang Dai, Lei Wang, Haoxuan Li, and Zhouchen Lin. 2025c. Time-o1: Time-series forecasting needs transformed label alignment. Advances in Neural Information Processing Systems .Hao Wang, Licheng Pan, Yuan Lu, Zhichao Chen, Tian-qiao Liu, Shuting He, Zhixuan Chu, Qingsong Wen, Haoxuan Li, and Zhouchen Lin. 2026a. Quadratic direct forecast for training multi-step time-series fore-cast models. In ICLR , pages 1–9. Hao Wang, Licheng Pan, Yuan Lu, Zhixuan Chu, Xiaoxi Li, Shuting He, Zhichao Chen, Haoxuan Li, Qing-song Wen, and Zhouchen Lin. 2026b. Distdf: Time-series forecasting needs joint-distribution wasserstein alignment. In ICLR , pages 1–9. Hao Wang, Zhiyu Wang, Yunlong Niu, Zhaoran Liu, Haozhe Li, Yilin Liao, Yuxin Huang, and Xinggao Liu. 2023a. An accurate and interpretable framework for trustworthy process monitoring. IEEE Transac-tions on Artificial Intelligence , 5(5):2241–2252. Junlin Wang, WANG Jue, Ben Athiwaratkun, Ce Zhang, and James Zou. 2025d. Mixture-of-agents enhances large language model capabilities. In The Thirteenth International Conference on Learning Representa-tions .Senzhang Wang, Jiannong Cao, and S Yu Philip. 2020. Deep learning for spatio-temporal data mining: A survey. IEEE transactions on knowledge and data engineering , 34(8):3681–3700. Xuezhi Wang, Jason Wei, Dale Schuurmans, Quoc V Le, Ed H Chi, Sharan Narang, Aakanksha Chowdhery, and Denny Zhou. 2023b. Self-consistency improves chain of thought reasoning in language models. In 
+
+The Eleventh International Conference on Learning Representations .Yingxu Wang, Siwei Liu, Jinyuan Fang, and Zaiqiao Meng. 2025e. Evoagentx: An automated framework for evolving agentic workflows. In Proceedings of the 2025 Conference on Empirical Methods in Nat-ural Language Processing: System Demonstrations ,pages 643–655. Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Fei Xia, Ed Chi, Quoc V Le, Denny Zhou, and 1 others. 2022. Chain-of-thought prompting elic-its reasoning in large language models. Advances in neural information processing systems , 35:24824– 24837. Qingyun Wu, Gagan Bansal, Jieyu Zhang, Yiran Wu, Beibin Li, Erkang Zhu, Li Jiang, Xiaoyun Zhang, Shaokun Zhang, Jiale Liu, and 1 others. Autogen: Enabling next-gen llm applications via multi-agent conversation. In ICLR 2024 Workshop on Large Lan-guage Model (LLM) Agents .Xingjian Wu, Jianxin Jin, Wanghui Qiu, Peng Chen, Yang Shu, Bin Yang, and Chenjuan Guo. 2026a. Au-rora: Towards universal generative multimodal time series forecasting. In ICLR .Xingjian Wu, Junkai Lu, Zhengyu Li, Xiangfei Qiu, Jilin Hu, Chenjuan Guo, Christian S. Jensen, and Bin Yang. 2026b. Timeart: Towards agentic time series reasoning via tool-augmentation. Xingjian Wu, Xiangfei Qiu, Hanyin Cheng, Zhengyu Li, Jilin Hu, Chenjuan Guo, and Bin Yang. 2025a. En-hancing time series forecasting through selective rep-resentation spaces: A patch perspective. In NeurIPS .Xingjian Wu, Xiangfei Qiu, Hongfan Gao, Jilin Hu, Bin Yang, and Chenjuan Guo. 2025b. K2VAE: A koopman-kalman enhanced variational autoencoder for probabilistic time series forecasting. In ICML .Xingjian Wu, Xiangfei Qiu, Zhengyu Li, Yihang Wang, Jilin Hu, Chenjuan Guo, Hui Xiong, and Bin Yang. 2025c. CATCH: Channel-aware multivariate time series anomaly detection via frequency patching. In 
+
+ICLR .Xinle Wu, Xingjian Wu, Bin Yang, Lekui Zhou, Chen-juan Guo, Xiangfei Qiu, Jilin Hu, Zhenli Sheng, and Christian S. Jensen. 2024. AutoCTS++: zero-shot joint neural architecture and hyperparameter search for correlated time series forecasting. VLDB J. ,33(5):1743–1770. Xinle Wu, Xingjian Wu, Dalin Zhang, Miao Zhang, Chenjuan Guo, Bin Yang, and Christian S Jensen. 2025d. Fully automated correlated time series fore-casting in minutes. In Proc. VLDB Endow. , vol-ume 18, pages 144–157. Yiyuan Yang, Ming Jin, Haomin Wen, Chaoli Zhang, Yuxuan Liang, Lintao Ma, Yi Wang, Chenghao Liu, Bin Yang, Zenglin Xu, and 1 others. 2024. A sur-vey on diffusion models for time series and spatio-temporal data. ACM Computing Surveys .Zhilin Yang, Peng Qi, Saizheng Zhang, Yoshua Bengio, William Cohen, Ruslan Salakhutdinov, and Christo-pher D Manning. 2018. Hotpotqa: A dataset for diverse, explainable multi-hop question answering. In Proceedings of the 2018 conference on empiri-cal methods in natural language processing , pages 2369–2380. Shunyu Yao, Dian Yu, Jeffrey Zhao, Izhak Shafran, Thomas L Griffiths, Yuan Cao, and Karthik Narasimhan. 2023. Tree of thoughts: Deliberate problem solving with large language models, 2023. 
+
+URL https://arxiv. org/abs/2305.10601 , 3:1. Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik R Narasimhan, and Yuan Cao. 2022. React: Synergizing reasoning and acting in language models. In The eleventh international conference on learning representations .Guibin Zhang, Yanwei Yue, Xiangguo Sun, Guancheng Wan, Miao Yu, Junfeng Fang, Kun Wang, Tianlong Chen, and Dawei Cheng. G-designer: Architect-ing multi-agent communication topologies via graph neural networks. In Forty-second International Con-ference on Machine Learning .Jiayi Zhang, Jinyu Xiang, Zhaoyang Yu, Fengwei Teng, Xiong-Hui Chen, Jiaqi Chen, Mingchen Zhuge, Xin Cheng, Sirui Hong, Jinlin Wang, and 1 others. 2024. Aflow: Automating agentic workflow generation. In 
+
+The Thirteenth International Conference on Learning Representations .Kai Zhang, Xiangchao Chen, Bo Liu, Tianci Xue, Zeyi Liao, Zhihan Liu, Xiyao Wang, Yuting Ning, Zhaorun Chen, Xiaohan Fu, and 1 others. 2025a. Agent learning via early experience. arXiv preprint arXiv:2510.08558 .Ruijia Zhang, Xinyan Zhao, Ruixiang Wang, Sigen Chen, Guibin Zhang, An Zhang, Kun Wang, and Qingsong Wen. 2025b. Safesieve: From heuris-tics to experience in progressive pruning for llm-based multi-agent communication. arXiv preprint arXiv:2508.11733 .Si Zhang, Hanghang Tong, Jiejun Xu, and Ross Ma-ciejewski. 2019. Graph convolutional networks: a comprehensive review. Computational Social Net-works , 6(1):1–23. Qinkai Zheng, Xiao Xia, Xu Zou, Yuxiao Dong, Shan Wang, Yufei Xue, Lei Shen, Zihan Wang, Andi Wang, Yang Li, and 1 others. 2023. Codegeex: A pre-trained model for code generation with multilingual bench-marking on humaneval-x. In Proceedings of the 29th ACM SIGKDD Conference on Knowledge Discovery and Data Mining , pages 5673–5684. Yuxiang Zheng, Dayuan Fu, Xiangkun Hu, Xiaojie Cai, Lyumanshan Ye, Pengrui Lu, and Pengfei Liu. 2025. Deepresearcher: Scaling deep research via reinforce-ment learning in real-world environments. arXiv preprint arXiv:2504.03160 .Zihao Zhou, Bin Hu, Chenyang Zhao, Pu Zhang, and Bin Liu. 2024. Large language model as a policy teacher for training reinforcement learning agents. In 
+
+Proceedings of the Thirty-Third International Joint Conference on Artificial Intelligence , pages 5671– 5679. Mingchen Zhuge, Wenyi Wang, Louis Kirsch, Francesco Faccio, Dmitrii Khizbullin, and Jürgen Schmidhuber. 2024. Gptswarm: Language agents as optimizable graphs. In Forty-first International Conference on Machine Learning .A Details of Methodology 
+
+We introduce some additional technical details in this section, related to the specific implementations. 
+
+A.1 Details of Optimization Objectives 
+
+Equation (18), (20), and (14) introduce three op-timization objectives of ST-EVO . Among them, Equation (18), (20) are optimized as reward models. Inituitively, we merge them as Lutility :
+
+− 1
+
+M
+
+> M
+
+X
+
+> m=1
+
+eRsta · u(Gm(Q)) · ∇ Θ(P (Gm)) , (21) where Rsta ∈ R−, so that eRsta ∈ [0 , 1] can be treated as a confidence level, which reflects the uncertainty of the scheduling trajectory. And the total loss function L is: 
+
+L = Lutility + γ · L reg (22) 
+
+A.2 Details of Retrieve-Augment 
+
+To efficiently manage temporal node states under memory constraints, we introduce our retrieval mechanism. Unlike traditional graph stores, our memory M with capacity L stores latent tensor representations. Each item mi ∈ M is a tuple 
+
+(ki, Hi, c i, u i, α i), where ki is the query embed-ding key, Hi is the sequence of node feature ten-sors (values), ci is the computational cost, ui is the uncertainty metric (i.e., Rsta ), and αi tracks access frequency. 
+
+Retrieval and Update. Given a query q, we retrieve the top-k items maximizing the dot-product similarity k⊤ 
+
+> i
+
+q. To maintain the most valuable information within the fixed capacity L, we employ a value-based eviction policy. When the buffer is full, a new candidate mnew replaces the item with the minimum retention score S(m) if S(mnew ) >
+
+min j S(mj ). The score S(m) balances reliability, efficiency, and popularity: 
+
+S(mi) = 1 + log( αi + 1) 
+
+ci · | ui| + ϵ (23) where ϵ is a smoothing term. This policy prior-itizes items with low uncertainty ( |ui| → 0) and low computational cost ( ci), while logarithmically scaling with access frequency to preserve useful knowledge without saturation.                                             
+
+> Category Dataset Answer Type Metric #Test License
+> General reasoning MMLU Multi-choice Acc. 153 MIT License HotpotQA Span F1 7,405 CC BY-SA 4.0 Math reasoning GSM8K Number Acc. 1,319 MIT License MultiArith Number Acc. 600 Unspecified SVAMP Number Acc. 1,000 MIT License AQuA Multi-choice Acc. 254 Apache-2.0 Code generation HumanEval Code Pass@1 164 MIT License DS-1000 Code Acc. 1,000 CC BY-SA 4.0 Medical reasoning DDXPlus Multi-choice Acc. 282,906 CC BY-SA 4.0
+
+Table 4: Dataset descriptions and statistics. 
+
+B Details of Experiments 
+
+B.1 Dataset Statistics 
+
+To comprehensively evaluate the model’s capabili-ties, we selected a diverse set of benchmarks across four primary categories: general reasoning, math-ematical reasoning, code generation, and medical reasoning. Table 4 provides a detailed summary of these datasets, including their respective evaluation metrics, test set sizes, and licenses. 
+
+B.2 Scalability 
+
+#Agents 5 10 20 
+
+Random Graph 
+
+Accuracy (%) 82.7 83.3 83.6 Time (min) 14.2 31.4 59.7 #Tokens 431,064 1,317,148 4,245,925 
+
+GPTSwarm 
+
+Accuracy (%) 83.6 84.2 84.8 Time (min) 67.8 201.8 422.5 #Tokens 1,672,201 5,103,328 14,054,825 
+
+G-Designer 
+
+Accuracy (%) 84.1 85.2 87.3 Time (min) 22.4 41.8 75.23 #Tokens 1,422,309 2,887,532 6,130,221 
+
+AFlow 
+
+Accuracy (%) 83.0 84.5 85.1 Time (min) 36.7 77.2 135.4 #Tokens 1,851,925 3,485,925 7,292,296 
+
+STEER 
+
+Accuracy (%) 84.0 86.2 87.8 Time (min) 48.2 105.6 233.2 #Tokens 2,025,125 4,256,252 9,026,290 
+
+ST-EVO 
+
+Accuracy (%) 89.2 91.6 93.3 Time (min) 15.2 28.4 51.6 #Tokens 1,162,296 1,825,926 3,326,037 
+
+Table 5: Comparison of accuracy, time, and token con-sumption across different agent configurations. We use xxxthe MMLU benchmark and gpt-oss-120b as the base LLM. C Case Study 
+
+We showcase some scheduling trajectories in this section–see Figure 6–10. GSM8K (case a) 
+
+Question: 
+
+John takes care of 10 dogs. Each dog 
+
+takes .5 hours a day to walk and take 
+
+care of their business. How many 
+
+hours a week does he spend taking 
+
+care of dogs?   
+
+> Math
+> Analyst
+> Math
+> Solver
+> Coder Inspector
+> Math
+> Analyst
+> Math
+> Solver
+> Coder Inspector
+
+Figure 6: Case study on GSM8K. MultiArith (case b) 
+
+Question: 
+
+A teacher had 34 worksheets to 
+
+grade. If she graded 7, but then 
+
+another 36 were turned in, how many 
+
+worksheets would she have to grade? 
+
+> Math
+> Analyst
+> Math
+> Solver
+> Inspector
+> Math
+> Analyst
+> Math
+> Solver
+> Inspector
+
+Figure 7: Case study on MultiArith. HumanEval (case c) 
+
+from typing import List 
+
+def f(n: int) -> List[int]: 
+
+""" Implement the function f that 
+
+takes n as a parameter, 
+
+and returns a list of size n, such 
+
+that the value of the element at 
+
+index i is the factorial of i if i is even 
+
+or the sum of numbers from 1 to i 
+
+otherwise. 
+
+i starts from 1. 
+
+the factorial of i is the 
+
+multiplication of the numbers from 1 
+
+to i (1 * 2 * ... * i). 
+
+> Algorithm
+> Designer
+> Coder
+> Bug
+> Fixer
+> Test
+> Analyst
+> Algorithm
+> Designer
+> Coder
+> Bug
+> Fixer
+> Test
+> Analyst
+> Algorithm
+> Designer
+> Coder
+> Bug
+> Fixer
+> Test
+> Analyst
+
+Figure 8: Case study on HumanEval. DS-1000 (case d) 
+
+I have following pandas 
+
+dataframe :\n\n\nimport pandas as 
+
+pd\nfrom pandas import Series, 
+
+DataFrame\ndata = 
+
+DataFrame({'Qu1': ['apple', 'potato', 
+
+'cheese', 'banana', 'cheese', 'banana', 
+
+'cheese', 'potato', 'egg'],\n 
+
+'Qu2': ['sausage', 'banana', 'apple', 
+
+'apple', 'apple', 'sausage', 'banana', 
+
+'banana', 'banana'],\n 'Qu3': 
+
+['apple', 'potato', 'sausage', 'cheese', 
+
+'cheese', 'potato', 'cheese', 'potato', 
+
+'egg']})\n\n\nI'd like to change 
+
+values in columns Qu1 according to 
+
+value_counts() when value count great 
+
+or equal 3 and change values in 
+
+columns Qu2 and Qu3 according to 
+
+value_counts() when value count great 
+
+or equal 2.    
+
+> Algorithm
+> Designer
+> Coder Bug
+> Fixer
+> Test
+> Analyst
+> Algorithm
+> Designer
+> Coder Bug
+> Fixer
+> Test
+> Analyst
+> Algorithm
+> Designer
+> Coder Bug
+> Fixer
+> Test
+> Analyst
+
+Figure 9: Case study on DS-1000. MMLU (case e) 
+
+Which of the following is not one of 
+
+nor follows directly from Kepler's 
+
+laws? 
+
+A. As a planet moves around its orbit 
+
+it sweeps out equal areas in equal 
+
+times. 
+
+B. The orbit of each planet about the 
+
+Sun is an ellipse with the Sun at one 
+
+focus. 
+
+C. The force of attraction between 
+
+any two objects decreases with the 
+
+square of the distance between their 
+
+centers. 
+
+D. A planet travels faster when it is 
+
+nearer to the Sun and slower when it 
+
+is farther from the Sun. 
+
+> Teacher
+> Inspector
+> Web
+> Searcher
+> Teacher
+> Inspector
+> Web
+> Searcher
+
+Figure 10: Case study on MMLU. D More Related Works 
+
+D.1 Time-Series and Spatio-Temporal Data Analysis 
+
+The analysis of time-series data is a fundamen-tal challenge in numerous fields, with recent re-search increasingly shifting from classical statis-tical models to deep learning-based solutions. A comprehensive survey of these methods from a channel strategy perspective highlights the diver-sity of approaches for multivariate forecasting (Qiu et al., 2025a). A primary focus in this area is the development of robust models for long-sequence time-series forecasting. Innovations in training paradigms and model architecture, such as the use of a quadratic direct forecast approach (Wang et al., 2026a) and the exploration of selective represen-tation spaces from a patch perspective (Wu et al., 2025a), have been proposed to enhance prediction accuracy. The move towards generative approaches is also notable, with models aiming for univer-sal multimodal forecasting capabilities (Wu et al., 2026a) or employing frameworks like Koopman-Kalman enhanced Variational AutoEncoders for probabilistic forecasting (Wu et al., 2025b). Concurrently, significant attention has been given to the design of objective functions to bet-ter guide the learning process. Methodologies such as learning to forecast in the frequency do-main (Wang et al., 2025b), employing transformed label alignment (Wang et al., 2025c), and using decomposition-based loss functions (Qiu et al., 2025d) have proven effective. Other work focuses on improving the alignment between the model’s output and the ground truth, for instance, by mini-mizing the Wasserstein distance between their joint distributions (Wang et al., 2026b). The field also addresses specific complexities inherent in time-series data. For multivariate se-ries, methods like dual clustering have been intro-duced to enhance forecasting (Qiu et al., 2025e), while other approaches leverage dual causal net-works to effectively incorporate exogenous vari-ables (Qiu et al., 2025f). For irregular time series, there has been a call to rethink complex models in favor of simple yet effective baselines (Liu et al., 2025a). Beyond forecasting, related tasks such as time-series imputation have also benefited from advanced techniques like optimal transport (Wang et al., 2025a). The parallel task of anomaly detec-tion is also evolving, with methods using channel-aware frequency patching (Wu et al., 2025c). Given the rapid proliferation of new methods, the community has emphasized the need for automa-tion, standardized benchmarking, and accessible tools. Efforts towards zero-shot joint neural archi-tecture and hyperparameter search (Wu et al., 2024) and fully automated forecasting systems (Wu et al., 2025d) aim to streamline the modeling pipeline. To ensure rigorous evaluation, comprehensive and fair benchmarking frameworks have been devel-oped for both forecasting (Qiu et al., 2024) and anomaly detection (Qiu et al., 2025c). Further-more, the development of accessible toolkits aims to make time series forecasting easy for a broader audience (Qiu et al., 2025b). The practical impact of these sophisticated frameworks is demonstrated in their application to critical real-world problems, including the development of accurate and inter-pretable systems for ensuring industrial security (Wang et al., 2023a). 
+
+D.2 Controllable Spatio-Temporal Content Generation 
+
+The principles of modeling sequential data are also central to the generation and manipulation of high-dimensional spatio-temporal content like video. As detailed in a recent survey on the topic (Ma et al., 2025a), a major trend in this field is controllable video generation. Researchers have developed a va-riety of methods that allow for fine-grained control over the synthesized output using intuitive user in-puts. For example, video generation can be guided by pose information, enabling animation from a sequence of poses even when models are trained on pose-free videos (Ma et al., 2024a). Similarly, motion transfer can be achieved through efficient spatial-temporal decoupled finetuning (Ma et al., 2025d). The scope of control also extends to more direct interactions, such as animating a specific image region based on a simple click and motion prompt (Ma et al., 2025c) or creating expressive portrait animations guided by emojis (Ma et al., 2024b). Subsequent work has focused on mak-ing these animation processes more efficient (Ma et al., 2025e). This paradigm of control is also be-ing applied to video editing and content creation, with methods that use control handle transforma-tions for precise edits (Ma et al., 2023) and leverage video inpainting to empower 4D creation (Ma et al., 2025b).

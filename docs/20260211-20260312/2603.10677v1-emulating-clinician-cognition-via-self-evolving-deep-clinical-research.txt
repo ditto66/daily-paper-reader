@@ -1,0 +1,634 @@
+Title: Emulating Clinician Cognition via Self-Evolving Deep Clinical Research
+
+URL Source: https://arxiv.org/pdf/2603.10677v1
+
+Published Time: Thu, 12 Mar 2026 00:53:21 GMT
+
+Number of Pages: 43
+
+Markdown Content:
+# Emulating Clinician Cognition via Self-Evolving Deep Clinical Research 
+
+## Ruiyang Ren 1†, Yuhao Wang 1†, Yunsen Liang 1, Lan Luo 2,Jing Liu 3* , Haifeng Wang 3* , Cong Feng 4* , Yinan Zhang 5,Chunyan Miao 5, Ji-Rong Wen 1, Wayne Xin Zhao 1* 
+
+> 1
+
+Gaoling School of Artificial Intelligence, Renmin University of China, Beijing, China. 
+
+> 2
+
+Peking University Third Hospital, Beijing, China. 
+
+> 3
+
+Baidu Inc., Beijing, China. 
+
+> 4
+
+Chinese PLA General Hospital, Beijing, China. 
+
+> 5
+
+Joint NTU-UBC Research Centre of Excellence in Active Living for the Elderly, Nanyang Technological University, Singapore. *Corresponding author(s). E-mail(s): batmanfly@ruc.edu.cn; 
+
+> †
+
+These authors contributed equally to this work. 
+
+Abstract 
+
+Clinical diagnosis is a complex cognitive process, grounded in dynamic cue acquisition and continuous expertise accumulation. Yet most current artificial intelligence (AI) systems are misaligned with this reality—treating diagnosis as single-pass retrospective prediction while lacking auditable mechanisms for gov-erned improvement. We developed DxEvolve, a self-evolving diagnostic agent that bridges these gaps through an interactive deep clinical research work-flow. The framework autonomously requisitions examinations and continually externalizes clinical experience from increasing encounter exposure as diagnostic cognition primitives. On the MIMIC-CDM benchmark, DxEvolve improved diag-nostic accuracy by 11.2% on average over backbone models and reached 90.4% on a reader-study subset, comparable to the clinician reference (88.8%). DxE-volve improved accuracy on an independent external cohort by 10.2% (categories covered by the source cohort) and 17.1% (uncovered categories) compared to the competitive method. By transforming experience into a governable learning asset, DxEvolve supports an accountable pathway for the continual evolution of clinical AI. 
+
+1
+
+> arXiv:2603.10677v1 [cs.AI] 11 Mar 2026
+
+# 1 Introduction 
+
+The mastery of diagnostic reasoning represents a defining hallmark of clinical exper-tise, a sophisticated cognitive process where rigorous investigation and experiential growth are inextricably linked [1–5]. In routine care, a seasoned clinician does not merely identify a disease from a static set of symptoms; they act as a dynamic investi-gator, navigating uncertainty through active, evidence-driven inquiry [6, 7]. Moreover, each patient encounter serves as a feedback loop through which clinicians refine their internal mental scripts. Over time, these refinements accumulate into transferable experiential policies that make future decisions more robust and less prone to error [8– 10]. This dual capacity for systematic investigation and continuous self-improvement underpins the maturation of clinical mastery. Despite remarkable proficiency in medical knowledge synthesis [11–15], current AI systems remain fundamentally misaligned with the cognitive architecture of human expertise. First, a profound process gap exists [16–18]: most clinical AI systems treat diagnosis as a static, full-information task, collapsing the step-wise investigative rigor of the bedside into a single retrospective prediction [19–26]. Second and more criti-cally, a developmental misalignment persists: whereas clinical mastery thrives on the refletive consolidation of experience, these systems function as ossified snapshots of their training data. Devoid of mechanisms to distill longitudinal practice into trans-ferable experiences [27, 28], parameter-based updating leaves much of the learned behavior implicit. This creates a dual challenge of clinical governance: it lacks clinical auditability, as the latent logic accrued over time remains impervious to human inspec-tion [29–32], and it precludes procedural governance, leaving the system immune to expert intervention or alignment with evolving standards [33–35]. Consequently, many systems lack an auditable, governed pathway for learning from practice—an ability that in medicine is not merely advantageous but integral to safety. Addressing these cognitive misalignments necessitates a conceptual pivot: recon-ceptualizing the diagnostic process not as a mere route to a prediction, but as the essential substrate for longitudinal evolution. To faithfully emulate human diagnostic reasoning, an agent must navigate a structured investigative framework that produces traceable trajectories of evidence acquisition and hypothesis refinement that mirror the uncertainty-laden nature of clinical practice [36–38]. Such trajectories provide the necessary learning substrate: they expose what was asked, observed and inferred at each step, enabling post hoc attribution, review and distillation of reusable experience artifacts rather than embedding all adaptation implicitly in model parameters [39]. By forging a symbiotic link between procedural rigor and governable evolution, it becomes possible to develop agents that not only achieve expert-level performance but also continuously cultivate their mastery that is aligned with the rigorous standards of the medical community. In this study, we introduce DxEvolve, a self-evolving diagnostic agent that rec-onciles the identified gaps in existing medical AI systems by integrating a dynamic investigative workflow with an explicit experiential learning mechanism (Fig. 1). At its foundation, DxEvolve operationalizes diagnosis through deep clinical research (DCR), an evidence-centered paradigm that reconfigures static prediction into active inquiry, synthesizing clinical findings with external medical knowledge. Within this substrate, 2the agent actively requisitions evidence, refines diagnostic hypotheses as cues emerge, and grounds every decision in observations with traceable provenance. Crucially, DxE-volve leverages these high-fidelity trajectories to support longitudinal self-evolution by distilling clinical encounters into diagnostic cognition primitives (DCPs)—explicit carriers of clinical experiments that link salient presentation patterns to actionable workup strategies and diagnostic insights. Unlike the opaque black-box updates, DCPs provide a portable repository of clinical expertise that can be selectively recalled to navigate future uncertainty. This architecture establishes a transparent pathway for clinician-led oversight and continuous improvement, while offering the practical advantage of bypassing the computationally-intensive and inflexible cycles of offline retraining. Systematic evaluation on the MIMIC-CDM benchmark [40] demonstrates that DxEvolve consistently enhances diverse backbone models, yielding an 11.2% mean accuracy gain over the competitive baseline system. Rather than relying on specific models, the framework’s efficacy is architectural: when integrated with state-of-the-art backbones, it attained expert-level proficiency under stringent dynamic constraints, achieving 90.4% accuracy and surpassing the 88.8% human expert (Fig. 2c). Beyond static benchmarks, independent validation at the Chinese PLA General Hospital confirmed the framework’s robust portability across institutional and linguistic bound-aries. The DCR architecture and distilled DCP repository yielded a 10.2% accuracy gain on translated records and a 11.9% improvement on raw Chinese documentation, with advantages extending to diagnostic categories entirely absent from the initial repository (17.1% gain). This sustained performance is underpinned by an evolution process that resolves the developmental misalignment characteristic of static systems. We observed a lon-gitudinal maturation effect, where experience harvested from later-stage encounters possessed higher diagnostic utility than earlier encounters. This evolution is further characterized by an error-driven dividend, where heuristics distilled from diagnostic failures catalyzed greater performance gains than those from successes. Process-level analyses confirm that DxEvolve’s investigative behavior aligns with real-world clinical practices and established clinical guidelines, ensuring that its progression is grounded in sound medical heuristics rather than statistical artifacts. Together, these findings advance a view of clinical AI systems in which compe-tence is defined not only by snapshot performance, but by how reliably an agent improves with exposure when diagnosis is executed as procedural evidence acquisition under workflow constraints. Our findings demonstrate that diagnostic excellence is not merely a function of static medical knowledge utilization, but a dynamic capabil-ity realized through the synergy of structured investigative workflows and progressive experiential maturation. By operationalizing these core pillars of human expertise, DxEvolve establishes that expert-level proficiency emerges when AI moves beyond statistical prediction toward the active, longitudinal cultivation of clinical wisdom. This framework provides a deployable path for clinical systems that couples workflow faithfulness with governance, supporting inspection, curation and controlled updating as standards of care and medical evidence evolve. To facilitate future research in this direction, we provide open access to our DxEvolve agentic system. 3High -salience Encounter Status 
+
+Positives / Negatives / Open questions :
+
+• RLQ tenderness, rebound tenderness, 
+
+WBC 15k, elevated CRP… 
+
+• No fever, LFTs normal, urinalysis 
+
+negative …
+
+• Need imaging for appendix 
+
+visualization… 
+
+Execute Evaluations Search Sources 
+
+Observe Evidence 
+
+Integrate & Update Encounter State 
+
+Plan Next Action 
+
+(Medical evaluation / Searching external sources)   
+
+> Action1
+> (Request PE)
+> Observation1
+> (PE report) Action2
+> (Order Labs)
+> Observation2
+> (Lab Results)
+> Action3
+> (Request US)
+> Observation3
+> (CT Report)
+> Dx
+> (Final Diagnosis)
+
+…
+
+a
+
+Encounter -time workflow Retrospective chart review 
+
+b
+
+c
+
+Diagnosis Cognitive Primitive 
+
+(DCP) 
+
+> Experience Pattern:
+> Acute RLQ pain …
+> Investigation Guidance:
+> Prioritize CT abdomen…
+> Decision Guidance:
+> High suspicion for
+> appendicitis…
+> Source Case:
+> ID -1234
+> Outcome:
+> Acute
+> appendicitis
+> Correctness:
+> Incorrect
+> diagnosis
+> Reflect &
+> Extract
+> Next
+> encounter
+
+DCP Repository 
+
+Indexed experience 
+
+d
+
+External Hospital Cohort 
+
+Out -of -distribution evaluation 
+
+MIMIC -CDM 
+
+Accrual Pool 
+
+Encounters for experience 
+
+accumulation 
+
+MIMIC -CDM Evaluation Cohort 
+
+Held -out evaluation 
+
+DCP Repository 
+
+Indexed experience 
+
+> DCP
+> consolidation
+> Patient
+> History
+> Patient
+> History
+
+Interactive Reasoning with Evidence Acquisition   
+
+> Request
+> CT
+> Request PE Order labs Final
+> Diagnosis
+
+Full clinical narrative, 
+
+all results at once 
+
+Static Reasoning 
+
+> Cross -institution
+
+Episode Trajectory  
+
+> Patient History
+> A1 & O1
+> Request & Observe PE
+> A2 & O2
+> Order & Observe Labs
+> A3 & O3
+> Request & Observe CT
+> Dx
+> Final Diagnosis
+> …
+> In -institution
+> under DCR
+
+Deep Clinical Research (DCR) Workflow 
+
+Experience -driven Self -Evolution Mechanism 
+
+> Reuse
+> Consolidate
+
+Fig. 1 DxEvolve: workflow-aligned diagnosis with experience-driven self-evolution. a ,DxEvolve frames diagnosis as evidence-centered sequential reasoning, contrasting the static, single-pass inference typical of retrospective evaluations using complete records. b, Deep clinical research (DCR) workflow. From the patient history context, the agent iteratively plans the next step, requests evaluations (physical examination, laboratory tests and imaging) and, when necessary, consults exter-nal sources (guidelines and PubMed); only requested observations are revealed and are integrated into a compact high-salience encounter state to guide subsequent actions until final diagnosis. c, Diagnos-tic cognition primitives (DCPs). After each diagnosis reasoning, DxEvolve consolidates a DCP from the trajectory, consisting of a retrievable presentation pattern and evidence-linked guidance for inves-tigation planning and diagnostic decision-making; DCPs are indexed in a repository and selectively reused in later encounters as an action like medical evaluation and searching external sources under the same DCR workflow. d, Cohorts and protocol. DCPs are built from a MIMIC-CDM accrual pool that is strictly non-overlapping with evaluation encounters, then assessed on a held-out in-distribution MIMIC-CDM cohort and an external hospital cohort for out-of-distribution evaluation. 
+
+42 Results 
+
+## 2.1 Experimental design and the DxEvolve framework 
+
+To bridge the gap between static biomedical knowledge and dynamic clinical reason-ing (Fig. 1a), we developed DxEvolve to operationalize this dynamic reasoning process by coupling a high-fidelity investigative workflow with a mechanism for explicit expe-riential growth. The framework is sustained by two synergistic pillars. First, the deep clinical research (DCR) workflow ensures that every diagnostic step remains grounded in a traceable evidence base (Fig. 1b). Second, a self-evolution mechanism distills these investigative trajectories into diagnostic cognition primitives (DCPs), effectively trans-forming individual patient encounters into a library of reusable, governable clinical wisdom (Fig. 1c). We designed an evaluation roadmap to rigorously test this framework (Fig. 1d). First, we utilized the MIMIC-CDM benchmark [40], a curated dataset of 2,400 acute abdominal presentations designed specifically for stepwise diagnosis. For primary com-parisons, we predefined a held-out evaluation cohort ( n=400) randomly sampled from MIMIC-CDM and reserved all remaining non-overlapping encounters exclusively for DCP accrual; unless noted otherwise, all analyses involving DCP retrieval use this fixed accrual pool under the same split. To provide a direct anchor to human exper-tise, we further validated DxEvolve against another encounter split from a published clinician-benchmarked reader-study subset [40] ( n=80) and reserved all remaining non-overlapping encounters exclusively for DCP accrual in this setting. Finally, to ensure the robustness extends beyond curated environments, we con-ducted external validation using an independent cohort from the Chinese PLA General Hospital ( N =293). This real-world dataset, which includes diagnostic categories both overlapping with and absent from the primary benchmark, provides a stringent test of DxEvolve’s generalizability across differing healthcare systems, institutional work-flows, and documentation practices. All evaluations were conducted in accordance with strict data-governance protocols, utilizing locally deployed models to ensure patient privacy and institutional compliance (“Ethics approval and governance”, Methods). 
+
+## 2.2 DxEvolve achieves clinician-level diagnostic performance 
+
+We first evaluated DxEvolve on the MIMIC-CDM evaluation cohort ( n=400), where Fig. 2a exhibited consistent diagnosis accuracy gains ( P <0.001) across all base LLM backbones comparing with the established CDM baseline [40] (11.2% mean accuracy gain) and DxEvolve w/o DCP (9.1% gain). Ablating clinical guideline and PubMed retrieval resulted in only a modest mean accuracy decrease (0.9%), sug-gesting that the core gains primarily arise from workflow scaffolding and experience retrieval, with external retrieval providing complementary support in selected cases. Critically, as these gains were achieved using off-the-shelf backbones without weight updates, the improvements reflect the efficacy of the proposed investigative workflow and experiential mechanisms rather than task-specific fine-tuning. To characterize the utility of DxEvolve across different clinical scenarios, we strat-ified encounters by investigative complexity, utilizing the evidence-acquisition volume 5Fig. 2 Main diagnostic performance results on MIMIC-CDM. a , Diagnosis accuracy on the MIMIC-CDM evaluation cohort ( n=400), reported per pathology and as the average. For each base LLM (color), we compare the CDM baseline, DxEvolve without DCP retrieval (DxEvolve w/o DCP), and DxEvolve over multiple seeds. b, Accuracy improvement of DxEvolve over the CDM baseline stratified by encounter-level diagnostic burden (easy versus hard). Points show the stratum-specific improvement for each base LLM; annotations indicate the improvement in each stratum and the between-stratum difference. c, Diagnosis accuracy on a reader-study subset of MIMIC-CDM ( n=80). Bars report average diagnostic accuracy for CDM and DxEvolve distinguished by light and dark shades of the same color, together with single-pass full-information (FI) inference (hatched). Specialist medical LLMs with limited action compliance are reported under FI only. The clinician reference (Doctors) corresponds to the published reader-study subset with full information available [40]. 
+
+6of the baseline model as a proxy for diagnostic burden. DxEvolve improved accuracy across all strata, with the most pronounced gains concentrated in the high-burden group, representing a 40%–169% relative increase in gain magnitude over low-burden counterparts (Fig. 2b). We next evaluate DxEvolve against human expertise using a reader-study subset of the MIMIC-CDM dataset [40] ( n=80). In the original reader study, clinicians issued retrospective diagnoses under a full-information (FI) regime, where all evidence was provided upfront. In contrast, DxEvolve operated under a significantly more strin-gent, workflow-aligned regime, requiring it to autonomously decide which evidence to acquire and when. Despite this informational disadvantage, DxEvolve attained expert-level proficiency: paired with state-of-the-art backbones, the agent achieved 90.4% accuracy, surpassing the 88.8% human expert (Fig. 2c). Notably, the clinician refer-ence comes from the published reader-study subset under FI conditions; we use it as an anchor for human-level performance rather than a head-to-head comparison under matched information access. Intriguingly, DxEvolve surpassed the corresponding single-pass FI baselines across base large language models (LLMs), including medical-domain LLMs (ClinicalCamel and MedGemma) evaluated under the FI regime due to their inability to comply with interactive action constraints (Fig. 2c). This advantage is consistent with two com-plementary mechanisms: first, the DCR workflow provides a reasoning scaffold that maintains clinical saliency and prevents the “cue dilution” common in long, unstruc-tured records; and second, DCP-guided evolution sharpens uncertainty calibration, allowing the agent to prioritize decisive findings. In summary, these results demonstrate that DxEvolve couples workflow-aligned execution with longitudinal self-evolution to reach expert-level diagnostic proficiency. By externalizing improvement through explicit clinical experiences rather than opaque parametric changes, the system provides an auditable pathway for achieving high-fidelity diagnostic performance that is robust to the complexities of the real-world clinical environment. 
+
+## 2.3 External validation supports cross-institution portability of experiential gains 
+
+To evaluate the external validity of DxEvolve, we conducted independent validation on a cohort from the Chinese PLA General Hospital, representing a substantial shift (“Evaluation cohorts” in Methods). To decouple institutional variance from linguistic factors, we applied the DCP repository distilled from 2,000 MIMIC-CDM encounters to standardized English translations of these clinical records. DxEvolve consistently elevated performance across all base LLMs, yielding a 10.2% mean accuracy gain over the CDM baseline and a 5% improvement over the DCP-free ablation (Fig. 3a). This sustained efficacy across distinct national and institutional contexts suggests that distilled DCPs capture trans-institutional diagnostic heuristics rather than narrow, dataset-specific shortcuts tied to the originating environment. While overall accuracy on the external cohort was comparable to that on MIMIC-CDM, we observed notable heterogeneity across disease states. Accuracy for 7Appendicitis Cholecystitis Pancreatitis Mean 
+
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Diagnostic accuracy (%)
+
+a DeepSeek-V3.2 Qwen3-30B Qwen3-235B GLM-4.7 CDM DxEvolve w/o DCP DxEvolve   
+
+> Liver Abscess Urinary Tract Infection Mean
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Diagnostic accuracy (%)
+
+b   
+
+> Appendicitis Cholecystitis Pancreatitis Mean
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Diagnostic accuracy (%)
+
+cFig. 3 External validation on an independent hospital cohort. a , Diagnostic accuracy on diagnoses overlapping with MIMIC-CDM (appendicitis, cholecystitis and pancreatitis) and their mean, evaluated using standardized English translations of the structured records. b, Category-level transfer on diagnoses that were never used for DCP accrual (liver abscess, urinary tract infection) and their mean, evaluated under the same protocol. c, Robustness to documentation with native institutional language, evaluated on the same external encounters using the original Chinese records. 
+
+appendicitis and cholecystitis decreased, whereas performance on pancreatitis encoun-ters improved. While the source of this variance likely reflects institution-specific workup pathways and documentation nuances, highlighting the necessity of evaluat-ing clinical agents across diverse practice environments where diagnostic thresholds and recording standards may differ. We further probed the framework’s adaptability on diagnostic categories absent from the initial repository, including liver abscess and urinary tract infection (UTI). In these out-of-distribution settings, DxEvolve yielded a 17.1% mean accuracy gain averaged across liver abscess and UTI cohorts over the CDM baseline and a 4.5% improvement over the DCP-free ablation (Fig. 3b). Notably, while liver abscess shares the abdominal domain of the original benchmark, UTI represents a distinct 80
+
+> 100
+> 200
+> 500
+> 1000
+> 2000
+> Number of accrued encounters
+> 65
+> 70
+> 75
+> 80
+> 85
+> 90
+> Overall diagnostic accuracy (%)
+
+a
+
+> Qwen3-30B
+> DeepSeek-V3
+> Qwen3-235B
+> DeepSeek
+> V3.2
+> Qwen3
+> 30B
+> Qwen3
+> 235B
+> 0
+> 5
+> 10
+> 15
+> 20
+> 25
+> 30
+> Incorrect experience rate (%)  ***
+> P = 1.56 × 10 −4
+> ***
+> P = 1.10 × 10 −5
+> ***
+> P = 4.76 × 10 −5
+> 22.6%
+> 18.8%
+> 15.8%
+> 14.9%
+> 11.2%
+> 9.1%
+
+b Improved cases 
+
+> Total cases
+
+Fig. 4 Exposure-dependent self-evolution and provenance of retrieved experience. a ,Overall diagnosis accuracy on the fixed MIMIC-CDM evaluation cohort ( n=400) as the DCP accrual pool increases, shown for three representative base LLM backbones. Accuracy improves with addi-tional accrual encounters and then tapers, yielding a saturating learning curve. b, Provenance of retrieved experience during evaluation. Bars show the fraction of retrieved DCPs whose source accrual episode ended in an incorrect diagnosis (“incorrect experience rate”), computed separately for improvement cases and for all evaluation encounters pooled. P values indicate enrichment of incorrect-source DCPs among retrievals in improvement cases. 
+
+clinical entity. These gains indicate that distilled DCPs encode portable, domain-agnostic heuristics that transcend specific disease labels. While the full scope of transferability across heterogeneous syndromes warrants further investigation, these results demonstrate the robust scalability of experience-guided evolution in previously unencountered clinical domains. Finally, we assessed the cross-lingual robustness of DxEvolve by evaluating its per-formance on original Chinese clinical records. In this practical deployment scenario, patient encounters were processed in their native language, while the underlying rea-soning framework and the accumulated DCP repository remained in English. Despite this linguistic mismatch, DxEvolve yielded an 11.9% mean accuracy gain over the CDM baseline and a 6.3% improvement over the DCP-free ablation (Fig. 3c). Notably, absolute diagnostic accuracy remained comparable to that achieved using standard-ized English translations. These observations demonstrate that the DCR framework and experiential heuristics within DxEvolve are language-agnostic, confirming the framework’s viability in diverse, multilingual clinical environments. Together, these external evaluations demonstrate that DxEvolve’s self-evolution mechanism confers substantial portability across institutional boundaries, documen-tation languages, and diagnostic categories. By externalizing clinical wisdom as symbolic, governable assets, the framework provides a rigorous trajectory for maintain-ing high-fidelity performance amidst the inherent heterogeneity of real-world clinical practice. 92.4 Self-evolution shows exposure-dependent scaling behavior and error-driven correction 
+
+We next studied whether DxEvolve exhibits exposure-dependent improvement consis-tent with clinician-like development, and whether the gains can be traced to reusable experience rather than incidental trajectory variation. We therefore quantified self-evolution by scaling the pool of encounters available for DCP accrual while holding the evaluation cohort fixed (“Evaluation and analysis” in Methods). Accuracy matured longitudinally, yielding reproducible learning curves across all evaluation schedules (Fig. 4a), with a mean accuracy gain of 8.97% after accrual over the first 0–1,000 encounters and a further 0.9% gain over 1,000–2,000 encoun-ters. While initial gains were remarkable, trajectories eventually diverged by model capacity: whereas weaker backbones reached an asymptotic plateau, more capable models sustained incremental growth throughout the accrual period. This divergence suggests that the saturation point of experience-guided evolution is governed by the base LLM’s reasoning capability; stronger architectures demonstrate a superior ability to mine from complex, long-tail scenarios, effectively raising the ceiling of attainable diagnostic expertise. To identify which experiences drive error correction, we analyzed improvement cases—encounters where DxEvolve succeeded but its baseline failed. In these cases, retrieved DCPs were significantly enriched with experiences distilled from prior diag-nostic failures compared to the general retrieval distribution (Fig. 4b). This highlights an error-driven dividend, where heuristics rooted in past mistakes contribute more to subsequent performance gains. These results suggest that failures represent high-value learning events, providing the critical corrective logic necessary to navigate complex diagnostic pitfalls that successful encounters may overlook. Together, these analyses connect exposure-dependent performance gains to an inspectable mechanism: improvement scales with accumulated experience, and the experience invoked when errors are corrected exhibits a systematic provenance struc-ture. This motivates examining not only how the repository grows, but how the content of accrued DCPs matures with continued exposure. 
+
+## 2.5 Self-evolution is accompanied by progressive maturation of experience 
+
+To quantify the functional maturation of the experience repository, we examined whether DCPs accrued in later developmental stages exhibit superior clinical utility and broader applicability than early-stage heuristics. This progression was vali-dated through blinded expert assessment and comprehensive retrieval-log analyses (“Evaluation and analysis” in Methods). In a clinician reader study blinded to study condition, we randomly sampled 20 DCPs from an early exposure window (encounters 1–300) and 20 from a late win-dow (encounters 1700–2000). Two clinicians rated each DCP on clinical correctness (including safety concerns), actionability (guiding evidence acquisition and hypothesis refinement) and generality (reusability beyond the source encounter and pathology). The robustness of the expert evaluation framework was confirmed by high inter-rater 10 Clinical   
+
+> Correctness
+> Actionability Generalizability Mean
+> Score
+> 3
+> 4
+> 5
+> Score
+> P = 0.005
+> **
+> P = 0.16
+> n.s.
+> P = 0.021
+> *
+> P = 0.007
+> **
+
+a Early (n = 20) Late (n = 20)   
+
+> 345
+
+Expert 1 score   
+
+> 3
+> 4
+> 5
+> Expert 2 score
+> Bubble size ∝n
+> ICC (total) = 0.81
+
+b    
+
+> Clinical Correctness
+> Actionability
+> Generalizability
+> Qwen3-30B Qwen3-235B DeepSeek-V3.2
+> 0
+> 5
+> 10
+> 15
+> Late experience
+> retrieval rate (%)  12.9 12.4
+> 13.5
+> 14.8 13.9
+> 15.9
+
+c Total cases Improved cases Fig. 5 Maturation of accrued experience artifacts with encounter exposure. a , Blinded clinician ratings of diagnostic cognition primitives (DCPs) sampled from an early exposure window (encounters 1–300; n=20) and a late window (encounters 1700–2000; n=20). DCPs were scored for clinical correctness, actionability and generalizability, with the mean shown as an aggregate. Boxes denote interquartile range, centre line the median, and points individual DCPs; two-sided P values are shown (n.s., not significant). b, Inter-rater reliability of clinician ratings for the aggregate DCP score (ICC=0.81), supporting the reliability of the clinician assessment. c, Evaluation-time retrieval signal for late-stage DCPs, quantified as the fraction of retrieval events that involve DCPs in the late encounter window. 
+
+reliability for the aggregate DCP scores (intraclass correlation coefficient (ICC)=0.81; Fig. 5b). Late-stage DCPs scored higher across dimensions than early-stage DCPs, with mean clinician rating 4.47 vs 4.17 on a 5-point scale (Fig. 5a). Both sets often contained clinically reasonable guidance, but later DCPs more consistently articu-lated it in reusable, action-oriented terms (for example, clearer conditional checks and escalation cues), whereas early DCPs more often remained context-bound, supporting gradual maturation with exposure. To complement clinician ratings with a usage-based signal, we analyzed evaluation-time DCP retrieval logs. Using the same early and late exposure windows, we 11 quantified for each DCP (i) retrieval breadth (the number of distinct evaluation encoun-ters in which it was retrieved) and (ii) association with error-correcting episodes 
+
+(retrieval events in encounters where DxEvolve was correct but DxEvolve w/o DCP was incorrect). Retrieval log analyses confirmed that late-stage DCPs possess supe-rior functional utility. While these artifacts maintained a baseline retrieval rate of 12.4%–13.5% across total encounters, their prevalence increased to 13.9%–15.9% within error-correcting episodes (Fig. 5c). This enrichment was most pronounced in DeepSeek-V3.2. Taken together, clinician-blinded ratings and usage-based signals converge on a consistent picture: with continued encounter exposure, DCPs become more reliably actionable and more broadly reusable, and their retrieval is increasingly enriched in error-correcting episodes. These findings support that self-evolution involves qualita-tive refinement of accrued experience artifacts, rather than simply expanding the size of the DCP repository. 
+
+## 2.6 DxEvolve’s evidence acquisition aligns with clinical workflows and clinical guidelines 
+
+In workflow-aligned diagnosis, performance depends not only on the final diagno-sis but also on whether requested investigations resemble routine care. We therefore assessed DxEvolve’s evidence-acquisition behaviour at the encounter level, measuring alignment with documented investigations and compatibility with common pathways (“Evaluation and analysis” in Methods). Across the MIMIC-CDM evaluation cohort, DxEvolve exhibited higher consistency with recorded workups on all four trajectory-consistency measures than the stan-dard workflow-aligned baseline (mean overall consistency across base LLMs, 0.89 and 0.68, respectively), including physical-examination execution, laboratory-test set F1, imaging (modality, region) set F1 and action-order concordance. The results indicate more reliable coverage of key investigation types and a workup sequence closer to the recorded workflow (Fig. 6a). We further assessed workup behavior against established clinical guidelines using a conservative, three-component compliance score that captures (i) whether physical examination was performed before downstream testing, (ii) coverage of guideline-recommended laboratory categories and (iii) whether the first imaging study matched guideline-supported modality–region choices for each condition. DxEvolve achieved higher overall compliance than CDM across all evaluated backbones, with distribu-tions shifted toward higher scores and statistically significant paired differences as shown in Fig. 6b. Together, these analyses indicate that DxEvolve’s improvements extend beyond end-point accuracy to more clinically compatible evidence acquisition, rather than arising from opportunistic or idiosyncratic request patterns. 
+
+# 3 Discussion 
+
+This study presents DxEvolve, a self-evolving diagnostic agent that instantiates diag-nosis as an interactive deep clinical research (DCR) workflow, in which clinical evidence 12 0.2 0.4 0.6 0.8 1.0 
+
+> Agreement with clinical ground truth
+> Physical Exam
+> Laboratory Tests
+> Imaging F1
+> Action Order
+> Physical Exam
+> Laboratory Tests
+> Imaging F1
+> Action Order
+> Physical Exam
+> Laboratory Tests
+> Imaging F1
+> Action Order
+> Physical Exam
+> Laboratory Tests
+> Imaging F1
+> Action Order
+> Qwen3-235B
+> Qwen3-30B
+> DeepSeek-V3.2
+> GLM-4.7
+
+a CDM DxEvolve       
+
+> Qwen3-30B Qwen3-235B GLM-4.7 DeepSeek-V3.2
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Overall compliance score
+> P = 1.7 ×10 −61 P = 3.9 ×10 −58 P = 3.6 ×10 −13 P = 2.2 ×10 −17
+
+b CDM DxEvolve Fig. 6 DxEvolve produces more workflow-consistent investigations and shows improved alignment with clinical guidelines. a , Workup consistency. Across the MIMIC-CDM evaluation cohort ( n=400), DxEvolve shows higher agreement with the documented investigation trace than the standard decision-making baseline CDM for each backbone, spanning whether a physical examination was performed, overlap with recorded laboratory testing, overlap with recorded imaging (modality and region), and concordance of the investigation ordering. Points are model-level means; grey lines connect paired results for DxEvolve versus CDM under the same backbone. b, Guideline adherence. Distributions of encounter-level guideline-compliance scores, derived from the mean adherence across three dimensions: physical examination, laboratory investigations, and imaging. Violin plots show score densities; embedded boxplots indicate the median and interquartile range; points mark the mean. P values are from paired two-sided comparisons. 
+
+is acquired procedurally through explicit evaluation actions, with optional consulta-tion of external medical sources. DxEvolve is designed as a governed learning system over encounter-level diagnostic trajectories, supporting longitudinal self-evolution by accruing and retrieving diagnostic cognition primitives (DCPs) as reusable experience artifacts. Across a public, de-identified benchmark of clinical encounters formatted for procedural evidence acquisition, DxEvolve reaches clinician-comparable performance under interactive diagnosis. Importantly, evaluation on an external cohort from a Chinese tertiary hospital operating in a distinct healthcare system shows consistent DCP-enabled gains, supporting the portability of experience under cross-institutional 13 shift. These findings show that workflow-aligned diagnostic agents can reach clinician-benchmarked performance while preserving auditability, reframing progress from static full-record prediction to governed, evidence-tethered execution and improvement as clinical expertise accrues. A central contribution of DxEvolve lies in the experience-driven self-evolution mechanism, which renders encounter exposure an explicit learning signal within a workflow-aligned diagnostic process. Unlike paradigms that treat each case as a static, full-record input, where all documented findings are provided upfront, DxEvolve oper-ates through procedural evidence acquisition and iterative hypothesis refinement under the DCR framework. This design more closely mirrors the temporal and inferen-tial structure of routine diagnostic workups. By generating standardized, clinically auditable trajectories with explicit provenance, DxEvolve learns from practice in a manner analogous to human clinicians. Through this process, DCPs are accumulated into a reusable experience repository and can be retrieved to steer subsequent evi-dence gathering and diagnostic refinement without parameter updates. When external medical sources are consulted, their evidence can provide additional authoritative cor-roboration. Empirically, diagnostic performance improved with cumulative encounter exposure, yielding a reproducible, exposure-dependent scaling curve. Notably, DCPs originating from prior diagnostic failures were enriched in improvement cases, sug-gesting an error-driven learning mechanism: unsuccessful episodes preferentially yield corrective effects that reduce the likelihood of repeating similar mistakes in similar clinical contexts. Because DCP-based self-evolution remains non-parametric and trace-able, these primitives can be inspected, curated, or even retracted as needed. This offers a practical pathway for governed, longitudinal adaptation, a capability difficult to achieve through conventional model training. External validation at the Chinese PLA General Hospital confirms that DxEvolve’s advantages transcend institutional boundaries, linguistic variations, and diagnos-tic categories. The DxEvolve’s sustained performance across translated and native Chinese documentation suggests that its distilled experiences capture portable, workflow-level logic rather than language-specific artifacts. Notably, the observed gains in diagnostic categories absent from the initial repository underscore a cross-disease generalizability essential for real-world deployment. Collectively, the DCR workflow provides a portable execution substrate for stepwise evidence acquisition under heterogeneous documentation, and DCP-based self-evolution supplies a review-able mechanism for adaptation as institutions, languages and workup patterns drift. They offer a practical route to maintaining dependable diagnostic performance beyond the originating benchmark. Beyond exposure-dependent performance gains, our results suggest that self-evolution is accompanied by a progressive improvement in the quality of accrued DCPs, echoing how clinicians’ experiential knowledge can mature with seniority rather than remaining isolated reflections. In clinician-blinded assessments, experiences accu-mulated later scored higher on clinical correctness, actionability and generality than earlier experiences, although both stages were broadly clinically reasonable. Consistent with this, usage-based analyses showed that later experiences were retrieved across a wider range of evaluation encounters and were more often observed in error-correcting 14 episodes under identical workflow constraints. Together, these signals support a matu-ration process in which accrued experience becomes more reliably actionable and more broadly reusable, rather than simply expanding in volume. In practice, the gains from self-evolution reflect experience refinement as well as accumulation. For workflow-aligned clinical agents, terminal diagnostic accuracy is an incom-plete endpoint because the agent determines the sequence and intensity of evidence acquisition, with downstream implications for test utilization and imaging escala-tion. DxEvolve’s requested investigations matched encounter-recorded workups more closely than the baseline across behavioural concordance measures, and more often selected guideline-supported first-line imaging. Together with the accuracy gains, these process-level improvements suggest that the gains are not primarily explained by indis-criminate escalation of investigations. Such process alignment provides an auditable substrate for governance, enabling calibration of investigation intensity and targeted review of recurrent failure patterns. Notwithstanding these advances, several limitations and corresponding priorities for future work warrant consideration. First, our experiments use de-identified EHR-derived records to enable reproducible, auditable measurement of evidence acquisition and experience reuse; extending this framework to prospective settings will benefit from incorporating additional real-world factors, such as clinician–patient interaction. Second, we observe consistent gains when applying distilled experiences to diagnostic categories beyond those represented in the initial repository, supporting portability across disease settings; broader evaluations across diverse case-mix and clinical con-texts will further delineate generalizability in complex practice. Third, our current action schema emphasizes the core diagnostic-relevant actions required for diagno-sis in an interactive workup setting; the framework is naturally extensible to richer actions as needed for specific clinical deployments. These considerations motivate three next steps: (i) prospective clinician-in-the-loop studies that evaluate workflow fidelity, efficiency and patient-relevant endpoints; (ii) expanded multi-institutional and multi-specialty evaluation to characterize when and where experience-guided self-evolution generalizes; and (iii) extension of the action space to incorporate richer operational actions while preserving auditability and benchmarking comparability. In summary, DxEvolve links workflow-aligned diagnostic investigation with lon-gitudinal, governed improvement through experience-driven self-evolution. By opera-tionalizing diagnosis as procedural evidence acquisition alongside auditable experience consolidation, the framework reflects two core elements of clinical expertise: system-atic investigation within a patient encounter and progressive learning across a career. Consistent with this, DxEvolve reaches clinician-level performance under evaluations that emulate clinically realistic diagnostic constraints, demonstrating that sophisti-cated diagnostic reasoning emerges when structured investigative protocols are refined by an ever-maturing repository of DCPs. By externalizing learning into inspectable artifacts rather than opaque parameter updates, DxEvolve aligns AI advancement with the transparency standards essential to clinical safety. More broadly, our findings support governed, auditable self-evolution as a promising direction for clinical AI that must remain reliable as evidence and standards of care evolve. 15 4 Methods 
+
+## 4.1 DxEvolve framework 
+
+DxEvolve is a self-evolving diagnostic agent that closes two coupled gaps observed in clinical AI diagnosis: a process gap between static full-information prediction and workflow-aligned stepwise evidence acquisition, and a learning gap in which appar-ent competence does not accumulate into more reliable evidence-consistent reasoning under uncertainty. DxEvolve operationalizes diagnosis as an evidence-centric deep clinical research workflow and the proposed self-evolution mechanism externalizes lon-gitudinal improvement as auditable diagnostic cognition primitives, distilled from and reinvoked within the same diagnostic trajectories, without any parameter updates to the base large language models (LLMs). At the core of each clinical encounter, DxEvolve implements a deep clini-cal research (DCR) framework—an agentic research protocol that treats diagnosis as evidence-driven investigation rather than single-pass prediction, while enforcing workflow-aligned constraints on evidence acquisition. Each encounter starts from the presenting complaint with limited initial context, mirroring early-stage clinical uncer-tainty. The agent then iteratively plans the next information need, executes a concrete acquisition action, and updates an explicit encounter state that integrates newly revealed findings with the evolving hypothesis set and a structured plan for subsequent steps. The DCR workflow thus proceeds through repeated cycles of (i) formulating the next evidence-seeking objective conditioned on the current state, (ii) acquiring the selected information through tool-mediated actions, and (iii) synthesizing the new evidence into the state to refine hypotheses and commit to the next investigative decision. The action space is aligned with routine workup operations and includes requests for physical examination findings, laboratory testing results and imaging reports. Because evidence availability and recommended workup choices are often guided by evolving clinical guidance and best practices, relying solely on parametric model knowledge can be insufficient, particularly early in an encounter when patient-specific evidence is sparse. DxEvolve can therefore optionally invoke external medical evi-dence interfaces (PubMed and clinical guidelines) within the same workflow to support evidence-grounded decision-making and to reduce reliance on unsupported ratio-nales. Specifically, clinical guidelines are accessed via dense retrieval through semantic vector-space indexing to identify contextually relevant standards, while peer-reviewed evidence is sourced through queries to the official PubMed search utilities. The DCR workflow can rapidly obtain long and heterogeneous text (for example, multi-parameter laboratory outputs, narrative imaging reports and retrieved docu-ments), in which weakly relevant or incidental content may dilute clinically decisive signals. To mitigate this, DxEvolve applies context engineering by prioritizing clinically salient findings and suppressing incidental content in the running context, performing an automatic summarization step that extracts and carries forward diagnostically rele-vant information when needed. This mechanism preserves continuity of the diagnostic trajectory while maintaining a stable, high-signal representation to inform subsequent 16 decisions. Importantly, the DCR-generated diagnostic trajectories can drive longi-tudinal learning with real encounter-derived workups and outcomes rather than by abstract, simulator-specific feedback. The central innovation of DxEvolve is the longitudinal self-evolution mechanism that enables progressive improvement with clinical exposure by accumulating and reusing experience from prior episodes, without any parameter updates to the underly-ing base LLM. This design is motivated by clinician cognition: expertise is not only the recall of medical facts, but the ability to recognize recurring clinical patterns, antici-pate high-yield investigations and apply context-appropriate decision rules shaped by prior successes and failures. This design externalizes learning into accountable experi-ence artifacts that clinicians can audit, revise or remove, rather than relying on latent behavioural drift. After each completed diagnostic episode in the accumulation pool, DxEvolve per-forms a structured post-hoc consolidation step over the trajectory and distills a diagnostic cognition primitive (DCP) optimized for reuse under uncertainty. Each DCP contains three components: experience pattern, test-ordering experience, and diagnostic decision experience. The experience pattern provides a high-salience sig-nature for retrieval, summarizing the presentation and discriminative cues at a level intended to generalize beyond the originating patient. The test-ordering experience encodes actionable workup guidance for the stepwise setting, including high-yield next-step evaluations, contingency options when findings are equivocal and safety-oriented guardrails that reduce common omissions or inappropriate escalation. The diagnos-tic decision experience captures evidence-linked implications for hypothesis refinement and final decision-making, including discriminative patterns that support or refute leading hypotheses, red-flag checks, and corrective lessons when the source trajectory exposed an error mode. DCPs are written as portable guidance rather than narrative rationales. To support mechanistic analyses and traceable governance, each DCP is stored with lightweight provenance metadata for in-depth analysis, including its exposure index, diagnostic category and whether the source episode produced a correct primary diagnosis. This provenance enables analyses of how DCP sources relate to subsequent performance gains and error correction. During diagnosis on encounters, DxEvolve treats the DCP repository as a grow-ing long-term memory. At the step of deciding to retrieve prior experience, the agent derives a retrieval query from its current evidence-grounded state and retrieves a small set of candidate DCPs whose experience patterns best match the current presenta-tion. Retrieved DCPs are injected as a bounded context and applied as conditional guidance: they may steer evidence seeking, highlight discriminative cues to verify or provide evidence-linked guidance for final diagnostic commitment. To mitigate spu-rious memory-driven bias, DxEvolve is instructed to use a DCP only when it is compatible with the patient-specific evidence acquired so far and to disregard DCP guidance that is irrelevant with observed findings. By combining workflow-aligned trajectories with structured DCP consolidation and evidence-compatible reuse, DxEvolve provides an accountable pathway for 17 exposure-dependent improvement while preserving transparency and avoiding fine-tuning-induced shifts in base-model behaviour. Diagnostic reasoning trajectories and DCP examples are shown in Supplementary Section C and D. 
+
+## 4.2 Data sources 
+
+Benchmark experiments used MIMIC-CDM [40], a clinical decision-making bench-mark curated from MIMIC-IV [41]. MIMIC-IV is a large, de-identified electronic health record resource sourced from routine clinical care at Beth Israel Deaconess Medical Center (Boston, MA, USA), including longitudinal structured variables, lab-oratory measurements and linked clinical documentation [41]. MIMIC-CDM inherits this real-world provenance and comprises 2,400 de-identified patient presentations of acute abdominal pain spanning four diagnostic categories (appendicitis, cholecysti-tis, diverticulitis and pancreatitis), formatted for workflow-aligned diagnosis in which additional evidence (such as physical examination findings, laboratory results and imaging reports) is revealed only when explicitly requested through the corresponding action [40]. To prevent label leakage, agent-facing inputs excluded any diagnosis fields or label-bearing metadata. Evidence items were provided as structured text fields in the dataset release, with field boundaries preserved to avoid inadvertent information disclosure through formatting, concatenation or re-ordering. When multiple items of the same evidence type were available, they were retained in their original record order and were exposed only after the agent issued the matching request action. 
+
+## 4.3 Evaluation cohorts 
+
+Across all experiments, we enforced strict non-overlap between encounters used for longitudinal experience accumulation ( i.e. , construction of the diagnostic cogni-tion primitive repository, DCP) and those used for evaluation, implemented at the encounter level using unique identifiers. For primary comparisons under the deep clinical research (DCR) workflow, we predefined a held-out MIMIC-CDM evaluation cohort of 400 encounters and kept it fixed across base models, ablations and random seeds; all remaining non-overlapping MIMIC-CDM encounters were used exclusively for DCP accrual. To contextualize against published clinician benchmarking, we additionally eval-uated on the reader-study subset from Hager et al. (80 encounters; 20 per pathol-ogy) [40], which was treated as an independent evaluation cohort and strictly excluded from DCP accrual. On this subset, we report both workflow-aligned evaluation and single-pass full-information (FI) inference using identical underlying encounter con-tent, differing only in the information-availability interface (complete record provided upfront for FI, with evidence-request actions disabled). For external validation, we assembled an independent cohort of de-identified encounters (2020–2024) from the Chinese PLA General Hospital ( N =293) curated with a standardized record structure, including appendicitis ( n=30), cholecystitis (n=39) and pancreatitis ( n=174), which match diagnostic categories in MIMIC-CDM, as well as liver abscess ( n=39) and urinary tract infection ( n=11). The cohort 18 composition reflects the natural prevalence and clinical distribution of these condi-tions within the institution’s stream, preserving the ecological validity of the dataset and ensuring that the evaluation mirrors the diagnostic challenges encountered in unconstrained real-world practice. All external encounters were used exclusively for out-of-distribution testing and were never used for DCP accrual. For external-cohort experiments, the DCP repository was built solely from the MIMIC-CDM accrual pool using the same base LLM as in the corresponding evaluation. Records were harmonized to follow the MIMIC-CDM task format, preserving the initial presenting complaint and a pool of candidate evidence items retrievable through explicit requests. Imaging evidence followed the MIMIC-CDM convention by providing only the final narrative report text. Owing to source-format constraints, laboratory testing was returned as a consolidated results field, analogous to physical examination returns. To enable controlled cross-institutional evaluation with English-prompted base models, we produced standardized English translations of the structured records using an offline, locally run translation tool with human verification. Translation was per-formed at the field level to preserve section boundaries and avoid reordering or merging across fields; numerical values, units and unambiguous medical abbreviations were retained. For cross-language robustness, we additionally evaluated DxEvolve on the original Chinese structured records under the same workflow and action schema. In this setting, only the patient-specific encounter content was in Chinese, whereas prompts and the DCP repository remained in English. 
+
+## 4.4 Ethics approval and governance 
+
+MIMIC-IV and the derived MIMIC-CDM cohort contain de-identified patient data and were accessed via PhysioNet under the required credentialing and data-use agree-ments, in accordance with the dataset governance policies [40, 41]. All analyses were conducted on de-identified data, and no directly identifiable information was used for model evaluation, reporting or dissemination. The external institution cohort from the Chinese PLA General Hospital comprised retrospectively collected encounters and was de-identified prior to analysis under insti-tutional policies. Use of these records for this study was reviewed and approved by the hospital’s institutional ethics committee of the Chinese PLA General Hospital (Approval No. S2020-418-01), with a waiver of informed consent where applicable under the approved protocol. Data access was authorized through institutional gov-ernance procedures, and all processing and analyses were performed by authorized study personnel within institutionally approved computing environments. 
+
+## 4.5 Models and implementation 
+
+DxEvolve was implemented as an LLM-orchestrated agent operating in a workflow-aligned diagnostic environment with a constrained action schema, standardized tool interfaces and explicit termination criteria. Across all experiments, we used off-the-shelf, open-weight base LLMs. Model inference was conducted locally to satisfy 19 data-governance requirements for both the MIMIC-derived benchmark and the exter-nal hospital cohort, which preclude transmitting patient-level content to third-party hosted LLM services or external APIs. 
+
+Base LLMs and inference settings. Unless otherwise stated, all experi-ments in this study applied Qwen3-30B ( Qwen3-30B-A3B-Instruct ), Qwen3-235B (Qwen3-235B-A22B-Instruct-2507 ) [42], DeepSeek-V3.2 [43] and GLM-4.7 [44] as backbones. To contextualize DxEvolve against domain-specific models, we also evaluated MedGemma [45] ( medgemma-27b-text-it ) and ClinicalCamel [46] (ClinicalCamel-70B ). During preliminary testing, these medical-domain LLMs demonstrated insufficient compliance with the structured action-calling protocol required for workflow-aligned evaluation; specifically, they frequently failed to adhere to the pre-specified JSON output format or generated invalid investigative actions. Consequently, these models were evaluated exclusively under the single-pass full-information regime. All experiments were run on a local server equipped with NVIDIA A100 GPUs (80 GB), without using external hosted services. Within each base model, decoding configurations were held fixed across all compared methods and ablations to ensure that differences reflect workflow and experience mechanisms rather than sam-pling settings. For all evaluated LLMs, we set temperature to 0 .1, top-p to 0 .7 and top-k to 50. 
+
+Prompt specification. All workflow-aligned experiments used a single, shared prompt contract that defines the action space and semantics, tool-call formatting, the agent state representation and the termination criteria. The same prompt template was applied across all evaluated base models without model-specific adapters or task-conditional modifications, ensuring that comparisons differ only in the underlying model and the enabled system components. Full prompt templates are provided in the Supplementary Section A and B. 
+
+Retrieval settings. DxEvolve uses a unified dense retrieval stack for both (i) experience retrieval from the DCP repository and (ii) retrieval of external clini-cal guidelines when enabled. For both retrieval pathways, queries and candidate documents were embedded using bge-large-en-v1.5 [47] as dense encoder with vector-based similarity search (FAISS [48]). Similarity was computed by cosine similarity between ℓ2-normalized embeddings. Retrieval was performed locally for reproducibility and, for sensitive cohorts, to avoid external transfer of patient infor-mation. We collected abdominal-condition guideline documents from authoritative clinical sources (for example, the American College of Gastroenterology, the World Society of Emergency Surgery and Mayo Clinic) and manually verified relevance, authority and recency, excluding outdated materials and ultimately retained 35 guide-lines. The guidelines were converted to structured text, lightly cleaned (for example, removing acknowledgements) before being locally indexed for retrieval. PubMed retrieval was implemented via the official NCBI Entrez (E-utilities) API, with queries restricted to de-identified, non-patient-specific medical terms (for example, disease and symptom keywords) and containing no patient-level records or identifiable information. 
+
+Baseline details and implementation parity. We use two complementary ref-erence points: a published workflow-aligned baseline (CDM [40]) and an in-framework ablation (DxEvolve w/o DCP) that isolates the marginal contribution of DCR and 20 self-evolution mechanism. CDM is an established clinical decision-making diagnos-tic baseline capable of stepwise inquiry but lacking both a specialized investigative architecture for evidence acquisition and a framework for experiential evolution. Our evaluation strategy prioritizes head-to-head, backbone-matched ablations within a unified architectural framework, an approach designed to isolate the specific con-tributions of workflow grounding and experiential reuse. Direct comparisons with general-purpose agent frameworks are confounded by fundamental disparities in their underlying diagnostic paradigms. For instance, most existing models focus on exam-centric reasoning like USMLE-style scenarios, or are optimized for patient-physician dialogues. These settings diverge significantly from the sequential, uncertainty-laden investigation inherent to real-world clinical workups, where evidence is latent and must be actively requisitioned. To preserve domain fidelity, DxEvolve is intentionally archi-tected to mirror the structured rigor of actual bedside practice, where evidence is latent and must be actively requisitioned. Such divergent information-access constraints and interaction modes make evaluation parity non-trivial; benchmarking against a stan-dardized, workflow-aligned baseline and its corresponding ablations therefore ensures that observed gains are strictly attributable to our architectural innovations rather than artifacts of mismatched task definitions. 
+
+## 4.6 Evaluation and analysis 
+
+This section defines the evaluation protocol and analysis definitions used throughout the study. We report encounter-level diagnosis accuracy under the DCR workflow, complemented by regime comparisons against single-pass full-information (FI) infer-ence, exposure-indexed self-evolution analyses based on DCP accrual, and process-level metrics that characterize evidence-acquisition behaviour. All analyses were conducted on held-out evaluation cohorts with prespecified encounter-level definitions. 
+
+Episodes, regimes and primary endpoint. Each diagnostic episode starts from the presenting complaint and limited initial context. The agent iteratively issues actions to request additional evidence and receives results only for requested items. Episodes terminate when the agent outputs a final primary diagnosis or reaches a prespecified maximum number of 20 interaction steps. The primary endpoint is encounter-level correctness of the final primary diagnosis; episodes that terminate without a valid diagnosis output are scored as incorrect. We report two regimes that differ only in information availability and interaction constraints. In the interactive regime, the agent must explicitly request evidence and may condition decisions only on evidence acquired within the episode. In single-pass full-information (FI) inference, the model receives the complete record upfront and produces a single-step diagnosis. Single-pass FI inference was evaluated only on the reader-study subset ( n=80) as a matched control. 
+
+Investigative burden and stratification. To analyze the efficacy of DxEvolve across varying levels of diagnostic difficulty, we defined an investigative complexity proxy derived from the baseline diagnostic burden. For each encounter, complex-ity was quantified as the evidence-acquisition footprint—defined as the total number of investigative steps required by the baseline CDM model to reach termination. Encounters were stratified into “high-burden” and “low-burden” groups based on a 21 median split of this footprint across the 400-case evaluation cohort. This stratification allowed us to assess whether experience-guided evolution provides differential benefits in cases requiring extensive iterative reasoning versus more straightforward clinical presentations. 
+
+Longitudinal self-evolution and improvement cases provenance. To quan-tify exposure-dependent self-evolution, we varied the number of encounters available for DCP accrual while holding the evaluation cohort fixed ( n=400). Accrual encoun-ters were ordered deterministically, and DCP repositories were constructed in a nested manner: at exposure level k, the repository contains DCPs consolidated from the first 
+
+k accrual encounters. This design yields an exposure-indexed learning curve without repeated re-sampling. The DCP-free ablation (DxEvolve w/o DCP) is exposure-independent by construction and was evaluated under the same interactive constraints as a reference. To isolate evaluation encounters in which DCP reuse plausibly contributes to error correction, we defined improvement cases as evaluation encounters satisfying all of the following criteria: (i) DxEvolve produced a correct primary diagnosis, (ii) DxEvolve w/o DCP produced an incorrect diagnosis under the same workflow constraints, and (iii) DxEvolve retrieved at least one DCP during the episode. For provenance analyses, each retrieved DCP was labeled by the outcome of its source accrual episode at the time of consolidation (correct versus incorrect primary diagnosis). We quantified provenance enrichment by comparing the distribution of source-episode outcomes among DCPs retrieved in improvement cases against the corresponding distribution among DCPs retrieved across the full evaluation cohort (that is, pooling retrieval events over all evaluation encounters). Unless otherwise stated, provenance analyses were performed using the fixed accrual pool defined by the non-overlapping MIMIC-CDM split. 
+
+Clinician assessment of DCP clinical maturation. To assess whether DCPs consolidated later in exposure are more clinically useful and reusable, we conducted a clinician reader study contrasting an early exposure window (encounters 1–300) and a late exposure window (encounters 1700–2000). For this assessment, we recruited two board-certified internal medicine physicians, one from the Chinese PLA General Hos-pital, China (with 15 years of clinical experience), one from the Peking University Third Hospital, China (with 8 years of clinical experience). Clinicians were masked to the exposure window of each DCP and the study hypothesis. From each window, we randomly sampled 20 DCPs (40 total). Each DCP was presented in its native three-part format (experience pattern, test-ordering experience and diagnostic deci-sion experience) with all provenance metadata removed (including exposure index, source outcome and pathology labels) and translated to Chinese via a standardized translation procedure followed by terminology checks. Two board-certified clinicians independently rated each DCP on a 1–5 ordinal scale across three prespecified dimen-sions: clinical correctness (including potential safety concerns), actionability (capacity to guide evidence acquisition and hypothesis refinement in an interactive workflow) and generality (reusability beyond the originating encounter and pathology). Rating order was randomized and raters were blinded to sampling window and DCP source. Inter-rater agreement for the clinician ratings was assessed using ordinal-appropriate 22 reliability metrics (quadratic-weighted Cohen’s κ and intraclass correlation). Agree-ment for the aggregate DCP score (mean across the three dimensions) was high (weighted κ=0 .83, ICC= 0 .81), supporting the reliability of the clinician assessment for downstream analyses. For analysis and visualization, ratings were aggregated by averaging the two clinicians’ scores for each dimension and for the aggregate score. 
+
+Process-level behaviour. We assessed evidence-acquisition behaviour by com-paring the investigations requested by each method (DxEvolve and the CDM baseline) with those documented in the MIMIC-CDM structured record for the same encounters (n=400). All metrics were averaged across encounters. 
+
+• Trajectory consistency. We quantified workup consistency using four comple-mentary measures. (i) Physical examination (PE) agreement was a binary indicator of whether the agent requested a physical examination at any point in the episode (1 if requested, 0 otherwise). (ii) Laboratory-set F1 compared the set of laboratory tests ordered by the agent with the set recorded in MIMIC-CDM using a set-level F1 score. Before scoring, laboratory item identifiers were canonicalized using a precomputed mapping that collapses equivalent codes to a canonical identifier, reducing artefac-tual disagreement due to coding variations. Precision reflects avoidance of unnecessary tests, whereas recall reflects coverage of recorded tests. (iii) Imaging-set F1 was com-puted analogously, but over sets of (modality, region) tuples extracted from imaging requests, and a match required agreement on both modality and region. (iv) Action-order concordance evaluated whether the relative ordering of broad investigation types followed the reference clinical ordering. We restricted comparison to the intersection of investigation types executed by both the agent and the record; if fewer than two types were present, concordance was defined as 1. Otherwise, we computed pairwise concordance as the fraction of ordered pairs ( a, b ) consistent with the reference order that were also ordered as a before b in the agent’s episode. 
+
+• Clinical guideline adherence proxies. We additionally scored adherence to guideline-informed workup expectations using rules-based proxies with three compo-nents, reported on a 0–100 scale and averaged to form an overall score. (i) PE timing score captured whether PE was performed as the first workup step (100), performed later (50) or not performed (0). (ii) Laboratory adherence score measured coverage of pathology-specific recommended laboratory categories with a two-tier weighting scheme: primary tests contributed weight 1.0 each, secondary tests contributed weight 0.5 each with the total secondary contribution capped by the primary maximum to prevent inflation by extensive secondary testing; scores were normalized by the maximum attainable weight for the pathology. (iii) Imaging adherence score evalu-ated only the first imaging study, scoring whether its modality and region matched a pathology-specific preferred option (100), an acceptable alternative (50) or other-wise (0), including missing imaging. Guideline categories and imaging preferences were derived from established society guidelines (WSES [49–51] for appendicitis, divertic-ulitis and pancreatitis; Tokyo Guidelines [52] for cholecystitis), and this analysis was intended as a conservative, descriptive check for gross deviations rather than a claim of a single optimal workup for all clinical contexts. 23 Data availability 
+
+The MIMIC-IV dataset is available via PhysioNet subject to completion of the required data-access training and a data use agreement. The MIMIC-CDM benchmark used in this study is derived from MIMIC-IV and is available from the original release at https://physionet.org/content/mimic-iv-ext-cdm under the same terms. After obtain-ing access to MIMIC-CDM, the data preprocessing and cohort-splitting scripts used in this study (to reproduce the non-overlapping accrual and evaluation partitions) are available at https://github.com/RUCAIBox/DxEvolve. The external cohort from the Chinese PLA General Hospital is not publicly available due to institutional data-governance requirements. Access to the minimum dataset necessary to reproduce the external-cohort analyses may be considered for qualified researchers, subject to approval by the hospital’s data governance procedures and execution of an appropriate data-use agreement; requests should be directed to the corresponding authors. 
+
+# Code availability 
+
+The code for DxEvolve is available at https://github.com/RUCAIBox/DxEvolve. All prompts used in DxEvolve are included in the Supplementary Information. 
+
+# References 
+
+[1] Graber, M. L., Franklin, N. & Gordon, R. Diagnostic error in internal medicine. 
+
+Archives of internal medicine 165 , 1493–1499 (2005). [2] Singh, H. & Sittig, D. F. Advancing the science of measurement of diagnostic errors in healthcare: the safer dx framework. BMJ quality & safety 24 , 103–110 (2015). [3] Singh, H., Meyer, A. N. & Thomas, E. J. The frequency of diagnostic errors in outpatient care: estimations from three large observational studies involving us adult populations. BMJ quality & safety 23 , 727–731 (2014). [4] Norman, G. R. et al. The causes of errors in clinical reasoning: cognitive biases, knowledge deficits, and dual process thinking. Academic Medicine 92 , 23–30 (2017). [5] Dalal, A. K. et al. Adverse diagnostic events in hospitalised patients: a single-centre, retrospective cohort study. BMJ Quality & Safety 34 , 377–388 (2025). [6] Ball, J. R., Miller, B. T. & Balogh, E. P. Improving Diagnosis in Health Care 
+
+(National Academies Press, 2016). [7] Schwartzstein, R. M. & Iyer, A. A. Critical thinking for 21st-century medicine—moving beyond illness scripts. JAMA 334 , 1509–1510 (2025). 24 [8] Mahajan, A., Obermeyer, Z., Daneshjou, R., Lester, J. & Powell, D. Cognitive bias in clinical large language models. npj Digital Medicine 8, 428 (2025). [9] Ferber, D. et al. Development and validation of an autonomous artificial intel-ligence agent for clinical decision-making in oncology. Nature cancer 1–13 (2025). [10] Nenadic, I. et al. Physicians as context engineers in the era of generative AI. 
+
+Nature Medicine (2026). URL https://doi.org/10.1038/s41591-026-04215-x. [11] Singhal, K. et al. Large language models encode clinical knowledge. Nature 620 ,172–180 (2023). [12] Achiam, J. et al. Gpt-4 technical report. arXiv preprint arXiv:2303.08774 (2023). [13] Eriksen, A. V., M¨ oller, S. & Ryg, J. Use of gpt-4 to diagnose complex clinical cases (2024). [14] Savage, T., Nayak, A., Gallo, R., Rangan, E. & Chen, J. H. Diagnostic reasoning prompts reveal the potential for large language model interpretability in medicine. 
+
+NPJ Digital Medicine 7, 20 (2024). [15] Qiu, P. et al. Quantifying the reasoning abilities of llms on clinical cases. Nature Communications 16 , 9799 (2025). [16] Gong, E. J., Bang, C. S., Lee, J. J. & Baik, G. H. Knowledge-practice perfor-mance gap in clinical large language models: Systematic review of 39 benchmarks. 
+
+Journal of Medical Internet Research 27 , e84120 (2025). [17] McCoy, L. G. et al. Assessment of large language models in clinical reasoning: a novel benchmarking study. NEJM AI 2, AIdbp2500120 (2025). [18] Bean, A. M. et al. Reliability of LLMs as medical assistants for the general public: a randomized preregistered study. Nature Medicine (2026). URL https: //doi.org/10.1038/s41591-025-04074-y. [19] Han, T. et al. Comparative analysis of multimodal large language model performance on clinical vignette questions. JAMA 331 , 1320–1321 (2024). [20] Kaczmarczyk, R., Wilhelm, T. I., Martin, R. & Roos, J. Evaluating multimodal ai in medical diagnostics. npj Digital Medicine 7, 205 (2024). [21] McDuff, D. et al. Towards accurate differential diagnosis with large language models. Nature 1–7 (2025). [22] Z¨ oller, N. et al. Human–ai collectives most accurately diagnose clinical vignettes. 
+
+Proceedings of the National Academy of Sciences 122 , e2426153122 (2025). 25 [23] Bhasuran, B. et al. Preliminary analysis of the impact of lab results on large language model generated differential diagnoses. npj Digital Medicine 8, 166 (2025). [24] Li, W. et al. Macd: Multi-agent clinical diagnosis with self-learned knowledge for llm. arXiv preprint arXiv:2509.20067 (2025). [25] Chen, X. et al. Enhancing diagnostic capability with multi-agents conversational large language models. NPJ digital medicine 8, 159 (2025). [26] Zhao, W. et al. An agentic system for rare disease diagnosis with traceable reasoning. Nature 1–10 (2026). [27] Charlin, B., Boshuizen, H. P., Custers, E. J. & Feltovich, P. J. Scripts and clinical reasoning. Medical education 41 , 1178–1184 (2007). [28] Xu, W. et al. Zaimis, E. (ed.) A-mem: Agentic memory for llm agents . (ed.Zaimis, E.) Advances in Neural Information Processing Systems (2025). [29] Li, J. et al. Agent hospital: A simulacrum of hospital with evolvable medical agents. arXiv preprint arXiv:2405.02957 (2024). [30] Food, U., Administration, D. et al. Transparency for machine learning-enabled medical devices: Guiding principles. US Food And Drug Administration. Retrieved June 30 , 2024 (2024). [31] Babic, B., Glenn Cohen, I., Stern, A. D., Li, Y. & Ouellet, M. A general framework for governing marketed ai/ml medical devices. npj Digital Medicine 8, 328 (2025). [32] Liu, X. et al. A generalist medical language model for disease diagnosis assistance. 
+
+Nature medicine 31 , 932–942 (2025). [33] Kore, A. et al. Empirical data drift detection experiments on real-world medical imaging data. Nature communications 15 , 1887 (2024). [34] Subasri, V. et al. Detecting and remediating harmful data shifts for the responsi-ble deployment of clinical ai models. JAMA Network Open 8, e2513685–e2513685 (2025). [35] Dong, S. et al. Zaimis, E. (ed.) Memory injection attacks on llm agents via query-only interaction . (ed.Zaimis, E.) Advances in Neural Information Processing Systems (2025). [36] Moor, M. et al. Foundation models for generalist medical artificial intelligence. 
+
+Nature 616 , 259–265 (2023). [37] Tu, T. et al. Towards conversational diagnostic artificial intelligence. Nature 642 ,442–450 (2025). 26 [38] Nori, H. et al. Sequential diagnosis with language models. arXiv preprint arXiv:2506.22405 (2025). [39] Rajpurkar, P., Chen, E., Banerjee, O. & Topol, E. J. Ai in health and medicine. 
+
+Nature medicine 28 , 31–38 (2022). [40] Hager, P. et al. Evaluation and mitigation of the limitations of large language models in clinical decision-making. Nature Medicine (2023). URL https://doi. org/10.1038/s41591-024-03097-1. [41] Johnson, A. E. et al. Mimic-iv, a freely accessible electronic health record dataset. 
+
+Scientific data 10 , 1 (2023). [42] Yang, A. et al. Qwen3 technical report. arXiv preprint arXiv:2505.09388 (2025). [43] Liu, A. et al. Deepseek-v3. 2: Pushing the frontier of open large language models. 
+
+arXiv preprint arXiv:2512.02556 (2025). [44] Team, G. et al. Glm-4.5: Agentic, reasoning, and coding (arc) foundation models (2025). URL https://arxiv.org/abs/2508.06471. arXiv:2508.06471. [45] Sellergren, A. et al. Medgemma technical report. arXiv preprint arXiv:2507.05201 
+
+(2025). [46] Toma, A. et al. Clinical camel: An open expert-level medical language model with dialogue-based knowledge encoding. arXiv preprint arXiv:2305.12031 (2023). [47] Xiao, S., Liu, Z., Zhang, P. & Muennighoff, N. C-pack: Packaged resources to advance general chinese embedding (2023). arXiv:2309.07597. [48] Johnson, J., Douze, M. & J´ egou, H. Billion-scale similarity search with GPUs. 
+
+IEEE Transactions on Big Data 7, 535–547 (2019). [49] Di Saverio, S. et al. Diagnosis and treatment of acute appendicitis: 2020 update of the wses jerusalem guidelines. World journal of emergency surgery 15 , 27 (2020). [50] Sartelli, M. et al. 2020 update of the wses guidelines for the management of acute colonic diverticulitis in the emergency setting. World Journal of Emergency Surgery 15 , 32 (2020). [51] Lepp¨ aniemi, A. et al. 2019 wses guidelines for the management of severe acute pancreatitis. World journal of emergency surgery 14 , 27 (2019). [52] Yokoe, M. et al. Tokyo guidelines 2018: diagnostic criteria and severity grading of acute cholecystitis (with videos). Journal of Hepato-biliary-pancreatic Sciences 
+
+25 , 41–54 (2018). 27 Supplementary Information 
+
+# A Diagnostic Prompt Template 
+
+The following is the main diagnostic prompt template of DxEvolve used in all exper-iments across various base models reported in this paper, with medical examinations, experience retrieval, clinical guidelines, and PubMed search enabled. Template vari-ables are shown in {braces }. The tags {system tag start }, {system tag end },
+
+{user tag start }, {user tag end }, and {ai tag start } are replaced with model-specific chat delimiters at runtime. 
+
+Supplementary Table 1 : Diagnostic Prompt Template. 
+
+{system tag start }
+
+You are a senior physician. Your task is to perform stepwise diagnostic reasoning using ONLY the allowed tools. You must strictly follow one of the two output formats below at every step. FORMAT A. INFORMATION GATHERING Thought: [1-2 concise sentences: what you know + what uncertainty remains + why next action is needed] Action: [One of: Physical Examination, Laboratory Tests, Imaging, Experience Search, Guideline Search, PubMed Search] Action Input: [Specific and valid request, MUST be within tool scope] Observation: [The system will fill this. DO NOT include any results yourself.] FORMAT B. FINAL DIAGNOSIS Thought: [1-2 concise sentences summarizing key findings leading to the diagnosis] Final Diagnosis: [Single, clear, concise, and standard diagnosis. (Avoid overly com-plex or speculative etiological chains, focus on the most likely and commonly recognized diagnosis.)] STRICT RULES: 1. You MUST always follow the exact format (A or B). No deviations. 2. For any test, ONLY request those allowed by the corresponding tool. - Laboratory Tests: only valid lab names. - Imaging: must specify ‘ <REGION > < MODALITY >’ format (e.g., ‘Abdomen Ultrasound’, ‘Abdomen CT’). - No invented tests, no unsupported modalities. 3. Before giving the final diagnosis, you MUST explicitly perform all three core types of medical evaluation as actions – at least one Physical Examination, one Laboratory Test, and one Imaging. - Consider all clinically relevant imaging modalities for the suspected condition. 
+
+Continued on next page 
+
+S1 - Do not omit a modality that is commonly recommended or diagnostically critical unless it is clearly inappropriate. 4. You MUST use Experience Search at least once before giving the final diagnosis. - In Action Input you SHOULD provide a short case style description of this patient (age, sex, chief complaint, symptom pattern, duration, key exam or lab or imaging findings), not just a single disease keyword. - If the retrieved experience is clearly irrelevant or not useful, you may reformulate the Action Input once and try a second Experience Search query. Do NOT keep searching repeatedly. - Only integrate insights that are consistent with this patient’s objective data. 5. You MUST use Guideline Search at least once before giving the final diagnosis. 6. Stop when a confident diagnosis is possible based on available information. 7. When using Experience Search, Guideline Search, or PubMed Search, integrate only relevant insights into your Thought and proceed; do not rely on them if they conflict with patient-specific objective data. 8. If uncertainty remains but no high-yield action exists, you MUST provide the best-supported diagnosis (Format B) based on currently available data, without loop actions indefinitely. CRITICAL FORMAT RULES: 1. MUST output the ”Observation:” label immediately after Action Input as a signal to pause for respond. 2. Keep ”Action”, ”Action Input” and ”Final Diagnosis” fields concise and to the point. AVAILABLE TOOLS: - Physical Examination: Request physical examination of patient and receive the observations. This is a strongly recommended Examination in the clinical diagnostic process and should be performed first. - Laboratory Tests: Request specific laboratory test and receive text values. Specify test names in ’Action Input’ clearly. This is a common diagnostic step in the clinical evaluation. - Imaging: Request imaging scans and receive the radiologist report. Region AND modality MUST be specified in the ’Action Input’ field. - Experience Search: Dense retrieval over past diagnostic cases. Action Input SHOULD be a short case style description of this patient, not just a disease name. - Guideline Search: Retrieve relevant clinical guidelines. Provide a concise clini-cal query in ”Action Input” (symptoms, suspected diagnosis, key labs/imaging, or decision point). - PubMed Search: Conduct targeted search on PubMed and receive relevant medical articles. Concise and specific search query (few KEYWORDS) MUST be specified in ”Action Input”. 
+
+Continued on next page 
+
+S2 BE EFFICIENT: Prioritize high-yield diagnostic actions before broad or low-yield ones. Some medical examination information may not be available, do not focus on the unavailable data, make full use of the information that can be obtained to diagnose. 
+
+{system tag end }{ user tag start }
+
+Patient History: 
+
+{input }
+
+BEGIN YOUR DIAGNOSTIC PROCESS: 
+
+{user tag end }{ ai tag start }
+
+Thought: {agent scratchpad }
+
+Annotation. The prompt instructs the LLM to act as a senior physician per-forming stepwise diagnostic reasoning in an action-based loop. Two output formats are enforced: Format A for iterative information gathering (Thought → Action →
+
+Observation) and Format B for the final diagnosis with thought. 
+
+# B Experience Construction Prompt Template 
+
+After each diagnostic case is completed, the following template is used to distill the case into a reusable diagnostic cognition primitive (DCP) through reflection on the diagnostic trajectory. The DCP is stored in the DCP repository for retrieval in future cases. 
+
+Supplementary Table 2 : Experience Construction Prompt. 
+
+{system tag start }
+
+You extract reusable diagnostic reasoning experience from completed clinical cases for future tool using agents. Your goal: - Do NOT retell the full case or reproduce chain of thought. - Do NOT include treatment. - Distill ONE Diagnostic Cognition Primitive (DCP): a short heuristic that improves future diagnosis. The DCP must: - Be consistent with the ground truth diagnosis and the correctness flag. - Focus on diagnostic reasoning, not management or consultation. - Emphasize when and how to use ONLY the following tools in future similar cases: - Physical Examination (no additional input) - Laboratory Tests (input: names of the lab tests to run) 
+
+Continued on next page 
+
+S3 - Imaging (input: imaging modality and region to be scanned) Tool input templates (copyable): - Physical Examination - Laboratory Tests: <test name 1 >, <test name 2 >, ... - Imaging: modality= <MODALITY >, region= <REGION >
+
+Coverage constraints: - Only recommend tests or imaging settings that are explicitly supported by the provided case context, meaning they appear in at least one of: 1) Clinician test orders (from the chart). Use this as a high quality reference for realistic first line test selection and sequencing. 2) Diagnostic steps where the tool call succeeded (has a non-error observation) 3) Rule based feedback ‘message’ or retrieved guidance that explicitly recom-mends a specific test or imaging setting - Prefer to fully cover the explicitly provided clinician orders and successful tool calls before adding anything else. - Do not invent new tests, imaging modalities, regions, or non-provided measure-ment names. Field roles: - Experience Pattern: - Case-style trigger pattern for retrieval, built from symptoms, basic context, and key objective findings. - You may append compact labels such as the final correct diagnosis and common misdiagnoses to improve retrieval. - Test Ordering Experience: - Constructive test-ordering heuristic using only the allowed tools and tool-compatible inputs. - You may rank actions by priority and specify escalation criteria, in natural clinical language. - Avoid blanket prohibitions. If a test is lower priority, express it as conditional or deferred rather than discouraged. - When naming tests or imaging, use the copyable tool input templates above. - Diagnostic Decision Experience: - Short rule on how to weigh key findings and move from differential diagnosis to the correct final diagnosis. Error correction rules: - If correctness is ”Correct”: - Treat the model’s diagnostic process as broadly appropriate. - Extract the most reusable diagnostic pattern and test ordering heuristic. - If correctness is ”Incorrect”: 
+
+Continued on next page 
+
+S4 - Treat the model’s final diagnosis and reasoning as a negative example. - Do NOT justify or reuse the incorrect diagnosis. - Use the ground truth and the rule based feedback in ‘message’ as the primary reference. - Base the DCP on the ideal diagnostic process implied by that feedback. Input fields: - Patient input: raw case description. - Diagnostic steps: chronological list of tool calls and observations. - Model final diagnosis: what the model concluded. - Ground truth diagnosis: correct diagnosis label for this case. - Correctness flag: ”Correct” or ”Incorrect”. - Rule based feedback: comments about missing exams, unnecessary tests, wrong imaging, and efficiency. - Clinician test orders (from the chart): tests ordered by the treating clinician as documented in the chart, expressed with the same tool names and inputs, and serving as a realistic reference for first line test selection and sequencing. Case context: Patient input: 
+
+{input }
+
+Diagnostic steps: 
+
+{intermediate steps }
+
+Model final diagnosis: 
+
+{output }
+
+Ground truth diagnosis: 
+
+{ground truth }
+
+Correctness flag: 
+
+{correctness }
+
+Rule based feedback on process: 
+
+{message }
+
+Clinician test orders (from the chart): 
+
+{clinician }
+
+Now output exactly in this format: 
+
+Continued on next page 
+
+S5 Experience Pattern: <case-style trigger pattern for retrieval. may include final correct diagnosis and frequent misdiagnoses as compact labels >
+
+Test Ordering Experience: <priority ranked ordering sequence and escalation criteria, using the tool input templates and respecting the coverage constraints >
+
+Diagnostic Decision Experience: <concise rule on how to weigh key findings and reach the correct diagnosis, aligned with ground truth and rule based feedback >
+
+{system tag end }{ai tag start }
+
+Annotation. This template implements the Experience Construction module that generates DCPs from completed cases. Each DCP consists of three fields: (1) Expe-rience Pattern, a case-style trigger description optimized for dense retrieval; (2) Test Ordering Experience, a prioritized test-ordering heuristic grounded in clinician orders and successful tool calls; and (3) Diagnostic Decision Experience, a concise rule for weighing findings toward the correct diagnosis. The {message } variable con-tains rule-based evaluator feedback on the diagnostic process, which identifies missing examinations, unnecessary tests, or procedural deviations based on pathology-specific evaluation criteria. For example, if the agent failed to request appropriate imaging for suspected appendicitis, the feedback might state: “Imaging: no appropriate abdomi-nal imaging was requested. Set region=‘Abdomen’ and request imaging (ultrasound is typically preferred in pediatric or pregnant patients, while CT is generally recom-mended for adult non-pregnant patients).” This feedback guides the DCP construction to emphasize the correct diagnostic workflow. The {clinician } variable provides real clinician test orders extracted from the MIMIC-IV chart, serving as a high-quality reference for realistic test selection and sequencing. 
+
+# C Example Diagnostic Cognition Primitive 
+
+The following is a representative DCP generated through reflection on the diagnostic trajectory from a correctly diagnosed case of acute biliary pancreatitis. This DCP is stored in the DCP repository and retrieved via vector-based dense retrieval when the agent encounters similar presentations in future cases. 
+
+Supplementary Table 3 : Example DCP (Correct Case). Experience Pattern: Post-cholecystectomy patient with acute RUQ/back pain, elevated liver enzymes and lipase. (Acute pancreatitis, DDx: Biliary pancreatitis vs. other etiologies) Test Ordering Experience: 
+
+Continued on next page 
+
+S6 First, confirm pancreatitis with Laboratory Tests: Lipase, Amylase, CBC, CMP. Concurrently, order first-line biliary imaging: Imaging: modality=Ultrasound, region=Abdomen. If ultrasound is negative for stones/dilation but liver enzymes remain elevated, escalate to definitive biliary evaluation (ERCP) per clinician orders; do not escalate to CT or MRCP without specific indications (e.g., concern for complications or failed ERCP). Diagnostic Decision Experience: In a post-cholecystectomy setting, acute pancreatitis with concurrent transamini-tis/hyperbilirubinemia is biliary in origin until proven otherwise, even with a negative initial ultrasound, as microlithiasis or sphincter dysfunction may be the cause. Below is a second example DCP generated from an incorrectly diagnosed case, demonstrating the error correction mechanism. The agent originally diagnosed “adhe-sive small bowel obstruction” but the ground truth was cholecystitis. 
+
+Supplementary Table 4 : Example DCP (Incorrect Case). Experience Pattern: Young to middle-aged female with acute right abdominal pain, sharp on palpation, bilious vomiting, chills, and history of prior abdominal surgeries (e.g., laparo-scopies). Past medical history of endometriosis. (Correct: cholecystitis; Common misdiagnosis: adhesive small bowel obstruction) Test Ordering Experience: 1. Physical Examination. 2. Laboratory Tests: CBC differential, CMP, (Blood) Lactate, (Urine) HCG. 3. Imaging: modality=Ultrasound, region=Abdomen. Escalate to further imaging (e.g., CT) only if ultrasound is non-diagnostic and clinical suspicion for obstruction or other complication remains high. Diagnostic Decision Experience: In a patient with right upper quadrant or right-sided abdominal pain, vomiting, and chills, prioritize gallbladder pathology. A history of prior surgery should not prematurely anchor to adhesive obstruction; a finding of gallstones on ultrasound, especially with local tenderness, strongly supports cholecystitis over obstruction. 
+
+Annotation. The first DCP illustrates how a correctly diagnosed case is consolidated into a reusable experience artifact. The experience pattern provides a high-salience signature for retrieval, summarizing the presentation and discriminative cues. The test-ordering experience encodes actionable workup guidance, including high-yield next-step evaluations and contingency options. The diagnostic decision experience captures S7 evidence-linked implications for hypothesis refinement and final decision-making. The second DCP demonstrates how corrective lessons are incorporated when the source trajectory exposed an error mode: when the agent misdiagnosed cholecystitis as small bowel obstruction in a case with atypical presentation, the DCP was constructed from the ground truth and evaluator feedback, explicitly labeling the common misdiagnosis and providing the correct reasoning pathway. 
+
+# D Example Diagnostic Reasoning Trace 
+
+The following is a complete diagnostic reasoning trace from a real case in the MIMIC-CDM benchmark, showing the agent’s stepwise process from initial presentation to final diagnosis. The case involves an elderly patient with diabetes presenting with acute right upper quadrant abdominal pain, ultimately diagnosed with acute calculous cholecystitis. 
+
+Supplementary Table 5 : Example Diagnostic Reasoning Trace. Patient History: Elderly male patient with history of type 2 diabetes mellitus on insulin, hypothy-roidism, hypertension, and prostate cancer status-post radiotherapy presented to the emergency department with acute onset abdominal pain. The patient reported that the pain began suddenly at approximately 3 AM, waking him from sleep. He described it as sharp, constant, and localized to the right side of the abdomen. When the pain persisted, he initially attempted to contact his primary care physician but was unable to secure an appointment, prompting him to call emergency services. In the emergency department, initial vital signs were temperature 98 °F, blood pres-sure 150/86 mmHg, heart rate normal, respiratory rate 16 breaths per minute, oxygen saturation 100% on room air. Initial laboratory studies showed lactate 2.3 mmol/L, glucose 279 mg/dL, normal liver function tests, and hematocrit 33.2%. Right upper quadrant ultrasound demonstrated extrahepatic biliary duct dilation with common bile duct measuring 10 mm and presence of gallstones. Computed tomography of the abdomen and pelvis confirmed these findings. He was treated with intravenous fluids, morphine for pain control, and ondansetron for nausea. On admission to the hospital floor, the patient reported improved but persistent right upper quadrant abdominal pain. He endorsed dry heaves and constipation, with his last bowel movement occurring two days prior. He denied fever, chills, chest pain, or shortness of breath. 
+
+Continued on next page 
+
+S8 Past Medical History: Prostate cancer status-post radiotherapy, type 2 diabetes mellitus on insulin, hypertension, hypothyroidism, chronic kidney disease stage III, history of gallstones, nephrolithiasis, osteoarthritis, glaucoma, cataracts, sickle cell trait, hearing loss. Past Surgical History: Pilonidal cyst excision, bilateral inguinal hernia repairs. Social History: Details not specified. Family History: Type 2 diabetes mellitus in family members; no family history of prostate cancer. Step 1: Physical Examination Action: Physical Examination Observation: Vitals: Temperature 98.2 °F, BP 148/68 mmHg, HR 90 bpm, RR 20, O2 sat 100%. General: Alert and oriented, no acute distress. HEENT: Sclerae anicteric, moist mucous membranes, oropharynx clear, pupils equal and reactive to light, bilateral cloudy lenses (cataracts). Cardiovascular: Regular rate and rhythm, normal S1 and S2 heart sounds, no murmurs, rubs, or gallops. Pulmonary: Clear to auscultation bilaterally, no wheezes, rales, or rhonchi. Abdomen: Soft, tender to palpation in the right upper quadrant, non-distended, bowel sounds present, no organomegaly, no rebound tenderness or guarding. Genitourinary: No Foley catheter in place. Extremities: Warm and well-perfused, 2+ pulses bilaterally, no clubbing, cyanosis, or edema. Neurological: Cranial nerves II-XII grossly intact, strength grossly intact, noted hearing loss. Step 2: Laboratory Tests 
+
+Continued on next page 
+
+S9 Action: Laboratory Tests Action Input: Complete blood count with differential, comprehensive metabolic panel, lipase Observation: White Blood Cell Count: 7.6 K/uL (reference range: 4.0–11.0 K/uL) Neutrophils: 89.1%, Absolute Neutrophil Count: 6.77 K/uL [Elevated, indicating neutrophilia] Lymphocytes: 6.4%, Absolute Lymphocyte Count: 0.49 K/uL Monocytes: 3.2%, Absolute Monocyte Count: 0.24 K/uL Eosinophils: 0.4%, Absolute Eosinophil Count: 0.03 K/uL Basophils: 0.5%, Absolute Basophil Count: 0.04 K/uL Red Blood Cell Count: 4.73 M/uL Hemoglobin: 11.2 g/dL (reference range: 13.5–17.5 g/dL) [Low] Hematocrit: 33.2% (reference range: 41–53%) [Low] MCV: 70.0 fL (reference range: 80–100 fL) [Low, microcytic] MCH: 23.7 pg (reference range: 27–31 pg) [Low] MCHC: 33.7 g/dL (reference range: 32–36 g/dL) Platelet Count: 156 K/uL (reference range: 150–400 K/uL) RDW: 14.6% (reference range: 11.5–14.5%) Glucose: 279 mg/dL (reference range: 70–100 mg/dL) [Elevated] Sodium: 141 mEq/L (reference range: 136–145 mEq/L) Potassium: 3.6 mEq/L (reference range: 3.5–5.1 mEq/L) Chloride: 99 mEq/L (reference range: 98–107 mEq/L) 
+
+Continued on next page 
+
+S10 Bicarbonate: 25 mEq/L (reference range: 22–29 mEq/L) Blood Urea Nitrogen: 19 mg/dL (reference range: 7–20 mg/dL) Creatinine: 1.1 mg/dL (reference range: 0.7–1.3 mg/dL) Calcium, Total: 9.3 mg/dL (reference range: 8.5–10.5 mg/dL) Alanine Aminotransferase (ALT): 43 IU/L (reference range: 7–56 IU/L) Aspartate Aminotransferase (AST): 30 IU/L (reference range: 10–40 IU/L) Alkaline Phosphatase: 91 IU/L (reference range: 40–150 IU/L) Total Bilirubin: 0.6 mg/dL (reference range: 0.3–1.2 mg/dL) Lipase: 12 IU/L (reference range: 7–60 IU/L) Step 3: Imaging (Abdominal Ultrasound) Action: Imaging Action Input: Abdomen Ultrasound (focused on gallbladder and biliary tree) Observation: Right Upper Quadrant Ultrasound: TECHNIQUE: Grayscale and color Doppler ultrasound images of the abdomen. FINDINGS: Liver: Homogenous attenuation throughout. No focal lesions identified. Hepatobiliary: Mild intrahepatic and extrahepatic biliary duct dilation noted. Com-mon bile duct measures 12 mm in diameter. Gallbladder contains gallstones without wall thickening or surrounding inflammation visible on this initial study. Trace pericholecystic free fluid noted. Pancreas: Diffuse pancreatic atrophy. No pancreatic duct dilation or peripancreatic fat stranding. 
+
+Continued on next page 
+
+S11 Spleen: Normal size and attenuation, no focal lesions. Kidneys: Bilateral subcentimeter renal hypodensities too small to characterize. A 6.1 × 5.6 cm simple cyst in the interpolar region of the left kidney. No hydronephrosis or perinephric abnormality. IMPRESSION: Cholelithiasis, common bile duct dilation (12 mm), trace perichole-cystic fluid. Recommend correlation with clinical findings and consider advanced biliary imaging if indicated. Step 4: Experience Search Action: Experience Search Action Input: Elderly male with diabetes, acute RUQ pain, leukocytosis, normal LFTs, imaging shows acute cholecystitis (gallbladder wall edema, pericholecystic fluid) and common bile duct dilation with papillary stenosis from passed stones Observation: Case 1: Experience Pattern: Elderly female with known gallstones and prior biliary interven-tion (ERCP/stent) presents with acute right upper quadrant pain and tenderness; normal white blood cell count and liver enzymes; ultrasound shows gallstones, gallbladder wall thickening, and common bile duct dilation. [Correct: Acute Cholecystitis — Misdiagnoses: Cholangitis, Biliary Colic, Pancreatitis] Test Ordering Experience: First, perform a Physical Examination focusing on abdominal signs. Then, order initial Laboratory Tests: CBC, CMP (including liver enzymes and bilirubin), and lipase. If these are normal but suspicion remains, esca-late to Laboratory Tests: C-reactive protein (CRP). For imaging, the first and often definitive test is Imaging: modality=Ultrasound, region=Abdomen (specifi-cally right upper quadrant). Do not escalate to CT or MRCP unless the ultrasound is non-diagnostic or complications are suspected. Diagnostic Decision Experience: In a patient with known gallstones, acute RUQ pain/tenderness, and ultrasound findings of gallstones with gallbladder wall thick-ening, diagnose acute cholecystitis even if inflammatory markers and LFTs are normal; CBD dilation and pneumobilia in this context are likely chronic sequelae of prior ERCP and do not rule out cholecystitis. [Additional guidelines omitted for brevity] 
+
+Continued on next page 
+
+S12 Step 5: Imaging (MRCP) Action: Imaging Action Input: Abdomen MRCP Observation: Magnetic Resonance Cholangiopancreatography (MRCP): TECHNIQUE: T1- and T2-weighted multiplanar images of the abdomen acquired in a 1.5 T magnet. Intravenous contrast: 9 mL Gadavist. Oral contrast: 1 cc of Gadavist mixed with 50 cc of water. FINDINGS: Lower Thorax: Mild bibasilar atelectasis. No large pleural effusion. Liver: Homogeneous signal intensity without focal lesions. Mild, nonspecific peri-portal edema. Biliary: The gallbladder is distended and contains numerous calculi. Since prior examinations, there is progressive gallbladder wall edema and pericholecystic fluid with gallbladder wall enhancement. No clear pericholecystic hepatic hyperenhance-ment. The common bile duct measures up to 1.2 cm in diameter. It tapers abruptly with a fixed loss in caliber, most consistent with papillary stenosis, likely the result of previously passed stones. Pancreas: Normal signal and enhancement. Several subcentimeter cystic lesions. Spleen: Normal size. Adrenal Glands: Unremarkable. Kidneys: Symmetric. Large simple cyst in the upper pole of the left kidney, unchanged. Minimal nonspecific perinephric fat stranding. Gastrointestinal Tract: No significant abnormalities. Lymph Nodes: No enlarged lymph nodes. Vasculature: Patent aorta and main branches. 
+
+Continued on next page 
+
+S13 Osseous and Soft Tissue Structures: Mild degenerative changes throughout the lower thoracic and lumbar spine. Mild symmetric bilateral gynecomastia noted incidentally. IMPRESSION: Acute calculous cholecystitis with gallbladder wall edema, peric-holecystic fluid, and wall enhancement. Common bile duct dilation with abrupt tapering suggestive of papillary stenosis from previously passed stones. Step 6: Guideline Search Action: Guideline Search Action Input: Management of acute cholecystitis with common bile duct dilation, suspected choledocholithiasis or papillary stenosis Observation: Guideline 1 (score=0.5146) Title: 2020 World Society of Emergency Surgery updated guidelines for the diagnosis and treatment of acute calculus cholecystitis Year: 2020 Key points: - Common bile duct dilation on ultrasound ( >6 mm with gallbladder in situ) is a strong risk factor for common bile duct stones (CBDS), but is not diagnostic alone; further tests are required. - For moderate-risk patients (e.g., CBD dilation + bilirubin 1.8–4 mg/dL), preoperative MRCP or endoscopic ultrasound is recommended to diagnose CBDS. - For high-risk patients (e.g., visualized CBD stone on ultrasound or ascending cholangitis), preoperative ERCP is recommended to diagnose CBDS. - An increased common bile duct diameter on ultrasound is an indirect sign but is not sufficient alone to diagnose choledocholithiasis, necessitating further diagnostic tests. [Additional guidelines omitted for brevity] Step 7: PubMed Search Action: PubMed Search Action Input: acute cholecystitis common bile duct dilation normal liver enzymes 
+
+Continued on next page 
+
+S14 Observation: Article 1: Role of liver function tests in symptomatic cholelithiasis. Abstract: Cholelithiasis is a common problem in Western and developing nations with continuously rising incidence. This prospective study evaluated the usefulness of routine liver function tests (LFTs) in patients undergoing cholecystectomy for symptomatic cholelithiasis. Out of 124 patients, 87.10% had LFTs within normal range. Most patients with normal LFTs (95.37%) presented with chronic calculous cholecystitis. Of those with deranged LFTs, 43.75% presented with acute calculous cholecystitis. None had dilated common bile duct on preoperative ultrasound or intraoperative findings. Conclusion: Routine LFTs in preoperative assessment of uncomplicated symptomatic cholelithiasis usually come out normal and are not good predictive markers for detecting silent common bile duct calculi. Article 2: Endoscopic Retrograde Cholangiopancreatography in Kidney Transplant Patients: Results From a Single Center. Abstract: Twenty-one kidney transplant patients underwent 23 ERCP procedures for various biliary indications including choledocholithiasis (28.6%), common bile duct dilation with liver enzyme elevations (19%), and cholangitis (23.8%). Findings included choledocholithiasis in 47.6% and dilated common bile duct in 9.6%. ERCP was safe with no complications such as acute pancreatitis, bleeding, or perforation. [Additional guidelines omitted for brevity] Final Diagnosis The patient presents with acute right upper quadrant pain, neutrophilia (89.1% neutrophils, absolute neutrophil count 6.77 K/uL), and cholelithiasis on imaging. Initial ultrasound demonstrated gallstones with common bile duct dilation (12 mm) and trace pericholecystic fluid. MRCP definitively showed progressive gallbladder wall edema, pericholecystic fluid, and gallbladder wall enhancement—classic imag-ing findings for acute cholecystitis. The common bile duct dilation with abrupt tapering is consistent with papillary stenosis from previously passed stones. Notably, liver function tests remained entirely normal (ALT 43 IU/L, AST 30 IU/L, alkaline phosphatase 91 IU/L, bilirubin 0.6 mg/dL), and lipase was normal (12 IU/L), effec-tively ruling out concurrent pancreatitis or acute cholangitis. The retrieved clinical experiences and guidelines confirm that normal liver enzymes do not exclude acute cholecystitis, and that CBD dilation in this setting likely reflects chronic sequelae from stone passage rather than active choledocholithiasis. Final Diagnosis: Acute calculous cholecystitis 
+
+Continued on next page 
+
+S15 Ground Truth: Cholecystitis ✓
+
+Annotation. This trace demonstrates the complete deep clinical research (DCR) workflow with actual laboratory results and rich experience retrieval. The agent fol-lows a clinically logical sequence: physical examination first revealing right upper quadrant tenderness, followed by comprehensive laboratory evaluation showing rela-tive neutrophilia (89.1% neutrophils, absolute neutrophil count 6.77 K/uL) with liver enzymes within normal limits (ALT 43 IU/L, AST 30 IU/L, alkaline phosphatase 91 IU/L, bilirubin 0.6 mg/dL) and normal lipase (12 IU/L). Initial right upper quad-rant ultrasound showed cholelithiasis with common bile duct dilation (12 mm) and trace pericholecystic fluid. The agent escalated to MRCP for more definitive biliary assessment, which revealed gallbladder wall thickening and edema, pericholecystic fluid, and increased T2 signal—findings consistent with acute calculous cholecystitis. The Experience Search retrieved relevant cases from the experience library, providing guidance on test-ordering strategies and diagnostic reasoning for similar presenta-tions. The retrieved experiences noted that acute cholecystitis can present with normal liver enzymes and that CBD dilation in the absence of visualized stones reduces the likelihood of active choledocholithiasis. The Guideline Search retrieved the 2020 World Society of Emergency Surgery guidelines on acute calculous cholecystitis, which informed the diagnostic reasoning regarding CBD dilation and the appropriateness of MRCP for moderate-risk patients. The PubMed Search provided supporting evidence regarding the prevalence of normal liver function tests in acute cholecystitis. The final diagnosis of acute calculous cholecystitis was correct, matching the ground truth label. S16

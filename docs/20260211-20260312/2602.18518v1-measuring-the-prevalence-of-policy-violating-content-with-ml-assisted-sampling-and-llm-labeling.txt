@@ -1,0 +1,699 @@
+Title: Measuring the Prevalence of Policy Violating Content with ML Assisted Sampling and LLM Labeling
+
+URL Source: https://arxiv.org/pdf/2602.18518v1
+
+Published Time: Tue, 24 Feb 2026 01:03:16 GMT
+
+Number of Pages: 8
+
+Markdown Content:
+# Measuring the Prevalence of Policy-Violating Content with ML-Assisted Sampling and LLM Labeling 
+
+# Attila Dobi 
+
+Pinterest San Francisco, CA, USA adobi@pinterest.com 
+
+# Aravindh Manickavasagam 
+
+Pinterest Richmond, VA, USA amanickavasagam@pinterest.com 
+
+# Benjamin Thompson 
+
+Pinterest Los Angeles, CA, USA benjaminthompson@pinterest.com 
+
+# Xiaohan Yang 
+
+Pinterest San Francisco, CA, USA xiaohanyang@pinterest.com 
+
+# Faisal Farooq 
+
+Pinterest Murphy, TX, USA ffarooq@pinterest.com 
+
+## Abstract 
+
+Content safety teams need metrics that reflect what users actually experienced, not only what was reported. We study prevalence : the fraction of user views (impressions) that went to content violating a given policy on a given day. Accurate prevalence measurement is challenging because violations are often rare and human labeling is costly, making frequent platform-representative studies slow. We present a design-based measurement system that (i) draws daily probability samples from the impression stream using ML-assisted weights to concentrate label budget on high-exposure and high-risk content while preserving unbiasedness, (ii) labels sam-pled items with a multimodal LLM governed by policy prompts and gold-set validation, and (iii) produces design-consistent prevalence estimates with confidence intervals and dashboard drill-downs. A key design goal is one global sample with many pivots . A single sam-ple supports prevalence by surface, viewer geography, content age, and other segments. We detail the statistical estimators, variance and CI construction, label-quality monitoring, and an engineer-ing workflow that makes the system configurable across policies. Because absolute prevalence levels for sensitive policies are confi-dential, we report production evidence primarily in relative terms and include a fully specified synthetic simulation appendix illus-trating sampling efficiency. 
+
+## CCS Concepts 
+
+• Mathematics of computing → Probability and statistics ; •
+
+Information systems → Social networks ; • Computing method-ologies → Neural networks .
+
+## Keywords 
+
+content safety, prevalence, probability sampling, weighted reservoir sampling, LLM labeling  
+
+> Permission to make digital or hard copies of all or part of this work for personal or classroom use is granted without fee provided that copies are not made or distributed for profit or commercial advantage and that copies bear this notice and the full citation on the first page. Copyrights for components of this work owned by others than the author(s) must be honored. Abstracting with credit is permitted. To copy otherwise, or republish, to post on servers or to redistribute to lists, requires prior specific permission and/or a fee. Request permissions from permissions@acm.org.
+> KDD ’26, Jeju, Korea
+> ©2026 Copyright held by the owner/author(s). Publication rights licensed to ACM. ACM ISBN 978-x-xxxx-xxxx-x/YYYY/MM https://doi.org/XXXXXXX.XXXXXXX
+
+ACM Reference Format: 
+
+Attila Dobi, Aravindh Manickavasagam, Benjamin Thompson, Xiaohan Yang, and Faisal Farooq. 2026. Measuring the Prevalence of Policy - Violating Content with ML -Assisted Sampling and LLM Labeling. In Proceedings of The 32nd ACM SIGKDD Conference on Knowledge Discovery and Data Mining (KDD ’26). ACM, New York, NY, USA, 8 pages. https://doi.org/XXXXXXX. XXXXXXX 
+
+## 1 Introduction 
+
+User-generated content platforms need fast, repeatable feedback loops to detect emerging harms and evaluate mitigations. Opera-tionally, metric refresh must be frequent enough to surface new patterns, support rapid root-cause analysis, and measure whether interventions and product changes move safety outcomes in the intended direction. However, a reports-only view is incomplete since many harms are under-reported, some users do not report content they seek, and rare categories yield too few reports for statistically powered moni-toring. Prevalence complements reporting by estimating the share of user experiences exposed to policy-violating content, enabling guardrails, trend monitoring, goal-setting, and intervention evalua-tion [ 3]. Because prevalence is computed from probability samples, it also supports drill-downs that help teams localize changes (e.g., by surface, geography, or content age) without re-running bespoke studies. Historically, prevalence studies relied on human review and were conducted infrequently due to significant cost and latency. Recent multimodal LLMs fundamentally shift this operating point: by bulk-labeling samples with an LLM using subject-matter-expert (SME) reviewed prompts and ongoing gold-set validation, we re-duce end-to-end labeling latency by ∼15 × (relative to a human-only review workflow) and operational cost by > 10 × at comparable de-cision quality. This efficiency makes daily, platform-representative measurement feasible at scale [3]. This paper describes an approach that enables daily measure-ment by combining (i) ML-assisted probability sampling from im-pression logs and (ii) LLM-assisted labeling with ongoing decision-quality monitoring. While production enforcement models provide auxiliary risk scores, they are not used as labels and do not gate inclusion; design-based reweighting removes sampling “lensing” so estimates remain comparable even as enforcement thresholds evolve. 
+
+> 1
+> arXiv:2602.18518v1 [cs.LG] 19 Feb 2026 KDD ’26, August 9–13, 2026, Jeju, Korea
+
+Figure 1: Illustrative example: prevalence trend over time (percent of impressions) with intervention markers. In pro-duction, estimates include 95% confidence intervals. 
+
+In production at Pinterest, we run this pipeline daily (for over a year) across multiple policy areas, supporting daily monitor-ing, OKR-style goal tracking, and automated alerting. Each run publishes prevalence estimates with 95% CIs and drill-down dash-boards, and pages an on-call owner when weekly shifts exceed policy-specific minimum detectable effect (MDE) thresholds (§11). Because absolute prevalence levels for sensitive policies are confi-dential, we report production evidence primarily in relative terms (e.g., sampling-efficiency lift and detectable relative changes) and provide a fully specified synthetic simulation appendix (§A) to enable methodological verification. Across policies, prevalence cor-relates weakly with confirmed user reports, indicating it provides complementary visibility beyond reporting. 
+
+Contributions. This work makes three contributions: (1) a design-consistent estimator for daily prevalence of violative views with 
+
+single-sample drill-downs across many segments; (2) practical un-certainty quantification (CIs, effective sample size, and optional correction for label error); and (3) a configurable engineering work-flow that turns a policy definition, an SME-reviewed prompt, and a gold set into a daily measurement pipeline. 
+
+## 2 Related Work 
+
+Our work draws on classical design-based sampling and estimation. Probability proportional-to-size (PPS) sampling and the Hansen– Hurwitz estimator provide unbiased (or design-consistent) estima-tion under with-replacement designs [ 5]. For without-replacement designs, Horvitz–Thompson style estimators and their ratio vari-ants are standard tools [ 7]. Weighted reservoir sampling provides an efficient streaming implementation of PPSWOR using per-item random keys [2]. Recently, model-assisted and ML-assisted sampling have been used in industry to improve efficiency when rare events are im-portant but unbiasedness is required. Meta (Facebook) released an open-source implementation ( ml_sampler ) that combines auxiliary model scores with probability sampling for estimation [ 1 ]. In the content-safety setting, prevalence-style exposure metrics comple-ment reports by measuring what was actually shown to users and enabling intervention evaluation [3]. On the labeling side, there is growing evidence that LLMs can serve as high-quality annotators for certain tasks, often matching or exceeding crowd-worker performance when prompts are well specified [ 4 ]. Because LLM behavior can drift (model updates, con-tent shift, policy changes), practical deployments require ongoing monitoring against human judgment and gold sets; rubric-based and judge-based evaluation frameworks provide useful patterns [6, 11]. 
+
+## 3 Problem and Metric 
+
+Let 𝑑 denote a day. The population is the set of content units (e.g., Pins) that received at least one impression on day 𝑑 . For each con-tent unit 𝑗 we observe its total impressions 𝐶 𝑗𝑑 ≥ 0 from impression logs. A policy-specific label 𝑌 𝑗𝑑 ∈ { 0, 1} indicates whether 𝑗 violates the policy (1) or not (0) under the policy definition in effect on day 
+
+𝑑 .We measure exposure-weighted prevalence: 
+
+𝜃 𝑑 =
+
+Í𝑗 𝐶 𝑗𝑑 𝑌 𝑗𝑑 
+
+Í𝑗 𝐶 𝑗𝑑 
+
+. (1) This definition emphasizes user experience: a single item can be posted once but receive many impressions, or none. 
+
+## 3.1 Segments and drill-downs 
+
+For drill-downs, we define segments 𝑔 ∈ G over impressions (e.g., surface=Homefeed/Search, viewer country, content age bucket). Let 𝐶 𝑗𝑑𝑔 be the impressions to content 𝑗 on day 𝑑 attributable to segment 𝑔 , with Í𝑔 𝐶 𝑗𝑑𝑔 = 𝐶 𝑗𝑑 . Segment prevalence is 
+
+𝜃 𝑑𝑔 =
+
+Í𝑗 𝐶 𝑗𝑑𝑔 𝑌 𝑗𝑑 
+
+Í𝑗 𝐶 𝑗𝑑𝑔 
+
+. (2) A primary design goal is that a single global sample supports all 𝑔 .We achieve this by (i) sampling content units once per day using global weights, and (ii) storing {𝐶 𝑗𝑑𝑔 }𝑔 ∈ G for sampled items so the estimator can be evaluated for any pivot without re-sampling. 
+
+## 4 ML-Assisted Probability Sampling 
+
+Violations may be rare, so naive random sampling can yield too few positive examples for stable daily estimates. We therefore use auxiliary signals to allocate label budget more efficiently while preserving unbiasedness. 
+
+## 4.1 Sampling weights 
+
+Each content unit 𝑗 receives an auxiliary risk score 𝑠 𝑗𝑑 > 0 from production safety models. Missing scores are imputed (e.g., to the day’s median) to keep fresh content in-frame [ 3]. We define a non-negative weight 
+
+𝑤 𝑗𝑑 = 𝐶 𝜈 𝑗𝑑 
+
+ 𝑠 𝛾 𝑗𝑑 + 𝜖 , 𝜈, 𝛾 ≥ 0, 𝜖 > 0. (3) The tunable exponents control efficiency trade-offs: 𝛾 = 0 yields impression-weighted sampling; 𝛾 = 𝜈 = 0 yields (approximately) uniform sampling. Intuitively, 𝛾 > 0 shifts probability mass to-ward model-high-risk items (increasing the sample positive rate), but can reduce effective sample size when score distributions are spiky; choosing 𝜈 < 1 softens exposure weighting to control weight variance.  
+
+> 2Measuring the Prevalence of Policy-Violating Content with ML-Assisted Sampling and LLM Labeling KDD ’26, August 9–13, 2026, Jeju, Korea
+
+Table 1: Sampling regimes via parameter choices in (3) .
+
+𝜈 𝛾 Interpretation 0 0 Uniform random over content units 1 0 PPS by impressions (exposure-weighted) 1 1 ML-assisted: impressions × model score 
+
+∈ ( 0, 1) 0 Softer exposure weighting (variance control) We construct a daily sampling distribution over content units: 
+
+𝑝 𝑗𝑑 = 𝑤 𝑗𝑑 
+
+Í𝑘 𝑤 𝑘𝑑 
+
+. (4) Crucially, 𝑠 𝑗𝑑 is used only to prioritize review and does not become a label; the estimator reweights by 1/𝑝 𝑗𝑑 so prevalence reflects impressions, not model thresholds. 
+
+## 4.2 Efficient implementation via weighted reservoir sampling 
+
+Operationally, we need to draw a fixed-size daily sample from a very large stream. At platform scale (billions of impressions/day and hundreds of millions of users), the population can contain tens of millions of content units; streaming sampling keeps memory 
+
+𝑂 (𝑚 ) and avoids materializing the full population. We implement weighted reservoir sampling using the Efraimidis–Spirakis key trick [2]: for each unit, draw 𝑈 𝑗𝑑 ∼ Uniform (0, 1] and compute 
+
+𝜅 𝑗𝑑 = − log (𝑈 𝑗𝑑 )
+
+𝑤 𝑗𝑑 
+
+. (5) Keeping the 𝑚 smallest keys yields a fixed-size PPSWOR sample (equivalently, the 𝑚 earliest events in an exponential race). The threshold 𝜏 𝑑 (the 𝑚 -th smallest key) provides a useful inclusion-probability approximation via 𝜋 𝑗𝑑 ≈ 1 − exp (− 𝑤 𝑗𝑑 𝜏 𝑑 ); for small sampling fractions, 𝜋 𝑗𝑑 ≈ 𝑤 𝑗𝑑 /Í𝑘 𝑤 𝑘𝑑 . We persist 𝜏 𝑑 so these ap-proximations (and conservative variance estimators) are recover-able. For platforms that prefer with-replacement PPS sampling (PPSWR), we also support multinomial draws from (4) . Both op-tions admit the estimator; we focus on PPSWR for exposition and note the PPSWOR alternative in §5. 
+
+## 5 Design-Consistent Estimation and Single-Sample Drill-downs 
+
+Let the sample on day 𝑑 contain 𝑚 draws {𝐽 𝑖 }𝑚 𝑖 =1. For draw 𝑖 , we observe (𝐶 𝐽 𝑖 𝑑 , 𝑌 𝐽 𝑖 𝑑 ) and the draw probability 𝑝 𝐽 𝑖 𝑑 . Define 
+
+𝑥 𝑖𝑑 = 𝐶 𝐽 𝑖 𝑑 , 𝑧 𝑖𝑑 = 𝐶 𝐽 𝑖 𝑑 𝑌 𝐽 𝑖 𝑑 . (6) 
+
+## 5.1 Hansen–Hurwitz ratio estimator (PPS with replacement) 
+
+For PPSWR, define the HH mean estimators 
+
+ˆ𝑍 𝑑 = 1
+
+𝑚 
+
+> 𝑚
+
+∑︁ 
+
+> 𝑖 =1
+
+𝑧 𝑖𝑑 
+
+𝑝 𝐽 𝑖 𝑑 
+
+, ˆ𝑋 𝑑 = 1
+
+𝑚 
+
+> 𝑚
+
+∑︁ 
+
+> 𝑖 =1
+
+𝑥 𝑖𝑑 
+
+𝑝 𝐽 𝑖 𝑑 
+
+. (7) The Hansen–Hurwitz (HH) ratio estimator [5] is 
+
+ˆ𝜃 𝑑 = ˆ𝑍 𝑑 
+
+ˆ𝑋 𝑑 
+
+=
+
+Í𝑚 𝑖 =1
+
+> 𝑧 𝑖𝑑
+> 𝑝 𝐽 𝑖 𝑑
+
+Í𝑚 𝑖 =1
+
+> 𝑥 𝑖𝑑
+> 𝑝 𝐽 𝑖 𝑑
+
+. (8) In practice, score drift can show up as wider confidence intervals rather than bias, because the reweighting corrects for the sampling design. 
+
+## 5.2 Without-replacement alternative 
+
+When using weighted reservoir sampling (PPSWOR), we can use a Horvitz–Thompson/Hájek style ratio estimator with inclusion prob-abilities 𝜋 𝑗𝑑 . In practice we approximate 𝜋 𝑗𝑑 using the threshold 𝜏 𝑑 
+
+from (5) (Poissonized approximation) or use variance estimators that do not require exact 𝜋 𝑗𝑑 ; we store 𝜏 𝑑 alongside the sample. Empirically, for large populations and moderate 𝑚 , PPSWR and PPSWOR yield similar point estimates, with PPSWOR typically slightly lower variance. 
+
+## 5.3 Drill-downs from a single sample 
+
+For a segment 𝑔 , define per-draw quantities 
+
+𝑥 𝑖𝑑𝑔 = 𝐶 𝐽 𝑖 𝑑𝑔 , 𝑧 𝑖𝑑𝑔 = 𝐶 𝐽 𝑖 𝑑𝑔 𝑌 𝐽 𝑖 𝑑 . (9) Two common cases arise: 
+
+• Known segment denominators. If 𝐷 𝑑𝑔 = Í𝑗 𝐶 𝑗𝑑𝑔 is com-puted exactly from logs, we estimate only the numerator: 
+
+b𝑁 𝑑𝑔 = 1
+
+𝑚 
+
+> 𝑚
+
+∑︁ 
+
+> 𝑖 =1
+
+𝑧 𝑖𝑑𝑔 
+
+𝑝 𝐽 𝑖 𝑑 
+
+, ˆ𝜃 𝑑𝑔 = b𝑁 𝑑𝑔 /𝐷 𝑑𝑔 . (10) 
+
+• Sample-based denominators. If 𝐷 𝑑𝑔 is not directly avail-able (e.g., ad-hoc pivots), we use the HH ratio form: 
+
+ˆ𝜃 𝑑𝑔 =
+
+Í𝑚 𝑖 =1
+
+> 𝑧 𝑖𝑑𝑔
+> 𝑝 𝐽 𝑖 𝑑
+
+Í𝑚 𝑖 =1
+
+> 𝑥 𝑖𝑑𝑔
+> 𝑝 𝐽 𝑖 𝑑
+
+. (11) The critical engineering step is persisting {𝐶 𝑗𝑑𝑔 } for sampled items (and optionally a compact segment key) so dashboards can compute (10) or (11) on demand. 
+
+## 6 Uncertainty Quantification 
+
+We report 95% confidence intervals (CIs) to convey precision. For PPSWR, we use a Taylor linearization for the ratio estimator. Let 
+
+ˆ𝑋 𝑑 = 1
+
+𝑚 
+
+> 𝑚
+
+∑︁ 
+
+> 𝑖 =1
+
+𝑥 𝑖𝑑 
+
+𝑝 𝐽 𝑖 𝑑 
+
+, ˆ𝑍 𝑑 = 1
+
+𝑚 
+
+> 𝑚
+
+∑︁ 
+
+> 𝑖 =1
+
+𝑧 𝑖𝑑 
+
+𝑝 𝐽 𝑖 𝑑 
+
+. (12) Define residuals 
+
+𝑟 𝑖𝑑 = 1
+
+𝑝 𝐽 𝑖 𝑑 
+
+ 𝑧 𝑖𝑑 − ˆ𝜃 𝑑 𝑥 𝑖𝑑 
+
+. (13) An approximate variance estimator is 
+
+cVar ( ˆ𝜃 𝑑 ) ≈ 1ˆ𝑋 2
+
+> 𝑑
+
+· 1
+
+𝑚 (𝑚 − 1)
+
+> 𝑚
+
+∑︁ 
+
+> 𝑖 =1
+
+ 𝑟 𝑖𝑑 − ¯𝑟 𝑑 
+
+2, ¯𝑟 𝑑 = 1
+
+𝑚 
+
+> 𝑚
+
+∑︁ 
+
+> 𝑖 =1
+
+𝑟 𝑖𝑑 . (14) We report 
+
+ˆ𝜃 𝑑 ± 1.96 √︃ cVar ( ˆ𝜃 𝑑 ). (15) The same construction applies to each segment by replacing (𝑥 𝑖𝑑 , 𝑧 𝑖𝑑 )
+
+with (𝑥 𝑖𝑑𝑔 , 𝑧 𝑖𝑑𝑔 ).
+
+> 3KDD ’26, August 9–13, 2026, Jeju, Korea
+
+## 6.1 Effective sample size diagnostics 
+
+Highly variable weights can reduce precision. To communicate this effect to metric owners, dashboards report an effective sample size (ESS) proxy, e.g. 
+
+ESS 𝑑 =
+
+ Í 𝑚 𝑖 =1 𝑎 𝑖𝑑 
+
+2
+
+Í𝑚 𝑖 =1 𝑎 2
+
+> 𝑖𝑑
+
+, 𝑎 𝑖𝑑 = 𝑥 𝑖𝑑 
+
+𝑝 𝐽 𝑖 𝑑 
+
+, (16) along with the sample positive rate and CI width. This is the stan-dard Kish effective sample size proxy for weighted estimators. These operational diagnostics can help tune (𝜈, 𝛾 ) and label budgets. 
+
+## 6.2 Optional correction for label error 
+
+LLM labels may have nonzero false positive and false negative rates. If we estimate the labeler sensitivity 𝑟 and false positive rate 𝑓 on a contemporaneous validation set, we can correct the prevalence via Rogan–Gladen [8]: 
+
+𝜃 𝑑 = 𝜃 (𝐿 ) 
+
+> 𝑑
+
+− 𝑓 𝑟 − 𝑓 , (17) where 𝜃 (𝐿 ) 
+
+> 𝑑
+
+is the measured prevalence using the LLM labeler. We propagate uncertainty by combining sampling variance ( (14) ) with validation uncertainty on (𝑟, 𝑓 ) (e.g., delta method or bootstrap). In production, we prefer to keep the core metric simple and instead monitor (𝑟, 𝑓 ) over time to ensure measurement conviction. 
+
+## 7 LLM Labeling and Decision Quality Monitoring 
+
+Given the sampled content IDs, we label each unit with a multi-modal LLM using (i) the content (image/video keyframes, title, text metadata), (ii) an SME-reviewed policy description, and (iii) an opti-mized prompt that returns a structured label and brief rationale. In our deployment discussed here, we used GPT-4-class multimodal models and have recently switched to current-generation mod-els. Prompts include the policy text plus content identifiers and metadata (e.g., title/description and keyframes), and return a struc-tured JSON-like output (label, reason, confidence). Figure 2 shows example outputs. 
+
+## 7.1 Quality gating and monitoring 
+
+Before launching a policy metric, the LLM+prompt configuration must meet a minimum decision-quality bar on a gold set labeled by policy SMEs (ground truth). After launch, we continuously moni-tor decision quality using two mechanisms: (1) a random subsam-ple of daily items routed to human validation, and (2) periodic re-evaluation on refreshed gold sets to detect drift (policy drift, con-tent shift, or model updates). This governance mirrors best practices for aligning automated evaluators with human judgment [ 4, 6, 11 ]. In internal evaluations on SME-validated gold sets, the LLM-based labeler achieved accuracy within ∼3.2% (relative difference) and an F1 score within ∼0.5% (relative difference) of human agent performance. These results demonstrate that the automated pipeline performs on par with human review while providing the scalability required for daily measurement [9]. 
+
+Figure 2: Example LLM outputs: structured label, rationale, and confidence. (Content blurred.) 
+
+## 8 System Implementation and Configurable Workflow 
+
+Figure 3 summarizes the end-to-end workflow. 
+
+## 8.1 Config-driven measurement 
+
+A key engineering principle is that prevalence measurement is 
+
+configurable . Each metric definition specifies: (1) the target policy taxonomy (including sub-policies), (2) data sources for impressions and auxiliary scores, (3) sampling parameters (𝑚, 𝜈, 𝛾, 𝜖 ), (4) the LLM prompt and model identifiers, (5) required gold sets and quality thresholds, and (6) output schemas and dashboards. This abstraction allows teams to stand up new policy measurements quickly. 
+
+## 8.2 Lineage, auditability, and cost controls 
+
+For each daily run we persist: (i) sampled IDs with weights and segment breakdowns, (ii) LLM outputs with prompt/policy/model versions, (iii) estimator diagnostics (CI width, ESS, positive rate), and (iv) token usage and per-run cost. Compared with a human-only workflow that can take weeks to reach statistical significance, LLM-assisted labeling can produce high-quality labels within hours and at orders-of-magnitude lower cost [ 3]. Operationally, we tune daily label budgets 𝑚 to balance precision (CI width) against run-time and token cost: larger 𝑚 tightens CIs but increases spend and can challenge a daily refresh SLA. Prompt and policy updates are gated by SME review and gold-set thresholds, adding governance overhead but preventing silent metric shifts. As part of measure-ment governance, when updating the auxiliary-score model used for sampling we run a consistency check using both the new and pre-vious score versions (and, optionally, 𝛾 = 0) and confirm that point estimates agree within statistical uncertainty; differences should mainly appear in CI width through weight variability. Because the LLM labeler is independent of enforcement models (which are used only as auxiliary scores), the resulting measurement is less coupled to the production thresholds.  
+
+> 4Measuring the Prevalence of Policy-Violating Content with ML-Assisted Sampling and LLM Labeling KDD ’26, August 9–13, 2026, Jeju, Korea
+
+Figure 3: Prevalence workflow: impression logs and auxiliary safety scores drive sampling; an LLM labeler produces policy labels; the estimator generates prevalence and CIs; results and lineage are stored for dashboards and audits. 
+
+## 8.3 Post-launch operational efficiency 
+
+The integration of LLM labeling provides a step-function increase in measurement velocity. Our automated system processes over 1M units per day, representing a throughput increase of approximately 100 × that of a human baseline. This efficiency allows for daily measurements, which was previously impossible due to latency. 
+
+Table 2: Relative Operational Comparison: Human vs. LLM 
+
+Metric Human Review LLM Label Throughput Baseline ( 1×) ∼ 100 ×
+
+Measurement Frequency Monthly/Quarterly Daily Labeling Latency Days to Weeks < 24 Hours Cost per 1k labels Baseline ∼ 95% reduction In our production configuration, we use approximately 3,000 tokens for the policy definition/prompt and 400 tokens per image (keyframes and metadata), generating a maximum of 100 output tokens for the rationale. Through the use of batch API processing and prompt caching, we further reduce these operational costs beyond the base rates. 
+
+## 9 Empirical Results 
+
+This section provides compact quantitative evidence for three key claims: (i) ML-assisted probability sampling improves sampling efficiency for rare policy areas at a fixed label budget, (ii) design-based reweighting preserves design-consistent point estimates un-der auxiliary-score drift (with drift primarily affecting variance via weight variability), and (iii) a single global probability sample supports multiple segment pivots with usable uncertainty. We re-port results from a simulation POC plus anonymized production statistics in relative terms. 
+
+Setup. We simulate a large population with long-tailed impres-sion weights, rare violations, and a noisy auxiliary risk score cor-related with the true label. We compare two schemes at a fixed daily label budget 𝑚 : (a) PPS with probabilities proportional to im-pressions only ( 𝛾 = 0), and (b) ML-assisted PPS with probabilities proportional to impressions times a score transform ( 𝛾 = 1). For each scheme we estimate impression-weighted prevalence using a Hansen–Hurwitz estimator and report empirical 95% uncertainty over repeated trials. As expected for a design-based estimator, em-pirical bias is negligible across sample sizes 𝑚 (not shown). Imple-mentation details and the exact synthetic parameter settings used to generate Figure 4 are provided in Appendix A. 
+
+Sampling efficiency. Figure 4 shows CI width versus label budget. At realistic sample sizes, ML-assisted PPS yields materially tighter CIs than uniform sampling and PPS-by-impressions, consistent with the intuition that concentrating budget on high-exposure / high-risk items increases effective sample size for rare events. 
+
+Figure 4: Simulation POC: empirical 95% CI width vs. sample size 𝑚 for two sampling schemes: PPS ( 𝑤 = impressions )ML_PPS ( 𝑤 = impression × model_score) 
+
+Production sampling efficiency (relative). We also evaluate sam-pling efficiency in production over one year of daily runs by com-paring impression-only PPS (§5) to ML-assisted sampling (PPS ML ;
+
+> 5KDD ’26, August 9–13, 2026, Jeju, Korea
+
+Table 3: Production: lift in sample positive fraction from ML-assisted sampling (PPS ML ) relative to impression-only PPS at fixed label budget. Values are ratios (higher is better). 
+
+Policy area Positive-rate lift (PPS ML : PPS) A 6.0 ×
+
+B 11.4 ×
+
+C 10.8 ×
+
+Eq. 3) at a fixed label budget. Across multiple policy areas, ML-assisted sampling increases the sample positive fraction by 6–11 ×
+
+(Table 3), reducing the label budget required to reach a target CI width. Absolute prevalence values are omitted for confidentiality; the prevalence estimator remains design-consistent because all estimates reweight by the known sampling probabilities. 
+
+## 10 Extensions: Experimentation and User Reach 
+
+Beyond monitoring, prevalence supports decision-making for in-terventions. Two extensions are particularly useful. 
+
+Experimentation. To measure treatment effects on rare policy areas with acceptable variance, we can combine (i) probability sam-pling for unbiased estimation and (ii) calibrated score-to-risk map-pings that translate model scores into estimated violation proba-bilities, enabling surrogate prevalence metrics for large-scale A/B testing [ 10 ]. A practical approach is a two-step pipeline. First, esti-mate a calibration map from an unbiased labeled sample. Second, apply the map to larger impression logs to form lower-variance experiment metrics. 
+
+User reach. Prevalence measures exposure volume as a fraction of impressions. A complementary metric is user reach , defined as the fraction of daily active users (DAUs) who saw at least one violative impression. Estimating user reach requires user-level ag-gregation (counting each user once if they saw any policy violating content) and can be approached via a two-stage design (sample users, then sample impressions within users) or via model-assisted approximations. We leave a full treatment to future work. 
+
+## 11 Case Study: Sensitivity, Minimum Detectable Effects, and Alerting 
+
+In production, two questions come up repeatedly: (i) How sensitive is the metric? and (ii) How large of a change can we reliably detect? 
+
+Because prevalence is computed from a probability sample, sensi-tivity is a tunable knob: increase daily label volume (or improve weight efficiency) to tighten CIs. 
+
+## 11.1 Sensitivity as CI half-width 
+
+We define daily sensitivity as the half-width of the 95% CI, 
+
+ℎ𝑑 = 1.96 √︃ cVar ( ˆ𝜃 𝑑 ). (18) When violations are rare and weights are not too variable, a use-ful back-of-the-envelope approximation relates sensitivity to an 
+
+Table 4: Typical minimum detectable effects (MDE), relative to each policy area’s mean. MDEs are computed for a two-sided test with 𝛼 = 0.05 and 80% power. Policy areas A, B, and C differ in production prevalence and ML model quality. We omit absolute prevalence and quality values. Representative configurations; actual production parameters may vary. 
+
+Policy area Daily labels 𝑚 MDE (relative to mean) A 50k 6.0% B 100k 6.5% C 10k 5.0% effective sample size (ESS): 
+
+ℎ𝑑 ≈ 1.96 √︄ 𝜃 𝑑 (1 − 𝜃 𝑑 )
+
+ESS 𝑑 
+
+≈ 1.96 √︄ 𝜃 𝑑 
+
+ESS 𝑑 
+
+(𝜃 𝑑 ≪ 1). (19) This makes explicit that sensitivity scales roughly as 1/√ESS 𝑑 ;doubling label volume improves CI width by about √2. For ML-assisted designs, ESS 𝑑 can be materially smaller than the raw sample size 𝑚 when inverse-probability weights are heavy-tailed. 
+
+## 11.2 Example daily configurations 
+
+Table 4 summarizes representative production configurations across policy areas. All use ML-assisted sampling (Eqs. (3)–(5)) and LLM labeling (§7), with daily label budgets tuned per policy. In practice, 
+
+𝑚 is increased for rarer types, for deeper drill-downs (e.g., surface, country, freshness), or when CI widths exceed an operational target. In production, prevalence supports guardrails and daily moni-toring/alerting with drill-downs. The system runs as a daily batch pipeline: each run draws fixed-size probability samples and pro-duces six-figure-scale LLM-assisted multimodal labels under ongo-ing decision-quality monitoring. We next translate daily sensitivity into weekly minimum detectable effects (MDEs) used for opera-tional alerting. 
+
+## 11.3 From daily sensitivity to weekly MDE 
+
+For operational alerting we smooth the daily series with a 7-day moving average, 
+
+¯𝜃 𝑑 = 17
+
+> 𝑑
+
+∑︁   
+
+> 𝑡 =𝑑 −6
+
+ˆ𝜃 𝑡 . (20) If daily estimation noise is approximately independent with vari-ance 𝜎 2, then Var ( ¯𝜃 𝑑 ) ≈ 𝜎 2/7 and the standard error shrinks by √7. To detect a step change by comparing two (approximately in-dependent) 7-day windows at two-sided level 𝛼 and power 1 − 𝛽 , a standard normal approximation yields 
+
+MDE abs ≈  𝑧 1−𝛼 /2 + 𝑧 1−𝛽 
+
+√︂ 27 𝜎. (21) Expressed as a relative change from a baseline 𝜃 0 and using ℎ𝑑 ≈
+
+𝑧 1−𝛼 /2𝜎 ,
+
+MDE rel ≈ MDE abs 
+
+𝜃 0
+
+≈ 𝑧 1−𝛼 /2 + 𝑧 1−𝛽 
+
+𝑧 1−𝛼 /2√︂ 
+
+27
+
+| {z }    
+
+> ≈0.76 for 𝛼 =0.05 ,1−𝛽 =0.8
+
+ℎ𝑑 
+
+𝜃 0
+
+. (22)  
+
+> 6Measuring the Prevalence of Policy-Violating Content with ML-Assisted Sampling and LLM Labeling KDD ’26, August 9–13, 2026, Jeju, Korea
+
+Equation (22) highlights that relative detectability scales with the ratio ℎ𝑑 /𝜃 0 and benefits from temporal aggregation (e.g., weekly rollups). 
+
+Correlated fluctuations. Real systems exhibit autocorrelation due to content mix shifts, policy changes, and labeler drift. If ˆ𝜃 𝑑 has lag-ℓ correlation 𝜌 ℓ , then Var ( ¯𝜃 𝑑 ) is inflated by 1+2 Í6 
+
+> ℓ=1
+
+(1−ℓ/7)𝜌 ℓ .We therefore treat (22) as a best-case planning rule and validate MDEs empirically from historical residuals. 
+
+## 11.4 What dominates short-term fluctuations 
+
+In many policy areas, day-to-day variability is driven less by sam-pling error and more by (i) decision quality (prompt/policy interpre-tation, ambiguous edge cases) and (ii) topic mix shifts (changes in the distribution of content types and contexts). We mitigate these effects through (a) decision-quality gates and recurring gold-set evaluations (§7), (b) drift diagnostics (auxiliary score distributions, topic/surface composition), and (c) smoothing for alerting ( (20) ). When decision quality is the limiting factor, increasing 𝑚 alone does not improve metric conviction; instead, prompt iteration and targeted human validation are required. In addition, because the estimator is exposure-weighted, a small number of high-weight sampled units can disproportionately affect the daily estimate, particularly when the underlying rate is very low. We retain the sampled units and metadata outputs in production ta-bles (§8), enabling rapid drill-downs and targeted human validation to distinguish genuine distributional changes from measurement effects. 
+
+## 12 Operational Impact 
+
+AI-assisted prevalence measurement transforms platform safety monitoring from infrequent audits to a high-frequency, statisti-cally grounded feedback loop. In practice, this enables (i) proactive detection of emerging risks with faster root-cause analysis via drill-downs, (ii) quicker evaluation of launches and mitigations using trend and sensitivity signals, and (iii) scalable governance through versioned prompts, gold sets, and lineage that preserve auditability while reserving human review for targeted validation. 
+
+## 13 Discussion and Limitations 
+
+Rare policy areas. Very low base rates lead to wide daily CIs. We adapt by tuning (𝜈, 𝛾 ), increasing 𝑚 , stratifying, or pooling to weekly windows. 
+
+Prompt and policy drift. Policy definitions evolve and content patterns shift. We version policies/prompts and periodically backfill labels for comparability. 
+
+Labeler drift. LLM providers update models; we mitigate with pinned model versions when possible and ongoing validation. 
+
+Privacy and safety. The workflow is designed to minimize human exposure to harmful content by using LLM labeling for the bulk and reserving human review for targeted validation. 
+
+## 14 Conclusion 
+
+We presented a real-time prevalence measurement system for plat-form safety that combines ML-assisted probability sampling with LLM labeling. The system yields design-consistent daily prevalence estimates with confidence intervals and supports many drill-downs from a single sample. A configurable, lineage-rich implementa-tion enables rapid expansion to new policies while maintaining governance through gold sets and continuous decision-quality mon-itoring. 
+
+## A Simulation details for Figure 4 
+
+We chose a deliberately simple synthetic setup whose goal is not to mirror any specific production policy area, but to stress-test relative sampling efficiency under three conditions we consistently observe in practice: (i) heavy-tailed exposure, (ii) low base rates, and (iii) imperfect but useful model scores. The configuration below was selected because it reliably exhibits these behaviors without introducing unnecessary complexity. This appendix provides a reproducible description of the sim-ulation POC used in §9 to generate Figure 4. The purpose of the simulation is to illustrate relative sampling-efficiency behavior un-der (i) heavy-tailed impression counts, (ii) rare violations, and (iii) an auxiliary risk score correlated with the true label. All parameters are synthetic and are not fit to any production dataset. 
+
+Algorithm 1 Simulation POC used for Figure 4 
+
+Require: population size 𝑁 , base positive rate 𝑝 , sample sizes M,trials 𝑇 
+
+Require: impression parameters (𝑝 small , 𝛼, 𝑥 𝑚 ); score parameters 
+
+(𝑎 −, 𝑏 − ), (𝑎 +, 𝑏 +)
+
+Require: sampling hyperparameters (𝜈, 𝛾, 𝜖 ) and random seeds 
+
+(𝑠𝑒𝑒𝑑 pop , 𝑠𝑒𝑒𝑑 mc ) 
+
+> 1:
+
+Set RNG seed to 𝑠𝑒𝑒𝑑 pop and generate a synthetic population of 𝑁 items:  
+
+> 2:
+
+for 𝑖 = 1 to 𝑁 do  
+
+> 3:
+
+Sample label 𝑦 𝑖 ∼ Bernoulli (𝑝 ) 
+
+> 4:
+
+Sample impressions 𝑤 𝑖 from mixture:  
+
+> 5:
+
+with prob 𝑝 small : 𝑤 𝑖 ∼ Unif {1, . . . , 10 } 
+
+> 6:
+
+else: 𝑤 𝑖 ← 𝑥 𝑚 
+
+ 1 + Pareto (𝛼 ) 
+
+> 7:
+
+Sample auxiliary score 𝑠 𝑖 from Beta (𝑎 −, 𝑏 − ) if 𝑦 𝑖 = 0, else 
+
+Beta (𝑎 +, 𝑏 +) 
+
+> 8:
+
+end for  
+
+> 9:
+
+Define sampling distributions (with replacement):  
+
+> 10:
+
+PPS: 𝜋 (pps ) 
+
+> 𝑖
+
+∝ 𝑤 𝜈 𝑖  
+
+> 11:
+
+ML-PPS: 𝜋 (ml ) 
+
+> 𝑖
+
+∝ 𝑤 𝜈 𝑖 
+
+ 𝑠 𝛾 𝑖 + 𝜖  
+
+> 12:
+
+Set RNG seed to 𝑠𝑒𝑒𝑑 mc for Monte Carlo sampling.  
+
+> 13:
+
+for each 𝑚 ∈ M do  
+
+> 14:
+
+for each scheme 𝑏 ∈ { pps , ml } do  
+
+> 15:
+
+for 𝑡 = 1 to 𝑇 do  
+
+> 16:
+
+Draw 𝑚 items i.i.d. with replacement using 𝜋 (𝑏 ) 
+
+> 17:
+
+Compute Hansen–Hurwitz ratio estimate:  
+
+> 18:
+
+ˆ𝜃 (𝑡 ) 
+
+> 𝑚,𝑏
+
+=
+
+> 1
+> 𝑚
+
+Í𝑗 𝑦 𝑗 𝑤 𝑗 /𝜋 (𝑏 )
+
+> 𝑗
+> 1
+> 𝑚
+
+Í𝑗 𝑤 𝑗 /𝜋 (𝑏 ) 
+
+> 𝑗
+> 19:
+
+end for  
+
+> 20:
+
+Empirical CI width: 𝑊 𝑚,𝑏 ← 𝑄 0.975 ( ˆ𝜃 𝑚,𝑏 ) − 𝑄 0.025 ( ˆ𝜃 𝑚,𝑏 ) 
+
+> 21:
+
+end for  
+
+> 22:
+
+end for  
+
+> 23:
+
+Normalize for plotting: 𝑊 rel  
+
+> 𝑚,𝑏
+
+← 𝑊 𝑚,𝑏 /𝑊 100 ,000 ,ml 
+
+> 7
+
+KDD ’26, August 9–13, 2026, Jeju, Korea 
+
+Table 5: Synthetic simulation parameters used to generate Figure 4. All parameters are hypothetical and not fit to any production dataset. 
+
+Parameter Value Population size 𝑁 300 ,000 items Base positive rate 𝑝 0.005 (0.5%) Impressions mixture mass 𝑝 small 0.93 
+
+Impressions small component Unif {1, . . . , 10 }
+
+Impressions tail component 𝑤 ← 𝑥 𝑚 
+
+ 1 + Pareto (𝛼 ) with 𝛼 = 1.4, 𝑥 𝑚 = 10 
+
+Scores 𝑠 | 𝑦 = 0 Beta (1.5, 6.0)
+
+Scores 𝑠 | 𝑦 = 1 Beta (6.0, 1.5)
+
+Sampling weights (Eq. 3) 𝜈 = 1.0; 𝛾 = 0 (PPS) or 𝛾 = 1 (ML-PPS); 𝜖 = 10 −6
+
+Sample sizes M {2,000 , 5,000 , 10 ,000 , 20 ,000 , 50 ,000 , 100 ,000 }
+
+Monte Carlo trials 𝑇 500 per (𝑚, scheme )
+
+Random seeds population generation: 𝑠𝑒𝑒𝑑 pop = 42 ; sampling draws: 
+
+𝑠𝑒𝑒𝑑 mc = 123 
+
+## References 
+
+[1] Spencer Beecher, Emanuel Strauss, and contributors. 2017. ml_sampler: Model Assisted Random Sampling. GitHub repository (facebookarchive). https:// github.com/facebookarchive/ml_sampler Repository commit history spans 2017– 2020; archived 2021. Includes accompanying paper ml_sampler.pdf. Accessed 2026-01-20. [2] Pavlos S Efraimidis and Paul G Spirakis. 2006. Weighted random sampling with a reservoir. Inform. Process. Lett. 97, 5 (2006), 181–185. [3] Faisal Farooq, Aravindh Manickavasagam, and Attila Dobi. 2025. How Pinterest Built a Real-Time Radar for Violative Content Using AI. Pinterest Engineering (Medium). https://medium.com/pinterest-engineering/how-pinterest-built-a-real-time-radar-for-violative-content-using-ai-d5a108e02ac2 Accessed 2026-01-20. [4] Fabrizio Gilardi, Meysam Alizadeh, and Ma"el Kubli. 2023. ChatGPT outperforms crowd workers for text-annotation tasks. Proceedings of the National Academy of Sciences 120, 30 (2023), e2305016120. [5] Morris H Hansen and William N Hurwitz. 1943. On the theory of sampling from finite populations. The Annals of Mathematical Statistics 14, 4 (1943), 333–362. [6] Helia Hashemi, Jason Eisner, Corby Rosset, Benjamin Van Durme, and Chris Kedzie. 2024. LLM-RUBRIC: A Multidimensional, Calibrated Approach to Auto-mated Evaluation of Natural Language Texts. In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (ACL 2024) .[7] Daniel G Horvitz and Donovan J Thompson. 1952. A generalization of sampling without replacement from a finite universe. J. Amer. Statist. Assoc. 47, 260 (1952), 663–685. [8] Walter J Rogan and Betsy Gladen. 1978. Estimating prevalence from the results of a screening test. American Journal of Epidemiology 107, 1 (1978), 71–76. [9] Yuqi Tian, Robert Paine, Attila Dobi, Kevin O’Sullivan, Aravindh Manick-avasagam, and Faisal Farooq. 2026. Decision Quality Evaluation Framework at Pinterest. (2026). Manuscript under submission. [10] Zehao Xu, Tony Paek, Kevin O’Sullivan, and Attila Dobi. 2026. Surrogate-Based Prevalence Measurement for Large-Scale A/B Testing. (2026). Manuscript under submission. [11] Liang Zheng, Wei-Lin Chiang, Ying Sheng, So Zhuang, Zi Lin, Zhuohan Li, Dacheng Li, Eric P Xing, Hao Zhang, Joseph E Gonzalez, and Ion Stoica. 2023. Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena. In Advances in Neural Information Processing Systems (NeurIPS) .8

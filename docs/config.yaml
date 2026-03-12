@@ -49,3 +49,42 @@ subscriptions:
           source: manual
           note: ''
       updated_at: '2026-03-12T03:55:05.142Z'
+    - tag: SEMMA
+      description: 自进化多模态智能体相关论文搜索
+      enabled: true
+      keywords:
+        - keyword: self-evolving agents
+          keyword_cn: 自进化智能体
+          query: self-evolving autonomous agents and systems
+        - keyword: multimodal LLM
+          keyword_cn: 多模态大语言模型
+          query: multimodal large language models for agentic tasks
+        - keyword: iterative learning
+          keyword_cn: 迭代学习
+          query: iterative self-improvement in multimodal agents
+        - keyword: self-correction
+          keyword_cn: 自我纠错
+          query: autonomous self-correction mechanisms in agents
+        - keyword: vision-language models
+          keyword_cn: 视觉语言模型
+          query: vision-language models for decision making
+        - keyword: reinforcement learning
+          keyword_cn: 强化学习
+          query: reinforcement learning for agent self-evolution
+      intent_queries:
+        - query: recent advances in self evolving multimodal agents
+          query_cn: 自进化多模态智能体的最新进展
+          enabled: true
+          source: manual
+          note: ''
+        - query: frameworks for autonomous self improvement in multimodal models
+          query_cn: 多模态模型自主自我提升的框架
+          enabled: true
+          source: manual
+          note: ''
+        - query: benchmarking self evolving capabilities of intelligent agents
+          query_cn: 智能体自进化能力的基准测试
+          enabled: true
+          source: manual
+          note: ''
+      updated_at: '2026-03-12T04:08:01.447Z'

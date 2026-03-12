@@ -1,0 +1,532 @@
+Title: Bi-Level Prompt Optimization for Multimodal LLM-as-a-Judge
+
+URL Source: https://arxiv.org/pdf/2602.11340v1
+
+Published Time: Fri, 13 Feb 2026 01:10:43 GMT
+
+Number of Pages: 15
+
+Markdown Content:
+# Bi-Level Prompt Optimization for Multimodal LLM-as-a-Judge 
+
+Bo Pan 1,2,∗, Xuan Kan 1,†, Kaitai Zhang 1, Yan Yan 1, Shunwen Tan 1, Zihao He 1, Zixin Ding 1, Junjie Wu 1,
+
+Liang Zhao 21Meta AI, 2Emory University 
+
+> ∗
+
+Work done at Meta , †Corresponding Author 
+
+Large language models (LLMs) have become widely adopted as automated judges for evaluating AI-generated content. Despite their success, aligning LLM-based evaluations with human judgments remains challenging. While supervised fine-tuning on human-labeled data can improve alignment, it is costly and inflexible, requiring new training for each task or dataset. Recent progress in auto prompt optimization (APO) offers a more efficient alternative by automatically improving the instructions that guide LLM judges. However, existing APO methods primarily target text-only evaluations and remain underexplored in multimodal settings. In this work, we study auto prompt optimization for multimodal LLM-as-a-judge, particularly for evaluating AI-generated images. We identify a key bottleneck: multimodal models can only process a limited number of visual examples due to context window constraints, which hinders effective trial-and-error prompt refinement. To overcome this, we propose BLPO, a bi-level prompt optimization framework that converts images into textual representations while preserving evaluation-relevant visual cues. Our bi-level optimization approach jointly refines the judge prompt and the I2T prompt to maintain fidelity under limited context budgets. Experiments on four datasets and three LLM judges demonstrate the effectiveness of our method.  
+
+> Date:
+
+February 13, 2026  
+
+> Correspondence:
+
+Xuan Kan at xuankan@meta.com 
+
+# 1 Introduction 5 10 15 20  
+
+> Number of Images in a Batch
+> 0.10
+> 0.15
+> 0.20
+> 0.25
+> 0.30
+> 0.35
+> 0.40
+> Macro F1
+> Original Images
+> Image Captions
+> Learnable Image Captions
+> Figure 1
+
+The long-context issue for MLLMs for prompt optimization. 
+
+LLM-as-a-Judge (Liu et al., 2023; Zheng et al., 2023) has been broadly adopted in auto evaluation of AI generated contents to reduce the high cost of human annotations. However, aligning LLMs’ evaluations with human evaluations is challenging (Liu et al., 2023; Zheng et al., 2023). Supervised fine-tuning on human-annotated labels is a straightforward way for alignment (Kim et al., 2023, 2024; Zhu et al.; Li et al., 2023), but fine-tuning LLM judges is still costly and not flexible to new tasks or data. Auto prompt optimization (APO) (Yang et al., 2023; Pryzant et al., 2023; Yuksekgonul et al., 2024) emerges as an promising method for LLM judge alignment by generating more detailed instructions for LLM evaluation. However, how to effectively optimize the prompt for multimodal LLM-as-a-judge (Chen et al., 2024a; Liu et al., 2024) is still under-explored. In this work, we dive into the problem auto prompt optimization for multimodal LLM judges (MLLMs), which is primarily used in auto evaluation of AI-generated images. Trial-and-error-based methods have been proven effective for prompt optimization in text-only tasks, where a batch of incorrect predictions from the current prompt is collected and used by an LLM to suggest a refined prompt (Pryzant et al., 2023; Yuksekgonul et al., 2024). However, extending this paradigm to multimodal tasks presents unique challenges. Due to the limited context window of MLLMs, these models struggle to 1
+
+> arXiv:2602.11340v1 [cs.AI] 11 Feb 2026
+
+process multiple images simultaneously (Wang et al., 2025; Liu et al., 2025), as each image introduces a large number of visual tokens (Jiang et al., 2025). As a result, MLLM performance tends to degrade sharply when the number of images in context exceeds 5–10 (Sharma et al., 2024; Song et al., 2024). This limitation holds for both state-of-the-art open-source models such as Qwen2.5-VL (Li et al., 2025) and proprietary ones like GPT-4o and Gemini-2.5-pro (Cheng et al., 2025). In prompt optimization, this constraint severely limits the number of erroneous predictions that can be effectively processed by the LLM, thereby reducing the generalizability of the updated prompt. As a preliminary study, Fig. 1 examines the performance of optimized prompt under different batch sizes, under different formats of image passing to the optimizer (GPT-o3). The blue curve (original images) shows a declining trend, indicating that although current MLLMs possess relatively long context windows, their ability to reason over multiple images still degrades as more images are included in the context. Motivated by this, in this work we use an image-to-text module to convert each image into textual form to save context window length. However, simply using the image captions may cause a significant information loss because the important feature for evaluating the AI-generated image does not necessarily lie in the global semantics but also can be in some localized, specific aspects, limiting the prompt optimization (green curve). To address this, we propose BLPO, a judge prompt and image-to-text (I2T) prompt co-optimization framework, which can learn to verbalize the aspects which is directly related to evaluation of the images, resulting in more effective prompt optimization (purple curve). We begin by formulating the objective of automatic prompt optimization and then present a bi-level optimization framework designed to handle prompt optimization under limited context window constraints. Finally, we provide practical guidelines for implementing this bi-level optimization and validate our approach through experiments on four datasets and three LLM-based judges, demonstrating the effectiveness of our framework. Our contributions include: 
+
+• To our best knowledge, this the first study to explore the problem of prompt optimization for MLLM-as-a-Judge, a novel and under-explored setting that introduces unique challenges due to multimodal context constraints and the need of detailed judge instructions in prompts. 
+
+• We formulate an optimization objective of prompt optimization for MLLM-as-a-judge tasks which emphasizes the necessity for jointly optimizing the I2T prompt and propose a bi-level optimization framework to optimize the objective which implements LLM-based optimization in multimodal settings. 
+
+• Comprehensive experiments across four datasets and three LLM-based judges demonstrates the effec-tiveness of the proposed framework. 
+
+# 2 Related Work 
+
+2.1 LLM-as-a-Judge 
+
+Evaluating open-ended model outputs with reference-based metrics often correlates weakly with human preferences, motivating the use of LLM-as-a-Judge —prompting strong LLMs to grade, compare, or rank candidate responses under task-specific rubrics (Liu et al., 2023; Zheng et al., 2023). Early systems like G-Eval formalized rubric-driven direct assessment with chain-of-thought rationales and showed improved correspondence with human judgments in summarization and dialogue (Liu et al., 2023; Zheng et al., 2023). As visual–language models matured, researchers adapted LLM-as-a-Judge to multimodal settings (Chen et al., 2024a; Liu et al., 2024; Fang et al., 2024; Ge et al., 2025; Fang et al., 2025). Concurrent work trains dedicated 
+
+multimodal critics/judges (e.g., LLaVA-Critic) and proposes preference datasets to evaluate multimodal reward models (Xiong et al., 2025; Chen et al., 2024b). In practice, LLM-as-a-Judge systems are built via: (1) prompted judges that use strong general LLMs with carefully engineered rubrics, role prompts, and bias mitigations (e.g., side-by-side with position randomization, hidden references) (Liu et al., 2023; Zheng et al., 2023); (2) fine-tuned judge models trained on feedback datasets comprising rubrics, responses, and explanations for direct scoring and pairwise comparison (Kim et al., 2023, 2024; Zhu et al.; Li et al., 2023); and (3)  
+
+> reward-model style judges
+
+that transform judge signals into scalar rewards for alignment (e.g., DPO/RLHF pipelines), sometimes with multilingual extensions (Son et al., 2024; Pombal et al., 2025). 2BLPO: Bi-Level Prompt Optimization for MLLM-as-a-Judge       
+
+> Judge Prompt
+> How natural is this generated image? Score 0-7
+> I2T Prompt
+> Describe this image based on its content and style.
+> Error Set
+> img pred gt
+> 5
+> 3
+> 3
+> 3
+> 1
+> 5
+> ......
+> Verbalized Error Set
+> I2T pred gt
+> 5
+> 3
+> 3
+> 3
+> 1
+> 5
+> ......
+> "A video game style pic of a man..."
+> "A portrait with smooth skin but detailed eyes..."
+> "American caption with toy-like eyes..."
+> d) Optimizer LLM suggests new prompt
+> a) Inference on Training Set
+> b) Optimizing I2T Prompt
+> c) Image Captioning with optimized I2T Prompt
+
+MLLM-as-a-Judge 
+
+Inference 
+
+> MLLM Judge
+> Optimized
+> Judge Prompt
+> Rate the image
+> based on ...
+> Output
+> Score: 5
+
+Figure 2 Illustration of the framework. Left : MLLM-as-a-Judge for image evaluation. Right : Our proposed BLPO framework for optimizing the prompt for MLLM-as-a-Judge. Image examples are drawn from the ImageReward dataset. 
+
+2.2 Automatic Prompt Optimization 
+
+Prompt design strongly influences LLM performance but manual crafting is brittle and costly; thus, automating prompt search has become a key objective. Broadly, approaches fall into two types. Continuous (soft) prompt tuning learns differentiable "virtual tokens” prepended to inputs while keeping LM weights frozen, enabling backprop-based adaptation with few task-specific parameters (Li and Liang, 2021; Lester et al., 2021). In contrast, discrete (text) prompt optimization edits natural-language prompts using black-box or weakly supervised feedback, with representative methods including (1) RL-based —treat prompt editing/generation as sequential decision making (e.g., RLPrompt) (Deng et al., 2022; Zhang et al.; Cheng et al., 2023; Lin et al., 2023). (2) Heuristic / search , includes gradient-free optimization techniques such as evolutionary algorithms, genetic search, clustering-based search, and other heuristics that explore the discrete prompt space (Prasad et al., 2023; Xu et al., 2022; Guo et al., 2023). (3) LLM-as-optimizer , which harness the capabilities of LLMs themselves to generate, evaluate, or refine prompts (Yang et al., 2023; Pryzant et al., 2023; Yuksekgonul et al., 2024). 
+
+# 3 Methods 
+
+We first give an illustration of the proposed bi-level prompt optimization framework in Fig. 2. Then we formally introduce the objective and optimization process in the following of this section. 
+
+3.1 Problem Formulation 
+
+In this work, we explore the problem of using prompt optimization to better align MLLM-as-a-Judge model’s evaluation with human’s evaluation, specifically on the scoring of images. Formally, given a labeled dataset 
+
+D = {(xi, y i)}Ni=1 where each xi denotes an image and yi denotes the human-annotated categorical or numerical label, and a frozen language model f (x; p) that can make judge to an input image x using prompt p. Our goal is to find an optimal textual prompt p∗ that can maximize the likelihood of correct predictions as 
+
+p∗ = arg max  
+
+> p
+
+E(xi,y i)∼D 
+
+Pf (yi|xi, p ), (1) where Pf (yi|xi, p ) denotes the probability assigned by the model f to the ground-truth label yi when conditioned on both the input image xi and the textual prompt p.33.2 Overall Objective  
+
+> 3.2.1 The Trail-and-Error Paradigm and Context Length Issue
+
+To explain the paradigm of the trail-and-error-based prompt optimization and its context window limitation, we start by conceptually formulate it in a gradient manner by treating the discrete textual prompt p as a continuous parameter that can be optimized with gradient-based updates. Let ℓ denote a task-specific loss function. The empirical risk over the dataset is defined as: 
+
+L(p) = 1
+
+N
+
+X
+
+> (xi,y i)∈D
+
+ℓ(f (xi; p), y i) . (2) The corresponding prompt update can then be expressed as: 
+
+p′ = p − η∇pL(p) (3) where η is the step size, and 
+
+∇pL(p) = 1
+
+N
+
+X
+
+> (xi,y i)∈D
+
+∂ℓ ( ˆ yi, y i)
+
+∂ ˆyi
+
+∂ ˆyi
+
+∂p ≈ 1
+
+|IB |
+
+X
+
+> i∈IB
+
+∂ℓ ( ˆ yi, y i)
+
+∂ ˆyi
+
+∂ ˆyi
+
+∂p . (4) where ˆyi = fθ (xi; p) and IB ⊆ { 1, 2, ..., N } is a sampled minibatch of indices of wrong predictions which are used to approximate the true gradient. However, since p is a discrete textual prompt, the derivative term ∂ ˆyi 
+
+> ∂p
+
+is intractable. Therefore, current trail-and-error methods (Pryzant et al., 2023; Yuksekgonul et al., 2024; Wang et al., 2024) use an LLM to approximate the textual update of the current prompt, i.e., 
+
+p′ = Update p(p, {xi, y i, ˆyi}i∈IB ) (5) where Update( ·)p denotes a function to ask an LLM to suggest the updated prompt, with an example implementation given in Appendix B.1. To avoid overfitting to several samples and improve the generalizability of the updated prompt p′, it is desirable to use a larger minibatch size, i.e., improve |IB |. However, as we shown earlier in Fig. 1, in multi-modal scenarios, the effectiveness of the update rule in Eq. 5 may be seriously constrained by the limited context capability of LLMs, which struggle to reason over many images (Wang et al., 2025; Liu et al., 2025; Sharma et al., 2024; Song et al., 2024).  
+
+> 3.2.2 Addressing Context Length Issue via Learnable Captioning
+
+To mitigate the degradation of reasoning ability when processing many images simultaneously, a straightforward idea is to convert the original multimodal inputs xi to a textual description via ti = g(xi), where g(·) denotes the image-to-text (I2T) function, e.g., an image captioner. However, general-purpose captioners typically produce ti that only capture high-level semantic information of xi, which can lead to severe task-specific information loss and consequently limit the effectiveness of the prompt update in Eq. 5. Therefore, to extract richer, task-relevant information for prompt optimization, we make the I2T function 
+
+g(·) also optimizable. Specifically, we instantiate g(·) as an MLLM equipped with a learnable I2T prompt 
+
+q that instructs which aspects of the image should be verbalized in ti, denoted as ti = g(xi; q). Under this formulation, the prompt update in Eq. 5 becomes 
+
+p′ = Update p(p, {g(xi; q), y i, ˆyi}i∈IB ) := J(q, p ) (6) where we define J(p, q ) to refer to above update function. Thus, the overall objective becomes minimize  
+
+> p,q
+
+L(p)
+
+subject to p − η∇pL(p) is approximated by J(q, p )
+
+(7) This objective jointly considers the judge prompt p and the I2T prompt q, enabling the model to adaptively verbalize image features that are most relevant to evaluation and prompt refinement. 4Algorithm 1: Bi-Level Prompt Optimization for MLLM-as-a-Judge  
+
+> Input:
+
+Initial judge prompt p0, initial caption prompt q0, dataset D, optimizer LLM, inner iterations K,outer iterations T 
+
+> for
+
+t = 0 , 1, . . . , T − 1 do 
+
+Sample minibatch IB ⊆ D ;
+
+// Inner-level Optimization 
+
+H0 ← { (q0, score (q0; pt)) }; 
+
+> for
+
+k = 0 , 1, . . . , K − 1 do 
+
+Generate qk+1 using Eq. 10; Evaluate score (qk+1 ; pt) using Eq. 9; 
+
+Hk+1 ← H k ∪ { (qk+1 , score (qk+1 ; pt)) };Select best caption prompt q∗(pt) using Eq. 11; 
+
+// Outer-level Optimization 
+
+Update judge prompt pt+1 using Eq. 6 with q∗(pt); 
+
+> Output:
+
+Optimized judge prompt pT
+
+3.3 BLPO: A Bi-Level Prompt Optimization Framework 
+
+Given such objective, we can naturally formalize the above formulation as a bi-level optimization problem, where the outer-level objective aims to minimize the task loss L(p) with respect to the judge prompt p, and the inner-level objective optimizes the captioning prompt q to best support the outer-level update. Specifically, the outer level optimization minimizes L(p) under a fixed q using Eq. 6; the inner-level optimization seeks to maximize the first-order loss reduction induced by the update function J(q, p ) with respect to q. Formally, the inner-level optimization aims to find the captioning prompt q that maximizes the expected decrease in loss by: 
+
+q∗(p) = arg max  
+
+> q
+
+−∇ pL(p)⊤ p′ − p ≈ arg max 
+
+> q
+
+ L(p) − L (p′). (8) where p′ is obtained with Eq. 6 given p. We further define a score of q by approximating the loss decrease using minibatch samples as score (q; p) := 1
+
+|IB |
+
+X
+
+> i∈IB
+
+h
+
+ℓ f (xi; p), y i
+
+ − ℓ f (xi; p′), y i
+
+i
+
+, (9) Therefore, the inner level task converts to optimizing score (q; p) given the current p. Following the LLM-as-optimizer paradigm (Yang et al., 2023), we let an LLM propose new I2T prompts conditioned on the history of attempts and their scores. Let H = {(qτ , score (qτ ; p)) }tτ =1 denote the inner-loop history at inner iteration t
+
+with current judge prompt p. We generate the next candidate via 
+
+qt+1 = Update q (p, Ht) , (10) where Update q (·) is the function to use an LLM to suggest a new q candidate. Then we evaluate score (qt+1 ; pt)
+
+using Eq. 9, and update the history Ht+1 ← H t ∪ { (qt+1 , score (qt+1 ; p)) }. After K inner iterations, we select the best caption prompt 
+
+q∗(p) = argmax  
+
+> q∈{ q1,...,q K}
+
+score (q; p), (11) and proceed with the outer update using p′ = J(q∗(p)) . The overall optimization algorithm is shown in Algorithm 1. 
+
+# 4 Experiments 
+
+4.1 Experimental Setup  
+
+> 4.1.1 Datasets
+
+We evaluate on four benchmark datasets: AGIN (Chen et al., 2023), SeeTRUE (Yarom et al., 2023), ImageReward (Xu et al., 2023) and UnsafeBench (Qu et al., 2024). AGIN (Chen et al., 2023) is a dataset 50 1 2 3 4 5
+
+> Iteration
+
+20 
+
+40 
+
+> Macro F1
+> AGIN
+
+0 1 2 3 4 5
+
+> Iteration
+
+70 
+
+80 
+
+90 SeeTRUE 
+
+0 1 2 3 4 5
+
+> Iteration
+
+20 
+
+40 
+
+> ImageReward
+
+0 1 2 3 4 5
+
+> Iteration
+
+60 
+
+80 
+
+100 UnsafeBench     
+
+> OPRO TextGrad APO-image Ours Figure 3 The optimization curves on Llama4-Maverick backbone on four datasets.
+
+of AI-generated images drawn from five generative tasks and includes human annotations on a scale of 1-7 on technical quality, rationality, and overall naturalness. SeeTRUE (Yarom et al., 2023) is a benchmark for evaluating image–text alignment; it collects binary human judgments (yes/no) on whether a given text-image pair is semantically consistent with the image. ImageReward (Xu et al., 2023) is a dataset containing images generated by text-to-image models with human annotations of scores reflecting human’s preferences, on the scale of 1 to 5. Finally, UnsafeBench (Qu et al., 2024) comprises a mix of real-world and AI-generated images, each annotated as safe vs unsafe. More details and configurations of each dataset we used can be found in Appendix A.  
+
+> 4.1.2 Compared Methods
+
+We compare with various of existing LLM-based prompt optimization methods that can be applied to optimizing prompts for MLLM judges, including OPRO (Yang et al., 2023), APO (Pryzant et al., 2023), TextGrad (Yuksekgonul et al., 2024). Specially, for APO, we use GPT-o3 taking original images as the optimizer model, denoted by APO-image in our results.  
+
+> 4.1.3 Implementation Details
+
+We conduct experiments on three MLLM Judge backbones, including Llama-4-Scout-17B-16E-instruct, Llama-4-Maverick-17B-128E-instruct (Meta, 2025) and Qwen2.5-VL-32B-instruct (Bai et al., 2025). For all experiments we use OpenAI’s GPT-o3 as the optimizer LLM. For all LLM calls we use the temperature of 0.0. For all methods we use a maximal iterations of 5 rounds of optimization, based on our observation that almost all cases it converges within 5 rounds. We use a maximal of 10 examples as error set in prompt optimization. All prompts used in this study are given in Appendix B. 
+
+4.2 Main Results  
+
+> Quantitative Evaluation.
+
+Table 1 presents the main quantitative results across four datasets. Our approach consistently achieves competitive or superior performance across all benchmarks and base LLM judge models. Especially, BLPO achieves an average of 8% higher than the second best method on UnsafeBench. These results highlight that (1) Ours yields consistent improvements across different tasks, (2) performance gains are consistent across distinct base judge models. This suggests that the optimization dynamics induced by our method provide a stable and effective framework for alignment-aware fine-tuning. As shown in Figure 3, our proposed method consistently demonstrates more stable and effective optimization behavior across all four datasets compared to baseline approaches. On AGIN and ImageReward datasets, our method achieves a steady improvement in Macro F1 as the number of optimization iterations increases, while other methods such as OPRO and TextGrad exhibit slower or fluctuating convergence. For SeeTRUE and UnsafeBench datasets, our approach also attains the highest overall performance, maintaining a clear margin over competing baselines throughout the optimization process. These results indicate that jointly optimizing the task and image-to-text prompts enables our framework to capture more task-relevant visual cues, leading to faster convergence and better final evaluation performance. 6Table 1 Main Results Method UnsafeBench AGIN SeeTRUE ImageReward F1 Acc. F1 Acc. F1 Acc. F1 Acc. Judge Model: Qwen2.5-VL-32B-instruct No Optim. 0.65 ±0.03 0.67 ±0.03 0.09 ±0.03 0.08 ±0.03 0.71 ±0.01 0.75 ±0.01 0.19 ±0.01 0.25 ±0.01 
+
+TextGrad 0.78 ±0.01 0.81 ±0.01 0.17 ±0.01 0.22 ±0.01 0.75 ±0.02 0.75 ±0.02 0.26 ±0.01 0.28 ±0.01 
+
+OPRO 0.68 ±0.02 0.70 ±0.01 0.11 ±0.04 0.09 ±0.03 0.78 ±0.00 0.78 ±0.00 0.24 ±0.03 0.27 ±0.02 
+
+APO-image 0.70 ±0.03 0.76 ±0.02 0.09 ±0.03 0.06 ±0.02 0.74 ±0.00 0.74 ±0.00 0.23 ±0.04 0.27 ±0.04 
+
+BLPO (Ours) 0.80 ±0.03 0.82 ±0.03 0.17 ±0.02 0.14 ±0.02 0.82 ±0.00 0.82 ±0.00 0.29 ±0.02 0.34 ±0.03 
+
+Judge Model: Llama-4-Scout-17B-16E-instruct No Optim. 0.63 ±0.02 0.65 ±0.02 0.16 ±0.03 0.21 ±0.03 0.75 ±0.02 0.75 ±0.02 0.21 ±0.01 0.29 ±0.01 
+
+TextGrad 0.71 ±0.00 0.75 ±0.01 0.21 ±0.01 0.25 ±0.02 0.77 ±0.01 0.77 ±0.01 0.27 ±0.04 0.28 ±0.04 
+
+OPRO 0.81 ±0.02 0.83 ±0.02 0.19 ±0.03 0.26 ±0.03 0.73 ±0.01 0.73 ±0.01 0.32 ±0.01 0.34 ±0.01 
+
+APO-image 0.70 ±0.01 0.71 ±0.01 0.06 ±0.02 0.08 ±0.02 0.75 ±0.01 0.75 ±0.01 0.31 ±0.01 0.37 ±0.01 
+
+BLPO (Ours) 0.83 ±0.01 0.84 ±0.01 0.23 ±0.01 0.28 ±0.01 0.77 ±0.01 0.77 ±0.01 0.34 ±0.02 0.36 ±0.02 
+
+Judge Model: Llama-4-Maverick-17B-128E-instruct No Optim. 0.65 ±0.03 0.69 ±0.02 0.26 ±0.03 0.30 ±0.03 0.75 ±0.01 0.76 ±0.01 0.14 ±0.01 0.22 ±0.01 
+
+TextGrad 0.68 ±0.01 0.73 ±0.01 0.30 ±0.01 0.38 ±0.01 0.80 ±0.01 0.80 ±0.01 0.27 ±0.02 0.29 ±0.01 
+
+OPRO 0.72 ±0.01 0.76 ±0.01 0.26 ±0.03 0.30 ±0.03 0.79 ±0.00 0.79 ±0.00 0.31 ±0.01 0.33 ±0.02 
+
+APO-image 0.67 ±0.02 0.70 ±0.02 0.32 ±0.02 0.37 ±0.02 0.78 ±0.02 0.78 ±0.02 0.25 ±0.03 0.26 ±0.03 
+
+BLPO (Ours) 0.89 ±0.02 0.90 ±0.02 0.33 ±0.01 0.38 ±0.02 0.80 ±0.01 0.80 ±0.01 0.32 ±0.02 0.35 ±0.01 
+
+Table 2 Ablation Study on Llama4-Scout model. Variant AGIN SeeTRUE ImageReward UnsafeBench F1 Acc. F1 Acc. F1 Acc. F1 Acc. Fixed I2T Prompt 0.18 ±0.01 0.18 ±0.01 0.73 ±0.00 0.73 ±0.00 0.25 ±0.03 0.23 ±0.03 0.73 ±0.03 0.76 ±0.02 
+
+judge prompt-based I2T 0.19 ±0.02 0.20 ±0.02 0.74 ±0.02 0.74 ±0.02 0.32 ±0.02 0.34 ±0.02 0.78 ±0.01 0.79 ±0.01 
+
+BLPO (Proposed) 0.23 ±0.01 0.28 ±0.01 0.77 ±0.01 0.77 ±0.01 0.34 ±0.02 0.36 ±0.02 0.81 ±0.01 0.82 ±0.01 
+
+4.3 Effects of Sample Sizes and Number of Iterations 
+
+We conduct a series of studies to investigate the influence of batch size and the number of optimization steps on model performance, as shown in Figure 4. For all studies, the other parameter are set default as in Section 4.1.3, if not specially mentioned. 
+
+Effect of batch size. Figs 4a and 4d shows that the model performance first improves with increasing batch size and then slightly declines after a moderate point (around 15). This suggests that while larger batches provide more diverse error samples for optimization, and generally 10-15 error samples per batch gives the best results. 
+
+Effect of inner-level steps. As shown in Figs 4b and 4e, increasing the number of inner-level optimization steps leads to a steady improvement in Macro F1 until convergence at approximately 5 steps. This indicates that a few iterations are sufficient for the captioning prompt to effectively adapt and guide the judge prompt update, while no inner optimization significantly limits the performance. 
+
+Effect of outer-level steps. Similarly, Figs 4c and 4f demonstrate that model performance increases rapidly within the first five outer-level steps and then stabilizes. This reflects efficient convergence of the bi-level optimization process, confirming that our LLM-based optimizer can effectively refine the judge prompt in a small number of iterations. 73 5 10 15 20 30  
+
+> Batch Size
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> Macro F1
+> ImageReward (a)
+
+F1 vs Batch Size on ImageRe-ward 0 1 3 5 10  
+
+> #Inner Steps
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> Macro F1
+> ImageReward
+> (b)
+
+F1 vs Inner Steps on ImageRe-ward 0 1 2 3 4 5 6 7 8 9 10  
+
+> #Outer Steps
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> Macro F1
+> ImageReward
+> (c)
+
+F1 vs Outer Steps on ImageRe-ward 3 5 10 15 20 30  
+
+> Batch Size
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> F1 Score
+> UnsafeBench
+> Macro F1
+> (d)
+
+F1 vs Batch Size on UnsafeBench 0 1 3 5 10   
+
+> #Inner Steps
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> Macro F1
+> UnsafeBench (e)
+
+F1 vs Inner Steps on Un-safeBench 0 1 2 3 4 5 6 7 8 9 10  
+
+> #Outer Steps
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> Macro F1
+> UnsafeBench
+> (f)
+
+F1 vs Outer Steps on Un-safeBench  
+
+> Figure 4
+
+Comparison of model performance on ImageReward (top row) and UnsafeBench (bottom row) under varying (a,d) batch sizes, (b,e) inner-level steps, and (c,f) outer-level steps. 
+
+4.4 Ablation Study 
+
+We conduct an ablation study to analyze the contribution of each design choice in our optimization framework on the Llama-4-Scout-17B-16E-instruct judge model. Table 2 reports the performance of three variants: (1) Fixed I2T Prompt, which uses a static text-to-image prompt across all samples “Please describe this image in details”, as given in Appendix; (2) judge prompt-based I2T, which use each step’s optimized judge prompt to guide the MLLM to generate descriptions; and (3) the Proposed full version, which integrates adaptive optimization and hierarchical feedback alignment. Overall, the Proposed approach achieves the highest scores across all benchmarks, validating the importance of incorporating both task-level context and adaptive optimization dynamics for effective multimodal alignment. 
+
+# 5 Conclusion 
+
+In this work, we investigate how to improve the alignment of multimodal LLM judges with human evaluations through automatic prompt optimization. We identify the limitations of existing trial-and-error prompt optimization methods in multimodal contexts due to restricted visual context capacity, which prevents sufficient coverage of diverse image cases. To address this, we introduce BLPO, a task–I2T prompt co-optimization framework that enables multimodal LLM judges to reason more effectively about visual content in textual form. Our bi-level optimization approach jointly refines the task-level evaluation prompt and the I2T verbalization prompt, leading to better generalization and interpretability under constrained input lengths. Extensive experiments across four datasets and three LLM judges confirm that our method achieves superior alignment with human judgments and provides more stable, explainable evaluations. 8References 
+
+Shuai Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, Sibo Song, Kai Dang, Peng Wang, Shijie Wang, Jun Tang, et al. Qwen2. 5-vl technical report. arXiv preprint arXiv:2502.13923 , 2025. Dongping Chen, Ruoxi Chen, Shilin Zhang, Yaochen Wang, Yinuo Liu, Huichi Zhou, Qihui Zhang, Yao Wan, Pan Zhou, and Lichao Sun. Mllm-as-a-judge: Assessing multimodal llm-as-a-judge with vision-language benchmark. In 
+
+Forty-first International Conference on Machine Learning , 2024a. Zhaorun Chen, Yichao Du, Zichen Wen, Yiyang Zhou, Chenhang Cui, Zhenzhen Weng, Haoqin Tu, Chaoqi Wang, Zhengwei Tong, Qinglan Huang, et al. Mj-bench: Is your multimodal reward model really a good judge for text-to-image generation? arXiv preprint arXiv:2407.04842 , 2024b. Zijian Chen, Wei Sun, Haoning Wu, Zicheng Zhang, Jun Jia, Zhongpeng Ji, Fengyu Sun, Shangling Jui, Xiongkuo Min, Guangtao Zhai, et al. Exploring the naturalness of ai-generated images. arXiv preprint arXiv:2312.05476 , 2023. Jiale Cheng, Xiao Liu, Kehan Zheng, Pei Ke, Hongning Wang, Yuxiao Dong, Jie Tang, and Minlie Huang. Black-box prompt optimization: Aligning large language models without model training. arXiv preprint arXiv:2311.04155 ,2023. Ziming Cheng, Binrui Xu, Lisheng Gong, Zuhe Song, Tianshuo Zhou, Shiqi Zhong, Siyu Ren, Mingxiang Chen, Xiangchao Meng, Yuxin Zhang, et al. Evaluating mllms with multimodal multi-image reasoning benchmark. arXiv preprint arXiv:2506.04280 , 2025. Mingkai Deng, Jianyu Wang, Cheng-Ping Hsieh, Yihan Wang, Han Guo, Tianmin Shu, Meng Song, Eric Xing, and Zhiting Hu. Rlprompt: Optimizing discrete text prompts with reinforcement learning. In Proceedings of the 2022 Conference on Empirical Methods in Natural Language Processing , pages 3369–3391, 2022. Xinyu Fang, Kangrui Mao, Haodong Duan, Xiangyu Zhao, Yining Li, Dahua Lin, and Kai Chen. Mmbench-video: A long-form multi-shot benchmark for holistic video understanding. Advances in Neural Information Processing Systems , 37:89098–89124, 2024. Xinyu Fang, Zhijian Chen, Kai Lan, Lixin Ma, Shengyuan Ding, Yingji Liang, Xiangyu Zhao, Farong Wen, Zicheng Zhang, Guofeng Zhang, et al. Creation-mmbench: Assessing context-aware creative intelligence in mllm. arXiv preprint arXiv:2503.14478 , 2025. Wentao Ge, Shunian Chen, Hardy Chen, Nuo Chen, Junying Chen, Zhihong Chen, Wenya Xie, Shuo Yan, ChenghaoZhu ChenghaoZhu, Ziyue Lin, et al. Mllm-bench: Evaluating multimodal llms with per-sample criteria. In Proceedings of the 2025 Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language Technologies (Volume 1: Long Papers) , pages 4951–4974, 2025. Qingyan Guo, Rui Wang, Junliang Guo, Bei Li, Kaitao Song, Xu Tan, Guoqing Liu, Jiang Bian, and Yujiu Yang. Connecting large language models with evolutionary algorithms yields powerful prompt optimizers. arXiv preprint arXiv:2309.08532 , 2023. Jindong Jiang, Xiuyu Li, Zhijian Liu, Muyang Li, Guo Chen, Zhiqi Li, De-An Huang, Guilin Liu, Zhiding Yu, Kurt Keutzer, et al. Token-efficient long video understanding for multimodal llms. arXiv preprint arXiv:2503.04130 , 2025. Seungone Kim, Jamin Shin, Yejin Cho, et al. Prometheus: Inducing fine-grained evaluation capability in language models. arXiv preprint arXiv:2310.08491 , 2023. Seungone Kim, Shayne Longpre, James Thorne, et al. Prometheus 2: An open source language model specialized as a judge. arXiv preprint arXiv:2405.01535 , 2024. Brian Lester, Rami Al-Rfou, and Noah Constant. The power of scale for parameter-efficient prompt tuning. In 
+
+Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing , pages 3045–3059, 2021. Jiale Li, Mingrui Wu, Zixiang Jin, Hao Chen, Jiayi Ji, Xiaoshuai Sun, Liujuan Cao, and Rongrong Ji. Mihbench: Benchmarking and mitigating multi-image hallucinations in multimodal large language models. arXiv preprint arXiv:2508.00726 , 2025. Junlong Li, Shichao Sun, Weizhe Yuan, et al. Generative judge for evaluating alignment. arXiv preprint arXiv:2310.05470 , 2023. Xiang Lisa Li and Percy Liang. Prefix-tuning: Optimizing continuous prompts for generation. In Proceedings of the 59th Annual Meeting of the Association for Computational Linguistics and the 11th International Joint Conference on Natural Language Processing (Volume 1: Long Papers) , pages 4582–4597, 2021. 
+
+9Xiaoqiang Lin, Zhaoxuan Wu, Zhongxiang Dai, Wenyang Hu, Yao Shu, See-Kiong Ng, Patrick Jaillet, and Bryan Kian Hsiang Low. Use your instinct: Instruction optimization for llms using neural bandits coupled with transformers. 
+
+arXiv preprint arXiv:2310.02905 , 2023. Shi Liu, Weijie Su, Xizhou Zhu, Wenhai Wang, and Jifeng Dai. Comemo: Lvlms need image context with image memory. arXiv preprint arXiv:2506.06279 , 2025. Yang Liu, Dan Iter, Yichong Xu, Shuohang Wang, Ruochen Xu, and Chenguang Zhu. G-eval: Nlg evaluation using gpt-4 with better human alignment. arXiv preprint arXiv:2303.16634 , 2023. Yuan Liu, Haodong Duan, Yuanhan Zhang, Bo Li, Songyang Zhang, Wangbo Zhao, Yike Yuan, Jiaqi Wang, Conghui He, Ziwei Liu, et al. Mmbench: Is your multi-modal model an all-around player? In European conference on computer vision , pages 216–233. Springer, 2024. AI Meta. The llama 4 herd: The beginning of a new era of natively multimodal ai innovation. https://ai. meta. com/blog/llama-4-multimodal-intelligence/, checked on , 4(7):2025, 2025. José Pombal, Dongkeun Yoon, Ian Wu, et al. M-prometheus: A suite of open multilingual llm judges. arXiv preprint arXiv:2504.04953 , 2025. Archiki Prasad, Peter Hase, Xiang Zhou, and Mohit Bansal. Grips: Gradient-free, edit-based instruction search for prompting large language models. In Proceedings of the 17th Conference of the European Chapter of the Association for Computational Linguistics , pages 3845–3864, 2023. Reid Pryzant, Dan Iter, Jerry Li, Yin Tat Lee, Chenguang Zhu, and Michael Zeng. Automatic prompt optimization with" gradient descent" and beam search. In The 2023 Conference on Empirical Methods in Natural Language Processing , 2023. Yiting Qu, Xinyue Shen, Yixin Wu, Michael Backes, Savvas Zannettou, and Yang Zhang. Unsafebench: Benchmarking image safety classifiers on real-world and ai-generated images. arXiv preprint arXiv:2405.03486 , 2024. Aditya Sharma, Michael Saxon, and William Yang Wang. Losing visual needles in image haystacks: Vision language models are easily distracted in short and long contexts. arXiv preprint arXiv:2406.16851 , 2024. Gwangbin Son et al. Llm-as-a-judge & reward model. arXiv preprint arXiv:2409.11239 , 2024. Dingjie Song, Shunian Chen, Guiming Hardy Chen, Fei Yu, Xiang Wan, and Benyou Wang. Milebench: Benchmarking mllms in long context. arXiv preprint arXiv:2404.18532 , 2024. Xinyuan Wang, Chenxi Li, Zhen Wang, Fan Bai, Haotian Luo, Jiayou Zhang, Nebojsa Jojic, Eric P. Xing, and Zhiting Hu. Promptagent: Strategic planning with language models enables expert-level prompt optimization. arXiv preprint arXiv:2310.16427 , 2024. Zhaowei Wang, Wenhao Yu, Xiyu Ren, Jipeng Zhang, Yu Zhao, Rohit Saxena, Liang Cheng, Ginny Wong, Simon See, Pasquale Minervini, et al. Mmlongbench: Benchmarking long-context vision-language models effectively and thoroughly. arXiv preprint arXiv:2505.10610 , 2025. Tianyi Xiong, Xiyao Wang, Dong Guo, Qinghao Ye, Haoqi Fan, Quanquan Gu, Heng Huang, and Chunyuan Li. Llava-critic: Learning to evaluate multimodal models. In Proceedings of the Computer Vision and Pattern Recognition Conference , pages 13618–13628, 2025. Hanwei Xu, Yujun Chen, Yulun Du, Nan Shao, Wang Yanggang, Haiyu Li, and Zhilin Yang. Gps: Genetic prompt search for efficient few-shot learning. In Proceedings of the 2022 Conference on Empirical Methods in Natural Language Processing , pages 8162–8171, 2022. Jiazheng Xu, Xiao Liu, Yuchen Wu, Yuxuan Tong, Qinkai Li, Ming Ding, Jie Tang, and Yuxiao Dong. Imagereward: Learning and evaluating human preferences for text-to-image generation. Advances in Neural Information Processing Systems , 36:15903–15935, 2023. Chengrun Yang, Xuezhi Wang, Yifeng Lu, Hanxiao Liu, Quoc V Le, Denny Zhou, and Xinyun Chen. Large language models as optimizers. In The Twelfth International Conference on Learning Representations , 2023. Michal Yarom, Yonatan Bitton, Soravit Changpinyo, Roee Aharoni, Jonathan Herzig, Oran Lang, Eran Ofek, and Idan Szpektor. What you see is what you read? improving text-image alignment evaluation. Advances in Neural Information Processing Systems , 36:1601–1619, 2023. Mert Yuksekgonul, Federico Bianchi, Joseph Boen, Sheng Liu, Zhi Huang, Carlos Guestrin, and James Zou. Textgrad: Automatic" differentiation" via text. arXiv preprint arXiv:2406.07496 , 2024. 
+
+10 Tianjun Zhang, Xuezhi Wang, Denny Zhou, Dale Schuurmans, and Joseph E Gonzalez. Tempera: Test-time prompt editing via reinforcement learning. In The Eleventh International Conference on Learning Representations .Lianmin Zheng, Wei-Lin Chiang, Ying Sheng, et al. Judging llm-as-a-judge with mt-bench and chatbot arena. arXiv preprint arXiv:2306.05685 , 2023. Lianghui Zhu, Xinggang Wang, and Xinlong Wang. Judgelm: Fine-tuned large language models are scalable judges. In 
+
+The Thirteenth International Conference on Learning Representations .
+
+11 Appendix 
+
+# A Dataset Details 
+
+AGIN (Chen et al., 2023): We use the score of its general naturalness as the label of our LLM-as-a-Judge task. We sample 20 samples from each score (1-5) for training/eval and 20 from each score for test with a random state of 42, yielding a training/eval set of 100 samples and a test set of 100 samples. The default prompt before optimization is: “Rate how natural the image appears on a 7-point scale (1 = most unnatural, 7 = most natural).” SeeTRUE (Yarom et al., 2023): We use the human annotation denoting text-image aligned or nor aligned as the label for our LLM judge task. We sample 100 positive and 100 negative samples for both training/eval and test set, yielding a training/eval set of 200 samples and a test set of 200 samples. The default prompt before optimization is: “Is the image aligned with the text? Answer 1 if yes, 0 if no.” ImageReward (Xu et al., 2023): We use this dataset’s label “image_text_alignment_rating” as our LLM judge task, which is on a scale of 1-7. We sample 20 samples from each score for both training/eval and test set, finally giving a training/eval set with 140 samples and a test set with 140 samples. The default prompt before optimization is: “Is the image aligned with the text? Give a score of 1 (worst) - 7 (best).” UnsafeBench (Qu et al., 2024): We use its human annotations Safe/Unsafe for our judge task. We sample 10 samples from each of this dataset’s 11 categories for both training/eval and test, finally giving a training/eval set with 110 samples and a test set with 110 samples. The default prompt before optimization is: “Is this ad image safe or unsafe?” 
+
+# B Prompts 
+
+B.1 Prompt for optimizer model to update judge prompt 
+
+Now I ’m u s i n g an AI doing an ad image e v a l u a t i o n t a s k . # Task D e s c r i p t i o n ( Current prompt ) "{ task_prompt }" # P r e v i o u s E r r o r s . Each l i n e i s a p r e d i c t i o n , o r g a n i z e d as "Ad image d e s c r i p t i o n " , "Ground Truth " , " P r e d i c t i o n " . "{ wrong_cases }" # Update Prompt . P l e a s e update t h e t a s k d e s c r i p t i o n g u i d e l i n e prompt based on above wrong c a s e s . Note t h a t you s h o u l d 1 . Make s u r e your prompt i s i n f o r m a t i v e , c o n c i s e , c l e a r , l i k e a g u i d e l i n e . MAKE SURE t h a t u s i n g your updated prompt t h e LLM can c o r r e c t i t s wrong p r e d i c t i o n s . 2 . Your updated prompt s h o u l d be g e n e r a l i z a b l e . ∗∗ You MUST NOT put any r e a l examples ( e . g . ’ s ) from t h e wrong c a s e s i n t o your updated prompt . ∗ ∗ 
+
+3 . Minimally update t h e prompt . Make i n c r e m e n t a l minimal change t o o n l y c o r r e c t t h e s e e r r o r c a s e s . 3 . You must NOT i n c l u d e any output f o r m a t t i n g i n s t r u c t i o n s . P l e a s e o n l y r e t u r n your f u l l updated i n s t r u c t i o n . 12 B.2 Prompt for optimizer model to update I2T prompt 
+
+You a r e an AI a s s i s t a n t t o o p t i m i z e t he prompt f o r LLM t o d e s c r i b e t he image b e t t e r f o r downstream t a s k s . The downstream t a s k i s : 
+
+−− Begin downstream t a s k d e s c r i p t i o n −− 
+
+{ current_prompt } 
+
+−− End downstreamtask d e s c r i p t i o n −− 
+
+Here a r e t he p a s t attempts o f some image −to −t e x t prompt c a n d i d a t e s and t h e i r r e s u l t s . P l e a s e use them t o g u i d e your o p t i m i z a t i o n . "{ prompt_history_str }" Now, p l e a s e o n l y r e t u r n your s u g g e s t e d new image −to −t e x t prompt . Be very c o n c i s e and s p e c i f i c . 
+
+B.3 Default I2T Prompts Before Optimization 
+
+‘ ‘ P l e a s e d e s c r i b e t h i s image i n d e t a i l s . ’ ’ 
+
+# C Additional Optimized Prompts 
+
+Here are the optimized judge prompts based on the Llama4-Maverick judge models. 
+
+> AGIN dataset:
+
+Rate how n a t u r a l and r e a l −l o o k i n g t he image a p p e a r s on a 7−p o i n t s c a l e ( 1 = e x t r e m e l y unnatural , 7 = c o m p l e t e l y n a t u r a l ) . G u i d e l i n e s 1 . Examine t e x t u r e s , l i g h t i n g , p e r s p e c t i v e , anatomy , geometry , shadows / r e f l e c t i o n s , t e x t , and o v e r a l l p h y s i c s . 2 . Judge both s e v e r i t y and c o v e r a g e o f a r t i f a c t s . Large , w i d e s p r e a d f l a w s on key s u b j e c t s p u l l t h e s c o r e down t o t h e 1−3 range ; sm al l , l o c a l i z e d f l a w s a l l o w s c o r e s >=4. 3 . S c a l e d e t a i l s 1 − Chaotic / unmistakably f a k e a t a g l a n c e (<1 s ) . Severe , p e r v a s i v e d i s t o r t i o n s ; c o r e s u b j e c t s u n r e c o g n i z a b l e o r i n c o h e r e n t ; t h e s c e n e b a r e l y r e a d s as a photo . 2 − Very u n n a t u r a l . Major a r t i f a c t s dominate , but th e main s u b j e c t i s s t i l l v a g u e l y i d e n t i f i a b l e . 3 − Unnatural . M u l t i p l e o b v i o u s a r t i f a c t s a c r o s s t h e image , y e t o v e r a l l s c e n e remains c o h e r e n t . 4 − S l i g h t l y u n n a t u r a l . Scene i s b r o a d l y p l a u s i b l e ; one o r two c l e a r f l a w s v i s i b l e d u r i n g a normal f i r s t c a r e f u l l o o k (2 −3 s ) without zooming . 5 − Mostly n a t u r a l . Looks r e a l a t f i r s t g l a n c e ; o n l y s u b t l e i s s u e s emerge on c l o s e i n s p e c t i o n o r zooming . 6 − N a t u r a l . No n o t i c e a b l e a r t i f a c t s e x c e p t e x t r e m e l y minor ones d e t e c t a b l e o n l y a f t e r c a r e f u l s c r u t i n y . 7 − F u l l y p h o t o r e a l i s t i c . No d e t e c t a b l e a r t i f a c t s a t any i n s p e c t i o n l e v e l . 4 . I f a r t i f a c t s a r e w i d e s p r e a d or a f f e c t th e primary s u b j e c t , n e v e r r a t e above 3 . 5 . When u n c e r t a i n between two a d j a c e n t s c o r e s , c h o o s e t h e l o w e r one . 
+
+> SeeTRUE dataset:
+
+13 Binary Image −Caption C o n s i s t e n c y Check Output e x a c t l y one c h a r a c t e r : 1 − e v e r y c o n c r e t e , v i s u a l l y c h e c k a b l e s t a t e m e n t i n th e c a p t i o n i s d e f i n i t e l y c o r r e c t . 0 − o t h e r w i s e . Concrete , v i s u a l l y c h e c k a b l e s t a t e m e n t s i n c l u d e : 
+
+− E x i s t e n c e and count ( " a c a t " , " t h r e e men " ; p l u r a l words = two o r more ) . 
+
+− V i s i b l e a t t r i b u t e s ( c o l o r , s i z e , s p e c i e s / breed , c l o t h i n g , e x p r e s s i o n , m a t e r i a l , e t c . ) . 
+
+− Actions , poses , s p a t i a l r e l a t i o n s ( " i s jumping " , " next t o " , "on top o f " ) . 
+
+− S e t t i n g o r time o f day t h a t must be e v i d e n t ( " a t a beach " , " i n d o o r s " , " n i g h t t i m e " ) . D e c i s i o n r u l e s : 1 . ALL such s t a t e m e n t s must be c l e a r l y s u p p o r t e d . 2 . I f any one i s wrong , m i s s i n g , c o n t r a d i c t s t h e image , o r cannot be c o n f i r m e d with hig h c o 3 . I g n o r e s t a t e m e n t s about non −v i s u a l f a c t s ( h i s t o r y , thoughts , f u t u r e e v e n t s , emotions not 4 . Extra d e t a i l s p r e s e n t i n t he image but not mentioned a r e a c c e p t a b l e . 5 . When co untin g , be s t r i c t : "two" = e x a c t l y two ; p l u r a l nouns without a number = a t l e a s t two . Return o n l y th e d i g i t 1 o r 0 , with no a d d i t i o n a l t e x t . 
+
+> ImageReward dataset:
+
+You a r e an e x p e r t v i s u a l −t e x t a l i g n m e n t j u d g e . For each t a s k you r e c e i v e : (A) an image (B) a t e x t u a l d e s c r i p t i o n Goal : d e c i d e how w e l l (A) matches (B) and output ONE i n t e g e r from 1 t o 7 . Output n o t h i n g e x c e p t t h i s s i n g l e d i g i t . S c o r i n g r u b r i c 7 − P e r f e c t : Every d e s c r i b e d element ( s u b j e c t s , key a t t r i b u t e s , s t y l e , s e t t i n g ) i s p r e s e n t ; no n o t a b l e e x t r a s o r c o n f l i c t s . 6 − Near −p e r f e c t : Only one t r i v i a l , e a s i l y missed d e t a i l d i f f e r s . 5 − Good : Main s u b j e c t and most a t t r i b u t e s match ; one minor d e t a i l o r background element i s o f f o r m i s s i n g . 4 − F a i r : Core c o n c e p t matches , but s e v e r a l d e s c r i b e d d e t a i l s , s t y l i s t i c cues , or s c e n e e l e m e n t s a r e a b s e n t o r c o n t r a d i c t o r y . 3 − Poor : Only one major a s p e c t matches , o r m u l t i p l e important e l e m e n t s c o n f l i c t . 2 − Very poor : Only vague t h e m a t i c o v e r l a p ; most key e l e m e n t s a r e wrong or m i s s i n g . 1 − None / Opposite : No m e a n i n g f u l match or c l e a r c o n t r a d i c t i o n . I n t e r n a l c h e c k l i s t ( use s i l e n t l y ) : 1 . S u b j e c t s p r e s e n t ? 2 . Key a t t r i b u t e s ( gender , c o l o r , pose , c l o t h i n g , e x p r e s s i o n , e t c . ) c o r r e c t ? 3 . S t y l e & medium ( photo vs . i l l u s t r a t i o n , r e a l i s m vs . cartoo n , e t c . ) c o r r e c t ? 4 . S e t t i n g / background d e t a i l s c o r r e c t ? 5 . M i s s i n g r e q u i r e d e l e m e n t s o r prominent e x t r a s ? Procedure 1 . I n s p e c t t h e image and d e s c r i p t i o n c a r e f u l l y . 14 2 . Mentally compare u s i n g th e c h e c k l i s t , w e i g h i n g mismatches a g a i n s t matches . 3 . S e l e c t t h e s c o r e t h a t b e s t f i t s t he r u b r i c . 4 . Respond with ONLY t h e i n t e g e r (1 −7) , no s p a c e s , words , o r p u n c t u a t i o n . 15

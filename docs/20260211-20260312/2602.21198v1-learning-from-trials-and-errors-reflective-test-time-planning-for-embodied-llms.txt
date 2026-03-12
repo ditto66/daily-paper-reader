@@ -1,0 +1,1430 @@
+Title: Learning from Trials and Errors: Reflective Test-Time Planning for Embodied LLMs
+
+URL Source: https://arxiv.org/pdf/2602.21198v1
+
+Published Time: Wed, 25 Feb 2026 02:18:59 GMT
+
+Number of Pages: 22
+
+Markdown Content:
+# Learning from Trials and Errors: Reflective Test-Time Planning for Embodied LLMs 
+
+Yining Hong 1 Huang Huang 1 Manling Li 2 Li Fei-Fei 1 Jiajun Wu 1 Yejin Choi 1
+
+ Website: https://reflective-test-time-planning.github.io 
+
+§ Code: https://github.com/Reflective-Test-Time-Planning/Reflective-Test-Time-Planning (a) Task      
+
+> Put the toy car in the green box
+> Bad choice: the teddy bear is
+> already in the green box.
+> Score: 22
+> The orange box is
+> too small. The toy
+> car doesn’t fit into
+> the orange box.
+> Score: 0
+> Blue Text Orange Text
+> Put the teddy bear into the green box
+> I shouldn’t have put the teddy bear in
+> the green box. The green box might
+> be the only box that fits the large toy
+> car. Score: 0
+> Collect all toys scattered
+> throughout the house and
+> place them into the
+> appropriate toy boxes.
+> Internal Simulation Internal Reflection External Reflection Execute the highest -score action Update internal reflection
+> Candidate Action 2
+> Candidate Action 1
+
+(b) Reflection -in -Action (c) Reflection -on -Action (d) Retro -Reflection 
+
+> Put the toy car in the orange box
+> Might be a good fit. Score: 89
+
+Figure 1. Conceptual overview of Reflective Test-Time Planning. The agent (a) receives a long-horizon task, (b) performs reflection-in-action by internally simulating and scoring candidate actions, (c) performs reflection-on-action by updating its beliefs and decision systems based on execution outcomes, and (d) conducts retrospective reflection to revise earlier decisions with hindsight. 
+
+Abstract 
+
+Embodied LLMs endow robots with high-level task reasoning, but they cannot reflect on what went wrong or why, turning deployment into a sequence of independent trials where mistakes repeat rather than accumulate into experience. Drawing upon human reflective practitioners, we introduce Reflective Test-Time Planning, which integrates two modes of reflection: reflection-in-action , where the agent uses test-time scaling to generate and score multiple candidate actions using internal reflections before execution; and 
+
+reflection-on-action , which uses test-time training to update both its internal reflection model and its action policy based on external reflections after execution. We also include retrospective reflec-tion, allowing the agent to re-evaluate earlier deci-sions and perform model updates with hindsight for proper long-horizon credit assignment. Ex-periments on our newly-designed Long-Horizon Household benchmark and MuJoCo Cupboard Fitting benchmark show significant gains over baseline models, with ablative studies validating the complementary roles of reflection-in-action 
+
+> 1
+
+Stanford University 2Northwestern University. Correspon-dence to: Yining Hong <yinihong@stanford.edu >.
+
+Preprint. February 25, 2026. 
+
+and reflection-on-action. Qualitative analyses, in-cluding real-robot trials, highlight behavioral cor-rection through reflection. 
+
+“Error isn’t simple darkness, it sheds a light of its own.” — Kathryn Schulz, Being Wrong 
+
+1. Introduction 
+
+Embodied LLMs (Zitkovich et al., 2023; Kim et al., 2024; Hong et al., 2024) equip agents with task planning abili-ties, but they remain brittle static oracles that cannot learn from failures, turning deployment into independent trials of repeated mistakes rather than accumulated experience. Hu-mans, in contrast, are natural reflective practitioners. Draw-ing on Sch ¨on’s framework about reflective planning (Sch ¨on, 1992), humans fluidly alternate between two modes of re-flection: through reflection-in-action , we engage in internal simulation, questioning whether our planned approach will actually work given what we currently understand; through 
+
+reflection-on-action , we use the actual outcomes to reshape both our beliefs about the environment and our strategies for acting within it. An illustrative example of these reflection modes is shown in Figure 1. This bidirectional flow allows us to learn not only from outcomes, but also from the very process of engaging with an uncertain world. Current approaches, however, capture at best a superficial version of one mode while neglecting the other. One line 1
+
+> arXiv:2602.21198v1 [cs.LG] 24 Feb 2026 Learning from Trials and Errors: Reflective Test-Time Planning for Embodied LLMs
+
+of work (Shinn et al., 2023; Madaan et al., 2023) uses LLM-based verbal reflection, generating natural-language critiques of past behavior to condition future actions. While this enables reflection-on-action at the level of reasoning traces, reflections are stored only as contextual text and do not update the underlying decision process, making their effects transient and prone to repetition under distributional shift. A second line of work (Zhen et al., 2024; Feng et al., 2025) relies on internal world models to guide action selec-tion in embodied environments. These approaches support reflection-in-action through anticipated outcomes, but typ-ically assume fixed, pretrained dynamics models that may be wrong in ways only revealed during execution. To operationalize both reflection modes in embodied set-tings, we introduce Reflective Test-Time Planning, aframework that seamlessly unifies reflection-in-action and reflection-on-action for embodied agents during test-time de-ployment. Concretely, the framework employs three embod-ied LLMs during deployment: an action generation model 
+
+πθ , an internal evaluator Vϕi , and an external evaluator Vϕe .During reflection-in-action, the agent samples N candidate actions via high-temperature sampling, uses Vϕi to generate internal reflections scoring each candidate, then executes the highest-scoring action. After execution, Vϕe generates an external reflection, providing an immediate, language-based evaluation of what happened and why. This immediate external reflection grounds the agent’s be-liefs in reality, but remains inherently local—it only eval-uates consequences visible at the next timestep. Yet many embodied failures are non-local: an action that appears successful may later block progress, and a seemingly sub-optimal action may enable future success. To address this temporal credit assignment problem, we introduce retrospec-tive reflection, where Vϕe periodically re-evaluates earlier decisions with hindsight (e.g., at room transitions or after repeated failures). These hindsight assessments provide self-supervised signals at deployment time, enabling two forms of test-time training: (1) policy gradient for πθ to favor actions that score well under hindsight, and (2) supervised learning for Vϕi to anticipate what hindsight will reveal. Be-cause these updates revise not only the action policy but also the predictive assumptions behind it, the process constitutes a form of double-loop learning (Argyris, 1977), in which agents learn not merely from outcomes but from diagnosing and correcting the underlying causes of their errors. We evaluate our approach on two embodied benchmarks that we design to stress error-driven adaptation: (1) a Long-Horizon Household benchmark that requires failure recov-ery during multi-step planning across rooms, and (2) a con-trolled MuJoCo Cupboard Fitting benchmark that isolates geometric placement failures. Our framework achieves large gains over reflective language, RL and world-model base-lines. Ablations indicate that improvement emerges only when both reflection-in-action and reflection-on-action take place, and when both action policy and internal reflection model are updated during deployment. Qualitative analyses, including preliminary real-robot trials, show that reflection reduces repetitive failure modes in practice. 
+
+2. Related Works 
+
+Test-Time Adaptation (TTA) and Learning enables mod-els to adjust to distribution shifts during inference without source data (Sun et al., 2020; Wang et al., 2021; Liang et al., 2025). Early methods minimize prediction entropy, with Tent (Wang et al., 2021) updating batch-norm parameters on-line and later work adding calibrated objectives (Niu et al., 2022; Yang et al., 2024). Parameter-efficient tuning fur-ther boosts TTA: LoRA (Hu et al., 2021) enables low-rank weight updates with little memory (Kojima et al., 2025), while bias-only tuning (Dumpala et al., 2023) offers alter-native efficiency–accuracy trade-offs. Recent extensions operate on hidden state representations (Sun et al., 2024), supporting long-context memory. For embodied settings, continual learning frameworks (Lesort et al., 2020; Meng et al., 2025) demonstrate viability in manipulation and navi-gation (Hajizada et al., 2024; Mendonca et al., 2024). We adapt models at test time via self-supervised reflective sig-nals extracted from the agent’s own verbal assessments. 
+
+Multimodal Embodied Large Language Models couple visual perception with language understanding to enable em-bodied planning. Recent foundation models leverage large-scale robotic datasets for zero-shot generalization (Zitkovich et al., 2023; Kim et al., 2024; Driess et al., 2023), with RT-2 transferring web knowledge and OpenVLA offering open-source support across heterogeneous embodiments. 3D spatial understanding has become central, spanning point clouds (Hong et al., 2023), 3D patches (Zhu et al., 2025), and lightweight point cloud injection (Li et al., 2025). Fur-ther extensions incorporate multisensory interaction (Hong et al., 2024), generative world models for manipulation (Zhen et al., 2024), and long-term spatial–temporal embod-ied memory (Hu et al., 2025). Architectural advances ex-plore interleaved multimodal instructions (Fan et al., 2025) and chain-of-thought reasoning (Zhao et al., 2025; Mu et al., 2023) for improved task decomposition. In contrast, we view deployment as a learning phase: instead of acting as a fixed policy, our embodied multimodal LLM reflects on its own actions and updates itself via test-time training. 
+
+Reflection and Self-Improvement in AI Agents. Re-flection mechanisms enable agents to learn from failures through self-critique and refinement. Verbal self-reflection methods (e.g., Reflexion (Shinn et al., 2023)) store natural-language critiques to guide future actions, with extensions exploring self-refinement (Madaan et al., 2023; Zhang et al., 2024), tool-assisted verification (Gou et al., 2024), curiosity-2Learning from Trials and Errors: Reflective Test-Time Planning for Embodied LLMs 𝑓 !                                                            
+
+> "#$,𝑠 !
+> "#$𝑓 !
+> ",𝑠 !
+> "
+> Action LLM θ
+> Internal LLM 𝜙 %
+> Internal LLM 𝜙 %
+> Internal LLM 𝜙 %
+> 𝑎 "
+> &
+> 𝑜 "
+> 𝑎 "
+> '
+> 𝑎 "
+> (
+> 𝑓 %",&,𝑠 %
+> ",&
+> 𝑓 %
+> ",',𝑠 %
+> ",'
+> 𝑓 %",(,𝑠 %
+> ",(
+> 𝑎 "
+> ∗=𝑎 "
+> +,-.+/ 1!
+> ",$
+> Execute
+> 𝑜 "#&
+> External
+> LLM 𝜙 !
+> 𝑜 "θ𝑎 "
+> 𝜙 %
+> Execute the
+> max -score
+> action
+> 𝜙 !
+> 𝑜 "#&𝑎 "#&
+> Execute
+> …𝑜 "#$𝑎 "#$
+> Working Memory Buffer 𝒲 =(𝑎 ",𝑓 !
+> ",𝑠 !
+> ")Retro -Refle ction on 𝑎
+> based on current
+> working memory and
+> latest reflection of 𝑎
+> using external LLM 𝜙 !
+> Sample a set of
+> (𝑎 ,𝑓 ,𝑠 )from 𝒲 or 𝒟
+> Current -chunk
+> Test -time
+> Training set 𝒟 =
+> (𝑎 ",𝑓 ,,𝑠 ,)
+> 𝑓 ,,𝑠 ,
+> (a) Reflection -in -Action and External Reflection
+> (b) Reflection -on -Action
+> Train Internal LLM 𝝓 𝒊 via Supervised Loss using {𝒂 ,𝒇 ,𝒔 } from 𝑫
+> Train Action LLM 𝜽 via Policy Gradient using {𝒂 ,𝒔 } from 𝑫
+> …
+> 𝑓 %",𝑠 %
+> "
+> θ
+> 𝜙 %
+> 𝑓 %"#&,𝑠 %
+> "#&
+> 𝑓 !
+> ",𝑠 !
+> "
+> 𝑓 !
+> "#&,𝑠 !
+> "#&
+> 𝜙 !
+> θ
+> Execute 𝜙 !
+
+Figure 2. Method overview. (a) Reflection-in-action : multiple candidate actions are generated and scored by an internal reflection LLM prior to execution. (b) Reflection-on-action : iteratively invoked when working memory hits K or at key milestones. Executed actions are critiqued by an external reflection LLM and stored in a working memory buffer; at milestones, hindsight re-evaluation assigns long-horizon credit. The resulting verbal reflections form self-supervised training data to update both the internal reflection LLM (supervised loss) and the action LLM (policy gradient) via test-time training, enabling agents to learn from execution experience during deployment. 
+
+driven reflection (Kauvar et al., 2024), multi-agent systems (Ng, 2024), and robotics (Huang et al., 2022). These ap-proaches support reflection-on-action but store reflections only as text, influencing behavior indirectly without updat-ing model parameters, and thus remain brittle under dis-tribution shift. A complementary line enables reflection-in-action via internal predictive models that anticipate out-comes (Zhen et al., 2024; Feng et al., 2025; Zhen et al., 2025; Hafner et al., 2024). Such world models are typi-cally fixed despite evolving dynamics in embodied settings. Our method unifies reflection-in-action and reflection-on-action by converting reflections into self-supervised training signals for parameter updates during deployment. 
+
+3. Reflective Test-Time Planning 
+
+Consider an embodied agent with a multimodal large lan-guage model operating on task τ in a partially observ-able environment. At each timestep t, the model receives multimodal observation ot, generates action at in natu-ral language, and receives execution feedback et indicat-ing whether the action executed successfully (e.g., object grasped, placement completed). Crucially, a positive et indi-cates successful execution but does not imply the action was strategically correct or contributes to full task completion. Traditional multimodal embodied LLM systems keep model parameters fixed at inference, limiting adaptation to novel scenarios or recovery from failures. We depart from this static inference setting by building an adaptive test-time framework that employs three interacting models: an action generation LLM πθ that produces actions given observa-tions, an internal reflection LLM Vϕi that generates pre-action evaluations, and an external reflection LLM Vϕe that generates post-execution assessments. These multimodal LLMs are first initialized with basic capabilities for reason-ing in specific embodied environments through minimum supervised fine-tuning on a small set of tasks, enabling them to understand action formats, generate reflections, and pro-cess 3D observations before they can effectively learn from test-time experience. At deployment time, we introduce three reflection types: internal reflection fi for pre-action scoring, external reflection fe for post-execution assessment, and retrospective reflection fr for hindsight re-evaluation. We combine test-time scaling (generating and scoring multi-ple candidate actions) for reflection-in-action, with test-time training (tuning πθ and Vϕi ) for reflection-on-action. Fig-ure 2 shows an overview of our method. We also provide a detailed method breakdown in Algorithm 1. We choose verbal reflection as the representation for all re-flection types inspired by “double-loop learning” (Argyris, 1977): by articulating what went wrong and why, the agent abstracts generalizable lessons transferable to future de-cisions rather than merely reporting that an action failed. These articulated lessons serve as supervisory signals during deployment, providing interpretable feedback to be reused later. Thus, instead of only training the action model based on outcomes during test time (single loop), we also train the internal reflection LLM to align its pre-action internal re-flections with post-execution external reflections, updating the underlying reasoning process behind the action itself. 3Learning from Trials and Errors: Reflective Test-Time Planning for Embodied LLMs 
+
+3.1. Reflection-in-Action 
+
+Humans naturally deliberate under uncertainty by mentally 
+
+simulating and reflecting on actions. We transfer this abil-ity to embodied agents via reflection-in-action : rather than greedily selecting the first plausible action, the agent sam-ples several candidates and reflects on each one before com-mitting. We implement this through test-time scaling, where we generate N diverse candidate actions and use the internal reflection LLM to produce reflective evaluations for each candidate, which guide action selection. 
+
+Algorithm 1 Reflective Test-Time Planning 
+
+Require: Task τ , initial observation o1; action LLM πθ , internal reflection LLM Vϕi , external reflection LLM Vϕe , window size K
+
+1: Initialize a0, f (0)  
+
+> e
+
+= None ; working memory buffer, test-time training set, retro-buffer W, Dtrain , Dretro ← ∅ ; Temperature T; Max step T ;
+
+2: for t = 1 , 2, ..., T do 
+
+3: // Reflection-in-Action 
+
+4: Construct action prompt xaction from τ, o t, a t−1, f t−1
+
+> e
+
+5: Sample N actions: {akt }Nk=1 ∼ πθ (·| xaction ; T )
+
+6: for k = 1 , ..., N do 
+
+7: Construct internal reflection prompt xk
+
+> internal
+
+8: Generate score: f t,k i , s t,k i ← Vϕi (xk
+
+> internal
+
+)
+
+9: end for 
+
+10: Select a∗ 
+
+> t
+
+= a(arg max k st,k i )
+
+> t
+
+11: Execute a∗ 
+
+> t
+
+in environment → observe (ot+1 , e t)
+
+12: Break if task complete 
+
+13: // Reflection-on-Action 
+
+14: Construct external reflection prompt xexternal 
+
+15: Generate reflection feedback: f te , s te ← Vϕe (xexternal )
+
+16: W ← W ∪ { (ot, a ∗ 
+
+> t
+
+, f te , s te)}
+
+17: if |W| = K or hit key milestone then 
+
+18: // Retrospective Reflection: Re-evaluate with Hindsight 
+
+19: for each (oj , a j , f j , s j ) ∈ W ∪ D retro do 
+
+20: Construct retro prompt xj 
+
+> retro
+
+from τ, a j , W, o t+1 , f j , s j
+
+21: Generate revised reflection: f jr , s jr ← Vϕe (xj
+
+> retro
+
+)
+
+22: Dretro [aj ] ← (aj , f jr , s jr ) // reflection overwrite for aj
+
+23: end for 
+
+24: Dtrain ← D retro 
+
+25: // Regularization: Prevent Catastrophic Forgetting 
+
+26: for sampled unexplored action al do 
+
+27: Construct pre-action internal xl
+
+> internal
+
+28: f li , s li ← Vϕi (xl
+
+> internal
+
+) // Original output 
+
+29: Dtrain ← D train ∪ { (al, f li , s li)}
+
+30: end for 
+
+31: // Test-Time Training: Supervised Learning for Internal LLM 
+
+32: for epoch e = 1 , ..., E do 
+
+33: for (a, f, s ) ∈ D train do 
+
+34: Construct xinternal from a
+
+35: Compute loss: ℓϕ = − log pϕi (f |xinternal )
+
+36: Update: ϕi ← ϕi − ηϕ∇ϕi ℓϕ
+
+37: end for 
+
+38: end for 
+
+39: // Test-Time Training: REINFORCE for Action LLM 
+
+40: for RL step = 1 , ..., RL Steps do 
+
+41: for (a, f, s r ) ∈ D train do 
+
+42: Construct xaction from a. Reward r = 2 sr /100 − 1
+
+43: Compute log probability: log pθ (a|xaction )
+
+44: Compute REINFORCE loss: ℓθ = −r · log pθ (a|xaction )
+
+45: end for 
+
+46: Accumulate gradients and update: θ ← θ − ηθ ∇θ ℓθ
+
+47: end for 
+
+48: Clear working memory: W ← ∅ 
+
+49: end if 
+
+50: end for 
+
+Vanilla Action Generation. Standard autoregressive gener-ation from the action LLM πθ produces a single action via greedy or low-temperature sampling: 
+
+at = arg max  
+
+> a∈A
+
+pθ (a|ot) (1) where ot is the current observation, with some architectures implicitly encoding historical context through memory struc-tures ( e.g. , (Hu et al., 2025)). Greedy generation commits to actions early without reflecting on potential consequences. 
+
+Candidates Generation. Different from the above, at each decision step t, we construct an action generation prompt 
+
+xaction containing task description τ , current observation 
+
+ot, previous action at−1, and previous external reflection 
+
+f t−1 
+
+> e
+
+(both initialized as None; external reflection will be introduced later). We sample N diverse candidate actions: 
+
+akt ∼ pθ (·| xaction ; T ) k = 1 , ..., N (2) where high temperature T encourages diversity in the gen-erated candidates. 
+
+Internal Reflection Scoring. For each candidate, we con-struct an internal reflection prompt xk
+
+> internal
+
+, which is identi-cal to xaction except that it adds the candidate action akt to be evaluated. The internal reflection LLM generates: 
+
+f t,k i , s t,k i = Vϕi (xk
+
+> internal
+
+) (3) where si ∈ [0 , 100] is a numerical score and f t,k i is natural language reflection. Because this reflection occurs prior to action execution, we refer to it as internal reflection. 
+
+Best Action Selection. We select the highest-scoring candidate: 
+
+a∗ 
+
+> t
+
+= a(arg max k∈[N ] st,k i ) 
+
+> t
+
+(4) Rather than executing the first feasible action, the agent “mentally tries out” multiple options and chooses the one it internally judges as most promising. 
+
+3.2. Reflection-on-Action 
+
+Reflection-in-action has a limitation: internal reflection oper-ates in imagination, not reality. The internal reflection LLM may score an action highly based on plausible reasoning, yet the action fails due to unforeseen physical constraints or environmental dynamics. Reflection-on-action, learning from experience after actions are executed, addresses this by grounding learning in actual execution outcomes. 3.2.1. M ULTI -S CALE EXTERNAL REFLECTION 
+
+External Reflection Generation. After executing a∗ 
+
+> t
+
+and observing (ot+1 , e t), we construct xexternal by extending 
+
+xaction with a∗ 
+
+> t
+
+, et, and (ot, o t+1 ). The external reflection LLM generates: 
+
+f te , s te = Vϕe (xexternal ) (5) 4Learning from Trials and Errors: Reflective Test-Time Planning for Embodied LLMs 
+
+where ste is a score and f te is language feedback assessing the immediate outcome and its cause. This provides real-time assessment based on directly observable consequences. 
+
+Working Memory Buffer. We maintain a buffer Wt =(oj , a j , e j , f je ) | j = t − K + 1 , ..., t with K steps. This buffer accumulates recent experience until reaching a key milestone (e.g., exiting a room, detecting repeated failures that need replanning) or when |W t| = K, at which point we trigger memory consolidation and test-time training. 
+
+Retrospective Reflection with Hindsight. A critical limita-tion of external reflection is that it evaluates actions based only on immediate outcomes. An action may appear suc-cessful initially but later prove problematic (e.g., placing an object in an accessible compartment that blocks the only space for a larger object). To address this credit assignment problem, we introduce retrospective reflection. Once we hit key milestone or reach the working memory limit, for each action aj that has been reflected before (ei-ther by immediate external reflection or by previous retro-reflection), the external reflection LLM re-evaluates the action with full hindsight: 
+
+f jr , s jr = Vϕe (xj
+
+> retro
+
+) (6) where the retrospective prompt xj 
+
+> retro
+
+includes: (1) the com-plete working memory window Wt as context; (2) a his-torical action aj to be retro-reflected based on the current outcomes; (3) its most recent reflection f j 
+
+> recent
+
+(either f je
+
+from the current working memory Wt if this is the first ret-rospective evaluation, or f jr from the previous retrospective round and stored in a retro-buffer Dretro ; and (4) the current observation ot+1 . After retro-revision, we update Dretro and store only the most recent retro-reflection for each action. As W ∪ D retro grows larger with actions, we may subsample historical actions if necessary to keep it tractable. 3.2.2. TEST -T IME TRAINING DATASET CONSTRUCTION .We construct training dataset Dtrain with two types of data: 
+
+Retro-supervised pairs : For any action aj that has been retrospectively evaluated, we create training pairs using the retrospective reflection f jr and sjr :
+
+Dretro = ( aj , f jr , s jr ) (7) These pairs use hindsight-corrected reflections and scores for training both the internal LLM Vϕi and action LLM πθ .
+
+Regularization pairs : To prevent catastrophic forget-ting, we randomly sample unexplored actions al, construct 
+
+xl 
+
+> internal
+
+and use the internal LLM’s current predictions: 
+
+Dreg = ( al, f li , s li) (8) where f li , s li = Vϕi (xl
+
+> internal
+
+) represents the model’s current output for randomly sampled action al. This anchors the model to its existing knowledge for actions not updated by recent experience, preventing distribution shift caused by training exclusively on retrospectively evaluated actions. 3.2.3. T EST -T IME TRAINING 
+
+Internal Reflection LLM Training via Supervised Learn-ing. We train the internal reflection LLM Vϕi to predict retrospective reflections using standard supervised learning. The objective minimizes negative log-likelihood over the combined dataset Dtrain = Dretro ∪ D reg :
+
+Linternal (ϕi) = E(xinternal , f, s ) ∼ D train [− log pϕi (f |x)] 
+
+(9) Where we construct xinternal from each action a. We perform 
+
+E epochs of test-time training: 
+
+ϕ(e+1)  
+
+> i
+
+= ϕ(e) 
+
+> i
+
+− ηϕ∇ϕi Linternal (10) 
+
+Action LLM Training via RL. The action LLM πθ is up-dated using policy gradient with retrospective scores as rewards. We convert the retrospective score sr ∈ [0 , 100] 
+
+to a reward signal r = 2 ∗ (sr /100) − 1 mapping scores to [−1, 1] . For each training example, we compute the log-probability of the executed action sequence: 
+
+log pθ (a|xaction ) = 
+
+> |a|
+
+X
+
+> i=1
+
+log pθ (ai|a<i , x action ) (11) where the sum is over action tokens. We construct xaction 
+
+from each action a. The REINFORCE loss is: 
+
+ℓθ = −r · log pθ (a|xaction ) (12) This gradient increases the probability of actions with posi-tive rewards and decreases the probability of actions with negative rewards. We accumulate gradients over all exam-ples in Dtrain over several RL steps: 
+
+θ(s+1) = θ(s) − ηθ ∇θ
+
+X 
+
+> (xaction ,f,s r)∈D train
+
+ℓθ (xaction , f, s r )
+
+(13) 
+
+4. Experiments on Long-Horizon Household Tasks 
+
+4.1. Long-Horizon Household Task Construction 
+
+To evaluate our framework on tasks requiring multi-step reasoning and failure recovery, we construct Long-Horizon Household Tasks based on the BEHAVIOR-1K (Li et al., 2024) environments. Drawing inspiration from household scenarios, we define four core task categories: (1) Fitting ,where objects must be packed or placed into constrained containers or surfaces, stressing geometry, capacity and oc-clusion failures; (2) Selection , where the agent compares 5Learning from Trials and Errors: Reflective Test-Time Planning for Embodied LLMs                                                                         
+
+> Baselines Ablations of Reflective Test-Time Planning (Ours)
+> Reflexion Self-Refine ReflectVLM PPO DreamerV3 3DLLM-Mem w/o RIA w/o ROA w/o RIA w/o ROA w/o Act. Loss w/o Int. Loss Ours
+> Fitting 8.51% 10.6% 2.12% 0% 4.26% 10.6% 0% 33.5% 6.38% 25.5% 12.8% 44.7%
+> Selection 8.82% 11.8% 5.88% 2.94% 11.8% 14.7% 17.6% 5.88% 11.8% 26.5% 8.82% 32.4%
+> Preparation 15.9% 12.7% 14.3% 7.94% 11.1% 9.52% 11.1% 3.17% 19.0% 20.6% 17.5% 31.7%
+> Hybrid 6.45% 9.68% 6.45% 3.23% 12.9% 9.68% 12.9% 3.23% 12.9% 16.1% 9.68% 25.8%
+> Average 9.92% 11.20% 7.19% 3.53% 10.02% 11.13% 10.40% 11.45% 12.52% 22.18% 12.20% 33.65%
+
+Table 1. Baseline comparisons and ablations of Reflective Test-Time Planning on Long-Horizon Household Tasks. “RIA” is short for Reflection-in-action, “ROA” for reflection-on-action. Act. Loss means action model loss; Int. Loss means internal reflection model loss. 
+
+and retrieves the most suitable item ( e.g. , in terms of prefer-ences or sizes). Failures occur when choices prove subopti-mal upon discovering better alternatives; (3) Preparation ,where tasks require sequential constraints and dependencies (e.g., assembling or nested placement), stressing sequential dependency and non-local failures; and (4) Hybrid , where multiple modes appear within a single episode, stressing mixed spatial, relational, and occlusion failures. 
+
+Task Generation & Execution. We employ GPT-5 to gener-ate task specifications through a carefully structured prompt-ing procedure, adapting existing task templates that empha-size long-horizon reasoning and failure recovery from the original BEHAVIOR-1K benchmark. Each generated task instance includes: (1) a task description, (2) 3-7 relevant rooms, (3) new objects with placement specifications, and (4) a complete trajectory with interleaved thoughts, actions, and reflections scores. Since we include scene graphs in the prompts to GPT-5, which provides object properties such as bounding boxes, GPT-5 can deduce potential failures (e.g., size mismatches) during generation. We further execute the tasks generated by GPT-5 in BEHAVIOR simulators to ensure consistency with the actual scene dynamics and provide ground-truth data for finetuning embodied LLMs. We initialize the environment by loading the BEHAVIOR-1K scenes, placing new objects at designated locations, and positioning the robot at a default starting pose. At each step, the agent executes the given actions. After every interac-tion, the system captures RGB-D observations, converted to point clouds which serve as the inputs to our Embodied LLMs. The simulator then performs physics-based veri-fication and provides execution results that could be used for prompting external reflections. We also perform task verification checks by comparing the task execution results with GPT-5’s generated task specifications ( e.g. , assumed task failures). Please refer to Appendix F for more details about data generation, models and experiments. 
+
+Finetuning & Evaluation Sets. Each GPT-generated and executed trajectory yields (observation, action, reflection, score) tuples extracted at corresponding timesteps, which form supervised fine-tuning pairs to initialize our three em-bodied LLMs with basic task competency before test-time deployment. During evaluation, the agent is given only the scene configuration and task description, with all other components initialized as None, and must autonomously generate and execute its trajectory step by step. To ensure rigorous evaluation, finetuning and evaluation sets have no overlap in task descriptions, scene configurations, or object placements. We evaluate using task success rate: the per-centage of tasks where the agent completes the objective within the action budget. A task succeeds if all required objects reach target locations and constraints are satisfied. 
+
+4.2. Model Architecture & Implementation Details 
+
+We build a 3D-LLM based on LLaVA-3D (Zhu et al., 2025). During supervised fine-tuning, we train a single unified model on all three modes (action generation, internal re-flection, external reflection) for cross-mode learning. We fine-tune LLaVA-3D-7B with learning rate 2 × 10 −5. At test-time, we instantiate three copies of this model as πθ ,
+
+Vϕi , and Vϕe , where πθ and Vϕi are updated via test-time training. Following Hu et al. (2025), we maintain fused ob-servations from previous-step point clouds. During test-time training, we apply LoRA (rank 4, alpha 8, dropout 0.15 )targeting q proj and v proj layers. The internal LLM uses supervised learning (learning rate 5 × 10 −3, E = 5 
+
+epochs); the action LLM uses REINFORCE (learning rate 
+
+1 × 10 −3, 3 RL Steps). We use gradient clipping ( 0.3 for supervised, 0.5 for RL) to prevent catastrophic forgetting. For reflection-in-action, we set N = 4 candidates and tem-perature T = 2 .0. We adopt four categories of baselines: (1) verbal-reflection (Shinn et al., 2023; Madaan et al., 2023); (2) world-model based reflection (Feng et al., 2025); (3) RL-based baselines: Vanilla PPO (Schulman et al., 2017) and world-model based RL (DreamerV3 (Hafner et al., 2024)) (4) 3D-LLM with interaction context (Hu et al., 2025). 
+
+4.3. Experimental Results & Analysis 
+
+Table 1 shows that our model achieves substantial improve-ments over both prior methods and ablated versions across all task categories. The improvement is most prominent on Fitting tasks, where our approach reaches 44.7% success rate compared to 10.6% for the strongest baseline (3DLLM-Mem), 2.1% for ReflectVLM and 0% for PPO. Fitting tasks benefit most from our method because they impose tight spatial constraints that require iterative refinement through trial and error—agents must reason about 3D geometry from multiple attempts and continuously adjust their understand-ing based on execution feedback. The ablation studies re-veal that reflection-in-action (RIA) and reflection-on-action (ROA) are mutually dependent. Removing either causes 6Learning from Trials and Errors: Reflective Test-Time Planning for Embodied LLMs [1] [2] [3] [4] [5] [6] [7] [8] [9] [10] [11] [12] [13] [14] [15] [16]                                       
+
+> 0
+> 10
+> 20
+> 30
+> 40
+> 50
+> 60
+> Rate (%)
+> 14.6 13.9 13.2 15.1 17.5 16.2 15.5 18.6 17.6
+> 23.4 24.1 26.5 25.5
+> 30.8
+> 26.0 25.3
+> 42.1 43.7 40.1 43.4 46.0 44.5 44.5
+> 49.3
+> 45.2
+> 52.6 53.0 53.5 54.5
+> 58.8 57.4 60.2 Correct Rate
+> Fit Rate
+> Baselines: [1] Reflexion [2] Self-refine [3] ReflectVLM [4] PPO [5] DreamerV3 [6] Qwen w/ Memory Context
+> Ablations-w/o Ext. Reflection: [7] Ours w/o RIA w/o ROA w/o External Reflection [8] Ours w/o RIA w/o External Reflection
+> Ablations-w/o RIA and/or ROA: [9] Ours w/o RIA w/o ROA [10] Ours w/o ROA [11] Ours w/o RIA (ROA: Base-Weight) [12] Ours w/o RIA (ROA: LoRA)
+> Ablations-w/o Action loss: [13] Ours w/o Action loss (ROA: Base-Weight) [14] Ours w/o Action loss (ROA: LoRA)
+> Full Model Variants: [15] Ours (ROA: Base-Weight) [16] Ours (ROA: LoRA)
+
+Figure 3. Cupboard Fitting results . Blue bars show correct-placement rate, pink bars show fit rate. RIA means Reflection-in-action; ROA means Reflection-on-action. “W/o external reflection” means that we don’t use external reflection as the input to the action generation LLM. We implement two test-time training variants for ROA: one is test-time training on all base weights; and the other is test-time training on LoRA parameters only. Reflective Test-Time Planning significantly improves both success metrics. 
+
+performance degradation. Sometimes removing just one component performs worse than removing both. For in-stance, without RIA, Preparation falls to 3.17% and Hybrid to 3.23%, while removing both components yields 11.1% and 12.9% respectively on these tasks. This is because RIA without ROA produces overconfident yet inaccurate ac-tion scores with no hindsight correction mechanism, while ROA without RIA wastes learning on poorly chosen ac-tions that fail to reveal true scene affordances. When com-bined, they form a virtuous cycle: best-of-N selection yields higher-quality trajectories for learning, and test-time train-ing refines the internal model, leading to better future action selection. The loss ablations similarly demonstrate mutual dependency between the action loss and internal reflection loss, which together constitute ROA. Removing either loss causes performance degradation, and sometimes removing just one loss performs worse than removing both (w/o ROA). Without the internal loss, Hybrid drops to 9.68% compared to 12.9% for w/o ROA, and Selection falls to 8.82% com-pared to 11.8% for w/o ROA. This demonstrates that policy-gradient updates and supervised reflection both contribute essential signals for effective adaptation. The qualitative example in Figure 5(a) demonstrates that our model sup-ports continual learning and active perception driven by accumulated scene experience. The test-time cost analysis and compute-matched experiment in Appendix B shows that even with substantially more test-time compute, the base-lines continue to repeat failures and their performance even degrades. Appendix C also shows that the reflection mech-anisms enable the agents to generalize to novel embodied environments like HM3D (Ramakrishnan et al., 2021). 
+
+5. Experiments on the Cupboard Fitting Task 
+
+Cupboard Fitting Task Design. The Cupboard Fitting task serves as a complementary benchmark to Long-Horizon Household Tasks. While BEHAVIOR provides realistic multi-room environments with complex semantic reasoning challenges, it also introduces environmental uncertainties that make it difficult to isolate learning mechanisms. We de-sign Cupboard Fitting as a controlled MuJoCo environment where agents learn from placement failures, enabling precise measurement of reflective test-time training mechanisms. 
+
+Figure 4. Examples of the Cupboard Fitting Task. 
+
+The task environment consists of three key components. First, a multi-compartment cupboard structure with 6-8 compartments of varying sizes and colors, each defined by precise 3D bounding boxes. Second, a set of 6-10 colored geometric objects that must be placed into compartments. Third, a Franka Panda robotic arm controlled through high-level natural language commands such as “pick up the red apple” or “put the blue object in the green compartment.” The agent’s objective is to place all objects into the cup-board such that each fits completely within compartment boundaries, while multiple objects may share compartments when space permits. Each task has only one valid solution where all objects fit within their designated compartments. Success requires reasoning about object-compartment com-patibility, multi-object spatial packing, and long-horizon dependencies where early placement decisions affect later possibilities. After each action, the environment provides execution status through forward simulation, and updated visual observations. We define two evaluation metrics: cor-rect rate measures the percentage of objects placed in their correct target compartments, while fit rate measures the per-centage of objects successfully placed in any compartment. 
+
+Model Architecture & Implementation Details. We build upon Qwen2.5-VL-3B with unified supervised fine-tuning (batch size 128, learning rate 1 × 10 −5, weight decay 0.1)7Learning from Trials and Errors: Reflective Test-Time Planning for Embodied LLMs y               
+
+> Explored, Nothing
+> there; 0
+> Unexplored , good;
+> 100
+> Don’t return until
+> the last step; 0
+> Bread in Gray (90)
+> Bread in Blue (10)
+> Bread in Orange(0)
+> Carrot in Pink (80)
+> Carrot in Gray (0)
+> Carrot in Pink (80)
+> Carrot in Gray (88)
+> t=9
+> Carrot in Blue (75) Carrot in Blue (75)
+> External Reflectio
+> Carrot in Gray (0)
+> t=10
+> External Reflection
+> Bread in Gray (0)
+> External Reflection
+> Carrot in Pink (100)
+> t=11
+> Retro :
+> Carrot in Pink (0)
+> àblock larger object placement
+> t=12 t=16
+> …
+> Prepare a breakfast
+> plate on the table in
+> the living room by
+> placing an empty
+> plate on the table,
+> adding vegetables
+> onto the plate, and
+> placing bacon on
+> top of vegetables. I
+> prefer lettuce to
+> tomato.
+> Found bacon and a
+> small plate. However,
+> bacon is last step.
+> Found tomato;
+> better veggies
+> may exist
+> tomato not the best;
+> 40
+> Unexplored , good;
+> 100
+> Go to kitchen
+> Still cannot return
+> until later; 0
+> Found lettuce; need
+> to place the plate
+> first
+> Retro & Internal:
+> Go to dining room
+> unexplored ;100
+> Go to kitchen
+> not yet to pick up
+> bacon; and plate too
+> small for ; 0
+> tomato inferior to
+> lettuce; 30
+
+(a)                                                        
+
+> (b)
+> Found a larger
+> plate . Ready to
+> set the table
+> Retro & Internal:
+> not yet to pick up
+> bacon; 20
+> not yet to pick up
+> the veggie; 40
+> Go to living room
+> ready to set the
+> table; 100
+> Successfully put
+> down the plate on
+> the table.
+> not yet to pick up
+> bacon; 0
+> Time to pick up the
+> best veggie; 100
+> Tomato there is
+> worse ; 0
+> Veggie placed;
+> need bacon.
+> Retro & Internal:
+> Go to kitchen
+> Time to pick up
+> bacon; 100
+> Go to storage room
+> lettuce already
+> retrieved; 0
+> no return until
+> retrieve the bacon; 0
+> Go to kitchen Go to bedroom Go to storage room Go to dining room Go to living room Go to storage room
+> àliving room
+> Go to kitchen
+> àliving room
+> Bacon placed;
+> task done .
+> Go to kitchen
+> Go to bedroom
+> Go to office
+> Retro & Internal Retro & Internal Retro & Internal Retro & Internal Retro & Internal Retro & Internal
+> Go to kitchen
+> Go to storage room
+> Go to bedroom
+> Go to bedroom
+> Go to kitchen
+> Go to living room
+> Go to kitchen
+> Go to bedroom
+> Go to storage room
+> Go to kitchen
+> Go to living room
+> Go to storage room
+> Go to kitchen Go to dining room
+> Go to storage room
+> Task
+> External External External External External
+> External External
+> External Reflection External Reflection External Reflection
+> Retro
+> Internal
+> Reflection
+> Internal
+> Reflection
+> Internal
+> Reflection
+
+Figure 5. Qualitative Examples. Steps and reflections are simplified for better presentations. Blue text shows internal reflection used for candidate selection, orange text shows external reflection after execution, and red text suggests retrospective reflection. (a) Long-Horizon Household example. We use retro & internal because the generated retro reflection is also used to train the internal model. (b) Real-robot Cupboard Fitting example. We put reflection scores inside brackets, omit detailed reflections and only present the scores for simplicity. 
+
+on action generation, internal reflection, and external re-flection. For test-time training, we implement two variants: (1) Base-Weight : updates all non-visual parameters with SGD (learning rate 1 × 10 −3 for action model, 5 × 10 −5
+
+for internal model); (2) LoRA : applies LoRA (rank 8, alpha 
+
+16 , dropout 0.1) targeting all linear layers except lm head, embed tokens, and visual encoder, using SGD with learning rate 0.01 for action model and 0.2 for internal model. Both train for 3 epochs. We limit episodes to 50 maximum steps and update the model whenever an execution failure occur. Hyperparameter selection ablations can be found in Ap-pendix D. We use the same baselines as the Long-Horizon Household Task except that we replace 3D-LLM with Qwen for the baseline model with context memory. 
+
+Experimental Results & Analysis. Figure 3 shows that our full method with both reflection-in-action (RIA) and reflection-on-action (ROA) using LoRA-based test-time training achieves 60.2% fit rate and 25.3% correct rate, sub-stantially outperforming LLM-based reflection baselines, RL-based baselines and memory context baselines. Ab-lation studies reveal that both reflection mechanisms are essential: removing RIA drops performance to 53.5% fit rate, while removing ROA reduces it to 45.2% fit rate. Re-moving both mechanisms along with external reflection further degrades performance to 44.5% fit rate. We also find that LoRA-based test-time training (60.2% fit rate) per-forms comparably to full base-weight training (57.4% fit rate) while being more parameter-efficient. These results confirm that our unified framework of reflection-in-action for candidate selection and reflection-on-action for test-time adaptation enables effective learning from failures during deployment. In Figure 5(b), we show a qualitative result where we generalize our model in the real-robot setting. In these trials, reflective adaptation enables the robot to recover from execution failures, avoid repeated placement errors, and correct earlier decisions through retrospective reflection, illustrating that the learned behaviors transfer to the physical world with satisfying generalization abilities. Appendix E also shows that our method enables long-horizon planning by retrospective reflection that outperforms Receding Hori-zon Planning while saving 5x test-time compute. 
+
+6. Conclusion 
+
+This paper introduces Reflective Test-Time Planning, which couples reflection-in-action for pre-action evaluation with reflection-on-action for post-execution assessments. Evalu-ations across two newly-designed embodied tasks demon-strate strong gains and highlight the complementary roles of the two reflection modes. Future work may extend reflective adaptation to richer sensory modalities ( e.g. , tactile). 8Learning from Trials and Errors: Reflective Test-Time Planning for Embodied LLMs 
+
+Acknowledgment 
+
+This paper is funded by ONR MURI N00014-24-1-2748. We thank Hang Yin and Wensi Ai for BEHAVIOR environ-ment support. 
+
+Impact Statement 
+
+The positive impact includes more robust household robots that recover from mistakes, enabling safer deployment in unstructured environments. However, autonomous behav-ior updates during deployment raise important consider-ations: agents might develop unexpected strategies that bypass safety constraints, verbal reflections could inherit language model biases, and improved failure recovery may reduce human oversight in safety-critical applications. We believe transparency through interpretable verbal reflections and careful monitoring during initial deployments can help mitigate these risks while advancing more capable and trust-worthy embodied AI systems. 
+
+References 
+
+Argyris, C. Double loop learning in organiza-tions. Harvard Business Review , September 1977. URL https://hbr.org/1977/09/ double-loop-learning-in-organizations .Driess, D., Xia, F., Sajjadi, M. S. M., Lynch, C., Chowdhery, A., Ichter, B., Wahid, A., Tompson, J., Vuong, Q., Yu, T., Huang, W., Chebotar, Y., Sermanet, P., Duckworth, D., Levine, S., Vanhoucke, V., Hausman, K., Toussaint, M., Greff, K., Zeng, A., Mordatch, I., and Florence, P. Palm-e: An embodied multimodal language model. In 
+
+arXiv preprint arXiv:2303.03378 , 2023. Dumpala, S. H., Sastry, C., and Oore, S. Test-time training for speech, 2023. URL https://arxiv.org/abs/ 2309.10930 .Fan, C., Jia, X., Sun, Y., Wang, Y., Wei, J., Gong, Z., Zhao, X., Tomizuka, M., Yang, X., Yan, J., and Ding, M. Interleave-vla: Enhancing robot manipulation with interleaved image-text instructions. 2025. URL https: //arxiv.org/abs/2505.02152 .Feng, Y., Han, J., Yang, Z., Yue, X., Levine, S., and Luo, J. Reflective planning: Vision-language models for multi-stage long-horizon robotic manipulation, 2025. URL 
+
+https://arxiv.org/abs/2502.16707 .Gou, Z., Shao, Z., Gong, Y., Shen, Y., Yang, Y., Duan, N., and Chen, W. CRITIC: Large language models can self-correct with tool-interactive critiquing. arXiv preprint arXiv:2305.11738 , 2024. Hafner, D., Pasukonis, J., Ba, J., and Lillicrap, T. Master-ing diverse domains through world models, 2024. URL 
+
+https://arxiv.org/abs/2301.04104 .Hajizada, E., Swaminathan, B., and Sandamirskaya, Y. Con-tinual learning for autonomous robots: A prototype-based approach. 2024. URL https://arxiv.org/abs/ 2404.00418 .Hong, Y., Zhen, H., Chen, P., Zheng, S., Du, Y., Chen, Z., and Gan, C. 3D-LLM: Injecting the 3D world into large language models. In Advances in Neural Information Processing Systems , 2023. Hong, Y., Zheng, Z., Chen, P., Wang, Y., Li, J., and Gan, C. MultiPLY: A multisensory object-centric embodied large language model in 3D world. In IEEE/CVF Conference on Computer Vision and Pattern Recognition , pp. 26406– 26416, 2024. Hu, E. J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang, S., Wang, L., and Chen, W. LoRA: Low-rank adaptation of large language models. arXiv preprint arXiv:2106.09685 , 2021. Hu, W., Hong, Y., Wang, Y., Gao, L., Wei, Z., Yao, X., Peng, N., Bitton, Y., Szpektor, I., and Chang, K.-W. 3dllm-mem: Long-term spatial-temporal memory for embodied 3d large language model, 2025. URL https://arxiv. org/abs/2505.22657 .Huang, W., Xia, F., Xiao, T., Chan, H., Liang, J., Florence, P., Zeng, A., Tompson, J., Mordatch, I., Chebotar, Y., Sermanet, P., Brown, N., Jackson, T., Luu, L., Levine, S., Hausman, K., and Ichter, B. Inner monologue: Embodied reasoning through planning with language models. In 
+
+arXiv preprint arXiv:2207.05608 , 2022. Kauvar, I., Doyle, C., Zhou, L., and Haber, N. Curious replay for model-based adaptation. International Confer-ence on Machine Learning , 2024. Kim, M. J., Pertsch, K., Karamcheti, S., Xiao, T., Bal-akrishna, A., Nair, S., Rafailov, R., Foster, E. P., San-keti, P. R., Vuong, Q., et al. OpenVLA: An open-source vision-language-action model. In 8th Annual Conference on Robot Learning , 2024. Kojima, Y., Xu, J., Zou, X., and Wang, X. Lora-ttt: Low-rank test-time training for vision-language models. 2025. URL https://arxiv.org/abs/2502.02069 .Lesort, T., Lomonaco, V., Stoian, A., Maltoni, D., Filliat, D., and D ´ıaz-Rodr ´ıguez, N. Continual learning for robotics: Definition, framework, learning strategies, opportunities and challenges. Information Fusion , 58:52–68, 2020. 9Learning from Trials and Errors: Reflective Test-Time Planning for Embodied LLMs 
+
+Li, C., Zhang, R., Wong, J., Gokmen, C., Srivastava, S., Mart ´ın-Mart ´ın, R., Wang, C., Levine, G., Ai, W., Mar-tinez, B., Yin, H., Lingelbach, M., Hwang, M., Hiranaka, A., Garlanka, S., Aydin, A., Lee, S., Sun, J., Anvari, M., Sharma, M., Bansal, D., Hunter, S., Kim, K.-Y., Lou, A., Matthews, C. R., Villa-Renteria, I., Tang, J. H., Tang, C., Xia, F., Li, Y., Savarese, S., Gweon, H., Liu, C. K., Wu, J., and Fei-Fei, L. Behavior-1k: A human-centered, em-bodied ai benchmark with 1,000 everyday activities and realistic simulation. arXiv preprint arXiv:2403.09227 ,2024. Li, C., Wen, J., Peng, Y., Peng, Y., Feng, F., and Zhu, Y. Pointvla: Injecting the 3d world into vision-language-action models. 2025. URL https://arxiv.org/ abs/2503.07511 .Liang, J., He, R., and Tan, T. A comprehensive survey on test-time adaptation under distribution shifts. Interna-tional Journal of Computer Vision , 133(1):31–64, 2025. Madaan, A., Tandon, N., Gupta, P., Hallinan, S., Gao, L., Wiegreffe, S., Alon, U., Dziri, N., Prabhumoye, S., Yang, Y., et al. Self-refine: Iterative refinement with self-feedback. Advances in Neural Information Processing Systems , 36, 2023. Mendonca, R., Panov, E., Bucher, B., Wang, J., and Pathak, D. Continuously improving mobile manipulation with autonomous real-world RL. In Conference on Robot Learning , 2024. Meng, Y., Bing, Z., Yao, X., Chen, K., Huang, K., Gao, Y., Sun, F., and Knoll, A. Preserving and combining knowl-edge in robotic lifelong reinforcement learning. Nature Machine Intelligence , pp. 1–14, 2025. Mu, Y., Zhang, Q., Hu, M., Wang, W., Ding, M., Jin, J., Wang, B., Dai, J., Qiao, Y., and Luo, P. Embod-iedgpt: Vision-language pre-training via embodied chain of thought, 2023. URL https://arxiv.org/abs/ 2305.15021 .Ng, A. Agentic design patterns part 2: Reflection. 
+
+DeepLearning.AI The Batch , 2024. URL https: //www.deeplearning.ai/the-batch/ agentic-design-patterns-part-2-reflection/ .Niu, S., Wu, J., Zhang, Y., Chen, Y., Zheng, S., Zhao, P., and Tan, M. Efficient test-time model adaptation with-out forgetting. In International Conference on Machine Learning , pp. 16888–16905, 2022. Ramakrishnan, S. K., Gokaslan, A., Wijmans, E., Maksymets, O., Clegg, A., Turner, J., Undersander, E., Galuba, W., Westbury, A., Chang, A. X., Savva, M., Zhao, Y., and Batra, D. Habitat-matterport 3d dataset (hm3d): 1000 large-scale 3d environments for embodied ai, 2021. URL https://arxiv.org/abs/2109.08238 .Sch¨ on, D. A. The Reflective Practitioner: How Profession-als Think in Action . Basic Books, New York, NY, USA, 1992. Schulman, J., Wolski, F., Dhariwal, P., Radford, A., and Klimov, O. Proximal policy optimization algo-rithms, 2017. URL https://arxiv.org/abs/ 1707.06347 .Shinn, N., Cassano, F., Gopinath, A., Narasimhan, K., and Yao, S. Reflexion: Language agents with verbal rein-forcement learning. Advances in Neural Information Processing Systems , 36, 2023. Sun, Y., Wang, X., Liu, Z., Miller, J., Efros, A. A., and Hardt, M. Test-time training with self-supervision for generalization under distribution shifts. In International Conference on Machine Learning , pp. 9229–9248, 2020. Sun, Y., Li, X., Dalal, K., Xu, J., Vikram, A., Zhang, G., Dubois, Y., Chen, X., Wang, X., Koyejo, S., Hashimoto, T., and Guestrin, C. Learning to (learn at test time): RNNs with expressive hidden states. In International Conference on Machine Learning , 2024. Wang, D., Shelhamer, E., Liu, S., Olshausen, B., and Darrell, T. Tent: Fully test-time adaptation by entropy minimiza-tion. In International Conference on Learning Represen-tations , 2021. Yang, H., Wang, M., Jiang, J., and Zhou, Y. Towards test time adaptation via calibrated entropy minimization. In 
+
+Proceedings of the 30th ACM SIGKDD Conference on Knowledge Discovery and Data Mining , KDD ’24, pp. 3736–3746, New York, NY, USA, 2024. Association for Computing Machinery. ISBN 9798400704901. doi: 10. 1145/3637528.3671672. URL https://doi.org/ 10.1145/3637528.3671672 .Zhang, W., Shen, Y., Wu, L., Peng, Q., Wang, J., Zhuang, Y., and Lu, W. Self-contrast: Better reflection through inconsistent solving perspectives. 2024. URL https: //arxiv.org/abs/2401.02009 .Zhao, Q., Lu, Y., Kim, M. J., Fu, Z., Zhang, Z., Wu, Y., Li, Z., Ma, Q., Han, S., Finn, C., et al. Cot-vla: Visual chain-of-thought reasoning for vision-language-action models. In Proceedings of the Computer Vision and Pattern Recognition Conference , pp. 1702–1713, 2025. Zhen, H., Qiu, X., Chen, P., Yang, J., Yan, X., Du, Y., Hong, Y., and Gan, C. 3D-VLA: A 3D vision-language-action generative world model. arXiv preprint arXiv:2403.09631 , 2024. 10 Learning from Trials and Errors: Reflective Test-Time Planning for Embodied LLMs 
+
+Zhen, H. et al. Learning 4d embodied world models. In 
+
+Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) , 2025. Zhou, S., Du, Y., Chen, J., Li, Y., Yeung, D.-Y., and Gan, C. Robodreamer: Learning compositional world models for robot imagination, 2024. URL https://arxiv. org/abs/2404.12377 .Zhu, C., Wang, T., Zhang, W., Pang, J., and Liu, X. LLaVA-3D: A simple yet effective pathway to empower-ing LMMs with 3D-awareness. In International Confer-ence on Computer Vision , 2025. Zitkovich, B., Yu, T., Xu, S., Xu, P., Xiao, T., Xia, F., Wu, J., Wohlhart, P., Welker, S., Wahid, A., et al. Rt-2: Vision-language-action models transfer web knowledge to robotic control. In Conference on Robot Learning , pp. 2165–2183. PMLR, 2023. 11 Learning from Trials and Errors: Reflective Test-Time Planning for Embodied LLMs 
+
+A. Contribution Statement 
+
+Yining Hong proposed the idea; implemented all codes, data, experiments and wrote the paper. Huang Huang helped set up the real-world robot. The other authors contributed through advisory support and research supervision. 
+
+B. Test-Time Cost Analysis 
+
+B.1. Computational Comparison 
+
+Our full model introduces two additional sources of infer-ence time cost: (i) candidate action sampling and internal reflection scoring for reflection-in-action (RIA), and (ii) periodic reflection-on-action(ROA)-based LoRA test-time updates. On average across Long-Horizon Household Tasks and Cup-board Fitting Tasks, we observe a ∼ 3× increase in per-step wall-clock time compared to the vanilla baseline: Time full ≈ 3.0 × Time no-RIA/ROA .
+
+Importantly, this latency is incurred at deployment and does not require additional supervised data or environment roll-outs beyond normal task execution. 
+
+B.2. Why the Overhead is Justified 
+
+Despite the additional test-time latency, the reflective over-head is justified for three reasons: 
+
+Deployment-Oriented Adaptation. The extra time cost occurs at deployment rather than pretraining. This aligns with realistic embodied settings where robots adapt online rather than relying on costly retraining cycles. 
+
+Reduction of Execution Waste. Vanilla agents frequently repeat failures (e.g., placing incompatible objects, revisit-ing rooms without intent). RIA reduces execution waste by filtering poor actions before execution, while ROA elim-inates repeated failures through hindsight-driven updates. A smaller number of higher-quality actions amortizes the reflection cost. 
+
+Conversion of Time into Learning. Extra time is not spent on naive rollouts, but on improving internal models. RIA and ROA produce persistent behavioral improvements, whereas baselines spend time without updating policies or reasoning mechanisms. In short, reflective time is struc-turally more valuable than mere rollout time. 
+
+B.3. Compute-Matched Experiment 
+
+A natural concern is whether the performance gap is merely due to increased wall-clock time. To evaluate this, we con-struct a time-matched variant where the vanilla baseline                   
+
+> w/o RIA w/o ROA Ours (Full) Vanilla Same Time Budget
+> Fitting 0.00% 0.00% 44.7% Selection 17.6% 14.7% 32.4% Preparation 11.1% 12.7% 31.7% Hybrid 6.45% 6.45% 25.8% Average 8.79% 8.46% 33.65%
+> Table 2. Performance comparison between (1) vanilla ablation without RIA or ROA, (2) vanilla baseline with matched time budget (3× steps), and (3) our full reflective model on Long-Horizon Household Tasks.
+
+receives a 3× steps budget, matching the approximate infer-ence time of our full model: Steps expanded baseline ≈ 3 × Steps baseline .
+
+From Table 2, we observe that even under a tripled time budget, the baseline: • fails to correct early suboptimal decisions, • frequently revisits states without strategic change, • exhibits repeated placement/navigation failures, • plateaus significantly below our full model on all benchmarks and does not improve over the vanilla baseline. This result supports that reflective time is not equivalent to naive rollout time expansion: reflective updates change the decision process itself, while rollout expansion merely increases trajectory length without improving competence or hindsight reasoning. 
+
+Conclusion. These findings indicate that although our method incurs a ∼ 3× test-time latency overhead, reflective computation provides unique adaptation benefits that can-not be recovered by proportional rollout-step scaling. The overhead is therefore practical and justified in embodied deployment settings. 
+
+C. Generalization to Habitat-Matterport 3D Scenes 
+
+C.1. Experimental Setup 
+
+To evaluate the generalization capacity of our Reflec-tive Test-Time Planning framework, we conduct addi-tional experiments on the Habitat-Matterport 3D (HM3D) dataset (Ramakrishnan et al., 2021), which provides photo-realistic 3D reconstructions of real-world indoor environ-ments. Unlike BEHAVIOR-1K scenes which are primarily synthetic household environments, HM3D offers diverse 12 Learning from Trials and Errors: Reflective Test-Time Planning for Embodied LLMs                            
+
+> Baselines Ablations of Reflective Test-Time Planning (Ours)
+> Reflexion Self-Refine ReflectVLM PPO DreamerV3 3DLLM-Mem w/o RIA w/o ROA w/o ROA w/o RIA w/o Act. Loss w/o Int. Loss Ours
+> Preparation 2.44% 4.88% 0% 0% 2.44% 7.32% 0% 7.32% 2.44% 14.6% 9.76% 19.5%
+> Table 3. Generalization results on Habitat-Matterport 3D (HM3D) environment for Preparation tasks (41 test cases). The significant performance drop compared to BEHAVIOR Long-Horizon Household Tasks (31.7% →14.6%) demonstrates the substantial domain gap. However, our reflective framework maintains relative advantages over baselines, with several methods (ReflectVLM, PPO, w/o RIA w/o ROA, w/o RIA) achieving 0% success rate. “RIA” is short for Reflection-in-action, “ROA” is short for reflection-on-action. Act. Loss means action model loss. Int. Loss means internal reflection model loss.
+
+real-world scenes with different spatial layouts, object dis-tributions, and visual appearances, providing a challenging domain shift for testing our method’s transferability. We focus specifically on Preparation tasks , which involve sequential constraints and dependencies where actions must occur in specific orders. These tasks are particularly chal-lenging in HM3D environments due to: (1) more complex spatial layouts with irregular room configurations, (2) di-verse object appearances and placements not seen during training, (3) ambiguous spatial relationships that require active exploration to resolve, and (4) longer navigation dis-tances between task-relevant objects. 
+
+C.2. Task Construction and Adaptation 
+
+We adapt our task generation pipeline to HM3D scenes while maintaining the same core task structure. We se-lect 41 preparation task instances across diverse HM3D scenes, ensuring coverage of various spatial configurations and object arrangements. Each task requires the agent to: (1) navigate through multiple rooms to locate task-relevant objects, (2) retrieve objects in the correct sequential order, (3) perform placement or assembly actions with proper de-pendencies, and (4) handle spatial constraints specific to real-world scene layouts. The key difference from Long-Horizon Household evalua-tion is the domain gap: our models are trained exclusively on BEHAVIOR-1K synthetic scenes and must generalize to HM3D’s photorealistic environments at test time. This tests whether reflection-based adaptation can overcome distribu-tion shift through deployment-time learning. 
+
+C.3. Implementation Details 
+
+We use the same model architecture (LLaVA-3D-7B) and test-time training configuration as the Long-Horizon House-hold experiments, with no additional fine-tuning on HM3D scenes. Point cloud observations are extracted from RGB-D sensors in the same manner, and the reflection generation prompts remain unchanged. This zero-shot transfer setup provides a rigorous test of whether reflective mechanisms learned in synthetic environments transfer to real-world scene understanding. 
+
+C.4. Results and Analysis 
+
+Table 3 presents the generalization results on HM3D Prepa-ration tasks. Our method demonstrates robust generalization to photorealistic real-world environments, achieving 19.5% success rate despite being trained exclusively on synthetic BEHAVIOR-1K scenes. While this represents a 12.2 per-centage point performance drop compared to Long-Horizon Household Tasks (31.7% → 19.5%), our reflective frame-work maintains over 60% of its original performance and substantially outperforms all baselines, demonstrating the effectiveness of reflection-based adaptation under domain shift. The strongest baseline, 3DLLM-Mem, achieves only 7.32%, while several methods completely collapse to 0% (ReflectVLM, PPO, w/o RIA w/o ROA). This stark con-trast highlights that our reflection mechanisms—particularly the combination of reflection-in-action and reflection-on-action—provide critical robustness when facing distribution shift from synthetic to photorealistic environments. The fact that our method maintains substantial relative advan-tages over baselines suggests that the core reflective mecha-nisms—generating diverse candidates, scoring them through internal simulation, learning from execution feedback, and updating both action and reflection models—transfer ef-fectively across domain boundaries and provide a robust foundation for embodied agents generalizing to novel envi-ronments. 
+
+D. Hyperparameter Analyses for Cupboard Fitting Task 
+
+We conduct ablation studies on four key hyperparameters that govern the reflection mechanism and show the results in Figure 6. 
+
+D.1. Test-Time Scaling: Number of Candidate Actions 
+
+The reflection-in-action mechanism generates N candidate actions via sampling, scores each using the internal reflec-tion model Vϕi , and executes the highest-scoring action. We vary N ∈ { 1, 2, 3, 4, 5, 6, 8, 9, 10 } to measure the impact of candidate diversity on task performance (Figure 6, top left). 
+
+Results. Performance improves monotonically from 53.0% (N=1, greedy decoding) to 60.0% (N=6), representing a 7 percentage point gain. This demonstrates that internal re-13 Learning from Trials and Errors: Reflective Test-Time Planning for Embodied LLMs 
+
+Figure 6. Hyperparameter ablation studies on Cupboard Fitting. Top Left: Performance vs. number of candidate actions. Peak performance (60.0%) occurs at N=6 candidates, demonstrating that internal reflection effectively identifies superior actions from diverse pools. Beyond N=6, performance plateaus as excessive candidates add computational cost without improving the best candidate quality. Top Right: Performance vs. sampling temperature. Optimal temperature range (T=1.25-1.5) balances candidate diversity with quality—temperatures below 0.5 produce overly similar candidates that limit reflection value, while temperatures above 1.75 generate incoherent actions that even accurate reflection cannot salvage. Bottom Left: Performance vs. LoRA configuration (rank, alpha). The optimal configuration (r=8, α=16) achieves 60.0% performance, balancing adaptation capacity with training stability. Smaller configurations like (4,4) underfit with insufficient capacity (52.5%), while larger configurations cause mode collapse during test-time training—(16,32) drops to 41.5% and (32,32) collapses to 34.8% as the model begins predicting identical outputs for all inputs, losing the ability to distinguish between different spatial configurations and task contexts. Bottom Right: Performance vs. action budget (maximum steps). Performance improves dramatically from 30 steps (51.5%) to 50 steps (60.0%), but slightly degrades to 59.4% at 100 steps, suggesting that excessive action budgets allow suboptimal exploration strategies that accumulate errors over longer horizons. 
+
+14 Learning from Trials and Errors: Reflective Test-Time Planning for Embodied LLMs 
+
+flection scoring effectively identifies superior actions from diverse candidate pools. Beyond N=6, performance plateaus and slightly decreases to 58.8% at N=10, suggesting di-minishing returns from excessive candidates—likely due to increased computational cost without proportional quality improvements in the candidate pool. 
+
+Analysis. The optimal operating point at N=6 balances ex-ploration breadth with computational efficiency. At N=1, the model lacks opportunities to reconsider suboptimal greedy choices. At N=2-5, expanding the candidate pool allows the internal reflection model to compare alternatives and avoid locally optimal but globally poor actions (e.g., placing a small object in a large compartment early). At N ≥6, the candidate pool may include too many low-quality options that add noise without improving the best candidate’s qual-ity, and the internal reflection model’s scoring may become less reliable across excessively diverse samples. 
+
+D.2. Sampling Temperature Analysis 
+
+Temperature T controls the sharpness of the probability distribution during action generation: low temperatures (T → 0) produce near-greedy sampling, while high tem-peratures ( T → ∞ ) approach uniform sampling. We evalu-ate T ∈ { 0.0, 0.25 , 0.5, 0.75 , 1.0, 1.25 , 1.5, 1.75 , 2.0} (Fig-ure 6, top right). 
+
+Results. Performance exhibits a clear inverted-U relation-ship with temperature. At T=0.0 (deterministic greedy de-coding), performance is 52.6%. Then it increases steadily through moderate temperatures, reaching a peak of 60.0% at T=1.25, and maintains near-peak performance of 59.8% at T=1.5. However, performance drops sharply at higher temperatures: 49.5% at T=1.75 and 47.0% at T=2.0. 
+
+Analysis. The optimal temperature range T=1.25-1.5 bal-ances two competing factors: (1) Diversity for reflection :Sufficient randomness generates meaningfully different can-didates for the internal reflection model to compare, en-abling it to identify strategic failures (e.g., blocking future placements) that greedy or near-greedy decoding would miss; (2) Quality preservation : Excessive randomness (T ≥1.5) samples from the low-probability tail of the dis-tribution, producing incoherent or physically infeasible ac-tions that even accurate internal reflection cannot salvage. The sharp drop at T ≥1.75 indicates that overly stochastic sampling overwhelms the reflection mechanism’s corrective capacity—no amount of scoring can recover from funda-mentally poor candidate pools. 
+
+D.3. LoRA Configuration Analysis 
+
+For parameter-efficient test-time training, we apply Low-Rank Adaptation (LoRA) with varying rank r and scaling factor α. We evaluate configurations (r, α ) ∈{(4 , 4) , (4 , 8) , (8 , 8) , (8 , 16) , (16 , 16) , (16 , 32) , (32 , 32) }
+
+to study the trade-off between adaptation capacity and training stability (Figure 6, bottom left). 
+
+Results. Performance exhibits a sharp peak at the inter-mediate configuration. Small configurations show limited performance: (4,4) achieves 52.5% and (4,8) reaches 56.2%, indicating insufficient adaptation capacity. Performance peaks at (r=8, α=16) with 60.0%, our optimal configuration. However, larger configurations show dramatic performance degradation: (8,8) maintains 55.8%, but (16,16) drops to 57.8%, (16,32) plummets to 41.5%, and (32,32) collapses catastrophically to 34.8%—below even the no-adaptation baseline of 53.0%. 
+
+Analysis. The LoRA rank controls the expressiveness of the adapter matrices, but excessive rank causes mode col-lapse during aggressive test-time training. At (r=4, α=4) and (r=4, α=8), the adapter capacity is too limited to capture nu-anced spatial reasoning required for effective reflection—the model cannot adequately learn from retrospective feedback about blocking placements or strategic failures. The opti-mal configuration (r=8, α=16) provides sufficient capacity to update internal reflection scoring and action selection policies based on task-specific feedback while maintain-ing stable optimization under high learning rates (0.2 for internal reflection, 0.01 for action model). Larger configurations fail catastrophically due to mode col-lapse. At (r=16, α=32) and beyond, the increased parameter space combined with aggressive learning rates and limited training data (10-15 retrospective examples per test-time training iteration) causes the model to collapse to predicting identical outputs for all inputs. Rather than learning task-specific spatial reasoning, the overparameterized adapters converge to degenerate solutions that ignore input variations. At (32,32), the model effectively stops distinguishing be-tween different object configurations, compartment sizes, or task contexts—producing the same stereotyped action regardless of the actual scene state. This mode collapse is particularly severe because test-time training lacks the reg-ularization and diverse data that prevent collapse in offline training. 
+
+D.4. Action Budget Analysis 
+
+We evaluate the impact of maximum action budget on task performance by varying the step limit from 30 to 100 steps (Figure 6, bottom right). 
+
+Results. Performance shows a sharp initial gain followed by slight degradation. At 30 steps, performance is only 51.5%, indicating insufficient budget to complete multi-object placement tasks. Performance peaks at 50 steps with 60.0%, our optimal setting. However, extending the budget to 100 steps results in slight performance degradation to 15 Learning from Trials and Errors: Reflective Test-Time Planning for Embodied LLMs 
+
+59.4%, a 0.6 percentage point drop. 
+
+Analysis. The low performance at 30 steps reflects task incompletion—agents frequently run out of steps before placing all objects, especially when early mistakes require exploration of alternative strategies. The 50-step budget provides sufficient runway for the agent to explore the en-vironment, execute placements, recover from initial fail-ures through reflection, and retry with corrected strategies learned via test-time training. The counterintuitive degradation at 100 steps reveals a fail-ure mode of excessive budgets: when given too many steps, agents exhibit suboptimal exploration patterns that accumu-late errors over longer horizons. With a generous budget, the model may attempt more exploratory actions rather than committing to placements, leading to inefficient trajectories. Additionally, longer episodes provide more opportunities for compounding errors—a single poor placement early in a 100-step episode has more downstream consequences than in a tightly constrained 50-step episode where the agent must act decisively. This suggests that moderate action budgets not only improve computational efficiency but also serve as a useful inductive bias that encourages focused, goal-directed behavior in embodied agents. 
+
+E. Single-Step Action Generation vs. Receding Horizon Planning 
+
+A key design decision in our framework is single-step action generation: the agent generates and executes one action at a time, rather than planning action sequences through receding horizon control. We validate this choice through ablation experiments on the Cupboard Fitting benchmark. 
+
+Experimental Setup. We compare two variants of our full method: (1) Single-Step (Ours) : generates one action, exe-cutes it, observes outcome, performs test-time training, then generates the next action; (2) Receding Horizon : generates a complete action sequence (5-10 actions), executes only the first action, observes outcome, performs test-time train-ing, then replans a new sequence from the updated state. Both variants use identical model architecture, training pro-cedures, and test-time training mechanisms, differing only in planning granularity. The receding horizon approach re-quires approximately 5× more computation per step due to generating full sequences at each decision point. 
+
+Results. Table 4 shows that receding horizon planning achieves only 57.8% fit rate compared to 60.0% for single-step action generation—a comparable performance but at the cost of 4x more computation per step. This demonstrates that planning full action sequences at each decision point not only increases computational cost but actually harms performance in our framework.           
+
+> Table 4. Single-step action generation vs. receding horizon plan-ning on Cupboard Fitting. Despite using 5× more computation to plan sequences at each step, receding horizon shows degraded performance, demonstrating that single-step action generation is more effective for our reflective learning framework.
+> Method Fit Correct Compute
+> Ours (Receding Horizon) 57.8% 25.8% 5.0× Ours (Single-Step) 60.2% 25.3% 1.0×
+
+Why Receding Horizon is Incompatible with Test-Time Training. The performance gap reveals fundamental in-compatibilities between sequence planning and reflective test-time training: (1) Wasted computation on unpredictable futures : Reced-ing horizon generates 5-action sequences at each step but executes only the first action, discarding 80% of the com-putation. Critically, in our error-driven tasks, the out-comes of actions are inherently unpredictable before ex-ecution—whether an object fits in a compartment, whether placement will be stable, or whether grasping succeeds de-pends on precise physical interactions that cannot be reliably simulated. The model imagines 4 future actions based on assumed execution outcomes, but these assumptions are fre-quently wrong. When the first action fails or succeeds differ-ently than predicted, the entire planned sequence becomes invalid. This wasted computation could instead generate more candidates for reflection-in-action (increasing N from 3 to 6) or perform additional test-time training epochs, both of which operate on actual execution outcomes rather than unreliable predictions. (2) Learning from imagination conflicts with learning from reality : Test-time training fundamentally relies on learn-ing from actual execution feedback—the model updates its understanding of spatial constraints only after physically at-tempting placements and observing real outcomes (does the object fit? does it block other spaces?). However, generating 5-action sequences forces the model to predict these out-comes before they occur: ”If I place object A here, then I can place object B there, then object C...” These predictions are made with the model’s current (pre-update) understanding, which is precisely what test-time training aims to improve. The model must simultaneously optimize two conflicting objectives: (a) accurately predicting hypothetical future states for sequence generation, and (b) updating its beliefs based on actual execution outcomes that contradict those predictions. This creates optimization interference where gradients from test-time training (learned from reality) fight against the inductive bias from sequence generation (learned from imagination). Our single-action approach eliminates this conflict by com-mitting only to decisions that can be made based on current observations, executing the action to obtain ground truth 16 Learning from Trials and Errors: Reflective Test-Time Planning for Embodied LLMs 
+
+feedback, updating the model with real outcomes, then mak-ing the next decision with improved understanding. This aligns perfectly with the test-time training paradigm: learn from actual experience, not imagined futures. 
+
+Retrospective Reflection Provides Implicit Long-Horizon Planning. A potential concern is that single-step action generation lacks the foresight that explicit sequence planning provides. However, retrospective reflection ad-dresses this through a different mechanism. While receding horizon achieves long-horizon reasoning by explicitly gen-erating future action sequences, our approach achieves it through learned anticipation: retrospective reflection re-evaluates past actions with hindsight about their long-term consequences, creating training signals that teach the in-ternal reflection model to anticipate multi-step outcomes before execution. For example, when placing objects in a cupboard, an ac-tion that initially appears successful may be retrospectively downgraded when the agent discovers that this placement blocks the only space for a larger object. These retrospec-tive scores train the internal reflection model to predict such long-horizon consequences at decision time—effectively distilling multi-step lookahead into single-step action evalua-tion. This learned implicit planning is more sample-efficient than explicit sequence generation: rather than exploring all possible future sequences at every step (most of which will be discarded), the agent learns which single actions lead to favorable long-term outcomes through accumulated experience. 
+
+Computational Efficiency Analysis. The 5× computa-tional cost of receding horizon stems from generating full 5-action sequences at each decision step, only to execute the first action and discard the rest. This is particularly inef-ficient in our test-time training setting, where: (1) Sequence generation requires forward passes through the language model for all actions in the sequence; (2) The additional compute does not improve learning quality—test-time train-ing still operates on single executed actions, so planning discarded sequences provides no learning benefit; (3) The saved computation in single-step action generation can be reallocated to improvements that actually help: generating more candidates (N=6 vs. N=3), performing more test-time training epochs, or using larger working memory windows for retrospective reflection. Our results demonstrate that effective long-horizon reason-ing in embodied agents need not come from explicit se-quence planning. Instead, combining single-step action generation with retrospective reflection achieves superior performance at 5× lower computational cost by learning to anticipate long-term consequences rather than exhaustively simulating future possibilities. 
+
+F. Experiments on Long-Horizon Household Tasks: More Details 
+
+In this section, we provide comprehensive implementation details for our Long-Horizon Household Tasks, including task generation, validation, data construction, model archi-tecture, training procedures, and evaluation protocols. 
+
+F.1. Why Build Upon BEHAVIOR? 
+
+BEHAVIOR-1K (Li et al., 2024) provides an excellent foun-dation for embodied AI research with several key strengths: (1) Photorealistic environments : BEHAVIOR-1K features high-fidelity household scenes with realistic object models, physics simulation, and diverse room layouts across 1,000+ scenes; (2) Rich object diversity : The benchmark includes hundreds of object categories with varied sizes, shapes, and physical properties, enabling complex manipulation tasks; (3) Standardized infrastructure : BEHAVIOR-1K pro-vides well-maintained simulation infrastructure, observation APIs, and action spaces that facilitate reproducible research. However, BEHAVIOR-1K’s original task design does not systematically stress two critical capabilities for reflective learning: (1) Learning from failures : Most BEHAVIOR-1K tasks are designed to be solvable with correct initial plan-ning, without requiring agents to recover from or learn from execution failures. Tasks rarely include scenarios where early actions create downstream failures that only become apparent after multiple steps (e.g., placing a small object first that later blocks the only space for a larger object). (2) 
+
+Long-term dependencies : The original benchmark empha-sizes task completion but does not specifically design tasks around sequential dependencies where action order criti-cally determines success, or where consequences of early actions remain hidden until much later in the episode. To evaluate our reflective test-time training frame-work—which specifically learns from execution failures through retrospective reflection—we adapt BEHAVIOR-1K environments to create tasks that systematically incorporate these failure modes. We retain BEHAVIOR-1K’s photoreal-istic scenes and simulation infrastructure while introducing task specifications that stress failure recovery, long-horizon credit assignment, and dependency reasoning. This allows us to leverage the strengths of BEHAVIOR-1K (realism, di-versity, standardization) while evaluating capabilities (learn-ing from failures, retrospective reasoning) that the original benchmark was not designed to measure. 
+
+F.2. Task Categories 
+
+We develop a systematic pipeline to generate Long-Horizon Household Tasks that stress error-driven adaptation in em-bodied agents. Our tasks are designed around four core failure modes common in real life: spatial reasoning errors, 17 Learning from Trials and Errors: Reflective Test-Time Planning for Embodied LLMs 
+
+object selection mistakes, sequential dependency violations, and non-local planning failures. 
+
+Task Categories and Failure Modes. We define four task categories, each targeting specific failure patterns: 
+
+Fitting Tasks require agents to pack or place objects into con-strained containers or surfaces. These tasks stress geometric reasoning and capacity constraints. Common failure modes include: (1) attempting to place oversized objects in small compartments, (2) blocking access to larger storage spaces with premature small-object placements, and (3) failing to recognize occlusion after placement. For example, placing a toy car in a box already containing a teddy bear may succeed physically but block future placements of larger items. 
+
+Selection Tasks require agents to compare and retrieve items based on preferences or constraints. Failure modes include: (1) selecting suboptimal items when better alternatives ex-ist in unexplored rooms, (2) committing to choices before exploring all options, and (3) failing to revise decisions when new information becomes available. A typical sce-nario involves retrieving vegetables for a meal where lettuce (preferred) is in one room and tomato (less preferred) is in another—agents that explore insufficiently may select the inferior option. 
+
+Preparation Tasks involve sequential constraints and depen-dencies where actions must occur in specific orders. Com-mon failures include: (1) attempting steps out of sequence (e.g., adding toppings before placing the base plate), (2) vi-olating prerequisite conditions (e.g., trying to cook without retrieving ingredients first), and (3) missing intermediate setup steps. These tasks require agents to maintain action dependencies across multiple rooms and objects. 
+
+Hybrid Tasks combine multiple failure modes within a sin-gle episode, requiring agents to simultaneously reason about spatial constraints, object preferences, and sequential depen-dencies across long horizons. The distribution of task categories can be found in Figure 7. 
+
+F.3. GPT-5 Task Generation Prompting Strategy 
+
+We employ a carefully structured prompting approach to generate high-quality, physically plausible long-horizon tasks. Our prompting strategy consists of three key com-ponents: (1) comprehensive scene context provision, (2) explicit failure mode specification, and (3) structured output formatting with reflection annotations. 
+
+Scene Context Provision. Each task generation prompt includes the complete scene graph from BEHAVIOR-1K, containing: room layouts with spatial relationships, existing objects in each room with 3D bounding boxes and affor-dance properties, navigable connections between rooms, and furniture placement. This rich context allows GPT-5  
+
+> Figure 7. Distribution of task categories in the dataset.
+
+to reason about physical feasibility when proposing object placements and action sequences. For example, knowing that a table has dimensions 1.2m × 0.8m × 0.75m allows the model to avoid proposing placements of oversized objects. 
+
+Failure Mode Specification. We explicitly instruct GPT-5 to incorporate specific failure scenarios into the generated trajectories. For Fitting tasks, we request scenarios where early placements block later optimal choices. For Selection tasks, we specify that preferred items should be in rooms requiring more exploration. For Preparation tasks, we re-quest action sequences with complex dependencies where naive sequential execution fails. For each task category, we provide 2-3 concrete examples of desired failure patterns in few-shot demonstrations. 
+
+Structured Output with Reflection Annotations. The prompt requires GPT-5 to generate not just action se-quences, but complete trajectories with: (1) Each action wrapped in angle brackets (e.g., <GO TO kitchen> ); (2) Internal reflections before each action with for-mat INTERNAL REFLECTION: [reasoning] | SCORE: [0-100] ; (3) Execution result annota-tions (execution: success or execution: fail ); (4) External reflections after each executed action with format PREVIOUS ACTION TO REFLECT ON: <action> | EXTERNAL REFLECTION: [assessment] | SCORE: [0-100] ; (5) Retrospec-tive reflections at room exits with format PREVIOUS ACTION TO REFLECT ON (retro): <action> | EXTERNAL REFLECTION: [hindsight assessment] | SCORE: [0-100] .18 Learning from Trials and Errors: Reflective Test-Time Planning for Embodied LLMs 
+
+Actions marked with INTERNAL REFLECTION: ... | SCORE: [low score] followed by the note “score low. don’t execute” represent strategically poor choices that should be avoided through reflection-in-action. These actions may be physically feasible but lead to suboptimal task outcomes (e.g., picking up an inferior item when better alternatives exist). Yet they provide valuable data to train the internal reflection LLM (these actions are not used for training action LLM though). 
+
+Few-Shot Demonstrations. We provide 2-3 complete task examples for each task category, demonstrating the expected output format, reflection structure, and failure pat-terns. These examples show diverse scenarios: a Fitting task where placing small objects first blocks large object storage, a Selection task where exploring only nearby rooms leads to selecting inferior items, and a Preparation task where violating sequential dependencies causes failure. 
+
+Prompt Iteration and Refinement. We iteratively refined the prompt through multiple rounds of generation and vali-dation. Early versions produced tasks with: (1) Physically implausible object placements (e.g., large furniture items on small shelves); (2) Insufficient failure diversity (most tasks had similar error patterns); (3) Inconsistent reflection scores (high scores for objectively poor actions). We ad-dressed these through: (1) Adding explicit bounding box information and size reasoning requirements; (2) Providing diverse few-shot examples spanning different failure modes; (3) Including calibration guidelines for score assignment (e.g., “score 0-30 for actions that fail or lead to dead ends; 70-100 for optimal strategic choices”). 
+
+Reflection Score Calibration. To ensure consistent score semantics across generated tasks, we provide GPT-5 with explicit calibration guidelines: Scores 0-20 indicate actions that fail physically or lead to immediate dead ends; scores 21-40 indicate poor strategic choices that succeed physically but create future problems; scores 41-60 indicate suboptimal but acceptable actions; scores 61-80 indicate good strategic choices; scores 81-100 indicate optimal or near-optimal actions. This calibration ensures that scores are meaningful training signals for the reflection models rather than arbitrary numbers. 
+
+F.4. Physical Validation in BEHAVIOR. 
+
+Raw GPT-5 outputs may contain physically implausible sce-narios or inconsistent spatial reasoning. We validate each generated task through execution in BEHAVIOR OmniGib-son physics simulation: 
+
+Object Placement Validation : We verify all new objects can be physically placed at specified locations using sampling-based kinematics ( sample kinematics ). Objects that fail placement (due to size mismatches, collision constraints, or stability issues) trigger task rejection. We use uniform scaling for all objects to avoid non-orthogonal transform errors. 
+
+Trajectory Execution Verification : We execute the ground-truth trajectory action-by-action, verifying that: (1) Naviga-tion actions ( GO TO ) successfully place the robot in target rooms; (2) Manipulation actions ( PICK UP , PUT DOWN )complete as annotated; (3) Expected failures actually fail (confirming physical constraints match annotations); (4) Action sequences respect object affordances and spatial con-straints. Tasks where any expected-success action fails, or any expected-failure action succeeds, are rejected as incon-sistent. This ensures our evaluation measures genuine agent learning rather than dataset annotation errors. 
+
+Observation Generation : During validation, we generate 3D point cloud observations for each room after every in-teraction step (navigation, pickup, placement). We capture observations from three external camera viewpoints posi-tioned around the robot at fixed relative poses. For each viewpoint, we: (1) Capture RGB-D images at 560×560 res-olution; (2) Convert depth to point clouds using camera intrinsics; (3) Transform point clouds from camera frame to robot base frame; (4) Store point clouds (stacked across viewpoints) as .npy files; (5) Save corresponding RGB images as .png files. Each room observation is stored in a unique directory named {room name } { step idx }, al-lowing models to access the most recent observation per room at any point during inference. 
+
+F.5. Training Data Construction 
+
+From validated trajectories, we extract training data for three model components. All training examples include point cloud observations stored as file paths, which are loaded and processed by the 3D vision encoder during training. 
+
+Action Training Data. For each step t in a validated trajec-tory, we create training examples of the form: Input: {Task , All Rooms , Explored Rooms ,
+
+Current Room , Observations ,
+
+Previous Action , Previous External Reflection }
+
+Output: Action t
+
+Observations consist of point cloud paths for each explored room (most recent per room). 
+
+Internal Reflection Training Data. For each action (includ-19 Learning from Trials and Errors: Reflective Test-Time Planning for Embodied LLMs 
+
+ing non-executed low-score actions), we create examples: Input: {Task , All Rooms , Explored Rooms ,
+
+Current Room , Observations ,
+
+Previous Action , Previous External Reflection }
+
+Potential Action t}
+
+Output: {Internal Reflection t, Score t}
+
+This includes actions marked “don’t execute”—the model must learn to score these actions low during internal reflec-tion to prevent execution. 
+
+External Reflection Training Data. After each executed action, we create examples: Input: {Task , All Rooms , Explored Rooms ,
+
+Current Room , Observations (before and after) ,
+
+Previous Action , Previous External Reflection }
+
+Executed Action t, Execution Result t}
+
+Output: {External Reflection t, Score t}
+
+Execution results indicate success or fail , and obser-vations include both pre-action and post-action point clouds to enable change detection. 
+
+Retrospective Reflection Training Data. For retrospective reflection, we identify room transitions (marked by EXIT 
+
+actions) and collect all actions taken in that room. For each historical action aj , we create: Input: {Task , Context , Current Observations ,
+
+Action j , Room Action History ,
+
+Last Reflection j }
+
+Output: {Retro Reflection j , Updated Score j }
+
+The prompt includes all actions and their external reflections from the current room window, allowing the model to re-evaluate aj with hindsight about downstream consequences. 
+
+F.6. Model Architecture and Training Base Architecture. We build our 3D vision-language-action model on LLaVA-3D (Zhu et al., 2025), which pro-cesses point clouds through a 3D encoder and fuses them with language instructions via a multimodal projector. The architecture consists of: (1) A 3D point cloud encoder that extracts spatial features; (2) A vision-language projector that aligns 3D features with language embeddings; (3) A Llama-based language model backbone (7B parameters) for reasoning and generation. 
+
+F.7. Evaluation Protocol and Baselines Train-Test Split. We ensure zero overlap between fine-tuning and evaluation: (1) No shared task descriptions— evaluation tasks have completely different natural lan-guage instructions; (2) No shared scenes—different scene instances from BEHAVIOR-1K; (3) No shared object placements—all object configurations are unique; (4) No shared trajectories—action sequences and reflection patterns differ. This tests generalization to novel tasks rather than memorization. 
+
+Success Criteria. A task succeeds if and only if: (1) All required objects reach target locations; (2) All spatial con-straints are satisfied (e.g., inside, on top of); (3) All prefer-ence constraints are met (e.g., selecting preferred items); (4) All sequential dependencies are respected; (5) Task comple-tion occurs within the action budget (30 steps). 
+
+Deployment Procedure. For each test task, we: (1) Initial-ize agent in the first room with task description; (2) Execute action generation + internal reflection + external reflection loop; (3) Trigger retrospective reflection at room exits or after K = 5 steps; (4) Perform test-time training when ret-rospective reflections accumulate; (5) Continue until task completion or action budget exhaustion. The agent receives no human feedback during deployment—all learning signals come from self-generated reflections. 
+
+Baseline Implementations. We implement the following baselines: Reflexion (Shinn et al., 2023) maintains a text buffer of past reflections and includes them in prompts for future actions, generating verbal critiques after each step without parameter updates. Self-Refine (Madaan et al., 2023) iteratively improves actions through self-critique and revi-sion cycles, allowing up to 3 refinement iterations per action before execution. We revise the above two baselines to incorporate multimodal inputs. ReflectVLM adapts the re-flection mechanism from (Feng et al., 2025) using learned value functions for action scoring, with a separate value head trained on our training data. 3DLLM-Mem (Hu et al., 2025) maintains fused point cloud observations from all previous steps and previous-step execution results as con-text, providing spatial memory without explicit reflection or test-time training. PPO (Schulman et al., 2017) and 
+
+DreamerV3 (Zhou et al., 2024) are trained as reinforcement learning baselines: PPO uses on-policy policy gradient with clipped surrogate objective and GAE for advantage esti-mation, while DreamerV3 learns a world model from ob-servations and trains a policy in the learned latent space. Both RL baselines are trained for the same total number of environment interactions as our supervised fine-tuning phase to ensure fair compute comparison. All baselines use the same LLaVA-3D-7B backbone with identical finetuning procedures where applicable for fair comparison. 20 Learning from Trials and Errors: Reflective Test-Time Planning for Embodied LLMs Internal 
+
+Reflection 
+
+Lobster in cyan (90 ) 
+
+Lobster in green (87 ) 
+
+Lobster in orange (85 ) 
+
+External Reflection: 
+
+Lobster in Cyan (0) 
+
+Internal 
+
+Reflection 
+
+Lobster in cyan (0 ) 
+
+Lobster in green (92 ) 
+
+Lobster in orange (90 ) 
+
+External Reflection: 
+
+Lobster in Green (0) 
+
+External Reflection: 
+
+Lobste r in Orange (95) 
+
+Internal 
+
+Reflection 
+
+Lobster in cyan (0 ) 
+
+Lobster in green (10 ) 
+
+Lobster in orange (90 ) 
+
+External Reflection: 
+
+Bread in Cyan (0) Retro: Watermelon in Blue (20) 
+
+-> block the placement of 
+
+longer objects, such as the 
+
+bread 
+
+Internal 
+
+Reflection 
+
+Watermelon in orange(85 ) 
+
+Watermelon in blue (20 ) 
+
+Watermelon in green (77 ) 
+
+Watermelon in orange (80) 
+
+External Reflection: 
+
+Watermelon in Orange (85) -> Now it’s 
+
+time to place the bread into the blue 
+
+Task: Find the 
+
+most suitable 
+
+box for the gift. 
+
+And put the gift 
+
+into the box. 
+
+Pick up the gift on 
+
+the coffee table 
+
+Internal : 
+
+Put the gift into the box 
+
+on the floor in the living 
+
+room (Good choice. The 
+
+white box seems vacant; 
+
+60) 
+
+Go to entryway (Good 
+
+choice, but it might save 
+
+time if I try the boxes in 
+
+the living room first; 40) 
+
+Put the gift into the box on 
+
+the breakfast table in the 
+
+living room 
+
+(I haven’t tried but it 
+
+seems inferior to the 
+
+white box .; 50) 
+
+External : Gift already 
+
+picked up. Next step is 
+
+to search for potential 
+
+boxes. I need to try the 
+
+two boxes in the living 
+
+room first. 
+
+Put the gift into the 
+
+white box on the floor 
+
+in the living room 
+
+External: The white box 
+
+is too wide and 
+
+shallow Internal : 
+
+Go to entryway (More 
+
+efficient if I try all 
+
+boxes in the living 
+
+room first; 30) 
+
+Put the gift into the box 
+
+on the breakfast table 
+
+in the living room 
+
+(Worth a try since I’m 
+
+already in the living 
+
+room; 60) 
+
+Go to kitchen (Not yet 
+
+to visit the kitchen; 20) 
+
+Put the gift into the box 
+
+on the breakfast table 
+
+in the living room 
+
+External: The box is too 
+
+small 
+
+Exit living room 
+
+Invoked Retrospective 
+
+Reflection: 
+
+Go to living room (Living room has 
+
+been explored. Gift box retrieved 
+
+and no suitable boxes. No need to 
+
+return; 0) 
+
+Put the gift into the box on the 
+
+breakfast table in the living room 
+
+(The box is too small; 0) 
+
+Put the gift into the box on the 
+
+floor in the living room (The box is 
+
+not suitable; 20) 
+
+Go to living room 
+
+External : Good move. 
+
+The gift is here and I 
+
+spot two potential 
+
+boxes. One on the 
+
+floor and one on the 
+
+breakfast table. 
+
+Internal : 
+
+Put the gift into the box on 
+
+the breakfast table in the 
+
+living room 
+
+(Nothing in hand. Invalid 
+
+put down action; 0) 
+
+Pick up the gift (Good 
+
+choice. The white box 
+
+seems vacant; 60) 
+
+Internal : 
+
+Go to living room (Living 
+
+room hasn’t been 
+
+explored and it’s 
+
+possible there’s a box 
+
+there; 86) 
+
+Go to kitchen (Kitchen 
+
+hasn’t been explored; but 
+
+it’s less likely to have a 
+
+gift; 74) 
+
+Internal : 
+
+Go o living room (Living 
+
+room has been explored. 
+
+Gift box retrieved and no 
+
+suitable boxes. No need 
+
+to return; 0) 
+
+Go to entryway (Good 
+
+choice. Entryway hasn’t 
+
+been explored; 95) 
+
+Go to kitchen (Kitchen is 
+
+not directly accessible 
+
+from the living room; 30) 
+
+Go to entryway 
+
+External : Good. I see 
+
+an orange box. 
+
+Internal : 
+
+Go to living room 
+
+(Living room has been 
+
+explored. Gift box 
+
+retrieved and no suitable 
+
+boxes. No need to return; 
+
+0) 
+
+Put the gift into the box 
+
+on the floor in the 
+
+entryway (Good choice. 
+
+Worth a try; 90) 
+
+Put the gift into the 
+
+box on the floor in 
+
+the entryway 
+
+External : Nice fit. But still 
+
+need to find other boxes to 
+
+see if they are better. 
+
+Exit entryway 
+
+Invoked Retrospective 
+
+Reflection: 
+
+Go to entryway (The box there 
+
+fits. I can go back if not other 
+
+boxes fit; 75) 
+
+Put the gift into the box on the 
+
+floor in the entryway (Nice action. 
+
+Good fit; 80) 
+
+Go to living room (Still nothing 
+
+valuable; 0) 
+
+Put the gift into the box on the 
+
+breakfast table in the living room 
+
+(Box too small; 0) 
+
+Put the gift into the box on the 
+
+floor in the living room (The box is 
+
+not suitable; 20) 
+
+Internal : 
+
+Go to living room (Still 
+
+nothing valuable; 0) 
+
+Go to entryway (The box 
+
+there fits. I can go back if 
+
+not other boxes fit; 75) 
+
+Go to kitchen (Kitchen 
+
+hasn’t been explored; 95) 
+
+Got to kitchen 
+
+External : I see a box on the 
+
+floor and its cylinder. Match 
+
+the shape of the gift. 
+
+Put the gift into the 
+
+box on the floor in 
+
+the kitchen. 
+
+External : The box is slightly 
+
+larger than we want. 
+
+Exit kitchen 
+
+Invoked Retrospective 
+
+Reflection: 
+
+Go to entryway (The box is 
+
+optimal; 95) 
+
+Put the gift into the box on the 
+
+floor in the entryway (Nice action. 
+
+Good fit; 90) 
+
+Go to living room (Still nothing 
+
+valuable; 0) 
+
+Go to kitchen (The box here 
+
+doesn’t fit well; 60) 
+
+Put the gift into the box on the 
+
+floor in the kitchen. (This box isn’t 
+
+optimal; 60) 
+
+Internal : 
+
+Go o living room (Still 
+
+nothing valuable; 0) 
+
+Go to entryway (The box 
+
+is optimal; 95) 
+
+Go to kitchen (The box 
+
+here doesn’t fit well; 60) 
+
+Go to entryway Put the gift into the 
+
+box on the floor in 
+
+the entryway 
+
+Figure 8. Steps and reflections are simplified for better presentations. Blue text shows internal reflection used for candidate selection, orange text shows external reflection after execution. We put reflection scores inside brackets. Red text shows retrospective reflection and model updates. 
+
+21 Learning from Trials and Errors: Reflective Test-Time Planning for Embodied LLMs 
+
+G. Cupboard Fitting: More Details 
+
+G.1. Base Model and Supervised Fine-tuning. 
+
+We build upon Qwen2.5-VL-3B as our base vision-language model for the Cupboard Fitting benchmark. We employ uni-fied multi-task supervised fine-tuning on action generation, internal reflection, and external reflection tasks using: global batch size 128, learning rate 1 × 10 −5, weight decay 0.1, trained for 3 epochs using AdamW optimizer. Task-specific prompts distinguish between the three reflection modes, en-abling cross-task knowledge transfer. 
+
+G.2. Test-Time Training Variants. 
+
+We implement two test-time training variants to study the trade-off between adaptation capacity and computational efficiency: 
+
+Base-Weight Test-Time Training for Reflection-on-Action: 
+
+This variant updates all non-visual parameters during de-ployment. We freeze visual encoder parameters (identified by visual or vision in parameter names) but update all language model parameters. For the action model trained via REINFORCE, we use SGD optimizer with learning rate 
+
+1 × 10 −3, weight decay 1 × 10 −4, zero momentum, training for 3 epochs. For the internal reflection model trained via su-pervised learning, we use SGD optimizer with learning rate 
+
+5 × 10 −5, weight decay 1 × 10 −4, zero momentum, training for 3 epochs. This approach provides maximum adaptation capacity but requires updating millions of parameters. 
+
+LoRA Test-Time Training for Reflection-on-Action: For memory-efficient adaptation, we apply Low-Rank Adap-tation with rank r = 8 , alpha α = 16 , dropout rate 0.1, tar-geting all linear layers except lm head , embed tokens ,and visual encoder components. The LoRA adapters are applied to both internal reflection and action models using the PEFT library. For the action model, we use SGD with learning rate 1×10 −2, weight decay 1×10 −4, zero momen-tum, trained for 3 epochs. For the internal reflection model, we use SGD with learning rate 0.2, weight decay 1 × 10 −4,zero momentum, trained for 3 epochs. The higher learning rates compensate for the reduced parameter count—LoRA updates only the low-rank adapter parameters, reducing trainable parameters by over 95% while maintaining com-parable performance. 
+
+H. More Qualitative Examples 
+
+In Figure 8, we show more qualitative examples. We can see that the model does get improved over reflection mecha-nisms. 
+
+I. Physical Experiment Setup 
+
+We validate our framework on a physical Franka Panda robotic arm in a cupboard fitting scenario. The workspace consists of a multi-compartment cupboard with compart-ments of varying sizes, along with different shape ob-jects that must be placed into designated compartments. A camera mounted above the workspace captures RGB images from a top-down offset viewpoint, matching the ‘top down offset’ camera configuration used in simulation training. Before each task, we record the initial positions of objects and compartment locations in the robot base frame through calibration. Given high-level action commands from the model (e.g., “pick up the red cube and put it in the blue compartment”), the robot executes a two-phase manipulation: (1) moves to the object’s registered initial position and grasps it using the parallel-jaw gripper, (2) places the object at the target compartment location com-puted from the registered compartment position. After each action, the system captures a post-execution image from the same camera viewpoint and provides binary success/failure feedback based on whether the object remains within the tar-get compartment bounds, which is used to generate external reflections following the same protocol as simulation. 22

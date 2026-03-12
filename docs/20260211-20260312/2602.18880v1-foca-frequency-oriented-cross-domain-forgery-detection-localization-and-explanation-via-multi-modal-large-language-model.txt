@@ -1,0 +1,169 @@
+Title: FOCA: Frequency-Oriented Cross-Domain Forgery Detection, Localization and Explanation via Multi-Modal Large Language Model
+
+URL Source: https://arxiv.org/pdf/2602.18880v1
+
+Published Time: Tue, 24 Feb 2026 01:34:55 GMT
+
+Number of Pages: 5
+
+Markdown Content:
+## FOCA: FREQUENCY-ORIENTED CROSS-DOMAIN FORGERY DETECTION, LOCALIZATION AND EXPLANATION VIA MULTI-MODAL LARGE LANGUAGE MODEL 
+
+## Zhou Liu 1,2, Tonghua Su 1,3,4, Hongshi Zhang 1, Fuxiang Yang 1, Donglin Di 1,2, Yang Song 5, Lei Fan 2,5⋆
+
+> 1
+
+## Harbin Institute of Technology, Harbin, China 
+
+> 2
+
+## DZ-Matrix 
+
+> 3
+
+## Guangdong Laboratory of Artificial Intelligence and Digital Economy (SZ), Shenzhen, China 
+
+> 4
+
+## Chongqing Research Institute of HIT, Chongqing, China 
+
+> 5
+
+## University of New South Wales, Sydney, Australia 
+
+ABSTRACT 
+
+Advances in image tampering techniques, particularly generative models, pose significant challenges to media ver-ification, digital forensics, and public trust. Existing image forgery detection and localization (IFDL) methods suffer from two key limitations: over-reliance on semantic content while neglecting textural cues, and limited interpretabil-ity of subtle low-level tampering traces. To address these issues, we propose FOCA, a multimodal large language model–based framework that integrates discriminative fea-tures from both the RGB spatial and frequency domains via a cross-attention fusion module. This design enables accurate forgery detection and localization while providing explicit, human-interpretable cross-domain explanations. We further introduce FSE-Set, a large-scale dataset with diverse authen-tic and tampered images, pixel-level masks, and dual-domain annotations. Extensive experiments show that FOCA outper-forms state-of-the-art methods in detection performance and interpretability across both spatial and frequency domains. 
+
+Index Terms — Image Forgery Detection, Multimodal Large Language Model, Frequency Domain Analysis 
+
+1. INTRODUCTION 
+
+Image forgery detection and localization (IFDL) aims to de-termine whether an image has been tampered with and to identify manipulated regions. It plays a critical role in mul-timedia forensics, digital evidence authentication, and com-bating misinformation. With the rapid advancement of gener-ative models [1], highly realistic synthetic images and seam-less edits can now closely mimic natural image statistics, pos-ing unprecedented challenges to traditional IFDL methods [2] and threatening media authenticity. Existing IFDL approaches can be broadly categorized into two paradigms. The first relies on pretrained image en-coders, such as MVSS-Net [3] and HiFi-Net [4], which often incorporate auxiliary cues from noise or frequency domains. These methods are computationally efficient but typically produce only detection scores or tampering masks, offer-ing limited interpretability. The second paradigm consists of multimodal large language models (MLLMs) [5, 6, 7], which leverage large-scale semantic knowledge to identify high-level inconsistencies. Representative works include SIDA [5], which constructs a cross-modal training dataset, and ForgeryGPT [8], which augments LLMs with mask-aware forgery extraction. Despite their strong semantic reasoning capabilities, existing MLLM-based methods op-erate exclusively in the RGB domain and often overlook subtle forensic traces, such as texture irregularities and high-frequency artifacts. In this paper, we aim to equip MLLMs with frequency-domain awareness for a more interpretable IFDL framework. To this end, we propose a Frequency-Oriented Cross-domain forgery detection, termed FOCA. It integrates RGB- and frequency-domain feature representations through a Fre-quency Attention Fusion (FAF) module. FAF leverages cross-attention and contrastive learning to dynamically fuse spatial and wavelet-frequency features, enabling the model to associate semantic inconsistencies with forensic traces and thereby improving both detection and localization per-formance. Furthermore, we construct a large-scale dataset named FSE-Set to fine-tune MLLMs. It contains diverse ma-nipulated and authentic images with pixel-level masks and provides both RGB- and frequency-domain explanations to facilitate interpretable evaluation. Our methodological contributions are as follows: We pro-pose FOCA, the first MLLM-based framework that integrates semantic reasoning with frequency-domain forensic cues for interpretable image forgery detection and localization. We construct the FSE-Set dataset, including multi-domain annotations that enable explainable forgery analysis across both spatial and frequency domains. Extensive experiments demonstrate that FOCA outperforms state-of-the-art methods in detection accuracy while providing human-interpretable explanations in both RGB and frequency domains.  
+
+> arXiv:2602.18880v1 [cs.CV] 21 Feb 2026 DWT
+> FAF Multi-Modal LLM
+> Question: Can you determine whether this image is real or tampered? And explain why. Answer: Sure, it’s tampered. It's [SEG] .1. Location of the tampering area: The tampered area is located in the lower left portion of the image, positioned on the grassy field in the foreground...
+> [SEG] [CLS] Real Tampered matmul matmul softmax MLP AvgPool Attract Repel
+
+FAF 
+
+> Decoder Encoder
+> Linear
+> LoRA
+
+Fig. 1 . Overview of FOCA. It receives an image ximg and a text instruction xtxt and produces a textual response. FOCA uses the [CLS] token for tamper classification and the [SEG] token for pixel-level mask generation. 
+
+2. METHOD 2.1. Overview 
+
+Given a text instruction xtxt and an input image ximg ∈
+
+RH×W ×3, our goal is to jointly predict three outputs: the detection result ˆD, the tampered area mask ˆM and a textual explanation of tampering artifacts ˆT . The overall architecture is shown in Fig. 1. Our FOCA comprises three components: • Frequency Attention Fusion (FAF) . To enhance sensitivity to tampering artifacts, we extract high-frequency compo-nents from ximg and fuse them with its original image, yielding a fused feature xf .• MLLM backbone F. The fused features xf , together with the text instruction xtxt , are passed into the MLLM F
+
+to generate the textual explanation ˆT . To enable detec-tion and localization [9], we extend the vocabulary of the MLLM with two special tokens, [SEG] and [CLS], corre-sponding to segmentation and detection tasks. • Segmentation module . We extract the last-layer embed-dings ehseg and ehcls of [SEG] and [CLS], respectively. The ehseg is projected via an MLP layer γ to produce hseg ,while ehcls is passed through a classifier ϕ to yield the de-tection result ˆD:
+
+ˆhseg = γ(ehseg ), ˆD = ϕ(ehcls ). (1) Meanwhile, a frozen image encoder Senc extracts visual fea-tures f from ximg , which are combined with hseg and de-coded by Sdec to generate the pixel-level mask ˆM .During training, the image encoder and MLLM parame-ters are frozen. We train only the FAF module and the seg-mentation decoder. The MLLM is fine-tuned with LoRA [10], which updates a small number of low-rank matrices, ensuring efficiency while retaining the pretrained model capacity. 
+
+2.2. Frequency Attention Fusion 
+
+Prior studies [11, 12] have shown that tampering often leaves subtle traces in frequency components. We adopt the Discrete Wavelet Transform (DWT) for high-frequency feature extrac-tion, since DWT not only isolates frequency information but also preserves spatial structures. Specifically, DWT decomposes the input image ximg 
+
+into four sub-bands xLL , x LH , x HL , x HH ∈ RH/ 2×W/ 2×3,where “L”and “H” denote low-/high-pass filters capturing smooth regions and edges, respectively. Among them, the 
+
+xHH sub-band demonstrates strong generalization capability and effectively reveals subtle tampering artifacts [11]. This sub-band is integrated with spatial features through the FAF module. The FAF employs a cross-attention mechanism in which xHH acts as the query, while the original image ximg 
+
+serves as the key and value. The process is defined as: 
+
+A = softmax 
+
+ (wq xHH )( wkximg )⊤
+
+√dk
+
+
+
+wv ximg , (2) where A is the attention score matrix, wq , wk, and wv are trainable projection matrices, and dk is the dimensionality of the key vectors. This design adaptively retrieves structurally relevant regions from spatial features under the guidance of high-frequency cues. The attended features are then fused with spatial features via a residual connection, thereby retain-ing low- and mid-frequency information while emphasizing tampering-sensitive details. To stabilize training and enhance robustness, we introduce a residual connection defined as: 
+
+xf = proj( A) + ximg , (3) where proj( ·) denotes a linear projection. It selectively am-plifies high-frequency details that are critical for tampering localization, while suppressing noise propagation. Inspired by recent contrastive learning strategies [13], we introduce an auxiliary contrastive objective to enhance dis-criminative feature learning. Specifically, for each input im-age, the fused features xf are first passed through spatial av-erage pooling and then projected into a latent space via a two-layer MLP with ReLU activation. The resulting embedding is normalized to yield a d-dimensional vector: 
+
+z = Norm(MLP(AvgPool( xf ))) . (4) Given a batch of N images, each sample forms a positive pair with itself, while all other samples serve as negatives. We compute the scaled cosine similarity between embeddings as: 
+
+sij = zi · zj
+
+τ ∥zi∥∥ zj ∥ , (5) where τ is a temperature controlling the distribution sharp-ness. The objective follows the InfoNCE formulation: 
+
+Lcl = − 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+log exp( sii )
+
+PNj=1 exp( sij ) . (6) This loss maximizes agreement between positive pairs while minimizing similarity with negatives, thereby enforcing dis-criminative, tampering-aware representations that comple-ment the primary detection and localization objectives. 
+
+2.3. FSE-Set Dataset 
+
+Existing IFDL datasets [14, 15, 5] provide tampering annota-tions but lack textual explanations and coverage of advanced manipulation techniques. To bridge these gaps, following prior dataset construction methodologies [5, 6, 7], we in-troduce FSE-Set, a new dataset designed to support cross-domain image forgery analysis in both spatial and frequency domains. FSE-Set consists of 50K real images from ImageNet [16] and 50K tampered images derived from COCO [17], includ-ing 25K traditional manipulations (splicing and copy-move) and 25K AI-generated edits. As shown in Fig. 2, tampered samples are constructed by object extraction with Qwen2.5-VL [18], mask generation using Language-SAM [19], and image modification via Stable Diffusion inpainting [1]. To provide dual-domain insights for tampering analysis, we further employ Claude [20] to jointly analyze the RGB image and its HH frequency sub-band, producing fine-grained explanations in both domains for training and evaluation. 
+
+2.4. Training Objectives 
+
+Our framework jointly optimizes two complementary loss functions: the prediction loss and the contrastive loss. The overall loss is defined as: 
+
+L = Lpred + λcLcl , (7) where λc balances the prediction and contrastive components. The prediction loss Lpred consists of three terms: 
+
+Lpred = Lt + Lcls + Lmask , (8) “Analyze the image and caption ‘A little girl holds a hand full of wet broccoli’. Then map it to COCO categories…    
+
+> Broccoli Caption Image
+> Language SAM A little girl holds a hand full of wet broccoli .Stable Diffusion Inpainting
+> Mask Caption modifcation A little girl holds a hand full of wet spinach .
+
++
+
+Fig. 2 . AI-Generated manipulations pipeline. where the text generation loss Lt and classification loss Lcls 
+
+are both formulated as cross-entropy losses, measuring dis-crepancies between the generated text ˆT and ground truth cap-tions T , as well as between the predicted category ˆD and true label D.For segmentation, we adopt a composite objective com-bining binary cross-entropy (BCE) and Dice loss to optimize the predicted mask ˆM against the ground truth mask M :
+
+Lmask = λbce LBCE ( ˆM , M ) + Ldice ( ˆM , M ), (9) where λbce and λdice are balancing coefficients. This formu-lation encourages pixel-level accuracy while ensuring struc-tural consistency of predicted tampered regions. 
+
+3. EXPERIMENTS 3.1. Experimental built upon 
+
+We conducted experiments on FSE-Set, CASIAv1 [14], and Columbia [15]. Our model was based on LISA-7B [9] as the MLLM backbone and SAM [21] as the vision backbone. The model was fine-tuned using LoRA [10] and a dropout rate of 0.05. Training was conducted on 4× NVIDIA H200 GPUs. The loss weights were set to λc = 0 .5 and λbce = 2 .0.
+
+Evaluation Metrics. For detection, we report image-level accuracy and F1 score. For localization, we adopt F1 and IoU. To evaluate artifact explanation quality, we use ROUGE-L and cosine similarity (CSS). Additionally, inspired by the LLM-as-a-Judge paradigm [22], we employ GPT-4o [23] as an evaluator. A carefully designed prompt guides GPT-4o to impartially compare the model’s explanation against ref-erences, analyze similarities, differences, and errors, before assigning a quantitative score from 1 to 10. 
+
+3.2. Results and Discussion Detection Evaluation. To evaluate the detection capability of our model, we conducted comparative experiments on FSE-Set with four state-of-the-art traditional detection meth-ods that are retrained on our FSE-Set, namely CnnSpott [24], Table 1 . Comparison with deepfake detection methods. Methods Real Tampered Overall Acc F1 Acc F1 Acc F1 CnnSpott [24] 93.9 92.1 90.4 92.1 92.1 92.1 Fusing [25] 98.1 94.7 91.4 94.6 94.6 94.6 UnivFD [26] 88.7 88.0 87.9 88.6 88.6 88.3 DRCT [27] 96.7 93.2 89.5 92.9 93.0 93.0 Our 97.1 96.2 95.4 96.3 96.2 96.2 Table 2 . Comparison of MLLM-based methods in detection performance and tamper localization performance. Method Detection FSE-Set CASIA v1 Columbia Acc F1 IoU F1 IoU F1 IoU F1 LISA [9] – – 32.5 49.0 6.1 11.6 13.7 24.1 DS [28] 49.2 34.5 9.5 17.3 7.9 14.7 25.6 40.1 Qwen [18] 57.3 63.9 23.4 37.9 15.0 26.0 45.4 62.4 IVL3 [29] 68.4 79.5 7.6 14.0 6.6 12.4 30.4 46.6 SIDA [5] 95.6 95.6 47.9 64.7 37.6 54.7 60.2 74.4 Ours 96.2 96.2 48.6 65.4 34.4 51.2 60.8 75.6 
+
+Fusing [25], Uni-vFD [26], and DRCT [27]. The detailed comparison results are presented in Table 1. Our method achieved the best performance across most metrics, especially in F1 scores for both Real (96.2%) and Tampered (96.3%) classes, and overall accuracy (96.2%). While Fusing [25] attained slightly higher results in Real accuracy (98.1%), our approach demonstrates a stronger balance between the two classes and superior performance in tampered-image detec-tion, highlighting its robustness in practical forgery scenarios. We further compared our method with four MLLM-based approaches: InternVL3 (IVL3) [29], Qwen2.5-VL (Qwen) [18], DeepSeekVL2 (DS), and SIDA [5]. For In-ternVL3, Qwen2.5-VL, and DeepSeekVL2, we used their released pre-trained models, while SIDA was retrained on our FSE-Set. The results are shown in Table 2. Our model achieved the best performance in detection, with both Accu-racy and F1 score reaching 96.2%, outperforming all other methods. The closest competitor, SIDA, achieved 95.6%, while other models fell further behind. The key advantage of our approach lies in feeding both RGB and frequency-domain representations into the MLLM. By leveraging high-frequency information, our framework captures subtle foren-sic cues that are often invisible in the spatial domain alone. 
+
+Localization Evaluation. 
+
+The localization evaluation experiment assesses FOCA’s ability to precisely identify pixel-level tampered regions on the FSE-Set, CASIA v1, and Columbia datasets. As shown in Table 2, FOCA achieves SOTA performance on FSE-Set (+0.7 IoU and +0.7 F1 over SIDA) and Columbia (+0.6 IoU and +1.2 F1 over SIDA). On CASIA v1, it slightly trails SIDA in IoU and F1 but remains highly competitive. All 
+
+Fig. 3 . Comparative results of the pre-trained MLLMs and FOCA in tampering explanation capabilities on the FSE-Set. other MLLM-based methods perform significantly worse than FOCA and SIDA across all datasets. FOCA’s superior localization performance is driven by the FAF module, which dynamically associates spatial semantic inconsistencies with high-frequency forensic traces to improve region-level preci-sion. Moreover, FOCA provides interpretable explanations from both spatial and frequency domains, enhancing the credibility of its localization results. 
+
+Explanation Evaluation. To evaluate the model’s inter-pretability and its ability to generate natural language expla-nations, we compared it with GPT-4o, InternVL3, Qwen2.5-VL, and SIDA on the FSE-Set dataset. We used ROUGE-L for surface-level structural alignment and CSS for semantic equivalence to jointly assess lexical coherence and contextual fidelity. Additionally, we employed the LLM-Judge score, which provides a human-like qualitative assessment of ex-planation quality on a 10-point scale. As shown in Fig. 3, our model achieved top performance in ROUGE-L, CSS, and LLM-Judge, demonstrating effectiveness in generating high-quality tampering explanations. 
+
+4. CONCLUSION 
+
+This paper introduces frequency-domain interpretation to the IFDL task and presents a dataset of 100,000 images with spa-tial and frequency analysis. We propose FOCA, a multimodal framework that detects, localizes, and explains tampering ar-tifacts in both domains, advancing image forensics and sup-porting efforts against misinformation. 
+
+5. ACKNOWLEDGENTS 
+
+This work was supported by the National Natural Science Foundation of China (Grant No. 62277011), National Key Research and Development Program of China (Grant No. GG-2024-01-02), Open Research Fund from Guangdong Laboratory of Artificial Intelligence and Digital Economy (SZ) (Grant No.GML-KF-24-18) and Project of Chongqing MEITC(Grant No. YJX-2025001001009). 6. REFERENCES 
+
+[1] Robin Rombach, Andreas Blattmann, et al., “High-resolution image synthesis with latent diffusion mod-els,” in CVPR , 2022, pp. 10684–10695. [2] Xiaohong Liu, Yaojie Liu, et al., “Pscc-net: Progressive spatio-channel correlation network for image manipula-tion detection and localization,” TCSVT , 2022. [3] Chengbo Dong, Xinru Chen, et al., “Mvss-net: Multi-view multi-scale supervised networks for image manip-ulation detection,” TPAMI , pp. 1–14, 2022. [4] Xiao Guo, Xiaohong Liu, et al., “Hierarchical fine-grained image forgery detection and localization,” in 
+
+CVPR , 2023, pp. 3155–3165. [5] Zhenglin Huang, Jinwei Hu, et al., “Sida: Social me-dia image deepfake detection, localization and explana-tion with large multimodal model,” in CVPR , 2025, pp. 28831–28841. [6] Guoxin Zang, Xue Li, et al., “Sage: A visual lan-guage model for anomaly detection via fact enhance-ment and entropy-aware alignment,” in ACM MM , 2025, pp. 5030–5039. [7] Shibo Sun, Xue Li, et al., “Llapa: A vision-language model framework for counterfactual-aware procedural planning,” in ACM MM , 2025, pp. 5020–5029. [8] Jiawei Liu, Fanrui Zhang, et al., “Forgerygpt: Mul-timodal large language model for explainable image forgery detection and localization,” arXiv:2410.10238 ,2024. [9] Xin Lai, Zhuotao Tian, et al., “Lisa: Reasoning seg-mentation via large language model,” in CVPR , 2024, pp. 9579–9589. [10] Edward J Hu, Yelong Shen, et al., “Lora: Low-rank adaptation of large language models.,” ICLR , vol. 1, no. 2, pp. 3, 2022. [11] Ouxiang Li, Jiayin Cai, et al., “Improving synthetic im-age detection towards generalization: An image trans-formation perspective,” in ACM SIGKDD , 2025, pp. 2405–2414. [12] Kai Yi, Jialin Chen, et al., “Approximate equivariance so (3) needlet convolution,” in Proc. TAGL Workshops .PMLR, 2022, pp. 189–198. [13] Lei Fan, Junjie Huang, et al., “Salvaging the overlooked: Leveraging class-aware contrastive learning for multi-class anomaly detection,” in ICCV , 2025, pp. 21419– 21428. [14] Jing Dong, Wei Wang, et al., “CASIA image tampering detection evaluation database,” in ChinaSIP , July 2013. [15] Y.-F. Hsu and S.-F. Chang, “Detecting image splic-ing using geometry invariants and camera characteristics consistency,” in ICME , 2006. [16] Jia Deng, Wei Dong, et al., “Imagenet: A large-scale hierarchical image database,” in CVPR , 2009, pp. 248– 255. [17] Tsung-Yi Lin, Michael Maire, et al., “Microsoft coco: Common objects in context,” in ECCV , 2014, pp. 740– 755. [18] Shuai Bai, Keqin Chen, et al., “Qwen2.5-vl technical report,” arXiv:2502.13923 , 2025. [19] lang-sam team, “lang-segment-anything,” 2024, 
+
+https://github.com/luca-medeiros/ lang-segment-anything .[20] Anthropic, “Claude sonnet 4,” 2025, https://www. anthropic.com/claude/sonnet .[21] Alexander Kirillov, Eric Mintun, et al., “Segment any-thing,” in ICCV , 2023, pp. 4015–4026. [22] Haitao Li, Qian Dong, et al., “Llms-as-judges: a com-prehensive survey on llm-based evaluation methods,” 
+
+arXiv:2412.05579 , 2024. [23] Josh Achiam, Steven Adler, et al., “Gpt-4 technical re-port,” arXiv:2303.08774 , 2023. [24] Sheng-Yu Wang, Oliver Wang, et al., “Cnn-generated images are surprisingly easy to spot... for now,” in 
+
+CVPR , 2020, pp. 8695–8704. [25] Yan Ju, Shan Jia, et al., “Fusing global and local fea-tures for generalized ai-synthesized image detection,” in 
+
+ICIP , 2022, pp. 3465–3469. [26] Utkarsh Ojha, Yuheng Li, et al., “Towards universal fake image detectors that generalize across generative models,” in CVPR , 2023, pp. 24480–24489. [27] Baoying Chen, Jishen Zeng, et al., “Drct: Diffusion re-construction contrastive training towards universal de-tection of diffusion generated images,” in ICML , 2024. [28] Zhiyu Wu, Xiaokang Chen, et al., “Deepseek-vl2: Mixture-of-experts vision-language models for ad-vanced multimodal understanding,” 2024. [29] Jinguo Zhu, Weiyun Wang, et al., “Internvl3: Exploring advanced training and test-time recipes for open-source multimodal models,” 2025.
