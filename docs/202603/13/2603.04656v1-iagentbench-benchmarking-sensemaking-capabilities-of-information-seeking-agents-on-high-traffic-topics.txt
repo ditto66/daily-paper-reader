@@ -1,0 +1,529 @@
+Title: iAgentBench: Benchmarking Sensemaking Capabilities of Information-Seeking Agents on High-Traffic Topics
+
+URL Source: https://arxiv.org/pdf/2603.04656v1
+
+Published Time: Fri, 06 Mar 2026 01:15:39 GMT
+
+Number of Pages: 9
+
+Markdown Content:
+# iAgentBench : Benchmarking Sensemaking Capabilities of Information-Seeking Agents on High-Traffic Topics 
+
+## Preetam Prabhu Srikar Dammu 
+
+University of Washington Seattle, Washington, USA preetams@uw.edu 
+
+## Arnav Palkhiwala 
+
+University of Washington Seattle, Washington, USA apalkh@uw.edu 
+
+## Tanya Roosta 
+
+UC Berkeley Berkeley, California, USA troosta@ischool.berkeley.edu 
+
+## Chirag Shah 
+
+University of Washington Seattle, Washington, USA chirags@uw.edu 
+
+## Abstract 
+
+With the emergence of search-enabled generative QA systems, users are increasingly turning to tools that browse, aggregate, and rec-oncile evidence across multiple sources on their behalf. Yet many widely used QA benchmarks remain answerable by retrieving a single relevant passage, making them poorly suited for measuring cross-source sensemaking, such as integrating evidence, tracking causal links, and resolving dependencies across facets of a topic. We present i AgentBench , a dynamic ODQA benchmark that tar-gets these higher-level information needs while keeping questions natural and grounded in realistic information-seeking behavior. iAgentBench draws seed topics from real-world attention signals and uses common user intent patterns to construct user-like ques-tions whose answers require combining evidence from multiple sources, not just extracting a single snippet. Each instance is re-leased with traceable evidence and auditable intermediate artifacts that support contamination checks and enable fine-grained diag-nosis of failures in retrieval versus synthesis. Experiments across multiple LLMs show that retrieval improves accuracy, but retrieval alone does not reliably resolve these questions, underscoring the need to evaluate evidence use, not just evidence access. 
+
+## CCS Concepts 
+
+• Information systems ;
+
+## Keywords 
+
+Data Contamination, Retrieval-Augmented Generation (RAG), Ques-tion Answering, Dynamic Benchmarking 
+
+ACM Reference Format: 
+
+Preetam Prabhu Srikar Dammu, Arnav Palkhiwala, Tanya Roosta, and Chi-rag Shah. 2026. i AgentBench : Benchmarking Sensemaking Capabilities of Information-Seeking Agents on High-Traffic Topics. In . ACM, New York, NY, USA, 9 pages. https://doi.org/10.1145/nnnnnnn.nnnnnnn  
+
+> Permission to make digital or hard copies of all or part of this work for personal or classroom use is granted without fee provided that copies are not made or distributed for profit or commercial advantage and that copies bear this notice and the full citation on the first page. Copyrights for components of this work owned by others than the author(s) must be honored. Abstracting with credit is permitted. To copy otherwise, or republish, to post on servers or to redistribute to lists, requires prior specific permission and/or a fee. Request permissions from permissions@acm.org.
+> Conference’17, Washington, DC, USA
+> ©2026 Copyright held by the owner/author(s). Publication rights licensed to ACM. ACM ISBN 978-1-4503-XXXX-X/2018/06 https://doi.org/10.1145/nnnnnnn.nnnnnnn
+
+## 1 Introduction 
+
+Information-seeking agents (ISAs) are increasingly used when a user needs more than a quick lookup. In these settings, the system must search across sources, reconcile partial evidence, and produce a concise synthesis that supports a downstream decision. When an answer is contained in a single passage, strong retrieval plus generation is often enough. When the answer only emerges after integrating multiple sources, reliability hinges on how well the system accumulates, organizes, and uses evidence. Yet evaluation still over-indexes on questions that collapse to finding one relevant passage. Many widely used QA benchmarks were designed around passage-centric answering, where success is dominated by matching and extracting the right span or sen-tence, even under adversarial perturbations [ 13 ]. This setup is a weak proxy for the cross-source understanding that motivates ISAs. It under-measures failure modes that arise when evidence is dis-tributed across documents, when multiple themes must be consid-ered jointly, or when the correct response depends on how those themes relate. A natural response is to turn to more challenging QA settings, particularly multi-hop QA. However, multi-hop reasoning should not be conflated with sensemaking, which requires capabilities beyond chaining evidence across hops. Datasets such as HotPotQA still often reward locating a small number of lexical matches or short supporting statements [33]. Even when multiple documents are involved, many multi-hop questions are structured so that the work is primarily path-following and snippet stitching. The notion of sensemaking questions , as defined by Edge et al .[4] , helps clarify what is missing. Edge et al . [4] argue that con-ventional RAG struggles on queries that require query-focused summarization of an entire text collection, rather than retrieving a few matching records. This dataset-level framing is valuable, but it targets a different regime than most open-domain ISAs. In practice, the relevant context is rarely a fixed private corpus. It is a query-conditioned slice of a large and changing web, where reading the first few pages of search results is often the natural scope for answering the user. Evaluating agents in this regime calls for benchmarks that focus on sensemaking over retrieved sources themselves, not global collection-level summarization. We introduce i AgentBench , short for Information-seeking Agent Benchmark , a dynamic benchmark that targets retrieved-sources-level sensemaking for open-domain QA. Each instance is seeded  
+
+> arXiv:2603.04656v1 [cs.CL] 4 Mar 2026 Conference’17, July 2017, Washington, DC, USA Dammu et al.
+
+from traffic-driven, time-indexed topics so it reflects what users were actively seeking, and grounded in a query-conditioned slice of open-web evidence. Questions are instantiated via intent patterns to stay natural and standalone, while the story-graph representation makes themes and connector relations explicit so that answering requires integrating evidence across multiple themes, not extracting a single passage or performing superficial multi-hop stitching. iAgentBench is designed to support repeated evaluation as the web changes and to enable analysis beyond headline accuracy by distinguishing failures of evidence access from failures of evi-dence integration. Specifically, i AgentBench is designed with the following benchmark-level characteristics: (1) Traffic-driven, time-indexed topics grounded in real-world attention signals. (2) Query-conditioned open-web corpora that reflect the bounded evidence slice an ISA would read at test time. (3) Cross-theme, connector-dependent questions with enforced de-pendence on multiple themes and their relations (not single-passage lookup or superficial multi-hop stitching). (4) Questions that reflect user informational needs by instantiat-ing common intent patterns, so evaluation tests sensemaking goals beyond generic fact lookup. (5) Dynamic regeneration over time windows to support repeated evaluation on fresh evidence and reduce exposure to memo-rization. We make i AgentBench available on Hugging Face 1, the source code on GitHub 2, and additional resources on the project website 3
+
+to support research on evaluating information-seeking agents under dynamic, open-web conditions. 
+
+## 2 Related Work 
+
+Open-domain question answering (ODQA) benchmarks differ sub-stantially in how closely their questions reflect real user intent. Reading-comprehension datasets such as SQuAD [ 24 ] helped stan-dardize span extraction, while later ODQA resources moved toward questions that resemble genuine web information needs. Natural Questions [ 18 ] is grounded in real search queries, and (QA) 2 [17 ]highlights that naturally occurring questions can include question-able assumptions. At the same time, many widely used ODQA datasets are shaped by benchmark convenience or authoring con-straints (e.g., trivia-oriented sources), which can skew the dis-tribution away from questions users actually ask. In this work, iAgentBench follows an interest-driven design: seed topics are drawn from real-world attention signals (via GDELT [ 30 ]) rather than curated knowledge bases or quiz-style collections. A central challenge in ODQA is that evidence is often distributed across multiple documents, and relevant evidence may not be se-mantically similar to the question itself. HotpotQA [ 33 ] popularized multi-hop supervision, and retrieval-heavy readers such as FiD [ 11 ]show the gains from aggregating many passages. Retriever devel-opment has similarly focused on improving coverage and compo-sitionality, including dense retrieval [ 14 ] and retrieval-augmented language models [ 8 , 12 , 19 ]. These benchmarks and systems are 
+
+> 1https://huggingface.co/datasets/preetam7/iAgentBench
+> 2https://github.com/iagentbench/iAB.git
+> 3https://iagentbench.github.io/iAgentBench/
+
+essential for studying retrieval quality and multi-hop composition. By contrast, i AgentBench shapes questions to require cross-theme synthesis over a query-conditioned web corpus, where the bottle-neck is often not a single missing passage but integrating evidence that is dispersed across themes and their explicit linkages. Graph structure has been used to support multi-step retrieval and to make cross-document reasoning more explicit. Early work retrieves reasoning paths over Wikipedia graphs for multi-hop QA [1 ], reflecting the value of structured traversal when lexical overlap is limited. More recently, GraphRAG-style [ 4 ] approaches propose building intermediate graph representations from a corpus to en-able higher-level synthesis, often relying on community discovery methods such as Leiden [ 31 ]. In particular, “local-to-global” query-focused summarization highlights that certain questions benefit from global structure over the relevant corpus rather than purely lo-cal passage matching [ 4]. i AgentBench builds on these insights but targets a different setting: instead of dataset-level sensemaking over a fixed corpus, we construct query-conditioned story graphs over web-retrieved evidence and generate ODQA pairs that implicitly require integrating multiple themes and their explicit inter-theme connectors. As QA systems increasingly incorporate tools (search, browsing, and iterative planning), evaluation must stress behaviors beyond one-shot retrieval. WebGPT [ 23 ] and ReAct [ 34 ] exemplify systems that interleave evidence gathering with generation. This trend also amplifies longstanding benchmarking concerns: static QA datasets age quickly and are increasingly susceptible to memorization and leakage as model training corpora expand [ 2 , 20 , 25 ]. Recent work has therefore emphasized time-sensitive evaluations [ 15 , 21 ] and dy-namic benchmarking frameworks [ 3, 16 , 22 , 26 , 35 , 37 ]. In retrieval-augmented settings, search-time contamination is an additional failure mode, where agents can directly retrieve benchmark con-tent and copy answers [ 9]. Accordingly, i AgentBench is designed to be refreshable and auditable: it is anchored in time-indexed, interest-driven topic signals and produces evidence artifacts (re-trieved documents, story-graph links, and annotations) that support contamination checks and qualitative error analysis. 
+
+## 3 Method 
+
+iAgentBench is a dynamic, open-domain QA benchmark construc-tion pipeline designed to evaluate cross-document sensemaking for information-seeking agents. The key idea is to start from realistic, traffic-driven topics, retrieve a query-conditioned corpus from the web, build a compact structured representation of how themes in that corpus relate, and then generate questions whose answers depend on multiple themes and the explicit links between them. Figure 1 summarizes the pipeline. 
+
+## 3.1 Interest-Driven Seeds 
+
+A central goal of i AgentBench is to support QA that users plausibly care about, rather than questions induced by artifacts of a fixed source database (e.g., a knowledge base schema or a curated trivia list). We therefore derive seed topics from public attention signals and time-index them to enable dynamic evaluation. 
+
+Seed candidates from GDELT.. We use daily snapshots from the GDELT 1.0 Global Knowledge Graph (GKG) [ 30 ] as a proxy for iAgentBench : Benchmarking Sensemaking Capabilities of Information-Seeking Agents on High-Traffic Topics Conference’17, July 2017, Washington, DC, USA High Traffic Seeds  Graph Construction  Role Assignment  QA Generation    
+
+> GDELT
+> GKG
+> Scoring &
+> Selection (Eq 1)
+> Time -indexed
+> Seed q
+> S(q) = f(Salience, Diversity)
+> Seed q
+> Web
+> Search
+> Retrieved
+> Docs
+> Graph
+> Extraction
+> Community C1
+> C2
+> C3
+> Cross -
+> Community Link
+> Generated
+> Instance
+> Community
+> Categorization
+> Influence
+> Computation
+> (Eq 4)
+> Core
+> Bridge
+> Satellite
+> Packet
+> Construction
+> Artifacts
+> for QA Gen
+> Panel of LLM
+> Judges
+> Filtered
+> Dataset
+
+Figure 1: Overview of the i AgentBench construction pipeline. We (1) sample time-indexed, high-traffic seed queries from public attention signals (GDELT), (2) retrieve a query-conditioned web corpus and extract a claim-like story graph with thematic communities, (3) assign community roles ( Core /Bridge /Satellite ) and build compact artifacts (community cards, connectors, packets) that preserve cross-theme links, and (4) generate and filter standalone ODQA pairs using a panel of LLM judges. 
+
+what events and entities are receiving attention. Each day yields a set of candidate event-style seeds by combining salient entities with event descriptors (e.g., entity + action phrase) extracted from GKG records. Aggregating over a time window produces a pool of candidates that naturally reflects changing interests. 
+
+Scoring and selection. Let Q denote all candidate seeds aggre-gated over a window. For each 𝑞 ∈ Q we compute a score that balances salience, temporal specificity, and diversity: 
+
+𝑆 (𝑞 ) = log (1 + 𝐴 (𝑞 )) + 𝛼 Geo (𝑞 ) + 𝛽 Freq (𝑞 )+ 𝛾 Δ𝑡 (𝑞 ) + 𝛿 Spec (𝑞 ) − 𝜂 Cov (𝑞 ). (1) Here 𝐴 (𝑞 ) is an attention proxy when available (otherwise a mono-tone function of daily observations), Geo (𝑞 ) is geographic breadth, 
+
+Freq (𝑞 ) is observation count, Δ𝑡 (𝑞 ) is the date span covered by the signal, Spec (𝑞 ) is a light specificity bonus (to avoid generic seeds), and Cov (𝑞 ) penalizes candidates that occur nearly every day (often indicating generic terms). 
+
+## 3.2 Graph Construction 
+
+Given a selected seed query 𝑞 , we retrieve a query-conditioned corpus D ( 𝑞 ) = {𝑑 𝑖 }𝑁 𝑖 =1 from web sources using a standard search API. This is the evaluation setting we target: an agent that can search, read, and synthesize from a small set of relevant sources returned at test time. In contrast to dataset-level summarization settings, the benchmark does not assume (or attempt) a persistent global representation of an entire corpus such as “the web.” To support cross-document sensemaking, we then construct a query-specific structured representation that aggregates informa-tion across D ( 𝑞 ). Following GraphRAG-style pipelines [ 4 ], we use an LLM-assisted extractor to identify entities and relational asser-tions from text. The resulting structure is not a schema-fixed knowl-edge graph. Relations are short natural-language claims grounded in evidence, which makes the representation closer to a hypergraph of assertions than a predicate-limited KG. 
+
+Graph definition. We construct a graph 
+
+𝐺 (𝑞 ) = (𝑉 , 𝐸 ), (2) where each node 𝑣 ∈ 𝑉 corresponds to an entity, and each edge 
+
+𝑒 ∈ 𝐸 is a tuple (𝑠, 𝑟, 𝑜, ev ) with subject 𝑠 ∈ 𝑉 , object 𝑜 ∈ 𝑉 , relation text 𝑟 (a claim-like statement), and evidence pointers ev ⊆ U to underlying text units (sentences or chunks). Each edge also carries a support signal (e.g., edge weight, frequency, or evidence mass). 
+
+Community detection and reports. We partition 𝐺 (𝑞 ) into com-munities C( 𝑞 ) = {𝑐 1, . . . , 𝑐 𝑚 } using Leiden clustering. We interpret each community as a theme (a coherent sub-story within the re-trieved corpus). For each community 𝑐 , the pipeline produces a short natural-language summary and a set of grounded findings (salient statements tied to evidence). These artifacts provide a compact, human-readable interface to the thematic structure of D ( 𝑞 ).
+
+## 3.3 Community Roles and Influence 
+
+A major challenge in turning 𝐺 (𝑞 ) into a benchmark is scale and noise. Large graphs contain many peripheral entities and redundant edges, and not all themes are equally important for question gener-ation. To focus question construction on the most consequential parts of the corpus, we compute a theme-level view of the graph and assign each community a role that guides downstream selection. 
+
+Community meta-graph. We define a community meta-graph 
+
+𝐻 (𝑞 ) = (C( 𝑞 ), 𝐸 𝐻 ) in which each node is a community and edges aggregate cross-community relations induced by 𝐺 (𝑞 ).
+
+𝐻 (𝑞 ) = (C( 𝑞 ), 𝐸 𝐻 ). (3) Intuitively, 𝐻 (𝑞 ) captures how themes interact within the query-conditioned corpus. The weight of an edge (𝑐 𝑖 , 𝑐 𝑗 ) ∈ 𝐸 𝐻 reflects both the strength and the quantity of cross-community evidence. 
+
+Influence score. We compute an influence score 𝐼 (𝑐 ) for each community that combines size, connectivity, and evidence support: 
+
+𝐼 (𝑐 ) = 14 𝑧 (log (1 + | 𝑐 |)) + 14 𝑧 (PR (𝑐 )) + 14 𝑧 (BC (𝑐 )) + 14 𝑧 (Ev (𝑐 )) , (4) Conference’17, July 2017, Washington, DC, USA Dammu et al. 
+
+where |𝑐 | is community size, PR and BC are PageRank and be-tweenness centrality on 𝐻 (𝑞 ), Ev (𝑐 ) counts unique evidence units supporting 𝑐 , and 𝑧 (·) denotes within-query standardization. 
+
+Core, Bridge, and Satellite themes. We assign each community a role using lightweight, query-local rules derived from the meta-graph 𝐻 (𝑞 ). Intuitively, Core captures dominant themes, Bridge 
+
+captures themes that mediate between otherwise separate themes, and Satellite captures peripheral themes that attach strongly to core/bridge structure. 
+
+• Core : high-influence themes that represent dominant sub-stories in D ( 𝑞 ).
+
+• Bridge : themes with high betweenness that connect other-wise separate sub-stories, often mediating how evidence in one theme affects another. 
+
+• Satellite : peripheral themes that provide supporting con-text and attach strongly to a core or bridge. Concretely, let 𝐼 (𝑐 ) be the influence score in Eq. (4) and let BC (𝑐 )
+
+denote betweenness centrality on 𝐻 (𝑞 ). We define a simple selec-tion operator TopK (𝑆, 𝑓 , 𝑘 ) that returns the 𝑘 elements of a set 𝑆 
+
+with the largest values under a scoring function 𝑓 . We define the 
+
+Core set as the top fraction of communities by influence, 
+
+Ccore (𝑞 ) = TopK  C( 𝑞 ), 𝐼, 𝑘 core 
+
+, (5) where 𝑘 core = max {5, 0.3 |C( 𝑞 )|} . Similarly, we define the Bridge 
+
+set as the top fraction by betweenness, 
+
+Cbridge (𝑞 ) = TopK  C( 𝑞 ), BC , 𝑘 bridge 
+
+, (6) where 𝑘 bridge = max {3, 0.2 |C( 𝑞 )|} . To identify Satellite themes, we include any remaining community that is strongly linked to a 
+
+Core or Bridge theme in 𝐻 (𝑞 ). A community 𝑐 is marked Satel-lite if it has a strong meta-edge to any Core or Bridge com-munity, i.e., if there exists 𝑐 ′ ∈ Ccore (𝑞 ) ∪ C bridge (𝑞 ) such that 
+
+max {𝑤 (𝑐, 𝑐 ′), 𝑤 (𝑐 ′, 𝑐 )} ≥ 𝜏 𝑞 , where 𝑤 (· , ·) is the meta-edge weight and 𝜏 𝑞 is set to the median meta-edge weight for query 𝑞 . These rules are lightweight, stable across queries, and make role assignments interpretable. These roles bias downstream packet selection toward salient themes and structurally meaningful cross-theme links while preserving enough peripheral context for realistic questions. 
+
+## 3.4 Benchmark Instance Construction 
+
+Given the query-conditioned thematic structure produced in §3.3, the remaining steps construct a benchmark instance by (i) selecting explicit cross-theme links, (ii) packaging required information for cross-document sensemaking, and (iii) generating and verifying standalone QA pairs. 
+
+3.4.1 Connector Relations. Sensemaking questions depend on mul-tiple themes and on how those themes connect . We therefore ex-tract explicit connector relations that tie communities together. Let 
+
+comm : 𝑉 → C( 𝑞 ) map each entity to its community. An edge 
+
+𝑒 = (𝑠, 𝑟, 𝑜, ev ) ∈ 𝐸 is a connector if it crosses community bound-aries, i.e., conn (𝑒 ) = Icomm (𝑠 ) ≠ comm (𝑜 ). Not all cross-theme assertions are equally informative, so we retain a small top-𝐾 set of connector edges ranked by their support signal (edge weight / evidence mass), favoring links that are repeatedly grounded in the retrieved corpus while keeping packets compact. 
+
+3.4.2 Packet Construction. To generate questions at scale without exposing the full graph or document set to an LLM, we construct compact packets that preserve only the information required for cross-theme reasoning. Each packet is built around a small bundle of themes that exposes a meaningful cross-theme linkage while remaining token-efficient. We begin with a high-influence Core theme and pair it with one or more Bridge themes that connect it to other regions of the meta-graph 𝐻 (𝑞 ). In most cases, a bundle contains two themes (a salient Core and a connecting Bridge ). When necessary to pre-serve a connector chain, we allow three-theme bundles (e.g., Core –
+
+Bridge –Core ). A bundle is retained only if at least one selected connector relation links its themes, ensuring that resulting QA can-didates depend on cross-theme connections rather than isolated fact lookups. Given a selected bundle, a packet 𝑃 contains (i) each theme’s community card (summary and top findings with evidence IDs) and (ii) the connector relations linking themes in the bundle. This rep-resentation is intentionally compact, yet preserves the ingredients required for cross-document sensemaking. 
+
+3.4.3 QA Generation and Verification. Conditioned on a packet 
+
+𝑃 (𝐵 ), an LLM generator produces one-sentence, user-like questions with short, objective answers grounded in the provided findings and connector relations. The prompt biases toward realistic sensemak-ing intents (e.g., trigger, consequence, or cross-theme connection) and explicitly discourages trivia-like entity lookups (refer Prompt P1 in §8). We run deterministic decoding (temperature 0), record all cited artifact IDs for traceability, and require the generator to output structured bookkeeping fields: required communities, sup-porting findings (at least one from each required community), and supporting connector IDs. These fields are not shown to models under evaluation, but they enable downstream filtering and analy-sis to ensure questions require cross-theme integration rather than a single isolated fact. We filter candidates using an LLM-as-a-Judge paradigm [ 5 , 36 ]. While reliability concerns are documented for subjective judgments [ 6, 10 , 36 ], prior work also finds that LLM judgments can reach agreement levels comparable to crowd-workers and, in some set-tings, match or exceed human performance [ 5 , 7 ]. Our checks are intentionally evidence-only and objective: the judge must verify (a) that the candidate is supported by the provided artifacts and (b) that it necessarily depends on multiple themes and at least one connector. This resembles fact verification and natural language inference, where LLMs have demonstrated strong performance [ 7]. In our experiments, we employ a panel of three judge LLMs; each judge independently evaluates a candidate using the verifier prompt and returns a structured JSON decision with binary flags and short, artifact-grounded reasons (refer Prompt P2 in §8). A candidate is retained only if it satisfies all hard criteria and passes necessity tests. We aggregate judge outputs by majority vote and additionally reject candidates if any judge flags missing evidence, non-unique answers, or trivia drift, prioritizing precision over recall. 
+
+## 4 Dataset Characteristics and Artifacts 
+
+An instance in iAgentBench is more than a QA pair: it includes auditable artifacts that reveal why answering the question requires iAgentBench : Benchmarking Sensemaking Capabilities of Information-Seeking Agents on High-Traffic Topics Conference’17, July 2017, Washington, DC, USA 
+
+cross-document synthesis. The design is guided by four goals: (G1) realism (interest-driven ODQA rather than KB- or trivia-induced questions), (G2) cross-theme dependence (questions that cannot be answered from a single theme), (G3) information-seeking fidelity (questions reflect common user intents), and (G4) auditability (trace-able evidence and intermediate structure). We reflect these goals in the released instance artifacts described below. 
+
+(G1) Realistic ODQA topics. Seed queries are sourced from real-world attention signals (§3.1) and paired with query-conditioned web corpora, enabling evaluation on event-centric information needs that resemble what users search for. 
+
+(G2) Cross-theme, connector-dependent QA. Each retained ques-tion is explicitly tied to at least two themes (communities) and at least one connector relation. We release the supporting find-ings/connectors and their IDs so evaluators can diagnose whether a model failed due to retrieval or synthesis. 
+
+(G3) Information-seeking intent patterns. Beyond requiring cross-theme evidence, questions are designed to resemble how users express information needs when trying to make sense of an evolv-ing topic. During generation we bias toward a small set of recurring intent patterns and record the intended pattern per instance as 
+
+intent_pattern . The five patterns capture common ways users seek understanding: explainer asks for a grounded “how/why” that hinges on a specific link; connection asks how two developments are related; trigger asks what action or decision led to a downstream response; consequence asks what outcome followed from a stated link; and stake asks about a concrete condition, constraint, or objec-tive tying developments together. This supports stratified analysis across intent types and evaluation beyond aggregate accuracy. 
+
+(G4) Auditability and released artifacts. Table 1 summarizes the core fields released per instance, including intent metadata that makes the information need explicit. We additionally release inter-mediate artifacts to support analysis of graph-based retrieval and agent failures. Instances can be regenerated for new time windows using the same construction rules, and because the retrieved cor-pora are recorded, the benchmark supports contamination checks and controlled re-runs. 
+
+## 5 Experiments & Results 
+
+In this section, we evaluate how evidence access and evidence inte-gration affect end-to-end QA performance, and how i AgentBench 
+
+compares to standard ODQA benchmarks. We compare four widely adopted LLMs under three inference settings: Base (no external tools), RAG (first page of retrieved documents from SearxNG [ 27 ]), and Reflexion (agentic self-reflection over retrieved evidence [28]). We report accuracy on two standard ODQA benchmarks, SimpleQA [ 32 ] and HotpotQA [ 33 ], alongside iAgentBench . Because these test sets are large and end-to-end agent evaluation is expensive, we randomly sample 500 questions from each benchmark, following similar approach in prior work [ 29 ]. Accuracy is computed using SimpleQA evaluation procedure [32]. A first consistent pattern is that retrieval substantially improves performance across all datasets and models. In Figure 2, all points lie above the 𝑦 =𝑥 line, indicating that access to external evidence             
+
+> Field Description
+> id Unique identifier for the instance.
+> query Seed query (interest-driven topic string).
+> time_window Time interval used for topic sourcing and retrieval.
+> question Final one-sentence question.
+> answer Short objective answer (entity, date, or short phrase).
+> intent_pattern Label for the information-seeking intent: explainer ,
+> connection ,trigger ,
+> consequence ,stake .
+> retrieved_sources URLs/metadata for retrieved documents in
+
+D ( 𝑞 ).   
+
+> text_units IDs of chunks/sentences used as evidence units.
+> story_graph_stats Graph statistics for
+
+𝐺 (𝑞 ) (#nodes, #edges).      
+
+> communities Community IDs with role labels (core/bridge/satellite) and influence scores.
+> community_cards Per-community summary and grounded findings (with IDs).
+> connectors Connector relations (with IDs and evidence pointers).
+> packet Selected bundle
+
+𝐵 and the packet 𝑃 (𝐵 ) used for generation.  
+
+> supporting_findings Finding IDs supporting the QA (
+
+≥ 1 per required community).  
+
+> supporting_connectors Connector IDs required for the QA (
+
+≥ 1).  
+
+> judge_decisions Outputs from the 3-LLM judge panel, including per-criterion flags and rationales.
+
+Table 1: Core fields released per iAgentBench instance. 0.0 0.2 0.4 0.6 0.8 
+
+> Base Accuracy
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> RAG Accuracy
+> Dataset
+> SimpleQA
+> HotpotQA
+> iAgentBench
+> Model
+> claude
+> gemma
+> llama
+> mistral
+
+Figure 2: Base vs. RAG accuracy across datasets and models. Points above the diagonal indicate gains from evidence ac-cess. 0.1 0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7   
+
+> RAG = Acc(RAG) Acc(Base)
+> 0.1
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> Refl  = Acc(Refl)  Acc(RAG)
+> Dataset
+> SimpleQA
+> HotpotQA
+> iAgentBench
+> Model
+> claude
+> gemma
+> llama
+> mistral
+
+Figure 3: Retrieval gains vs. agentic gains, decomposing im-provements into ΔRAG = Acc (RAG ) − Acc (Base ) and ΔRefl =
+
+Acc (Refl ) − Acc (RAG ). Positive ΔRefl means iteration helps be-yond RAG, while negative values indicate regressions. 
+
+is beneficial even for strong frontier models. The magnitude of this effect differs across benchmarks. SimpleQA exhibits the largest Base →RAG jumps, suggesting that many questions are primar-ily bottlenecked by evidence access: once a relevant passage is Conference’17, July 2017, Washington, DC, USA Dammu et al.                                                                              
+
+> Model SimpleQA HotpotQA iAgentBench
+> Base RAG Refl. ΔRAG ΔRefl Base RAG Refl. ΔRAG ΔRefl Base RAG Refl. ΔRAG ΔRefl
+> Claude Sonnet 4.5 0.240 0.740 0.716 0.500 −0.024 0.574 0.700 0.790 0.126 0.090 0.584 0.648 0.682 0.064 0.034 LLaMA 4 Maverick 17B 0.174 0.657 0.826 0.483 0.169 0.456 0.537 0.758 0.081 0.221 0.356 0.532 0.628 0.176 0.096 Mistral Large 3 (675B) 0.196 0.730 0.820 0.534 0.090 0.500 0.654 0.720 0.154 0.066 0.486 0.638 0.564 0.152 −0.074 Gemma 3 27B 0.092 0.700 0.764 0.608 0.064 0.420 0.548 0.694 0.128 0.146 0.432 0.592 0.570 0.160 −0.022
+
+Table 2: Accuracy of Base, RAG, & Reflexion across SimpleQA, HotpotQA, and iAgentBench ; ΔRAG = RAG −Base , ΔRefl = Refl −RAG .
+
+retrieved, models can often extract the short answer reliably. Hot-potQA also benefits from retrieval, but the gains are more modest, consistent with a setting where evidence access and multi-hop composition jointly matter. iAgentBench likewise improves under RAG across the completed runs, but its remaining gap indicates that retrieving evidence is only part of the challenge and that cross-theme integration remains important. These differences also reflect how the benchmarks are con-structed and what they are designed to stress. SimpleQA is con-structed to be challenging for base LLMs: it is adversarially collected against GPT-4-family responses and constrained to short questions with a single, indisputable answer [ 32 ]. By design, this yields low Base accuracy across models, even though the questions are drawn from a broad set of topics. As seen in Table 2, once retrieval is en-abled, SimpleQA becomes the easiest benchmark for most models, suggesting that its remaining difficulty is largely evidence access and precise extraction. In comparison, iAgentBench targets real-istic, high-traffic topics drawn from attention signals and retains a sizable gap even under RAG, indicating that simply supplying evidence is not sufficient; systems must integrate information co-herently across multiple pieces of context. Figure 3 further disentangles retrieval gains from the additional effect of multi-step self-reflection. While ΔRAG is typically positive, 
+
+ΔRefl is mixed: Reflexion can improve over RAG when extra steps help connect dispersed evidence, but it can also regress when multi-step reasoning introduces drift or over-correction. This behavior is visible across datasets and is especially salient for iAgentBench ,where models differ in whether iteration helps or hurts. The table highlights these differences concretely. On SimpleQA, several models show large gains from Reflexion beyond RAG (e.g., LLaMA and Mistral), suggesting that iterative checking can help recover from initial extraction errors even when retrieval is strong. On HotpotQA, Reflexion yields a sizable boost for LLaMA, consis-tent with benefits for multi-hop composition, while improvements for other models are smaller. On iAgentBench , LLaMA benefits from Reflexion, but Mistral and Gemma decrease relative to RAG, reinforcing that agentic pipelines are not uniformly beneficial and should be evaluated for stability of evidence use rather than assum-ing monotonic improvements with more steps. 
+
+## 6 Conclusion 
+
+In this work, we present iAgentBench , a dynamic open-domain benchmark for evaluating information-seeking agents on ques-tions that require cross-document sensemaking rather than single-passage extraction. iAgentBench couples traffic-driven topic se-lection with query-conditioned web corpora and a story-graph representation that exposes themes and the explicit links between them, enabling the construction of standalone, user-like questions that necessarily depend on multiple themes and connector relations. To support scientific use beyond headline accuracy, each instance is released with auditable artifacts, including intent patterns, support-ing findings/connectors, packets, and judge decisions, so failures can be analyzed as breakdowns in evidence access, evidence inte-gration, or multi-step stability. Our experiments show that retrieval reliably improves perfor-mance across benchmarks, but iAgentBench retains a meaningful gap under RAG, indicating that evidence access alone does not resolve cross-theme questions. Decomposing improvements fur-ther reveals that agentic self-reflection is not uniformly beneficial; multi-step reasoning can help some models while degrading others, underscoring the need to evaluate not only retrieval quality but also the reliability of evidence use. We hope iAgentBench and its released artifacts provide a practical foundation for measuring and improving sensemaking-oriented information-seeking systems under evolving, real-world topics. 
+
+## 7 Limitations 
+
+Cost of dynamic construction. Dynamic benchmarking increases cost relative to static QA datasets. iAgentBench requires retrieval, query-conditioned graph construction, and generation whenever a new evaluation window is produced, increasing compute and API overhead. This is an inherent trade-off of evaluating retrieval-augmented and agentic systems under evolving information. 
+
+Dependence on generative models. The pipeline relies on gen-erative models for graph construction, question generation, and LLM-as-judge verification, so errors can arise from hallucinations, omissions, or biased evidence interpretation. We mitigate these risks with structured prompts, a multi-model judge panel, and by releasing intermediate artifacts for auditability. Prior work finds that for objective NLP assessment tasks, LLM-based annotation can reach agreement comparable to crowd-workers and, in some settings, match or exceed human performance [5, 7]. 
+
+Experimental coverage. We evaluate multiple LLM backbones under Base, RAG, and an agentic self-reflection variant, but alter-native retrievers, tool sets, longer-horizon planning strategies, and broader hyperparameter sweeps remain to be explored. Expanding coverage is valuable but quickly becomes combinatorial and cost-prohibitive, so the current results are intended as a representative slice that enables comparable follow-on evaluations. 
+
+## References  
+
+> [1] Akari Asai, Kazuma Hashimoto, Hannaneh Hajishirzi, Richard Socher, and Caim-ing Xiong. 2020. Learning to Retrieve Reasoning Paths over Wikipedia Graph for Question Answering. arXiv:1911.10470 [cs] doi:10.48550/arXiv.1911.10470
+
+iAgentBench : Benchmarking Sensemaking Capabilities of Information-Seeking Agents on High-Traffic Topics Conference’17, July 2017, Washington, DC, USA 
+
+Comment: Published as a conference paper at ICLR 2020. Code is available at https://github.com/AkariAsai/learning_to_retrieve_reasoning_paths. [2] Nicholas Carlini, Daphne Ippolito, Matthew Jagielski, Katherine Lee, Florian Tramer, and Chiyuan Zhang. 2023. Quantifying Memorization Across Neural Language Models. arXiv:2202.07646 [cs] doi:10.48550/arXiv.2202.07646 [3] Preetam Prabhu Srikar Dammu, Himanshu Naidu, and Chirag Shah. 2025. Dynamic-KGQA: A Scalable Framework for Generating Adaptive Question An-swering Datasets. In Proceedings of the 48th International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR ’25) . Association for Computing Machinery, New York, NY, USA, 3498–3508. doi:10.1145/3726302. 3730324 [4] Darren Edge, Ha Trinh, Newman Cheng, Joshua Bradley, Alex Chao, Apurva Mody, Steven Truitt, Dasha Metropolitansky, Robert Osazuwa Ness, and Jonathan Larson. 2024. From local to global: A graph rag approach to query-focused summarization. arXiv preprint arXiv:2404.16130 (2024). [5] Fabrizio Gilardi, Meysam Alizadeh, and Maël Kubli. 2023. ChatGPT outperforms crowd workers for text-annotation tasks. Proceedings of the National Academy of Sciences 120, 30 (2023), e2305016120. [6] Jiawei Gu, Xuhui Jiang, Zhichao Shi, Hexiang Tan, Xuehao Zhai, Chengjin Xu, Wei Li, Yinghan Shen, Shengjie Ma, Honghao Liu, et al . 2024. A Survey on LLM-as-a-Judge. arXiv preprint arXiv:2411.15594 (2024). [7] Jian Guan, Jesse Dodge, David Wadden, Minlie Huang, and Hao Peng. 2023. Language Models Hallucinate, but May Excel at Fact Verification. arXiv preprint arXiv:2310.14564 (2023). [8] Kelvin Guu, Kenton Lee, Zora Tung, Panupong Pasupat, and Mingwei Chang. 2020. Retrieval Augmented Language Model Pre-Training. In Proceedings of the 37th International Conference on Machine Learning . PMLR, 3929–3938. [9] Ziwen Han, Meher Mankikar, Julian Michael, and Zifan Wang. 2025. Search-Time Data Contamination. arXiv:2508.13180 [cs] doi:10.48550/arXiv.2508.13180 [10] Fan Huang, Haewoon Kwak, and Jisun An. 2023. Is chatgpt better than human annotators? potential and limitations of chatgpt in explaining implicit hate speech. In Companion proceedings of the ACM web conference 2023 . 294–297. [11] Gautier Izacard and Edouard Grave. 2021. Leveraging Passage Retrieval with Generative Models for Open Domain Question Answering. arXiv:2007.01282 [cs] doi:10.48550/arXiv.2007.01282 [12] Gautier Izacard, Patrick Lewis, Maria Lomeli, Lucas Hosseini, Fabio Petroni, Timo Schick, Jane Dwivedi-Yu, Armand Joulin, Sebastian Riedel, and Edouard Grave. 2022. Atlas: Few-shot Learning with Retrieval Augmented Language Models. arXiv:2208.03299 [cs] doi:10.48550/arXiv.2208.03299 [13] Robin Jia and Percy Liang. 2017. Adversarial Examples for Evaluating Reading Comprehension Systems. arXiv:1707.07328 [cs] doi:10.48550/arXiv.1707.07328 Comment: EMNLP 2017. [14] Vladimir Karpukhin, Barlas Oguz, Sewon Min, Patrick Lewis, Ledell Wu, Sergey Edunov, Danqi Chen, and Wen-tau Yih. 2020. Dense Passage Retrieval for Open-Domain Question Answering. In Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP) , Bonnie Webber, Trevor Cohn, Yulan He, and Yang Liu (Eds.). Association for Computational Linguistics, Online, 6769–6781. doi:10.18653/v1/2020.emnlp-main.550 [15] Jungo Kasai, Keisuke Sakaguchi, Yoichi Takahashi, Ronan Le Bras, Akari Asai, Xinyan Yu, Dragomir Radev, Noah A. Smith, Yejin Choi, and Kentaro Inui. 2024. RealTime QA: What’s the Answer Right Now? arXiv:2207.13332 [cs] doi:10.48550/ arXiv.2207.13332 Comment: RealTime QA Website: https://realtimeqa.github.io/. [16] Douwe Kiela, Max Bartolo, Yixin Nie, Divyansh Kaushik, Atticus Geiger, Zhengx-uan Wu, Bertie Vidgen, Grusha Prasad, Amanpreet Singh, Pratik Ringshia, Zhiyi Ma, Tristan Thrush, Sebastian Riedel, Zeerak Waseem, Pontus Stenetorp, Robin Jia, Mohit Bansal, Christopher Potts, and Adina Williams. 2021. Dynabench: Rethinking Benchmarking in NLP. arXiv:2104.14337 [cs] doi:10.48550/arXiv.2104. 14337 Comment: NAACL 2021. [17] Najoung Kim, Phu Mon Htut, Samuel R. Bowman, and Jackson Petty. 2023. (QA)$^2$: Question Answering with Questionable Assumptions. arXiv:2212.10003 [cs] doi:10.48550/arXiv.2212.10003 [18] Tom Kwiatkowski, Jennimaria Palomaki, Olivia Redfield, Michael Collins, Ankur Parikh, Chris Alberti, Danielle Epstein, Illia Polosukhin, Jacob Devlin, Kenton Lee, Kristina Toutanova, Llion Jones, Matthew Kelcey, Ming-Wei Chang, Andrew M. Dai, Jakob Uszkoreit, Quoc Le, and Slav Petrov. 2019. Natural Questions: A Benchmark for Question Answering Research. Transactions of the Association for Computational Linguistics 7 (2019), 452–466. doi:10.1162/tacl_a_00276 [19] Patrick Lewis, Ethan Perez, Aleksandra Piktus, Fabio Petroni, Vladimir Karpukhin, Naman Goyal, Heinrich Küttler, Mike Lewis, Wen-tau Yih, Tim Rocktäschel, Sebastian Riedel, and Douwe Kiela. 2020. Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks. In Advances in Neural Information Processing Systems , Vol. 33. Curran Associates, Inc., 9459–9474. [20] Yucheng Li, Frank Guerin, and Chenghua Lin. 2024. An Open Source Data Contamination Report for Large Language Models. arXiv:2310.17589 [cs] doi:10. 48550/arXiv.2310.17589 [21] Adam Liška, Tomáš Kočiský, Elena Gribovskaya, Tayfun Terzi, Eren Sezener, Devang Agrawal, Cyprien de Masson d’Autume, Tim Scholtes, Manzil Zaheer, Susannah Young, Ellen Gilsenan-McMahon, Sophia Austin, Phil Blunsom, and Angeliki Lazaridou. 2022. StreamingQA: A Benchmark for Adaptation to New Knowledge over Time in Question Answering Models. arXiv:2205.11388 [cs] doi:10.48550/arXiv.2205.11388 [22] Zhiyi Ma, Kawin Ethayarajh, Tristan Thrush, Somya Jain, Ledell Wu, Robin Jia, Christopher Potts, Adina Williams, and Douwe Kiela. 2021. Dynaboard: An Evaluation-As-A-Service Platform for Holistic Next-Generation Benchmarking. arXiv:2106.06052 [cs] doi:10.48550/arXiv.2106.06052 [23] Reiichiro Nakano, Jacob Hilton, Suchir Balaji, Jeff Wu, Long Ouyang, Christina Kim, Christopher Hesse, Shantanu Jain, Vineet Kosaraju, William Saunders, Xu Jiang, Karl Cobbe, Tyna Eloundou, Gretchen Krueger, Kevin Button, Matthew Knight, Benjamin Chess, and John Schulman. 2022. WebGPT: Browser-assisted Question-Answering with Human Feedback. arXiv:2112.09332 [cs] doi:10.48550/ arXiv.2112.09332 Comment: 32 pages. [24] Pranav Rajpurkar, Jian Zhang, Konstantin Lopyrev, and Percy Liang. 2016. SQuAD: 100,000+ Questions for Machine Comprehension of Text. arXiv:1606.05250 [cs] doi:10.48550/arXiv.1606.05250 Comment: To appear in Proceedings of the 2016 Conference on Empirical Methods in Natural Language Processing (EMNLP). [25] Mathieu Ravaut, Bosheng Ding, Fangkai Jiao, Hailin Chen, Xingxuan Li, Ruochen Zhao, Chengwei Qin, Caiming Xiong, and Shafiq Joty. 2025. A Comprehen-sive Survey of Contamination Detection Methods in Large Language Models. arXiv:2404.00699 [cs] doi:10.48550/arXiv.2404.00699 Comment: Accepted by TMLR in July 2025. 18 pages, 1 figure, 3 tables. [26] Christopher Rawles, Sarah Clinckemaillie, Yifan Chang, Jonathan Waltz, Gabrielle Lau, Marybeth Fair, Alice Li, William Bishop, Wei Li, Folawiyo Campbell-Ajala, Daniel Toyama, Robert Berry, Divya Tyamagundlu, Timothy Lillicrap, and Ori-ana Riva. 2025. AndroidWorld: A Dynamic Benchmarking Environment for Autonomous Agents. arXiv:2405.14573 [cs] doi:10.48550/arXiv.2405.14573 [27] SearXNG contributors. [n. d.]. SearXNG . https://github.com/searxng/searxng Source code repository (AGPL-3.0).. [28] Noah Shinn, Federico Cassano, Ashwin Gopinath, Karthik Narasimhan, and Shunyu Yao. 2023. Reflexion: Language agents with verbal reinforcement learning. 
+
+Advances in Neural Information Processing Systems 36 (2023), 8634–8652. [29] Jiashuo Sun, Chengjin Xu, Lumingyuan Tang, Saizhuo Wang, Chen Lin, Yeyun Gong, Lionel M Ni, Heung-Yeung Shum, and Jian Guo. 2023. Think-on-graph: Deep and responsible reasoning of large language model on knowledge graph. 
+
+arXiv preprint arXiv:2307.07697 (2023). [30] The GDELT Project. n.d.. The GDELT Project. https://www.gdeltproject.org/. Accessed: 2026-02-02. [31] Vincent Traag, Ludo Waltman, and Nees Jan van Eck. 2019. From Louvain to Leiden: Guaranteeing Well-Connected Communities. Scientific Reports 9, 1 (March 2019), 5233. arXiv:1810.08473 [cs] doi:10.1038/s41598-019-41695-z [32] Jason Wei, Nguyen Karina, Hyung Won Chung, Yunxin Joy Jiao, Spencer Papay, Amelia Glaese, John Schulman, and William Fedus. 2024. Measuring Short-Form Factuality in Large Language Models. arXiv:2411.04368 [cs] doi:10.48550/ arXiv.2411.04368 Comment: Blog post: https://openai.com/index/introducing-simpleqa/. [33] Zhilin Yang, Peng Qi, Saizheng Zhang, Yoshua Bengio, William W. Cohen, Rus-lan Salakhutdinov, and Christopher D. Manning. 2018. HotpotQA: A Dataset for Diverse, Explainable Multi-hop Question Answering. arXiv:1809.09600 [cs] doi:10.48550/arXiv.1809.09600 Comment: EMNLP 2018 long paper. The first three authors contribute equally. Data, code, and blog posts available at https://hotpotqa.github.io/. [34] Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan, and Yuan Cao. 2023. ReAct: Synergizing Reasoning and Acting in Language Models. arXiv:2210.03629 [cs] doi:10.48550/arXiv.2210.03629 Comment: v3 is the ICLR camera ready version with some typos fixed. Project site with code: https://react-lm.github.io. [35] Zhehao Zhang, Jiaao Chen, and Diyi Yang. 2024. DARG: Dynamic Evaluation of Large Language Models via Adaptive Reasoning Graph. arXiv:2406.17271 [cs] doi:10.48550/arXiv.2406.17271 [36] Lianmin Zheng, Wei-Lin Chiang, Ying Sheng, Siyuan Zhuang, Zhanghao Wu, Yonghao Zhuang, Zi Lin, Zhuohan Li, Dacheng Li, Eric Xing, et al . 2024. Judging llm-as-a-judge with mt-bench and chatbot arena. Advances in Neural Information Processing Systems 36 (2024). [37] Kaijie Zhu, Jindong Wang, Qinlin Zhao, Ruochen Xu, and Xing Xie. 2024. DyVal 2: Dynamic Evaluation of Large Language Models by Meta Probing Agents. arXiv:2402.14865 [cs] doi:10.48550/arXiv.2402.14865 Comment: Technical report; 20 pages. Conference’17, July 2017, Washington, DC, USA Dammu et al. 
+
+## 8 Appendix Prompts 
+
+Here, we provide the prompts used in the iAgentBench framework for the QA generation step (P1) and the evaluation step (P2), with P2 used in the LLM-as-a-Judge setup. 
+
+Prompt P2: LLM-as-a-Judge Verification Prompt 
+
+SYSTEM: You are a EXPERT VERIFIER. Decide whether the ONE QA candidate should PASS or FAIL based ONLY on the evidence provided. PASS criteria (all must hold): (1) Evidence-only support: 
+
+• The answer is fully supported by the evidence texts provided inside the QA candidate object. 
+
+• No external knowledge, assumptions, or unstated facts may be used. (2) Multi-community necessity: 
+
+• The QA truly requires at least TWO communities. 
+
+• Necessity test: if you remove ALL finding texts from ANY ONE of the required communities, the question becomes unanswerable or clearly ambiguous. (3) Connector necessity: 
+
+• The QA truly requires at least ONE connector relation. 
+
+• Necessity test: if you remove ALL cited connector texts, the question becomes unanswerable or clearly ambiguous. 
+
+• The cited connector(s) must be necessary for deriving the answer (not just loosely related). (4) Objective QA: 
+
+• The question has a single best answer supported by the evidence. 
+
+• The question/answer are not subjective, interpretive, or perspective-dependent. 
+
+• The answer contains no hedging (“might/could/likely”) and no normative language (“good/bad/important”). (5) Natural user question: 
+
+• The question is exactly ONE sentence and reads like a natural user query (not a quiz/test item). (6) Anti-trivia: 
+
+• The QA is not answerable using only identity/alias/name equivalence. 
+
+• If identity/alias content is present, it must not be sufficient on its own; the QA must still depend on non-identity cross-community content. (7) Evidence presence and consistency: 
+
+• evidence_findings contains ≥1 finding from EACH of at least TWO distinct community_id values. 
+
+• evidence_connectors contains ≥1 connector. 
+
+• Each evidence item must include both its ID(s) and its text. (8) Standalone clarity: 
+
+• The question must be fully interpretable and specific when read by itself, without needing any additional artifacts. 
+
+• All key referents must be explicit or uniquely identifying in the question. 
+
+• FAIL if a reasonable reader could ask “which one?” / “who?” / “what exactly?” due to missing antecedents or unspecified entities/events. Inputs: QA_CANDIDATE: 
+
+{QA_CANDIDATE_JSON} 
+
+Output: Return ONE JSON object with EXACTLY these keys: 
+
+• evidence_only_support_flag: true/false 
+
+• evidence_only_support_reasoning: string 
+
+• multi_community_necessity_flag: true/false 
+
+• multi_community_necessity_reasoning: string 
+
+• connector_necessity_flag: true/false 
+
+• connector_necessity_reasoning: string 
+
+• objective_qa_flag: true/false 
+
+• objective_qa_reasoning: string 
+
+• natural_user_question_flag: true/false 
+
+• natural_user_question_reasoning: string 
+
+• anti_trivia_flag: true/false 
+
+• anti_trivia_reasoning: string 
+
+• evidence_presence_consistency_flag: true/false 
+
+• evidence_presence_consistency_reasoning: string 
+
+• standalone_clarity_flag: true/false 
+
+• standalone_clarity_reasoning: string Rules: 
+
+• Each *_reasoning must be 1–2 sentences, concrete, and refer only to QA_CANDIDATE fields. 
+
+• If you cannot confidently mark a criterion as true based on QA_CANDIDATE alone, set its *_flag to false and explain why. Return only the JSON object, no other text or markdown. iAgentBench : Benchmarking Sensemaking Capabilities of Information-Seeking Agents on High-Traffic Topics Conference’17, July 2017, Washington, DC, USA 
+
+Prompt P1: Q&A Generation Prompt 
+
+SYSTEM: You generate open-domain QA pairs that require CROSS-COMMUNITY SENSEMAKING over the provided STORY ARTIFACTS. What you see (and ONLY what you can use): 
+
+• COMMUNITY_CARDS: community summaries + grounded findings (with IDs). 
+
+• CONNECTOR_RELATIONS: explicit cross-community relations (with IDs) linking communities. Definition: A cross-community sensemaking question cannot be answered using a single community card alone (or one isolated finding). It MUST require integrating information from MULTIPLE communities AND at least ONE explicit connector relation that links those communities. Required constraints (must satisfy for every item): (1) Multi-community requirement: 
+
+• Each QA MUST require at least TWO distinct communities. 
+
+• supporting_findings MUST include ≥1 finding from EACH required community. (2) Connector requirement: 
+
+• Each QA MUST require ≥1 connector relation. 
+
+• The cited connector(s) MUST be necessary: if the cited connectors were removed, the question becomes unanswerable or ambiguous. 
+
+• The cited connector(s) MUST link the required communities (directly or via the stated relation). (3) Objective-answer requirement: 
+
+• The question MUST have a single best answer supported by the provided findings/connectors. 
+
+• Do NOT generate subjective, interpretive, or perspective-dependent questions or answers. Question style (ONE sentence, realistic, user-like): 
+
+• Sound like a real user trying to understand a situation (not a quiz). 
+
+• Prefer grounded sensemaking intents that hinge on explicit cross-community links: connection, trigger →response, cause →consequence, mechanism/role, stated condition/constraint. 
+
+• Good patterns include: 
+
+– “How is X connected to Y?” 
+
+– “What action/decision led to Y?” 
+
+– “What triggered Y after X?” 
+
+– “How did X contribute to Y?” 
+
+– “What stated condition/demand tied X and Y together?” 
+
+• Do NOT mention graphs, hypergraphs, communities, summaries, findings, packets, datasets, or “according to the graph.” 
+
+• Avoid exam/trivia tone (e.g., “Which leader...”, “What country...”, “In what year...”) unless it still clearly requires multi-community + connector dependence. Do NOT generate: 
+
+• Subjective/interpretive prompts: “significance,” “importance,” “what it reveals,” “how it reflects,” “was it justified,” “who was right,” “how people felt,” “what it meant.” 
+
+• Anything whose answer could vary by perspective, framing, or values. 
+
+• Pure lookup / identity-only / alias-only questions (e.g., “Who is X?”, “What is X’s real name?”), unless the question ALSO requires a non-identity connector and genuine cross-community integration. 
+
+• Broad overview questions (“What happened?”, “Summarize...”) that do not force a specific connector-dependent cross-community link. Answer style: 
+
+• Short, factual, uniquely supported by the artifacts (aim ≤ 12 tokens; slightly longer only if unavoidable). 
+
+• No hedging (“might/could/likely”) and no normative language (“good/bad/important”). 
+
+• Do NOT introduce facts not present in the provided findings/connectors. 
+
+• If a unique objective answer is not supported, do not output that QA pair. Intent labels: Set intent_pattern to one of ["explainer","connection","trigger","consequence","stake"] where: 
+
+• explainer: a grounded explanation that hinges on a specific cross-community link (not “significance”) 
+
+• connection: how two developments/entities are related via connector(s) 
+
+• trigger: what action/decision/event led to a cross-community response/outcome 
+
+• consequence: what outcome followed from a cross-community link 
+
+• stake: a concrete stated constraint/condition/demand/objective tying communities (NOT “why was it important”) Internal self-checks (run these before outputting each item; do not output the check text): (1) Objective-answer test: 
+
+• Is there exactly one best short answer supported by the cited findings/connectors? 
+
+• Would reasonable readers give the same answer? (2) Multi-community necessity test: 
+
+• If ANY one required community card is removed, does the question become unanswerable or ambiguous? (3) Connector necessity test: 
+
+• If ALL cited connector relations are removed, does the question become unanswerable or ambiguous? (4) Anti-trivia test: 
+
+• Does it feel like a real sensemaking question (not a quiz or entity-attribute lookup)? Output: Return a JSON array of up to {K} items. Each item must be: 
+
+• question: string (ONE sentence) 
+
+• answer: string (short, objective, supported) 
+
+• required_communities: [2+ community_id] 
+
+• supporting_findings: [community_id: ..., finding_id: ..., ...] ( ≥1 per required community) 
+
+• supporting_connectors: [connector_id, ...] ( ≥1; must be necessary; must link required communities) 
+
+• intent_pattern: one of ["explainer","connection","trigger","consequence","stake"] 
+
+• why_multi_community: ONE sentence explaining why multiple communities + connector(s) are required 
+
+• (describe it in content terms; do NOT mention graphs/communities/packets) Diversity: 
+
+• Across the set, vary intent_pattern when possible and avoid using the same connector_id for all items unless unavoidable. COMMUNITY_CARDS: 
+
+{COMMUNITY_CARDS_JSON} 
+
+CONNECTOR_RELATIONS: 
+
+{CONNECTORS_WITH_IDS} 
+
+Generate up to {K} QA pairs. Return ONLY the JSON array, with no extra text and no markdown.

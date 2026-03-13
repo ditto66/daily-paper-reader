@@ -1,0 +1,2015 @@
+Title: 2602.12597v1.pdf
+
+URL Source: https://arxiv.org/pdf/2602.12597v1
+
+Published Time: Mon, 16 Feb 2026 01:23:27 GMT
+
+Number of Pages: 34
+
+Markdown Content:
+PISHYAR: A Socially Intelligent Smart Cane for Indoor Social 
+
+# Navigation and Multimodal Human -Robot Interaction for Visually 
+
+# Impaired People 
+
+Mahdi Haghighat Joo 1, Maryam Karimi Jafari 1, Alireza Taheri 1*
+
+> 1
+
+Social and Cognitive Robotics Laboratory, Sharif University of Technology, Tehran, Iran 
+
+* Corresponding author:  artaheri@sharif.edu  , Tel: +982166165531 
+
+Abstract 
+
+Visual impairments pose significant challenges to safe mob ility and situational awareness for visually impaired and 
+
+low -vision individuals, particularly in socially dynamic indoor environments. This paper presents PISHYAR, a 
+
+socially intelligent smart cane designed by our group to combine socially aware navigation with multimodal human -
+
+AI interaction to support both physical mobility and interactive assistance. The system consists of two components: 
+
+(1) a social navigation framework implemented on a Raspberry Pi 5 that integrates real -time RGB -D perception using 
+
+an OAK -D Lite camera, YOLOv8 -based object detection, CO MPOSER -based collective activity recognition, D* Lite 
+
+dynamic path planning, and haptic feedback via vibration motors for tasks such as locating a vacant seat; and (2) an 
+
+agentic multimodal LLM -VLM interaction framework that integrates speech recognition, vision language models ,
+
+large language models , and text -to -speech, with dynamic routing between voice -only and vision -only modes to enable 
+
+natural voice -based communication, scene description, and object localization from visual input. The system is 
+
+evalua ted through a combination of simulation -based tests, real -world field experiments, and user -centered studies. 
+
+Results from simulated and real indoor environments demonstrate reliable obstacle avoidance and socially compliant 
+
+navigation, achieving an overal l system accuracy of approximately 80% under different social conditions. Group 
+
+activity recognition further shows robust performance across diverse crowd scenarios. In addition, a preliminary 
+
+exploratory user study with eight visually impaired and low -vision participants evaluates the agentic interaction 
+
+framework through structured tasks and a UTAUT -based questionnaire reveal s high acceptance and positive 
+
+perceptions of usability, trust, and perceived sociability during our experiments . The results highlight the potential of 
+
+PISHYAR as a multimodal assistive mobility aid that extends beyond navigation to provide socially interactive support 
+
+for such users. 
+
+Keywords: smart cane, socially assistive technology , visually impaired and low -vision users , social navigation , group 
+
+activity recognition, large language models , human -robot interaction 1 Introduction 
+
+In recent years, robotic systems have been rapidly developing to assist and enhance various aspects of human life, 
+
+including delivery and service roles [1], industries [2] and healthcare [3]. One important application of these 
+
+technologies is improving daily life for i ndividuals with special needs. Social robotics has shown strong potential in 
+
+this area , including children with autism [4, 5], sign -language recognition [6], and lip -reading training for hearing -
+
+impaired individuals [7]. Among these groups , visual impairments present significant challenges and mak e routine 
+
+tasks difficult for affected individuals. 
+
+Visual impairments remain a growing global concern, with ov er 2.2 billion individuals affected worldwide 
+
+according to the World Health Organization. Among them, at least one billion people suffer from moderate to severe 
+
+vision loss due to preventable or unaddressed conditions such as cataracts, uncorrected refract ive errors, diabetic 
+
+retinopathy, glaucoma, trachoma, and presbyopia [8]. These impairments significantly reduce quality of life and limit 
+
+personal independence. As the global population ages and the prevalence of chronic diseases rises, the need for 
+
+advanced assistive technologies that support independent mobility and environ mental awareness has become 
+
+increasingly urgent. 
+
+Traditional mobility aids, such as white canes and guide dogs, while accessible and widely used, are often 
+
+insufficient in complex and dynamic environments [9]. These tools typically lack the capability to provide detailed 
+
+environmental context or real -time feedback, which are essential for safe and autonomous navigation. In response, 
+
+there has been a growing focus on the development of intelligent assistive systems that integrate modern technologies 
+
+such as sensors, embedded cameras, and real -time processing algorithms , to deliver actionable information to users 
+
+through auditory, vibratory, or multimodal feedback mech anisms [10 ]. Beyond physical navigation support, assistive 
+
+systems for visually impaired users increasingly emphasize interaction and communication. Human -robot interaction 
+
+(HRI) plays a critical role in this context, as it enables not only functional assistance but also socially meaningful 
+
+interactions between users and assistive devices [11 ].
+
+Recent advancements in Large Language Models (LLMs) and Vision Language Models (VLMs) have opened 
+
+new possibilities for developing interactive and socially aware assistive technologies for visually impaired users [12 ].
+
+In contrast to traditional rule -based systems, LLMs enable natural language communication, and VLMs allow the 
+
+system to connect visual information with user requests. These features enable assistive devices such as smart canes 
+
+to go beyond simple obstacle detection and provide richer services, including scene understanding, object localization, 
+
+and conversational guidance. 
+
+In this paper, we present PISHYAR , our developed socially intelligent smart cane designed to support visually 
+
+impaired users through both social navigation and interactive assistance . The system is named PISHYAR (Persian: 
+
+پیشیار  ), reflecting its dual role as a “pioneer” that guides the user and as a predictive assistant that anticipates upcoming 
+
+environmental elements in front of the user. The proposed system provides two complementary but independently 
+
+developed system -level contributions: 1) a socially aware navigation framework that integrates real -time perception, 
+
+object detection, group activity recognition, and path planning for locating and navigating to vacant seats in indoor environ ments , and 2) an agentic multimodal interaction framework based on LLM -VLM cooperation that enables 
+
+natural voice -based communication, scene description, and object localization. The system is evaluated through a 
+
+combination of simulation -based tests and r eal -world experiments to assess navigation accuracy and socially aware 
+
+behavior. In addition, a preliminary exploratory user stud y with eight visually impaired participants is conducted to 
+
+initially investigate the multimodal interaction framework using a UTAUT -based questionnaire, which focuses on 
+
+usability, perceived usefulness , perceived ease of use, user acceptance , intention to use, trust, and perceived social 
+
+intelligence . An overview of the proposed system is shown in  Fig. 1.      
+
+> Fig. 1An overview of the study :PISHYAR hardware design and its capabilities (for visually impaired individuals ).
+
+2 Related Work s
+
+Over the past two decades, significant efforts have been made to develop smart assistive technologies for visually 
+
+impaired individuals. Among these, smart canes have attracted the most attention and can generally be categorized 
+
+based on their core function , such as obstacle detection, navigation assistance, or support for daily activities. These 
+
+categories are further subdivided based on sensor type and intended environment (indoor vs. o utdoor) [13 ].
+
+Several studies have focused on obstacle detection. For example, Masud et al. [14 ] proposed a low -cost, wearable 
+
+smart cane using Raspberry Pi 4B, camera, ultrasonic sensor, and Arduino, employing Viola -Jones and TensorFlow 
+
+Object Detection for accurate scene classification and obstacle detection. Alashjaee et al. [15 ] introduced the 
+
+HAODVIP -ADL system, an attention -driven deep learning approach combining YOLOv10, CapsNet, InceptionV3, 
+
+and MHA -BiLSTM, achieving highly accurate (99.74%) object detection and safe navigation support while enabling 
+
+family monitoring via a we b-based application. Bauer et al. [16 ] developed a low -cost, non -intrusive wearable system 
+
+that estimates depth maps from color images, detects urban objects, and conveys 3D and semantic obstacle information 
+
+via haptic or spoken feedback, achieving 87.99% mean accuracy in real -world outdoor navigation. Muktha et al. [17 ]
+
+de veloped a smart cane equipped with ultrasonic sensors to detect nearby obstacles and provide haptic feedback via a arphones Camera Raspberry Pi   
+
+> attery
+> Vibration Motor
+> STT TTS MVMPath Planning b ect etection roup Activity Recognition Haptic
+> Feedback
+
+bidirectional vibration motor before contact occurs. This cane was also able to assist visually impaired users with 
+
+navigation using a voice assistant. 
+
+Some studies have focused on supporting daily activities. Abdusalomov et al. [18 ] proposed an AI -based vision 
+
+system using YOLOv5m for early indoo r fire detection, providing real -time alerts to blind and visually impaired 
+
+individuals with high speed and accuracy. Dang et al. [19 ] developed a deep learning -based system for kitchen 
+
+environments, which offers real -time object detection and interactive guidance via speech to enhance accuracy, 
+
+autonomy, and safety in complex settings. 
+
+Most recent developments target navigation and obsta cle avoidance. Slade et al. [20 ] developed the Augmented 
+
+Cane, a low -cost, sensor -equipped white cane that provides steering assistance, obstacle avoidance, and ob ject 
+
+recognition, improving walking speed by up to 35% and enhancing mobility, confidence, and safety. Feltner et al. [21 ]
+
+combined a depth camera, Raspberry Pi, K inect sensor, and vibration motors to provide tactile feedback for obstacle 
+
+awareness. Agrawal et al. [22 ] created a perceptual robotic cane with haptic guidance, enabling users to identify and 
+
+approach preferred seats in public spaces. The system used RGB -D cameras, inertial measurement units (IMUs), 
+
+vibration motors, and portable processors, integrating SLAM and goal -oriented planning for accurate seat recognition .
+
+Mai et al. [23 ] introduced a LiDAR and vision -based smart cane capable of real -time obstacle detection and 
+
+localization. The system employed 2D LiDAR, RGB -D cameras, GPS, and a Jetson Nano processor. Object 
+
+recognition was achieved using YOLOv5, and SLAM was used for environment mapping. Real -world evaluations 
+
+showed pedestrian detection accuracy of 84.6%, zebra -crossing detection at 71.8%, and overall o bject recognition 
+
+accuracy of 61.2% across 86 object types. 
+
+Finding vacant seats is an important need for visually impaired individuals [24 ]. This has motivated re search 
+
+toward goal -aware assistive systems that navigate users toward specific targets. However, prior works do not consider 
+
+social etiquette during navigation —a critical factor for user comfort and privacy. 
+
+With recent advances in LLMs, their use in assis tive technologies for visually impaired individuals has gained 
+
+increasing attention. Recent studies have explored LLM - and VLM -based approaches for tasks such as object 
+
+detection, scene description, and navigation assistance [25 , 26 ]. Video -based LLMs such as GPT -4o [27 ] have 
+
+demonstrated strong performance in real -time tasks related to home and social environments, which indicates their 
+
+potential for interactive assistance. Other works have shown that these models can generate navigation instructions 
+
+and contextual guidance [25 ], while safety -aware systems using GPT -4V [26 ] highlight the ability of VLMs to assess 
+
+environmental risks in real time. 
+
+Several recent works have attempted to integrate LLMs and VLMs into practical assistive systems for visually 
+
+impaired users. MASA [28 ] proposed a wearable system using GPT -4o to interpret camera input and user queries 
+
+through an agentic pipeline, with results showing high usability in user studies. NAVISIGHT [29 ] combined 
+
+YOLO v11n and LLaVA for object recognition and scene description, although it did not include user evaluations. 
+
+Nevasekar et al. [30 ] in troduced a robot -assisted navigation system using YOLO v8 and LLaVA with retrieval -
+
+augmented generation (RAG) for visual question answering. PathFinder [31 ] employed LLMs and VLMs together with monocular depth estimation for navigation, and measured user engagement and response time. Hao et al. [32 ]
+
+proposed a system that uses a VLM for scene understanding and hazard detection, with responses generated by a 
+
+Vicuna -based LLM, but without interactive navigation experiments. Although these studies show the potential of 
+
+LLMs and VLMs for assistive tasks, they often focus on specific tasks and do not fully address socially aware 
+
+navigation or integrated interaction in smart canes . Unlike previous methods , our designed robot, PISHYAR , integrates 
+
+socially aware navigation and agentic multimodal interaction within a single smart cane platform, evaluated through 
+
+both technical experiments and user studies. 
+
+3 Hardware esign 
+
+This section presents the design and implementation of PISHYAR ha rdware, which constitutes the first core 
+
+component of the proposed system. The hardware is designed to support environmental perception, onboard 
+
+computation, and intuitive user feedback, which enables both social navigation and interactive functionalities. 
+
+PISHYAR integrates a depth -sensing camera (OAK -D Lite), a Raspberry Pi 5 as the central processing unit, vibration 
+
+motors for haptic feedback, a power supply module, and a custom mechanical cane structure. 
+
+One of the key components of the system is the depth -sensing camera, whose primary function is to acquire 
+
+information from the environment and calculate the distances of objects relative to the user. The OAK -D Lite camera 
+
+was selected as the primary sensor due to its balance of depth measurement accuracy, real -time processing capability, 
+
+ease of integration, and low power consumption. In addition to providing high -resolution RGB -D data, this camera is 
+
+equipped with an internal neural processing unit (Myriad X VPU), which allows computer vision algorithms to be 
+
+executed independently without reliance on an external processor. This feature reduces the computational load on the 
+
+central processing unit and improves system response time. Moreover, the camera incl udes a built -in six -degree -of -
+
+freedom IMU, eliminating the need for a separate motion sensor module and contributing to a more lightweight design. 
+
+For the central processing unit, criteria such as high computational power, support for multiple inputs and o utputs, 
+
+simultaneous multi -sensor data processing, and compatibility with machine learning algorithms were considered. 
+
+Accordingly, the Raspberry Pi 5 was chosen as the processing core. With its powerful processor and adaptable 
+
+communication interfaces, th is board can simultaneously manage processes such as navigation, sensor control, and 
+
+real -time feedback delivery. 
+
+The power supply module uses two 18650 lithium -ion batteries connected in series to provide 7.4 V, managed by 
+
+a two -cell battery management sy stem (BMS) for balanced charging and protection. A power switch enables manual 
+
+control of the system. The output is regulated to 5 V using an XL4015 DC –DC buck converter and delivered to the 
+
+Raspberry Pi 5 via a USB Type -C port. 
+
+To provide user feedback, t hree vibration motors were installed on the cane handle, each corresponding to a 
+
+specific direction (left, right, and forward). These motors are controlled by the Raspberry Pi 5 and are activated for 
+
+one second depending on the required direction of moveme nt. This haptic feedback system provides a simple way for 
+
+visually impaired users to receive spatial information. Mechanical design and component placement were fully performed using SolidWorks 2023. Special attention was 
+
+given to handle ergonomics, weight distribution, and ease of maintenance. After completing the design, components 
+
+were manufactured using FDM 3D pri nting, which not only reduced production costs but also allowed rapid design 
+
+modifications and customization. The initial version of the cane, consisting of only the basic structural elements, 
+
+weighed approximately 500 grams. After integrating the camera, processing unit, vibration motors, battery, and other 
+
+electronics, the total weight of the smart cane reached around 1 kg. The total cost of the entire assembly is 
+
+approximately 400 USD.  Fig. 2 illustrates an overall view of PISHYAR .   
+
+> ab
+> Fig. 2The developed PISHYAR smart cane prototype: (a) SolidWorks 3D model of the cane structure, and (b) the implemented
+> physical prototype.
+
+4 Social Navigation for Indoor Vacant Seat Finding 
+
+This section presents the second core component of the proposed system, focusing on the design and implementation 
+
+of socially aware indoor navigation for vacant seat finding. The goal of this component is to enable safe and socially 
+
+appropriate indoor navigation by com bining object detection, path planning, and group activity recognition. This part 
+
+of the system primarily relies on the depth -sensing camera, the onboard processing unit, and the haptic feedback 
+
+actuators. This section first introduces the system modules f or social navigation, then describes the execution process 
+
+and evaluation methods. 
+
+4.1 Social Navigation System Architecture 
+
+4.1.1 b ect and bstacle etection for Social Navigation 
+
+As part of the proposed system, this section focuses on socially aware navigation in indoor environments, with the 
+
+specific goal of identifying vacant seats and guiding the user toward them. To achieve this goal, a high -accuracy, real -
+
+time obstacle detection model was required. After evaluating several options, the YOLO v8 n architecture was selected as the primary model which can be executed on the camera processing unit [33 ]. Trained on the COCO dataset, this 
+
+model is capable of recognizing objects from 80 different classes across a large -scale annotated dataset. 
+
+After detecting objects in the environment, target selection was performed based on two criteria: the unoccupied 
+
+seat and the shortest distance to the user. Distances were calculated using the Euclidean metric. Once the target was 
+
+determined, the coordinates of the seat and obstacles were provided to the path planning algorithm. 
+
+4.1.2 Path Planning Algorithm 
+
+Another key component of the proposed system is the path planning algorithm. The purpose of the algorithm is to 
+
+provide a safe and shortest path while respecting all constraints of the problem. Additionally, given the coordinates of 
+
+the start point, destination, and obstacles , the algorithm must be able to generate an optimal path in real time, and 
+
+instantly recalculate an alternative route if the previous path becomes blocked. Accordingly, the D* Lite algorithm, a 
+
+grid -based optimized method suitable for dynamic environments [34 ], was employed. To simplify navigation, the 
+
+user’s permissible directions were limited to three main options: forward, left, and right. After selecting the target and 
+
+sending the coordinate s, the path proposed by the algorithm was transmitted to PISHYAR , and user guidance was 
+
+executed using the three primary directions. 
+
+4.1.3 roup Activity Recognition Using C MP S R
+
+To train and evaluate the group activity recognition model, the standard Co llective Activity Dataset was used, which 
+
+was first collected and annotated in 2009 by Choi and colleagues [35 ]. This dataset includes five social activity classes: 
+
+queuing, talking, waiting, walking, and crossing. In our study , Given the high similarity between “crossing” and 
+
+“walking,” these two act ivities were considered as a single class, referred to as “walking”. In total, it contains 2,543 
+
+ten -frame clips with a resolution of 480×640 pixels. Videos were recorded from different angles to ensure spatial 
+
+diversity and introduce realistic visual chal lenges. Each clip is accompanied by detailed labels, including the type of 
+
+activity, individuals’ orientations, and their positions within each frame. 
+
+Recognizing collective activity is one of the most challenging tasks in video understanding due to the ne ed to 
+
+capture spatiotemporal relationships among people and objects. Traditional approaches based on RGB images or 
+
+optical flow, besides being heavily dependent on background and scene conditions, often face issues such as 
+
+environmental bias and privacy co ncerns. To address these challenges, this work adopts the COMPOSER architecture 
+
+proposed by Zhou et al. [36 ], a multiscale transformer -based model that performs group activity recognition using 
+
+only 2D/3D human key -point coordinates rather than raw RGB images. By modeling interactions between indiv iduals 
+
+at multiple semantic levels, COMPOSER enables reliable recognition of collective activities while reducing sensitivity 
+
+to background variations and preserving user privacy. In this study, COMPOSER is used as a pretrained framework 
+
+and retrained on t he Collective Activity Dataset for the target activity classes. 
+
+The COMPOSER framework represents collective activities using a hierarchical, multi -scale tokenization scheme 
+
+that encodes human motion and social context from body key points to group -level interactions, while also 
+
+incorporating object information. A global clip -level token aggregates contextual information across all scales to 
+
+enable robust recognition of group activities. To extract the 17 key body points required as input to th e COMPOSER model for activity recognition, this research utilized the MediaPipe library [37 ]. Although this approach is different 
+
+from the method originally used in the COMPOSER architecture, it was chosen because it is simpler and has a faster 
+
+processing speed , which makes it more suitable for real -time deployment. 
+
+For model configuration, the hidden size for token representation was set to 128, shared across query, key, and 
+
+value vectors in all transformer encoders; while the hidden dimension of the MLP layers was fixed at 1024. Th e
+
+architecture employs two multiscale transformer blocks, each containing separate encoders for the different scales. 
+
+The number of attention heads was set to 2, 8, 2, and 2 for the four scales, respectively; with corresponding dropout 
+
+rates of 0.5, 0.2, 0 .2, and 0. ReLU was chosen as the activation function in the MLP layers. To improve generalization, 
+
+several data augmentation techniques were applied, including horizontal flipping, horizontal and vertical shifting, and 
+
+random actor dropout; additionally, small random noise (±1 pixel) was added to the coordinates during certain steps. 
+
+For optimization, the Adam optimizer was used with an initial learning rate of 0.0005, reduced to 0.0001 after 40 
+
+epochs, and a batch size of 384. 
+
+4.2 Social Navigation xecution Process 
+
+The path planning process in this system is carried out through a set of structured and interconnected steps to ensure 
+
+the  visually impaired  user is guided safely while adhering to social navigation etiquette in public spaces. These steps 
+
+are shown in  Fig. 3. The execution steps, incorporating group activity recognition, are defined as follows: 
+
+1.  Initial User Positioning: The user holds the cane and is given 10 seconds to position themselves correctly and 
+
+adjust the cane at a standard angle (approximately 45° relative to the horizontal plane). This time allows stabilization 
+
+and prevents initial data collection errors. 
+
+2. ata Acquisition and Initial Analysis: After the initial period, the RGB -D camera begins capturing data. The 
+
+first 10 frames are sent to both the obstacle and object detection model (utilizing YOLO) and the group activity 
+
+recognition architecture.  To improve accuracy, distance data from these frames are compared. If an object’s distance 
+
+deviates more than 10% from the mean of the 10 frames, it is identified as an outlier and removed. If a seat is 
+
+initially selected as the target and is not occupied by another person, this choice remains fixed until the end of the 
+
+path. Even if better seats are detected later, the originally selected target does not change. 
+
+3. roup Activity Recognition: Those initial 10 frames are sent to be processed by the group activity recognition 
+
+model. If no collective activity is detected, the system proceeds to standard path planning.  In this case, the system 
+
+skips social condition adaptation and performs path planning using only obstacle detection and goal information. 
+
+The detection of collective activities is performed only at the beginning of the movement, under the assumption that 
+
+no new human groups enter the im mediate navigation area during execution. 
+
+4. Social Condition Adaptation:  The environment is divided into grid cells for path planning, and detected human 
+
+groups are expanded into surrounding cells, which are then treated as obstacles . If a collective activity (e.g., walking, 
+
+talking, queuing) is identified, path planning decisions are adjusted according to the activity type: • Walking Activity: The system waits 10 seconds for the path to clear, indicated to the user via three short 
+
+activations of the forward -direction vibration motor. If the group persists, normal path planning resumes. 
+
+• Talking Activity: The area occupied by the talking group is marked as non -navigable, and two adjacent cells 
+
+are blocked for safe distancing. 
+
+• Queuing or Waiting Activity: The entire group is treated as a restricted area, with one extra row adjacent to the 
+
+group also marked as non -navigable to maintain minimum social distance. 
+
+5. b ect Analysis and Path Planning Input: Following initial data filtering and collecti ve activity recognition, 
+
+detected valid objects and obstacles, along with their distances from the cane, are sent to the D* Lite algorithm to 
+
+compute the optimal path. 
+
+6. User uidance Start: The initial direction (left, right, or forward) is communicated to the user through the 
+
+vibration motors based on the calculated path, considering any social condition adjustments. 
+
+7. Movement Monitoring and Position Verification:  After the user moves, th eir displacement is analyzed by 
+
+comparing data from 10 consecutive frames. The measurement metric uses 10 randomly selected pixels in the image 
+
+to estimate displacement consistency across frames. Step length is set to 40 cm for blind users, slightly shorter than 
+
+the average sighted step, to improve accuracy and safety. 
+
+8. Next irection Announcement: If the movement and direction are verified with acceptable accuracy (less than 
+
+10% deviation from predictions), the next direction is calculated and communicated to the user. 
+
+9. Target Review and Alternative Path Planning: At each step, the algorithm checks if the target seat has been 
+
+occupied. If so, a new alternative path is suggested. 
+
+10. Cumulative rror Correction: To mitigate errors from sen sor inaccuracies or model drift, the user’s calculated 
+
+position is compared with the reference map after every three steps, and corrected if significant deviation is detected. 
+
+11. Iteration Until Reaching the oal: This process loops until the user reaches the final target. Fig. 3 Social navigation workflow .
+
+4. 3 Social Navigation valuation Methodology 
+
+4. 3.1 Simulation - ased valuation 
+
+In the first step, the combination of the obstacle detection model and the path planning algorithm was evaluated using 
+
+simulation . For this simultaneous evaluation, Webots robotic simulation platform [38 ] was used. In this environment, 
+
+a humanoid model equipped with the smart cane was implemented. The cane was fitted with an RGB -D camera and 
+
+a six -degree -of -freedom IMU. The camera fed image f rames to the YOLO model to identify objects and estimate their 
+
+distances relative to the user, while the IMU recorded the user’s movement direction in real time. To increase the 
+
+safety of blind users’ movements , the simulated environment was divided into c ells measuring 40 cm each, slightly 
+
+shorter than the average step length of sighted individuals. This evaluation was conducted solely in the presence of 
+
+static obstacles and human figures ; where the number, type, and spatial arrangement of obstacles and objects were 
+
+randomly varied in each test to generate diverse environmental layouts, allowing the system’s behavior to be examined 
+
+under controlled conditions. The designed model was evaluat ed across ten such scenarios to verify the accuracy and 
+
+reliability of the obstacle detection and path planning modules, and to confirm their correct integration and coordinated 
+
+operation prior to real -world deployment. The primary success criterion in thi s simulation stage was the system’s 
+
+ability to guide the user toward the target seat without collisions. 
+
+4. 3.2 Real -World valuation of roup Activity Recognition 
+
+In the next step, the trained COMPOSER model was evaluated on real -world data obtained from t he camera mounted 
+
+on PISHYAR , besides its evaluation on the test portion of the training dataset . For this purpose, after the required C MP S R          
+
+> Collective
+> Activity
+> etected
+> Wait elay lock Area
+> uffer Cells
+> lock Area
+> xtended
+> uffer
+> WAITIN TA KIN WA KIN
+> *ite
+> xtract irection
+> FT RI HT FRWAR
+> Haptic Feedback
+> Movement
+> Verification
+> Valid Path
+> N
+> Target
+> Reached
+> Y S
+> Y S
+> N
+> Y
+
+preprocessing, ten consecutive frames from the camera’s output were provided as input to the model to perform 
+
+collective activity recognition. 
+
+For performing this evaluation , experiments were designed and conducted across 20 different scenarios. In these 
+
+experiments, each group of collective activities was present in the environment at least five times to examine the 
+
+influence of position and viewing angle variations on model accuracy. In order to replicate real -world difficulties, the 
+
+test conditions were created to be as varied as possible in terms of camera angles and environmental settings . Fig. 4
+
+present s an example of images captured during these experiments, illustrating the variety of environments and test 
+
+conditions.     
+
+> ab
+> Fig. 4Example images captured by PISHYAR for group activity recognition : (a) queuing activity, and (b) talking activity .
+
+4. 3.3 Field valuation of the System Across Scenarios 
+
+In the last step of evaluation of the whole system , including the hardware and the algorithms, we decided to perform 
+
+field evaluation across some scenarios. The evaluation process was conducted in an indoor environment measuring 
+
+approximately 3 meters in width and 5 meters in length, which was suitable for flexible arrangement of obstacles and 
+
+positioning of human groups at various angles and locations. The purpose of this setup was to accurately simulate 
+
+real -world conditions so that the performance of PISHYAR could be thoroughly tested under a wide range of 
+
+environmental and behavioral variations. Notably, the evaluations were performed by a sighted individual with their 
+
+eyes closed to replicate the experience of a visually impaired person. This approach was adopted for safety reasons 
+
+during early -stage testing and to ensure controlled and repeatable evaluation conditions. To assess overall system 
+
+performance, 15 experimental scenarios were designed and executed, divided into three categories: 
+
+• Scenario 1, Static bstacles without Human roups: Only fixed obstacles such as tables, chairs, and other 
+
+objects were present, and the goal was to reach an empty seat without collisions. This scenario served as the initial 
+
+evaluation of system stability. Each scenario was repeated three times with random variations in obstacle positions 
+
+and target seat location to assess adaptability. • Scenario 2, Static bstacles with Target Changes: Similar to Scenario 1, but during movement, the target seat 
+
+was suddenly occupied by another person. The system had to quickly identify an alternative path and guide the 
+
+user to another empty seat. This scenario was also repeated three times with randomized obstacle and target 
+
+placements to evaluate system flexibility and replanning capability. 
+
+• Scenario 3, Social Path P lanning with Human roups: The most complex and research -focused scenario 
+
+involved the presence of human groups in the environment. The system needed to detect the group, analyze their 
+
+activity type, and navigate in a way that maintained social etiquette, such as keeping proper distance and avoiding 
+
+disturbance. This scenario was executed in nine different configurations: three for walking, three for talking, and 
+
+three for waiting activities. Due to the similarity between waiting and queuing cases, only the waiting class was 
+
+used for execution. 
+
+These scenarios were designed to evaluate all system components, from object detection and path planning to 
+
+social activity recognition and feedback delivery, under conditions that closely simulate real -world operatio n. To 
+
+comprehensively assess the system’s performance, the evaluation was based on three key and essential criteria: 1) 
+
+successfully reaching the designated target, 2) a voiding collisions with any obstacles along the path, and 3) s trictly 
+
+observing social etiquette and interactions in the presence of human groups. In each scenario, the system’s 
+
+performance was considered acceptable only if all three criteria were met simultaneously.  Fig. 5 show s an example 
+
+from one of the evaluated scenarios, illustrating the diversity of positions and testing conditions. Fig. 5 Example of a social navigation evaluation scenario. 
+
+5 M- and V M- ased Social Interaction Framework 
+
+This section presents the third core component of the proposed system, focusing on the development and evaluation 
+
+of PISHYAR ’s social and conversational intelligence. This component integrates LLM and VLM to enable natural 
+
+dialogue and visual sce ne understanding. Its implementation relies on key hardware elements of the smart cane, 
+
+including the Raspberry Pi, depth -sensing camera, power supply, physical cane structure, and earphones for audio 
+
+feedback. This section first introduces the multimodal interaction architecture and system modules, then describes the 
+
+agentic interaction framework, and finally presents the user study design and evaluation metrics. 
+
+5.1 Multimodal Social Interaction Architecture 
+
+The proposed multimodal interactive system cons ists of several interconnected modules that collaboratively enable 
+
+natural and multimodal communication between the user and PISHYAR . These modules are described as follows: 
+
+5.1.1 Speech Recognition Module STT and KWS 
+
+A speech -to -text (STT) module is used to convert the user’s spoken input into text. Google Speech Recognition was 
+
+employed due to its support for the Persian language , which is accessible through the Python SpeechRecognition 
+
+library. In addition, a keyword spotting (KWS) module was integr ated to activate the STT system only when the user explicitly calls the system using predefined phrases such as “Hello, PISHYAR” or “PISHYAR, my friend.” To achieve 
+
+this, the Vosk small Persian STT model was used to perform KWS. Vosk is an open -source tool kit that works well on 
+
+local devices without an online connection and allows accurate voice recognition in a variety of languages, including 
+
+Persian. Because the Vosk small model is lightweight and effective but inaccurate for transcribing long or complex 
+
+spoken words, it was primarily utilized for keyword spotting. 
+
+5.1.2 Scene escription Module V M
+
+The system utilizes GPT -4o as a VLM for indoor scene description. Whenever the user requests a description of the 
+
+surrounding environment, an image captured by the OAK -D camera is sent to the VLM, and the generated textual 
+
+description is returned to the sy stem. 
+
+5.1.3 b ect etection Module Y 
+
+Object detection is performed using the YOLOv8n model in conjunction with the VLM. This module detects objects 
+
+in the environment and estimates their distance from the user using depth information from the RGB -D c amera, which 
+
+is converted into approximate step counts. This module runs the YOLO on the camera’s internal neural processing 
+
+unit instead of the Raspberry pi. 
+
+5.1.4 Natural anguage ialogue Module M
+
+GPT -4o is employed as the core LLM responsible for m anaging user interaction. The LLM processes the user’s textual 
+
+input and determines whether visual perception is required. It has access to the outputs of both the VLM and the 
+
+YOLO module to generate context -aware responses. Additionally, it is capable of answering general -purpose 
+
+questions independent of visual input. 
+
+5.1.5 ate and Time Provider Module 
+
+This module uses Python’s built -in tools to get the current system date and time . It then converts them into the Persian 
+
+(Jalali) calendar when requested by the user. 
+
+5.2 Agentic Interaction Framework 
+
+The interaction framework is designed as an agentic system , in which the LLM acts as a decision -making agent that 
+
+dynamically routes user requests and invokes perception and dialogue modules b ased on the inferred intent. The reason 
+
+for using an agentic interaction framework is to enable context -aware control over multiple system modules and reduc e
+
+unnecessary computation. By treating the LLM as a n agent, the system can interpret user intent and dynamically 
+
+decide which perception and dialogue components should be activated, rather than executing all modules continuously. 
+
+This design is particularly suitable for assistive systems, where efficient resource usage is critical. The agentic 
+
+workflow o f PISHYAR is shown in  Fig. 6. All prompts used for the LLM and VLM components are provided in the 
+
+Appendix .
+
+According to  Fig. 6, i nteraction with the system begins when the user calls “PISHYAR,” which activates the STT 
+
+module for a command input. The user’s speech is converted into text and forwarded to an LLM -based routing module ,
+
+referred to as the Interaction Mode Router IMR . Based on the content of the user’s request, this router selects one 
+
+of two operational modes: VISION mod e, which involves camera -based perception for scene description or object detection, and VOICE mode , which does not require visual input and is used for general dialogue, including date and 
+
+time queries. The routing between VOICE and VISION modes enables t he camera and vision modules to be activated 
+
+only when visual input is required. This reduces unnecessary computational load and power consumption on the 
+
+embedded hardware, which is particularly important for assistive devices. This design introduces a tra de -off between 
+
+responsiveness and computational efficiency, as mode switching may cause slight delays; however, it enables more 
+
+efficient resource utilization. 
+
+In VISION mode, a secondary LLM -based router, referred to as the Vision Task Router VTR , determines 
+
+whether the user’s request corresponds to SCENE mode (scene description) or OBJECT mode (object detection) . The 
+
+VLM module is utilized in both cases; however, the YOLO module is activated only in OBJECT mode in order to 
+
+estimate object distances. Upon entering this mode, the camera is initialized and an image is captured. The VLM 
+
+processes the image to generate a scene description, while the YOLO module operates for a duration of two seconds 
+
+to detect objects and estimate their distances. This time window was selected to ensure robust detection of all visible 
+
+objects. Detected objects are filtered to retain unique instances, and estimated distances are converted into step counts. 
+
+The outputs of the VLM and YOLO modules are then transmitted to the LLM, which synthesizes a final response to 
+
+the user. 
+
+In VOICE mode , if the user requests temporal information, the output of the Python date and time provider 
+
+module is passe d to the LLM to generate the response. For all other queries, the LLM generates responses 
+
+independently. Finally, the LLM’s textual output is sent to the TTS module, and the synthesized audio is transferred 
+
+to the user through earphones. 
+
+Fig. 6 The agentic workflow of PISHYAR. IMR      
+
+> VMV M
+> Y
+> Time
+> Question
+> VIC VISI N
+> SC N J CT
+> ate Time
+> Y S
+> M
+> N
+> Keyword
+> etected
+> STT
+> TTS
+> Y S
+> N
+> VTR
+> KWS
+
+5. 3 User Study esign and valuation Metrics 
+
+5. 3.1 xperimental Setup 
+
+The use r study experimental setup consisted of an indoor room environment. Participants initially sat on a chair 
+
+positioned at the starting point, where instructions were provided and the test began. At a distance of approximately 
+
+two meters from the starting position, a table and two additional chairs were placed at the opposite end of the room. 
+
+Several everyday objects were arranged on the table, including a water bottle, a cup, an apple, a spoon, a fork, a book, 
+
+and a notebook. You can see the setup environment on  Fig. 7.  
+
+> Fig. 7Experimental setup: (a) room environment, (b) object arrangement on the table.
+
+5. 3.2 xperimental Scenario 
+
+At the beginning of each trial, while participants were seated and received verbal instructions about the tasks , they 
+
+were encouraged to physically explore the smart cane to become familiar with the device. After this introduction, the 
+
+test session began . The participants were supposed to do at least 4 tasks , and if they wanted, they could ask PISHYAR 
+
+for any other desired commands in the end. 
+
+PISHYAR first introduced itself, and the participant heard the introduction through the earphones. The participant 
+
+then called PISHYAR, triggering the system. Upon receiving the response “Yes, I am listening” from PISHYAR and 
+
+through the earphones, the STT module was activated, and the participant asked about the current date and time. The 
+
+IMR selected the VOICE mode, and the system retrieved the requested information and responded via the TTS 
+
+module. 
+
+In the second task, the participant again called PISHYAR and requested a description of the surrounding 
+
+environment. The LLM router s selected VISION mode and then SCENE mode. An image captured by the camera was 
+
+processed by the VLM, and the LLM generated a response based on the scene description. The resulting audio output 
+
+was delivered through the earphones. 
+
+In the third task, the participant asked the system to locate a chair. The system entered VISION and then OBJECT 
+
+mode. The VLM and YOLO modules generated perception outputs, which were used by the LLM to pr oduce the 
+
+response. If YOLO successfully detected the chair, the response included an estimated distance in terms of steps; otherwise, the response was generated based solely on the VLM output. After locating the chair, the participant stood 
+
+up, walked tow ard it, and sat down. 
+
+In the fourth task , the participant held PISHYAR in one hand, oriented toward the right, and asked the system to 
+
+locate the water bottle that is on the table to their right. The system again operated in VISION mode, activating both 
+
+th e VLM and YOLO modules, and detected the water bottle on the edge of the table, enabling the participant to reach 
+
+out and grasp it. After completing this task, the participant was allowed to ask any additional questions of their choice, 
+
+which were handled by the LLM in VOICE mode . They could also request any other perception task from PISHYAR. 
+
+Finally, the participant said goodbye to the system, and the session concluded. 
+
+All interactions were conducted in the Persian language . The experiment including exp lanations, doing the tasks, 
+
+and answering the questions, lasts about 20 to 25 minutes for each participant . The log of the interactions was also 
+
+captured and saved , which consists what has been transferred between the participant and PISHYAR. A participant 
+
+interacting with PISHYAR is shown in  Fig. 8.    
+
+> Fig. 8A participant interacting with PISHYAR during our user study.
+
+5. 3.3 Participants 
+
+Eight p articipants were recruited from a local school for visually impaired individuals. The average age was 11.25 
+
+years (SD = 3.5), with ages ranging from 7 to 18 years. All participants were male and not totally blind and had varying 
+
+degrees of visual impairment, including partial vision, light perception, and various types of visual distortions. Six out 
+
+of the eight participants had prior expe rience using AI applications such as ChatGPT or Copilot, whereas only two 
+
+participants had previous experience using a white cane. 
+
+5. 3.4 Questionnaire and Acceptance Measures 
+
+Participants were asked a set of questions both before and after the experiment, and oral consent for participation was 
+
+also obtained. Before the experiment , participants were asked the following questions about their prior experience 
+
+with any smart or non -smart white cane and any conversational AI applications :• Have you ever used a white cane (a mobility cane for people who are visually impaired)? 
+
+• Have you ever used applications such as ChatGPT or other voice -based smart assistants? 
+
+After completing the tasks, participants answered a questionnaire based on the Unified Theory of Acceptance and 
+
+Use of Technology (UTAUT) [39 ], focusing on their interaction with PISHYAR as a socially intelligent cane to 
+
+measure their acceptance of using this new technology. The questionnaire includes these items: Anxiety (AN), Attitude 
+
+Towards Technology (ATT), Facilitating Conditions (FC), Int ention to Use (IU), Perceived Adaptiveness (PAD), 
+
+Perceived Ease of Use (PEU), Perceived Usefulness (PU), Perceived Enjoyment (PE), Perceived Sociability (PS), 
+
+Social Influence (SI), Social Presence (SP), and Trust (TR). The questionnaire statements are sh own in  Table 1.
+
+Responses were recorded using a 5 -point Likert scale, and researchers documented the participants’ answers.   
+
+> Table 1Twelve common questionnaire statements adopted from UTAUT, rated orally by participants on a 5 -point Likert scale
+> after the experiment.
+
+No.  Item  Statement 
+
+1 AN  If I should use PISHYAR , I would be afraid to break something. 
+
+2 ATT  PISHYAR would make life more interesting. 
+
+3 FC  I know enough of PISHYAR to make good use of it. 
+
+4 IU  I’m certain to use PISHYAR in the future .
+
+5 PA  I think PISHYAR can be adaptive to what I need. 
+
+6 P U I find PISHYAR easy to use. 
+
+7 PU  I think PISHYAR can help me with many things. 
+
+8 P I enjoy doing things with PISHYAR. 
+
+9 PS  I find PISHYAR pleasant to interact with. 
+
+10  SI  I think it would give a good impression if I should use PISHYAR. 
+
+11  SP  I can imagine PISHYAR to be a living creature. 
+
+12  TR  I would follow the advice PISHYAR gives me. 
+
+6 Results and iscussion 
+
+6.1 valuation of Socially Aware Navigation Performance 
+
+6. 1. 1 Simulation - ased valuation of bstacle etection and Path Planning 
+
+Results of the simulation showed that in nine out of ten scenarios , the path planning algorithm successfully identified 
+
+the optimal route and ensured correct guidance wit hout accidents or obstacle contact. In only one case, due to specific 
+
+environmental conditions and obstacle arrangement, the algorithm’s performance required further optimization.  Fig. 
+
+9 illustrates the different stages of the path planning process in one of these simulated scenarios, providing a clear 
+
+representation of how the system detects obstacles and selects the appropr iate route. Fig. 9 Representative stages of obstacle detection and path planning in the Webots simulation environment. The humanoid model 
+
+> equipped with the smart cane navigates toward the target chair while avoiding static obstacle s.
+
+6. 1. 2 Training and Validation Results of the C MP S R Architecture 
+
+From the entire dataset, approximately 70% (equivalent to 1,778 clips) was used for model training, while 30% (765 
+
+clips) was allocated for performance evaluation. The model achieved a Top -1 accuracy of 95.7% , which is consistent 
+
+with the reported result i n the original paper [36 ]. The confusion matrix of the model is shown in  Fig. 10 .Fig. 10 Confusion matrix of the COMPOSER architecture evaluated on the Collective Activity dataset, showing classification 
+
+> performance across walking, waiting, queuing, and talking activities.
+
+Analysis of this matrix shows that the model achieved a flawless perfo rmance in classifying the talking class, 
+
+reaching an accuracy of 100%. The highest level of confusion occurred between the walking and waiting classes, 
+
+where in a few cases, samples from these two classes were misclassified. The classification accuracy for the queueing 
+
+class was also very high, at 93%. 
+
+These results demonstrate the remarkable efficiency of the COMPOSER model in recognizing collective activities 
+
+in diverse and complex environments. The only major challenge lies in distinguishing between beha viorally similar 
+
+activities such as walking and waiting, which could be improved by enhancing the training dataset or employing more 
+
+advanced preprocessing techniques. Overall, the developed model shows strong potential for practical applications 
+
+and real -world scenarios. 
+
+6. 1.3 Real -World valuation of the C MP S R Architecture 
+
+Fig. 11  presents the COMPOSER model’s accuracy in each of the 20 experimental conditions, providing a clear visual 
+
+representation of its strengths and weaknesses in different scenarios and enabling a more detailed analysis of successes 
+
+and prediction errors in each test. 
+
+The results of this evaluation showed that in 17 out of 20 scenarios , the model was able to correctly predict the 
+
+group activity present in the scene indicating acceptable accuracy even under challenging conditions (In all 20 
+
+scenarios, the correct label appeared among the model’s top three predictions). Among the three misclassifications, 
+
+one case involved an incorrect recognition of the waiting class, while the other two i nvolved incorrect recognition of 
+
+the walking class. In all these cases, the two classes were substituted for each other —a predictable and justifiable 
+
+outcome given the behavioral and motion similarities between these activities. Similar misclassification p atterns were 
+
+also observed in the model’s training results on the Collective Activity dataset. Considering the limited number of experiments and the complexity of real -world conditions, the overall accuracy 
+
+of 85% obtained in this evaluation can be regarde d as satisfactory for practical applications, highlighting the model’s 
+
+strong potential for integration into intelligent assistive systems.    
+
+> Fig. 11 Accuracy of the COMPOSER architecture across 20 real -world experimental scenarios, illustrating correct and incorrect
+> group activity predictions under varying environmental conditions.
+
+6. 1.4 System - evel Performance valuation of PISHYAR 
+
+The results obtained from evaluating PISHYAR in the three defined scenarios are as follows: 
+
+• Scenario 1, Presence of Static bstacles without Human roups: In this scenario, the system successfully 
+
+completed all three trials. PISHYAR guided the user to the destination (vacant chair) without any collisions with 
+
+static obstacles. These results demon strate the stable performance and high accuracy of the system in 
+
+environments with non -moving obstacles. The average time per trial in this scenario was approximately 25 
+
+seconds, indicating a fast system response. 
+
+• Scenario 2, Static bstacles with Changing Target Position Midway: This scenario was more complex than 
+
+the first. The system successfully completed 2 out of 3 trials, correctly finding an alternative path and guiding the 
+
+user to the newly available vacant chair. In the unsuccessful trial, the primary cause was the user mo ving too close 
+
+to the initial target chair, causing other chairs to move out of the depth camera’s field of view. Additionally, 
+
+persistent errors in data from the camera and IMU sensor prevented PISHYAR from correctly identifying 
+
+alternative chairs and cal culating the proper path. The average time per trial in this scenario was approximately 
+
+30 seconds, reflecting increased processing and decision -making time due to environmental complexity. 
+
+• Scenario 3 – Social Navigation in the Presence of Human roups: Th is scenario was the most challenging, 
+
+involving obstacles and human groups exhibiting different behaviors. For the Talking activity class, PISHYAR 
+
+successfully guided the user in all three trials, maintaining proper social distance and etiquette. For the Waiting 
+
+activity class (including Queuing ), the system successfully navigated in 2 out of 3 trials; while in one trial, it 
+
+mistakenly classified the activity as walking. In this case, since the system awaited the group to leave, the misclassification led to a temporary halt in navigation. For the Walking activity class, the system performed 
+
+satisfactorily in 2 out of 3 trials, but in one trial, misclassification of the collective activity caused a collision with 
+
+people in the path. Overall, out of 9 trials in this scenario, 7 were fully successful, corresponding to the estimated 
+
+accuracy of 78% . This performance is considered acceptable given the complex and dynamic social conditions. 
+
+The average time per trial was approximately 35 seconds, slightly longer due to the complexity and multi -layered 
+
+processing required.  Fig. 12  summarizes th e overall performance of the proposed system across all evaluation 
+
+scenarios. This figure reflects the accuracy of reaching the target, avoiding obstacles, and maintaining social 
+
+etiquette, clearly highlighting the strengths and limitations of the system u nder practical and real -world 
+
+conditions.   
+
+> Fig. 12 Summary of PISHYAR performance across all real -world evaluation scenarios, including obstacle avoidance, target
+> reaching, and compliance with social navigation constraints.
+
+The above results indicate that the proposed social navigation system on PISHYAR , despite certain limitations, 
+
+has demonstrated acceptable performance in real -world environments with complex human conditions. The overall 
+
+accuracy of the system across all evaluations was ~ 80% . Observed errors were mainly due to limited camera field of 
+
+vi ew, IMU sensor inaccuracies, and the lack of a comprehensive environmental map, which can be minimized through 
+
+hardware improvements, enhanced positioning algorithms, and modifications to the navigation method. Additionally, 
+
+the system’s capability to dete ct and respect social etiquette, such as maintaining appropriate distance from human 
+
+groups, highlights the innovation and practical applicability of this research, offering a notable advantage over many 
+
+existing navigation systems. 
+
+To provide a benchmark, the results of the final evaluation in this study were compared with the data reported by 
+
+Agrawal et al. [22 ]. Since social navigation was not addressed in their study or in much of the related literature, a 
+
+direct comparison for social navigation is not possible. However, the primary objective of t heir work (finding an empty 
+
+chair and navigating toward it in the presence of static obstacles ) is closely aligned with the goals of this research, 
+
+making it suitable for comparison. In addition to proximity, their criteria for selecting an empty chair als o considered social aspects such as privacy, comfort, and social distance. The key difference is that in Agrawal et al.’s study, the 
+
+social element was only incorporated in the chair selection process, not in the navigation itself. Their study conducted 
+
+ev aluations across 12 scenarios, with obstacles randomly placed in different positions and the goal being to reach a 
+
+socially and spatially optimal chair without collisions. Their results showed that the system successfully achieved its 
+
+objective in 10 out o f 12 scenarios, corresponding to an overall accuracy of 83.3%. 
+
+This accuracy is comparable to the ~80% achieved in the present study, and the slight difference can be attributed 
+
+to the added complexity of social navigation in this research. Social navigati on introduces additional challenges 
+
+compared to standard navigation with only static obstacles. It is also noteworthy that in scenarios involving only static 
+
+obstacles, PISHYAR developed in this study successfully reached the target in all three trials, de monstrating full 
+
+reliability under simpler conditions. 
+
+6. 2 valuation of M- ased Assistive Interaction 
+
+6. 2.1 User Study Questionnaire Results 
+
+The results of the UTAUT questionnaire in our preliminary exploratory study for eight visually impaired participants 
+
+are shown in  Fig. 13 . All questionnaire items were scored on a five -point Likert scale, with 1 indicating the minimum 
+
+and 5 indicating the maximum score. In general, most items received mean scores of 4 or higher , which indicates a
+
+generally positive perception of PISHYAR among the partici pants. These results suggest a strong level of acceptance 
+
+of the proposed system during our exploratory study which shows us a positive signal of our developed platform .
+
+Similar levels of user acceptance have been reported in recent assistive systems leveraging large language or vision 
+
+language models for visually impaired users, including wearable VLM -based assistants [28 ] and real -time navigation 
+
+aids [31 ].                         
+
+> Fig. 13 Mean participant scores for UTAUT questionnaire items (5 -point Likert scale) evaluating acceptance, usability, trust, and
+> perceived sociability of PISHYAR. Error bars indicate standard deviation. AN ATT FC IU PAD PEU PU PE PS SI SP TR
+> UTAUT 1.625 44.75 4.125 4.625 4.25 4.625 4.75 4.625 3.625 44.25
+> 0
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> Participants  Average  Score
+
+# UTAUT Based on the results of our conducted study , t he Anxiety (AN) item received a mean score of 1.625, which 
+
+indicates a relatively low level of anxiety while using PISHYAR. This suggests that during interaction , participants 
+
+generally did not feel afraid of breaking the system. This low anxiety level may indicate that the system was perceived 
+
+as safe and user -friendly. However, the relatively high standard deviation for this item suggests individual differences, 
+
+which may be related to participants’ different levels of familiarity with technology. 
+
+As shown in  Fig. 13 , several items with high mean scores also e xhibited relatively large standard deviations. For 
+
+example, the Intention to Use (IU) item shows that while many participants expressed willingness to use PISHYAR 
+
+again in the future, a smaller number were less inclined to do so. A similar pattern can be o bserved for Perceived Ease 
+
+of Use (PEU), which suggests that although most participants found the system easy to use, some experienced 
+
+difficulties during interaction. These difficulties may be related to system limitations, such as occasional uncertainty 
+
+in responding to user inputs, which is common in LLM -powered interactive systems. The Pearson correlation 
+
+coefficient between Anxiety (AN) and Perceived Ease of Use (PEU) was calculated as -0.97, highlighting a strong 
+
+negative relationship. This result suggests that participants who found PISHYAR easier to use also reported lower 
+
+levels of anxiety during interaction. This correlation is based on a tiny sample size and should not be considered as a 
+
+conclusive s tatistical finding, but rather as an exploratory sign of connection. 
+
+The results for Facilitating Conditions (FC) indicate that participants felt they had sufficient knowledge to use 
+
+PISHYAR. This may be explained by their prior experience with conversatio nal AI systems such as ChatGPT or 
+
+similar voice -based assistants . Based on the Perceived Adaptiveness (PAD) results, participants perceived PISHYAR 
+
+as adaptive to their needs. In the context of this study, this suggests that the developed system and its in tegrated 
+
+modules generally functioned as intended, with only minor malfunctions observed. The results for Perceived 
+
+Enjoyment (PE) indicate that participants experienced enjoyment while using PISHYAR. In addition, the Perceived 
+
+Sociability (PS) item sugges ts that the interaction was perceived as pleasant. Together, these findings highlight 
+
+PISHYAR’s role as a socially intelligent assistive cane that can provide a positive user experience. 
+
+The Trust item received a high score, which shows that participants g enerally perceived PISHYAR as trustworthy. 
+
+Trust is a critical factor in human -robot interaction, particularly for assistive technologies. In contrast, Social Influence 
+
+(SI), Social Presence (SP), and Attitude Toward Technology (AT) received comparatively lower scores than other 
+
+questionnaire items. This suggests that, in its current form, PISHYAR may have a limited impact on users’ social 
+
+experiences or daily social life. However, the Perceived Usefulness (PU) item still received a high score, indicating 
+
+that participants found the system helpful and functional. 
+
+The Pearson correlation coefficient between Intention to Use (IU) and Social Presence (SP) was calculated as 
+
+0.92, indicating a strong positive relationship. Since there were only a few participant s, this correlation should be read 
+
+cautiously and does not suggest that desire to use and perceived social presence are causally related. This result 
+
+suggests that participants who were better able to perceive PISHYAR as a social entity were more likely to express 
+
+willingness to use it again in the future. This finding highlights the importance of sociability and anthropomorphic 
+
+cues in inc reasing long -term acceptance of socially assistive technologies. The strong correlation between perceived 
+
+sociability and intention to use shows prior findings in socially assistive robotics, where anthropomorphic cues and conversational responsiveness wer e shown to directly influence long -term acceptance and trust [11 , 25 ]. Unlike 
+
+systems focusing solely on task efficiency, PISHYAR integrates conversational interaction into a physical mobility 
+
+aid, which may increase the role of social presence in shaping user attitudes. 
+
+Overall, the questionnaire results indicate that PIS HYAR is acceptable as a socially intelligent cane among 
+
+visually impaired users ; however, the observed trends are exploratory and should be validated in future studies with 
+
+larger and more diverse populations . While its social impact is currently limited, the system shows potential to 
+
+influence users’ experiences positively with further improvements in social interaction capabilities. 
+
+6. 2.2 Interaction - evel System Performance 
+
+Across all trials, PISHYAR success fully handled date and time requests as well as general question -and -answer 
+
+commands issued by participants. The system also completed all scene description tasks without failure. 
+
+For object detection tasks involving “chair” and “bottle” detection, each of the eight participants performed both 
+
+tasks, resulting in 16 detection trials in total. The combined VLM -YOLO pipeline successfully detected the target 
+
+object in 15 out of 16 trials, with a single failure occurring in the water bottle detection . However, distance estimation 
+
+in terms of step count for “chairs” was successfully provided in only 4 cases. Failures in distance estimation may be 
+
+attributed to limitations in visual input, such as an incomplete view of the object or incorrect orientation of the ca ne 
+
+relative to the target. 
+
+Interaction logs further indicate that during vision -based tasks, the system was also able to detect additional 
+
+objects on the table, such as apples and cups. These objects were detected either by YOLO or the VLM, with the VLM 
+
+being responsible for most successful detections. This suggests that the vision language model played a significant 
+
+role in providing robust scene understanding beyond predefined object classes. This observation supports findings 
+
+from recent multimodal foundation -model approaches, where VLMs demonstrated superior generalization beyond 
+
+predefined object categories and provided richer scene understanding compared to standalone object detectors [27 ,
+
+32 ]. Such flexibility is particularly valuable in assistive contexts, where the range of relevant objects cannot be 
+
+predefined. 
+
+At the end of each session, participants were encouraged to ask PISHYAR additional questions beyond the 
+
+structured tasks. Example queries included requests for information about the environment, such as “What is on the 
+
+table in front of me?” an d spatial guidance like “Can you tell me what is on my left side?” They also asked general 
+
+knowledge and problem -solving questions, for instance, “What is ten times ten?” and personal advice, such as “My 
+
+mother has a neck and back disc problem , what should I do to help her feel better?”, “What should I do to improve 
+
+my physical strength?”, and “What should I do to improve my studies?” These interactions provided insights into the 
+
+system’s flexibility and participants’ natural use patterns, which demonstrate s its ability to handle unstructured, user -
+
+initiated requests in addition to task -oriented commands. 
+
+In contrast to robot -assisted platforms that rely on external computation or large mobile bases [30 ], PISHYAR 
+
+demonstrates that multimodal LLM -based interaction can be effectively embedded within a lightweight cane -based 
+
+form factor, albeit with trade -offs in sensing coverage and depth robu stness. Overall, the interaction -level results indicate that integrating LLMs and VLMs into a smart cane enables reliable 
+
+conversational assistance and flexible scene understanding, while remaining constrained by camera viewpoint and 
+
+sensing limitations. PISHYAR highlights both its useful potential and areas for further development by achieving a 
+
+balance between portability and interaction richness as compared to prior wearable or robot -based systems. 
+
+7 imitations and Future Work 
+
+This study faces several limitations related to sensing, navigation, interaction, and evaluation. In the social navigation 
+
+component, one of the main limitations is the lack of a n environmental map. The system relies solely on the RGB -D
+
+camera and IMU, which may reduce rob ustness in crowded or highly dynamic environments. This design choice was 
+
+made to preserve real -time performance and to avoid requiring complex user movements during navigation. In 
+
+addition, financial constraints prevented the use of high -cost sensors such as LiDAR. Furthermore, the COMPOSER -
+
+based group activity recognition model is limited to detecting a maximum of two human groups with up to 13 
+
+individuals in total. As a result, in dense crowds, the system may not fully capture all social interactions or enforce 
+
+social navigation rules effectively. 
+
+Another limitation is related to the interaction module. Audio -based interaction, which depends on speech 
+
+recognition and KWS, is sensitive to environmental noise , which could potentially affect recognition accu racy . In 
+
+addition, the interaction mode routing mechanism, while effective in reducing computational load and power 
+
+consumption, may introduce minor delays due to mode switching. This represents a trade -off between responsiveness 
+
+and efficiency that is com mon in embedded assistive systems. 
+
+From an object perception perspective, the object detection and distance estimation module occasionally fail to 
+
+detect certain obstacles. Since the YOLOv8 model trained on the COCO dataset was used, object recognition is limited 
+
+to the 80 predefined classes in this dataset. Consequently, uncommon obstacles may not be detected reliably. 
+
+Moreover, distance estimation accuracy depends on depth sensor data and may degrade under challenging lighting .
+
+Finally, evaluation -related limitations should be noted. The relatively small size of the visually impaired 
+
+population and the fact that all participants in the study were male may limit the generalizability of the findings across 
+
+broader user groups with different gender, age group s, and cultural contexts . In addition, collective activity recognition 
+
+is performed only at the beginning of navigation, assuming that no new human groups enter the environment during 
+
+movement, which may limit system responsiveness in highly dynamic social settings. 
+
+Future work will focus on addressing these limitations through both hardware and algorithmic improvements. 
+
+Planned extensions include the integration of advanced sensors such as LiDAR or higher -resolution depth cameras to 
+
+improve perceptio n accuracy, as well as the adoption of SLAM -based mapping and navigation to enable more reliable 
+
+operation in dynamic and complex environments. The system will be extended to larger indoor spaces settings to 
+
+increase its practical applicability. In additio n, future versions will enhance multimodal feedback by combining both 
+
+haptic and auditory cues, and improve user interaction through more user -friendly interfaces and organized instruction 
+
+for users. On the interaction side, more robust STT and KWS models will be explored to increase reliability in noisy environments. From an evaluation perspective, future studies will involve a larger and more diverse participant group 
+
+to improve generalizability. Furthermore, object detection performance can be improved by incorporating alternative 
+
+detection models or segmentation -based approaches. Finally, future work will explore deeper integration of LLM - and 
+
+VLM -based navigation using additional contextual inputs such as map information, as well as OCR or VLM -based 
+
+tex t reading to support richer environmental understanding. 
+
+8 Conclusion 
+
+In this study, we designed and developed PISHYAR, a socially intelligent smart cane that combines socially aware 
+
+navigation with multimodal LLM -based interaction to support both mobility and interactive assistance for visually 
+
+impaired individuals in indoor environments. The system integrates three core components: (1) a hardware platform, 
+
+including an OAK -D Lite RGB -D camera, a Raspberry Pi 5, and a modified white cane with a 3D -printed structure, 
+
+three vibration motors for haptic feedback, and a power supply module; (2) a socially aware navigation framework 
+
+that utilizes YOLOv8 for object detection, the D* Lite algorithm for path planning, and the COMPOSER  transformer 
+
+model for collecti ve human activity recognition; and (3) an agentic LLM -VLM interaction framework that allows 
+
+voice -based interaction, scene description, and object localization through GPT -4o, plus keyword spotting, speech -to -
+
+text, and text -to -speech modules. 
+
+The socially aware navigation component was evaluated through simulation and real -world experiments to 
+
+measure its ability to guide users safely and respecting social etiquette at the same time . Across all navigation 
+
+scenarios, the system achieved an overall success rate of approximately 80%. The system successfully combines 
+
+obstacle avoidance, dynamic re -planning, and social compliance. In environments with only static obstacles, the cane 
+
+achieved a 100% success rate, demonstrating stable baseline navigation. When target seats became occupied during 
+
+movement, the system correctly re -planned in most cases, with failures primarily caused by the limited camera field 
+
+of view and IMU drift. In socially dynamic scenarios involving walking, talking, and waiting group s, this system 
+
+achieved seven out of nine successful trials by maintaining the proper interpersonal distance and modifying its 
+
+behavior accordingly. These findings suggest that integration of the COMPOSER model enabled reliable recognition 
+
+of collective hu man activities, with 85% accuracy in real -world tests. Overall, the results confirm that incorporating 
+
+group activity awareness significantly enhances navigation quality compared to purely obstacle -based approaches. 
+
+The agentic LLM -based interaction framew ork was evaluated through structured user studies with visually 
+
+impaired participants for measuring usability, acceptance, intention to use, trust, perceived usefulness, and socially 
+
+relevant factors such as sociability and social presence. The system demo nstrated stable and reliable performance in 
+
+voice -based interaction, with all time/date queries and general conversational requests completed successfully. Scene 
+
+description tasks were executed correctly in every trial, which indicates strong multimodal un derstanding. For object 
+
+detection commands, the system correctly identified target objects in 15 out of 16 cases. However, distance estimation 
+
+was only accurate in half of the trials, with errors mainly due to incomplete visual framing or cane misorientati on. We 
+
+have also performed a preliminary study for eight visually impaired participants using our developed social robot. 
+
+Questionnaire results based on the UTAUT model revealed high user acceptance and strong perceptions of usefulness, trust, and sociabil ity. Participants reported that PISHYAR was enjoyable to use during our experiments . Additionally, 
+
+intention to reuse the system correlated strongly with perceived social presence. These findings suggest that the agentic 
+
+interaction framework effectively s upports natural and engaging assistance, while highlighting the need for improved 
+
+spatial grounding and distance estimation in future iterations. 
+
+Overall, these results demonstrate that PISHYAR can effectively combine socially aware navigation and 
+
+multimod al human -robot interaction to provide a user -friendly smart cane. The system provides visually impaired 
+
+users with independent mobility in complex and socially dynamic contexts and provides the foundation for future 
+
+works  to integrate multimodal perception , navigation, and conversational AI into portable assistive devices. 
+
+Acknowledgment 
+
+This work is based upon research funded by the Sharif University of Technology. We would like to express our 
+
+gratitude to our friend s at the Social and Cognitive Robotics Laboratory . for cooperation and helps with the data 
+
+collection, as well as all the participants . We would like to offer special thank s to Dr. Dezhan, Dr. Shirmohammadi ,
+
+Mr. Asadi and the staff of Shahid Moheebi high -school for their cooperation during our experimental study .
+
+Statements eclarations 
+
+Conflict of interest 
+
+Author Alireza Taheri has received a research grant from the Sharif University of Technology . The author s Mahdi 
+
+Haghighat Joo and Maryam Karimi Jafari declare that they have no conflict of interest. 
+
+Availability of data and material data transparency 
+
+All data from this project (the cane design files , codes, photos, videos , etc.) are available in the Social and Cognitive 
+
+Robotics Laboratory archive. 
+
+Code availability 
+
+All of the codes are available in the archive of the Social and Cognitive Robotics Laboratory. In case the readers 
+
+need the codes, they may contact the corr esponding author. 
+
+Authors’ contributions All authors contributed to the study's conception and design. Material preparation, data collection, and analysis were 
+
+performed by Mahdi Haghighat Joo and Maryam Karimi Jafari . Alireza Taheri supervised this research. The first draft 
+
+of the manuscript was written by Mahdi Haghighat Joo and Maryam Karimi Jafari ; and all authors commented on 
+
+previous versions of the manuscript. All authors read and approved the final manuscript. 
+
+Consent to participate 
+
+Informed consent was obtained from all individual partic ipants included in the study. 
+
+Appendix 
+
+This appendix summarizes the prompts used in the proposed multimodal LLM -based interaction framework. The table 
+
+presents the prompts employed by the LLM, the VLM, and the interaction routing module. The second column lists 
+
+the prompt content, where System Instruction refers to the system -level prompt defining the model’s role and 
+
+be havior, and User Input corresponds to the user -role messages provided to the model during runtime, as defined in 
+
+the OpenAI API message structure. The third column includes representative examples selected from experimental 
+
+tests to illustrate how the prom pts are instantiated in practice. 
+
+Task  Prompt Template  Few -Shot xamples 
+
+Interaction 
+
+Mode Router 
+
+IMR 
+
+system instruction: You are a mode selector for a cane 
+
+assistant. Decide if the user intent REQUIRES the 
+
+camera/vision tools now. 
+
+Return STRICT JSON with: 
+
+{"mode": "VISION" | "VOICE"} 
+
+Rules: 
+
+- Use "VISION" when the user asks about surroundings, 
+
+people, objects, distances, obstacles, navigation, or anything 
+
+needing the live camera. 
+
+- Use "VOICE" for date/time, chit -chat, general Q&A 
+
+without current visu al info. 
+
+- Be conservative: if camera is not clearly needed, pick 
+
+"VOICE". 
+
+user input: (the output of the STT is sent as the input) 
+
+Input: 
+
+بطری آب را پیدا کن. 
+
+utput: 
+
+{"mode": "VISION"} 
+
+Input: 
+
+امروز چند شنبه است؟ 
+
+utput: 
+
+{"mode": "VOICE"} 
+
+Vision Task 
+
+Router 
+
+VTR 
+
+system instruction: You are a routing controller for a 
+
+multimodal cane assistant. Decide which TOOL to call based 
+
+ONLY on the user's latest utterance. 
+
+TOOLS: 
+
+- SCENE: Use ONLY the VLM scene description (no object 
+
+detector). Choose this wh en the user asks about surroundings 
+
+/where they are/what's around/people/crowds/caution areas, 
+
+or generally needs situational awareness. 
+
+- OBJECT: Use BOTH the VLM scene description AND the 
+
+object detector. Choose this when the user asks to 
+
+find/locate/ide ntify a specific object or asks about nearby 
+
+objects in general. If the user mentions a specific object (e.g., 
+
+"cup", "empty chair", "phone"), extract it into `target`. If not, 
+
+set `target` to null. 
+
+Return a STRICT JSON object with exactly these keys: 
+
+Input: 
+
+می تونی بگی که جلوی من چیه؟ 
+
+utput: 
+
+{
+
+"action": "SCENE", 
+
+"target": None 
+
+}
+
+Input: 
+
+صندلی رو برام پیدا کن. 
+
+utput: 
+
+{
+
+"action": "OBJECT", {
+
+"action": "SCENE" | "OBJECT", 
+
+"target": "<string or null>" 
+
+}
+
+No extra text. No explanations. JSON only. 
+
+user input: (the output of the STT is sent as the input) 
+
+"target": "chair" 
+
+}
+
+M
+
+system instruction: You are an interactive conversational 
+
+assistant named 'Pishyār' (Persian:  پیشیار ), a friendly 
+
+companion for the user. Introduce yourself briefly when 
+
+appropriate, and speak with a warm and respectful tone. You 
+
+may occasionally add a tiny touch of light hum or or 
+
+playfulness, but always stay concise and supportive. Avoid 
+
+unnecessary complexity, extra commentary, or directly 
+
+mentioning blindness unless the user explicitly does. Focus 
+
+only on practical help and clear guidance in your responses, 
+
+like a supportiv e friend. 
+
+user input: 
+
+You are a friendly and helpful companion for the user. 
+
+Environmental information and text detected on signs: 
+
+{the VLM output} 
+
+The user has asked: 
+
+{the STT output} 
+
+Please provide a short, warm, fluent, and direct response in 
+
+Persian. Do not start with greetings such as “hello” unless the 
+
+user has greeted first. If text on a sign or board is detected, 
+
+state it clearly and include it in the response if it helps with 
+
+orientation or navigation. If distance information or the 
+
+number of ste ps to nearby objects is available, be sure to 
+
+include it so the user knows how far away objects are. Avoid 
+
+unnecessary details, extra explanations, or any reference to 
+
+the user being visually impaired. 
+
+Input: 
+
+You are a friendly and helpful companion for 
+
+the user. Environmental information and text 
+
+detected on signs: 
+
+{
+
+توصیف صحنه: اتاقی با چیدمان ساده مشاهده می شود. در 
+
+سمت چپ تصویر، بخشی از یک میز چوبی با یک بطری آب 
+
+روی آن قرار دارد. دو صندلی با پشتی چوبی در نزدیکی میز 
+
+دیده می شوند که به دیوا ر متصل شده اند. پرده های نازک بر 
+
+روی پنجره ای که قسمت باالی تصویر را اشغال کرده، آویخته 
+
+شده اند و مقداری نور از آن عبور می کند. در کنار صندلی ها، 
+
+شوفاژ دیواری قرار دارد .
+
+متن قابل خواندن روی تابلوها دیده نشد .
+
+اشیای اطراف: 
+
+chair:  حدود ۴قدم  | table:  حدود ۲قدم 
+
+جست وجو برای « chair »: پیدا شد 
+
+}
+
+The user has asked: 
+
+{صندلی رو برام پیدا کن.} 
+
+Please provide a short, warm, fluent, and 
+
+direct response in Persian. Do not start with 
+
+greetings such as “hello” unless the user has 
+
+greeted first. If text on a sign or board is 
+
+detected, state it clearly and include it in the 
+
+response if it helps with orientation or 
+
+navigation. If distance information or the 
+
+number of steps to nearby objects is available, 
+
+be sure to include it so the user knows how far 
+
+away objects are. Avoid unnecessary details, 
+
+extra explanations, or any reference to the 
+
+user being visually impaired. 
+
+utput: 
+
+صندلی ها  ً حدودا چهار قدم با تو فاصله دارند ودر نزدیکی میز 
+
+چوبی قرار گرفته اند .امیدوارم این اطالعات کمکت کند !
+
+V M
+
+Text Prompt: Look at the image and do TWO things: 
+
+1) Scene (Persian): Give a clear, natural Persian description 
+
+(60 –120 words) focusing on environment, key 
+
+objects/people/actions, relative positions, movements, and 
+
+useful distances. Do NOT mention colors. 
+
+2) OCR (fa/en): Extract all visible Persian or English 
+
+sign/label/place -name text. 
+
+Return your answer in EXACTLY this template: 
+
+Scene: 
+
+<scene description in Persian> 
+
+Texts: 
+
+- <lang:fa|en> «{exact text}» 
+
+Visual Input: 
+
+utput: 
+
+Scene: If there is no text, write:   
+
+> Texts:
+> -none
+> Visual Input:
+> (An RGB image captured by the cane -mounted camera and
+> provided to the model)
+> در ا ینتصو یر، اتاق یساده د یده میشود . در سمت چپ، م یز
+> چوب یکوچک با سطح یصاف وجود دارد که رو یآن یک
+> بطر یآب پالست یکیویکفنجان قرار گرفته اند. در م یانه ی
+> تصو یر، دو صندل یچوب یبا پا یهها یفلز یکنار هم در برابر
+> دیوار یبا راد یاتور قرار گرفته اند. پرده ها یی در باال نصب شده اند
+> که جلو یپنجره ایبزرگ را گرفته اند و نور از ا ینپنجره ها به
+> داخل اتاق م یتابد .
+> Texts:
+> -none
+
+References 
+
+1.  Lee W, Ryu S, Park G, et al (2025) Mobile robot design with linkage -based reaction wheel mechanism for 
+
+horizontal –vertical force transmission. Intel Serv Robotics 18:1089 –1101.  https://do i.org/10.1007/s11370 -025 -
+
+00644 -8
+
+2.  Pan H, Cai Y, Jia B, et al (2025) Improving the absolute positioning accuracy of industrial robots based on OP -
+
+ELM and an enhanced backtracking search algorithm. Intel Serv Robotics 18: 247 –260. 
+
+https://doi.org/10.1007/s11370 -024 -00581 -y
+
+3.  Cauli N, Reforgiato Recupero D (2025) Dr.VCoach: employment of advanced deep learning and human –robot 
+
+interact ion for virtual coaching. Intel Serv Robotics 18:613 –629.  https://doi.org/10.1007/s11370 -025 -00603 -3
+
+4.  Taheri A, Meghdari A, Alemi M, Pouretemad H (2018) Human –Robot Interaction in Autism Treatment: A Case 
+
+Study on Three Pairs of Autistic Children as Twins, Siblings, and Classmates. Int J of Soc Robotics 10:93 –113. 
+
+https://doi.org/10.1007/s12369 -017 -0433 -8
+
+5.  Taheri A, Meghdari A, Mahoor MH (2021) A Close Look at the Imitation Performance of Children with Autism 
+
+and Typically Developing Children Using a Robotic System. Int J of Soc Robotics 13:1125 –1147. 
+
+https://doi.org/10.1007/s12369 -020 -00704 -2
+
+6.  Basiri S, Taheri A, Meghdari AF, et al (2023) Dynamic Iranian Sign Language Recogni tion Using an Optimized 
+
+Deep Neural Network: An Implementation via a Robotic -Based Architecture. Int J of Soc Robotics 15:599 –619. 
+
+https://doi.org/10.1007/s12369 -021 -00819 -0
+
+7.  Esfandbod A, Nourbala A, Rokhi Z, et al (2024) Design, Manufacture, and Acceptance Evaluation of APO: A 
+
+Lip -syncing Social Robot Developed for Lip -reading Training Programs. Int J of Soc Robotics 16:1151 –1165. 
+
+https://doi.org/10.1007/s12369 -022 -00933 -7
+
+8.  WHO (2023) Blindness and Vision Impairment.  https://www.who. int/news -room/fact -sheets/detail/blindness -
+
+and -visual -impairment . Accessed 10 Aug 2023. 
+
+9.  Elmannai W, Elleithy K (2017) Sensor -Based Assistive Devices for Visually -Impaired People: Current Status, 
+
+Challenges, and Future Dir ections. Sensors 17:565.  https://doi.org/10.3390/s17030565 
+
+10.  Khanom M, Sadi MS, Islam MdM (2019) A Comparative Study of Walking Assistance Tools Developed for the 
+
+Visually Impaired People. In: 2019 1st International Conference on Advances in Science, Engineering and Robotics Tec hnology (ICASERT). IEEE, Dhaka, Bangladesh, pp 1 –5. 
+
+https://doi.org/10.1109/ICASERT.2019.8934566 
+
+11.  Wei Y, Rocher N, Gupta C, et al (2025) Human Robot Interaction for Blind and Low Vision People: A 
+
+Systematic Literature Review. In: Proceedings of the 2025 CHI Conference on Human Factors in Computing 
+
+Systems. ACM, Yokohama Japan, pp 1 –19.  https://doi.org/10.1145/ 3706598.3713438 
+
+12.  Kuzdeuov A, Mukayev O, Nurgaliyev S, et al (2024) ChatGPT for Visually Impaired and Blind. In: 2024 
+
+International Conference on Artificial Intelligence in Information and Communication (ICAIIC). pp 722 –727. 
+
+https://doi.org/10.36227/techrxiv.22047080.v2 
+
+13.  Zafar S, Asif M, Ahmad MB, et al (2022) Assistive Devices Analysis for Visually Impaired Persons: A Review 
+
+on Taxonomy. IEEE Access 10:13354 –13366.  https://doi.org/10.1109/ACCESS.2022.3146728 
+
+14.  Masud U, Saeed T, Malaikah HM, et al (2022) Smart Assistive System for Visu ally Impaired People 
+
+Obstruction Avoidance Through Object Detection and Classification. IEEE Access 10:13428 –13441. 
+
+https://doi.org/10.1109/ACCESS.2022.3146320 
+
+15.  Alashjaee AM, AlEisa HN, Darem AA, Marzouk R (2025) A hybrid object detection approach for visually 
+
+impaired persons using pigeon -inspired optimization and deep learning models. Sci Rep 15:9688. 
+
+http s://doi.org/10.1038/s41598 -025 -92239 -7
+
+16.  Bauer Z, Dominguez A, Cruz E, et al (2020) Enhancing perception for the visually impaired with deep learning 
+
+techniques and low -cost wearable sensors. Pattern Recognition Letters 1 37:27 –36. 
+
+https://doi.org/10.1016/j.patrec.2019.03.008 
+
+17.  S MD, Niveditha G, Pinto NA, Sinha S (2024) Enhancing Mobility: A Smart Cane with Integrated Navigation 
+
+System and Voice -Assisted Guidance for the Visually Impaired. In: 2024 IEEE 13th International Conference 
+
+on Communication Systems and Network Technolog ies (CSNT). pp 1124 –1129. 
+
+https://doi.org/10.1109/CSNT60213.2024.10546111 
+
+18.  Abdusalomov AB, Mukhiddinov M, Kutlimuratov A, Whangbo TK (2022) Improved Real -Tim e Fire Warning 
+
+System Based on Advanced Technologies for Visually Impaired People. Sensors 22:7305. 
+
+https://doi.org/10.3390/s22197305 
+
+19.  Dang B, Ma D, Li S, et al (2024) Enh ancing Kitchen Independence: Deep Learning -Based Object Detection for 
+
+Visually Impaired Assistance. AJST 9:180 –184.  https://doi.org/10.54097/hc3f1045 
+
+20.  Slade P, Tambe A, Ko chenderfer MJ (2021) Multimodal sensing and intuitive steering assistance improve 
+
+navigation and mobility for people with impaired vision. Sci Robot 6:eabg6594. 
+
+https://doi.org/10.1126/scirobotics.a bg6594 
+
+21.  Feltner C, Guilbe J, Zehtabian S, et al (2019) Smart Walker for the Visually Impaired. In: ICC 2019 - 2019 
+
+IEEE International Conference on Communications (ICC). pp 1 –6.  https://doi.org/10.1109/ICC.2019.8762081 
+
+22.  Agrawal S, West ME, Hayes B (2022) A Novel Perceptive Robotic Cane with Haptic Navigation for Enabling 
+
+Vision -Independent Participation in the Social Dynamics of Se at Choice. In: 2022 IEEE/RSJ International 
+
+Conference on Intelligent Robots and Systems (IROS). pp 9156 –9163. 
+
+https://doi.org/10.1109/IROS47612.2022.9981219 23.  Mai C, Chen H, Zeng L, et al (2024) A Smart Cane Based on 2D LiDAR and RGB -D Camera Sensor -Realizing 
+
+Navigation and Obstacle Recognition. Sensors 24:870.  https://doi.org/10.3390/s24030870 
+
+24.  Wang H -C, Katzschmann RK, Teng S, et al (2017) Enabling independent navigation for visually impaired 
+
+people through a wearable vision -based feedback system. In: 2017 IEEE International Conference on Robotics 
+
+and Automation (ICRA). IEEE, S ingapore, Singapore, pp 6533 –6540. 
+
+https://doi.org/10.1109/ICRA.2017.7989772 
+
+25.  Merchant Z, Anwar A, Wang E, et al (2024) Generating Contextually -Relevant Navigation Instructions for 
+
+Blind and Low Vision People.  https://doi.org/10.48550/arXiv .2407.08219 
+
+26.  Hwang H, Kwon S, Kim Y, Kim D (2024) Is It Safe to Cross? Interpretable Risk Assessment with GPT -4V for 
+
+Safety -Aware Street Crossing. In: 2024 21st International Conference on Ubiquitous Robots (UR). pp 281 –288. 
+
+https://doi.org/10.1109/UR61395.2024.10597464 
+
+27.  Zhang Z, Sun Z, Zhang Z, et al (2025) “I Can See Forever!”: Evaluating Real -time VideoLLMs for Assisting 
+
+Ind ividuals with Visual Impairments.  https://doi.org/10.48550/arXiv.2505.04488 
+
+28.  Mahboob Z, Sadiq S, Khan US, et al (2024) MASA: Multi Agent Situational Awareness for Visually Impaired. 
+
+In: 2024 21st International Bhurban Conference on Applied Sciences and Technology (IBCAST). pp 349 –354. 
+
+https://doi.org/10.1109/IBCAST61650.2024.10877205 
+
+29.  Sachin A, Penukonda A, Naveen M, et al (2025) NAVISIGHT: A Deep Learning and Voice -Assisted System for 
+
+Intelligent Indoor Navigation of the Visually Impaired. In: 2025 3rd International Conference on Inventive 
+
+Computing and Informatics (I CICI). pp 848 –854.  https://doi.org/10.1109/ICICI65870.2025.11069837 
+
+30.  Nevasekar V, Cabrera ME (2025) Seeing Eye Stretch: Robot -assisted Indoor Navigation for Blind or Low -
+
+Vision Individuals. In: 2025 22nd International Conference on Ubiquitous Robots (UR). pp 518 –522. 
+
+https://doi.org/10.1109/UR65550.2025.11078138 
+
+31.  Da s D, Das AD, Sadaf F, et al (2025) Real -Time Assistive Navigation for the Visually Impaired: A Scalable 
+
+Approach for Indoor and Outdoor Mobility.  https://doi.org/10.48550/arXiv.2504.20976 
+
+32.  Hao Y, Yang F, Huang H, et al (2024) A Multi -Modal Foundation Model to Assist People with Blindness and 
+
+Low Vision in Environmental Interaction. J Imaging 10:103.  https://doi.org/10.3390/jimaging100501 03 
+
+33.  Terven J, Córdova -Esparza D -M, Romero -González J -A (2023) A Comprehensive Review of YOLO 
+
+Architectures in Computer Vision: From YOLOv1 to YOLOv8 and YOLO -NAS. MAKE 5:1680 –1716. 
+
+https://doi.org/10.3390/make5040083 
+
+34.  Koenig S, Likhachev M (2005) Fast replanning for navigation in unknown terrain. IEEE Trans Robot 21:354 –
+
+363.  https://d oi.org/10.1109/TRO.2004.838026 
+
+35.  Choi W, Shahid K, Savarese S (2009) What are they doing? : Collective activity classification using spatio -
+
+temporal relationship among people. In: 2009 IEEE 12th International Conference o n Computer Vision 
+
+Workshops, ICCV Workshops. pp 1282 –1289.  https://doi.org/10.1109/ICCVW.2009.5457461 
+
+36.  Zhou H, Kadav A, Shamsian A, et al (2022) COMPOSER: Composit ional Reasoning of Group Activity in 
+
+Videos with Keypoint -Only Modality. In: Avidan S, Brostow G, Cissé M, et al (eds) Computer Vision – ECCV 
+
+2022. Springer Nature Switzerland, Cham, pp 249 –266.  ht tps://doi.org/10.1007/978 -3-031 -19833 -5_15 37.  Lugaresi C, Tang J, Nash H, et al (2019) MediaPipe: A Framework for Building Perception Pipelines. 
+
+https://doi.org/10.48550/arXiv.1906.08172 
+
+38.  Michel O (2004) Cyberbotics Ltd. WebotsTM : Professional Mobile Robot Simulation. International Journal of 
+
+Advanced Robotic Systems 1:5.  https://doi.org/10.5772/5618 
+
+39.  Venkatesh V, Morris MG, Davis GB, Davis FD (2003) User Acceptance of Information Technology: Toward A 
+
+Unified View1. MIS Quarterly 27:425 –478.  https://doi.org/10.2307/30036540

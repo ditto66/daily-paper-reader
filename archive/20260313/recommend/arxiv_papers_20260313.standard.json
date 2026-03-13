@@ -1,0 +1,835 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-03-13T19:34:59.846915+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 79,
+    "deep_cap": 7,
+    "deep_selected": 7,
+    "quick_candidates": 155,
+    "quick_skim_target": 12,
+    "quick_selected": 12
+  },
+  "deep_dive": [
+    {
+      "id": "2603.10846v1",
+      "title": "Towards Cold-Start Drafting and Continual Refining: A Value-Driven Memory Approach with Application to NPU Kernel Synthesis",
+      "abstract": "Deploying Large Language Models to data-scarce programming domains poses significant challenges, particularly for kernel synthesis on emerging Domain-Specific Architectures where a \"Data Wall\" limits available training data. While models excel on data-rich platforms like CUDA, they suffer catastrophic performance drops on data-scarce ecosystems such as NPU programming. To overcome this cold-start barrier without expensive fine-tuning, we introduce EvoKernel, a self-evolving agentic framework that automates the lifecycle of kernel synthesis from initial drafting to continual refining. EvoKernel addresses this by formulating the synthesis process as a memory-based reinforcement learning task. Through a novel value-driven retrieval mechanism, it learns stage-specific Q-values that prioritize experiences based on their contribution to the current objective, whether bootstrapping a feasible draft or iteratively refining latency. Furthermore, by enabling cross-task memory sharing, the agent generalizes insights from simple to complex operators. By building an NPU variant of KernelBench and evaluating on it, EvoKernel improves frontier models' correctness from 11.0% to 83.0% and achieves a median speedup of 3.60x over initial drafts through iterative refinement. This demonstrates that value-guided experience accumulation allows general-purpose models to master the kernel synthesis task on niche hardware ecosystems. Our official page is available at https://evokernel.zhuo.li.",
+      "authors": [
+        "Yujie Zheng",
+        "Zhuo Li",
+        "Shengtao Zhang",
+        "Hanjing Wang",
+        "Junjie Sheng",
+        "Jiaqian Wang",
+        "Junchi Yan",
+        "Weinan Zhang",
+        "Ying Wen",
+        "Bo Tang",
+        "Muning Wen"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-03-11T14:57:06+00:00",
+      "link": "https://arxiv.org/pdf/2603.10846v1",
+      "tags": [
+        "keyword:SEMMA"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "self-evolving agentic framework for continual refining",
+      "llm_evidence_cn": "用于持续优化的自进化智能体框架",
+      "llm_evidence": "用于持续优化的自进化智能体框架",
+      "canonical_evidence": "用于持续优化的自进化智能体框架",
+      "llm_tldr_en": "Presents EvoKernel, a self-evolving agentic framework for automated kernel synthesis and continual refinement.",
+      "llm_tldr_cn": "提出EvoKernel，一个用于自动内核合成和持续优化的自进化智能体框架。",
+      "llm_tldr": "提出EvoKernel，一个用于自动内核合成和持续优化的自进化智能体框架。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "self-evolving autonomous agents and systems",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.12208v1",
+      "title": "ForensicZip: More Tokens are Better but Not Necessary in Forensic Vision-Language Models",
+      "abstract": "Multimodal Large Language Models (MLLMs) enable interpretable multimedia forensics by generating textual rationales for forgery detection. However, processing dense visual sequences incurs high computational costs, particularly for high-resolution images and videos. Visual token pruning is a practical acceleration strategy, yet existing methods are largely semantic-driven, retaining salient objects while discarding background regions where manipulation traces such as high-frequency anomalies and temporal jitters often reside. To address this issue, we introduce ForensicZip, a training-free framework that reformulates token compression from a forgery-driven perspective. ForensicZip models temporal token evolution as a Birth-Death Optimal Transport problem with a slack dummy node, quantifying physical discontinuities indicating transient generative artifacts. The forensic scoring further integrates transport-based novelty with high-frequency priors to separate forensic evidence from semantic content under large-ratio compression. Experiments on deepfake and AIGC benchmarks show that at 10\\% token retention, ForensicZip achieves $2.97\\times$ speedup and over 90\\% FLOPs reduction while maintaining state-of-the-art detection performance.",
+      "authors": [
+        "Yingxin Lai",
+        "Zitong Yu",
+        "Jun Wang",
+        "Linlin Shen",
+        "Yong Xu",
+        "Xiaochun Cao"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-03-12T17:30:49+00:00",
+      "link": "https://arxiv.org/pdf/2603.12208v1",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Forensic vision-language models for forgery detection",
+      "llm_evidence_cn": "用于伪造检测的取证视觉语言模型",
+      "llm_evidence": "用于伪造检测的取证视觉语言模型",
+      "canonical_evidence": "用于伪造检测的取证视觉语言模型",
+      "llm_tldr_en": "Presents ForensicZip, a framework for efficient and interpretable multimedia forgery detection using MLLMs.",
+      "llm_tldr_cn": "提出ForensicZip框架，利用多模态大模型实现高效且可解释的多媒体伪造检测。",
+      "llm_tldr": "提出ForensicZip框架，利用多模态大模型实现高效且可解释的多媒体伪造检测。",
+      "llm_tags": [
+        "query:ai-mmd"
+      ],
+      "matched_query_tag": "query:ai-mmd",
+      "matched_query_text": "multimodal misinformation detection techniques",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.05471v1",
+      "title": "Leveraging LLM Parametric Knowledge for Fact Checking without Retrieval",
+      "abstract": "Trustworthiness is a core research challenge for agentic AI systems built on Large Language Models (LLMs). To enhance trust, natural language claims from diverse sources, including human-written text, web content, and model outputs, are commonly checked for factuality by retrieving external knowledge and using an LLM to verify the faithfulness of claims to the retrieved evidence. As a result, such methods are constrained by retrieval errors and external data availability, while leaving the models intrinsic fact-verification capabilities largely unused. We propose the task of fact-checking without retrieval, focusing on the verification of arbitrary natural language claims, independent of their source. To study this setting, we introduce a comprehensive evaluation framework focused on generalization, testing robustness to (i) long-tail knowledge, (ii) variation in claim sources, (iii) multilinguality, and (iv) long-form generation. Across 9 datasets, 18 methods and 3 models, our experiments indicate that logit-based approaches often underperform compared to those that leverage internal model representations. Building on this finding, we introduce INTRA, a method that exploits interactions between internal representations and achieves state-of-the-art performance with strong generalization. More broadly, our work establishes fact-checking without retrieval as a promising research direction that can complement retrieval-based frameworks, improve scalability, and enable the use of such systems as reward signals during training or as components integrated into the generation process.",
+      "authors": [
+        "Artem Vazhentsev",
+        "Maria Marina",
+        "Daniil Moskovskiy",
+        "Sergey Pletenev",
+        "Mikhail Seleznyov",
+        "Mikhail Salnikov",
+        "Elena Tutubalina",
+        "Vasily Konovalov",
+        "Irina Nikishina",
+        "Alexander Panchenko",
+        "Viktor Moskvoretskii"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published": "2026-03-05T18:42:51+00:00",
+      "link": "https://arxiv.org/pdf/2603.05471v1",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "fact-checking for agentic AI systems using LLM parametric knowledge",
+      "llm_evidence_cn": "利用LLM参数化知识为智能体AI系统进行事实核查",
+      "llm_evidence": "利用LLM参数化知识为智能体AI系统进行事实核查",
+      "canonical_evidence": "利用LLM参数化知识为智能体AI系统进行事实核查",
+      "llm_tldr_en": "Explores fact-checking without retrieval to enhance the trustworthiness of agentic AI systems.",
+      "llm_tldr_cn": "探索无需检索的事实核查方法，利用LLM内部知识增强智能体AI系统的可信度。",
+      "llm_tldr": "探索无需检索的事实核查方法，利用LLM内部知识增强智能体AI系统的可信度。",
+      "llm_tags": [
+        "query:ai-mmd"
+      ],
+      "matched_query_tag": "query:ai-mmd",
+      "matched_query_text": "automated fact-checking using multi-agent systems",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.04636v1",
+      "title": "When Agents Persuade: Propaganda Generation and Mitigation in LLMs",
+      "abstract": "Despite their wide-ranging benefits, LLM-based agents deployed in open environments can be exploited to produce manipulative material. In this study, we task LLMs with propaganda objectives and analyze their outputs using two domain-specific models: one that classifies text as propaganda or non-propaganda, and another that detects rhetorical techniques of propaganda (e.g., loaded language, appeals to fear, flag-waving, name-calling). Our findings show that, when prompted, LLMs exhibit propagandistic behaviors and use a variety of rhetorical techniques in doing so. We also explore mitigation via Supervised Fine-Tuning (SFT), Direct Preference Optimization (DPO), and ORPO (Odds Ratio Preference Optimization). We find that fine-tuning significantly reduces their tendency to generate such content, with ORPO proving most effective.",
+      "authors": [
+        "Julia Jose",
+        "Ritik Roongta",
+        "Rachel Greenstadt"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-03-04T21:56:29+00:00",
+      "link": "https://arxiv.org/pdf/2603.04636v1",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Propaganda generation and mitigation in LLM agents",
+      "llm_evidence_cn": "LLM智能体中的宣传生成与缓解",
+      "llm_evidence": "LLM智能体中的宣传生成与缓解",
+      "canonical_evidence": "LLM智能体中的宣传生成与缓解",
+      "llm_tldr_en": "Analyzes propagandistic behaviors in agents and explores fine-tuning methods for mitigation.",
+      "llm_tldr_cn": "分析智能体中的宣传行为，并探索通过微调方法缓解有害内容的生成。",
+      "llm_tldr": "分析智能体中的宣传行为，并探索通过微调方法缓解有害内容的生成。",
+      "llm_tags": [
+        "query:ai-mmd:composite"
+      ],
+      "matched_query_tag": "query:ai-mmd:composite",
+      "matched_query_text": "Papers central to 结合智能体路线进行多模态虚假信息检测、多模态有害意图检测的文章, especially work that connects or combines: multimodal misinformation detection techniques; multimodal harmful intent detection in social media; automated fact-checking using multi-agent systems; detecting malicious multimodal content with AI agents; State of the art agentic frameworks for detecting harmful multimodal content..",
+      "matched_requirement_id": "req-composite-ai-mmd",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.04597v1",
+      "title": "Bootstrapping Exploration with Group-Level Natural Language Feedback in Reinforcement Learning",
+      "abstract": "Large language models (LLMs) typically receive diverse natural language (NL) feedback through interaction with the environment. However, current reinforcement learning (RL) algorithms rely solely on scalar rewards, leaving the rich information in NL feedback underutilized and leading to inefficient exploration. In this work, we propose GOLF, an RL framework that explicitly exploits group-level language feedback to guide targeted exploration through actionable refinements. GOLF aggregates two complementary feedback sources: (i) external critiques that pinpoint errors or propose targeted fixes, and (ii) intra-group attempts that supply alternative partial ideas and diverse failure patterns. These group-level feedbacks are aggregated to produce high-quality refinements, which are adaptively injected into training as off-policy scaffolds to provide targeted guidance in sparse-reward regions. Meanwhile, GOLF jointly optimizes generation and refinement within a unified RL loop, creating a virtuous cycle that continuously improves both capabilities. Experiments on both verifiable and non-verifiable benchmarks show that GOLF achieves superior performance and exploration efficiency, achieving 2.2$\\times$ improvements in sample efficiency compared to RL methods trained solely on scalar rewards. Code is available at https://github.com/LuckyyySTA/GOLF.",
+      "authors": [
+        "Lei Huang",
+        "Xiang Cheng",
+        "Chenxiao Zhao",
+        "Guobin Shen",
+        "Junjie Yang",
+        "Xiaocheng Feng",
+        "Yuxuan Gu",
+        "Xing Yu",
+        "Bing Qin"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published": "2026-03-04T20:53:17+00:00",
+      "link": "https://arxiv.org/pdf/2603.04597v1",
+      "tags": [
+        "keyword:SEMMA",
+        "query:SEMMA"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "reinforcement learning with language feedback for agent refinement",
+      "llm_evidence_cn": "利用语言反馈进行智能体优化的强化学习",
+      "llm_evidence": "利用语言反馈进行智能体优化的强化学习",
+      "canonical_evidence": "利用语言反馈进行智能体优化的强化学习",
+      "llm_tldr_en": "A framework using group-level language feedback to guide exploration and refinement in reinforcement learning.",
+      "llm_tldr_cn": "一种利用群体语言反馈指导强化学习中探索和优化的框架。",
+      "llm_tldr": "一种利用群体语言反馈指导强化学习中探索和优化的框架。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "reinforcement learning for agent self-evolution",
+      "matched_requirement_id": "req-11",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2602.16346v2",
+      "title": "Helpful to a Fault: Measuring Illicit Assistance in Multi-Turn, Multilingual LLM Agents",
+      "abstract": "LLM-based agents execute real-world workflows via tools and memory. These affordances enable ill-intended adversaries to also use these agents to carry out complex misuse scenarios. Existing agent misuse benchmarks largely test single-prompt instructions, leaving a gap in measuring how agents end up helping with harmful or illegal tasks over multiple turns. We introduce STING (Sequential Testing of Illicit N-step Goal execution), an automated red-teaming framework that constructs a step-by-step illicit plan grounded in a benign persona and iteratively probes a target agent with adaptive follow-ups, using judge agents to track phase completion. We further introduce an analysis framework that models multi-turn red-teaming as a time-to-first-jailbreak random variable, enabling analysis tools like discovery curves, hazard-ratio attribution by attack language, and a new metric: Restricted Mean Jailbreak Discovery. Across AgentHarm scenarios, STING yields substantially higher illicit-task completion than single-turn prompting and chat-oriented multi-turn baselines adapted to tool-using agents. In multilingual evaluations across six non-English settings, we find that attack success and illicit-task completion do not consistently increase in lower-resource languages, diverging from common chatbot findings. Overall, STING provides a practical way to evaluate and stress-test agent misuse in realistic deployment settings, where interactions are inherently multi-turn and often multilingual.",
+      "authors": [
+        "Nivya Talokar",
+        "Ayush K Tarun",
+        "Murari Mandal",
+        "Maksym Andriushchenko",
+        "Antoine Bosselut"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.LG"
+      ],
+      "published": "2026-02-18T10:31:19+00:00",
+      "link": "https://arxiv.org/pdf/2602.16346v2",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "automated red-teaming framework for measuring agent misuse in harmful tasks",
+      "llm_evidence_cn": "用于衡量智能体在有害任务中被滥用的自动化红队框架",
+      "llm_evidence": "用于衡量智能体在有害任务中被滥用的自动化红队框架",
+      "canonical_evidence": "用于衡量智能体在有害任务中被滥用的自动化红队框架",
+      "llm_tldr_en": "Proposes STING, a framework to evaluate how LLM agents might assist in harmful or illegal multi-turn scenarios.",
+      "llm_tldr_cn": "提出了 STING 框架，用于评估大模型智能体在多轮对话中协助有害或非法任务的可能性。",
+      "llm_tldr": "提出了 STING 框架，用于评估大模型智能体在多轮对话中协助有害或非法任务的可能性。",
+      "llm_tags": [
+        "query:ai-mmd"
+      ],
+      "matched_query_tag": "query:ai-mmd",
+      "matched_query_text": "detecting malicious multimodal content with AI agents",
+      "matched_requirement_id": "req-4",
+      "selection_source": "carryover_cache",
+      "paper_id": "2602.16346v2"
+    },
+    {
+      "id": "2602.23577v1",
+      "title": "Multi-Agent Causal Reasoning for Suicide Ideation Detection Through Online Conversations",
+      "abstract": "Suicide remains a pressing global public health concern. While social media platforms offer opportunities for early risk detection through online conversation trees, existing approaches face two major limitations: (1) They rely on predefined rules (e.g., quotes or relies) to log conversations that capture only a narrow spectrum of user interactions, and (2) They overlook hidden influences such as user conformity and suicide copycat behavior, which can significantly affect suicidal expression and propagation in online communities. To address these limitations, we propose a Multi-Agent Causal Reasoning (MACR) framework that collaboratively employs a Reasoning Agent to scale user interactions and a Bias-aware Decision-Making Agent to mitigate harmful biases arising from hidden influences. The Reasoning Agent integrates cognitive appraisal theory to generate counterfactual user reactions to posts, thereby scaling user interactions. It analyses these reactions through structured dimensions, i.e., cognitive, emotional, and behavioral patterns, with a dedicated sub-agent responsible for each dimension. The Bias-aware Decision-Making Agent mitigates hidden biases through a front-door adjustment strategy, leveraging the counterfactual user reactions produced by the Reasoning Agent. Through the collaboration of reasoning and bias-aware decision making, the proposed MACR framework not only alleviates hidden biases, but also enriches contextual information of user interactions with counterfactual knowledge. Extensive experiments on real-world conversational datasets demonstrate the effectiveness and robustness of MACR in identifying suicide risk.",
+      "authors": [
+        "Jun Li",
+        "Xiangmeng Wang",
+        "Haoyang Li",
+        "Yifei Yan",
+        "Shijie Zhang",
+        "Hong Va Leong",
+        "Ling Feng",
+        "Nancy Xiaonan Yu",
+        "Qing Li"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-02-27T01:06:18+00:00",
+      "link": "https://arxiv.org/pdf/2602.23577v1",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "multi-agent framework for detecting harmful intent in online conversations",
+      "llm_evidence_cn": "用于检测在线对话中有害意图的多智能体框架",
+      "llm_evidence": "用于检测在线对话中有害意图的多智能体框架",
+      "canonical_evidence": "用于检测在线对话中有害意图的多智能体框架",
+      "llm_tldr_en": "Uses a multi-agent causal reasoning framework to detect suicide ideation and harmful influences in social media.",
+      "llm_tldr_cn": "利用多智能体因果推理框架检测社交媒体中的自杀意念及有害影响。",
+      "llm_tldr": "利用多智能体因果推理框架检测社交媒体中的自杀意念及有害影响。",
+      "llm_tags": [
+        "query:ai-mmd:composite"
+      ],
+      "matched_query_tag": "query:ai-mmd:composite",
+      "matched_query_text": "Papers central to 结合智能体路线进行多模态虚假信息检测、多模态有害意图检测的文章, especially work that connects or combines: multimodal misinformation detection techniques; multimodal harmful intent detection in social media; automated fact-checking using multi-agent systems; detecting malicious multimodal content with AI agents; State of the art agentic frameworks for detecting harmful multimodal content..",
+      "matched_requirement_id": "req-composite-ai-mmd",
+      "selection_source": "carryover_cache",
+      "paper_id": "2602.23577v1"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2602.12597v1",
+      "title": "PISHYAR: A Socially Intelligent Smart Cane for Indoor Social Navigation and Multimodal Human-Robot Interaction for Visually Impaired People",
+      "abstract": "This paper presents PISHYAR, a socially intelligent smart cane designed by our group to combine socially aware navigation with multimodal human-AI interaction to support both physical mobility and interactive assistance. The system consists of two components: (1) a social navigation framework implemented on a Raspberry Pi 5 that integrates real-time RGB-D perception using an OAK-D Lite camera, YOLOv8-based object detection, COMPOSER-based collective activity recognition, D* Lite dynamic path planning, and haptic feedback via vibration motors for tasks such as locating a vacant seat; and (2) an agentic multimodal LLM-VLM interaction framework that integrates speech recognition, vision language models, large language models, and text-to-speech, with dynamic routing between voice-only and vision-only modes to enable natural voice-based communication, scene description, and object localization from visual input. The system is evaluated through a combination of simulation-based tests, real-world field experiments, and user-centered studies. Results from simulated and real indoor environments demonstrate reliable obstacle avoidance and socially compliant navigation, achieving an overall system accuracy of approximately 80% under different social conditions. Group activity recognition further shows robust performance across diverse crowd scenarios. In addition, a preliminary exploratory user study with eight visually impaired and low-vision participants evaluates the agentic interaction framework through structured tasks and a UTAUT-based questionnaire reveals high acceptance and positive perceptions of usability, trust, and perceived sociability during our experiments. The results highlight the potential of PISHYAR as a multimodal assistive mobility aid that extends beyond navigation to provide socially interactive support for such users.",
+      "authors": [
+        "Mahdi Haghighat Joo",
+        "Maryam Karimi Jafari",
+        "Alireza Taheri"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.HC"
+      ],
+      "published": "2026-02-13T04:17:55+00:00",
+      "link": "https://arxiv.org/pdf/2602.12597v1",
+      "tags": [
+        "keyword:SEMMA"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "agentic multimodal LLM-VLM interaction for navigation",
+      "llm_evidence_cn": "用于导航的智能体多模态LLM-VLM交互",
+      "llm_evidence": "用于导航的智能体多模态LLM-VLM交互",
+      "canonical_evidence": "用于导航的智能体多模态LLM-VLM交互",
+      "llm_tldr_en": "PISHYAR uses an agentic multimodal LLM-VLM framework for socially aware robot navigation.",
+      "llm_tldr_cn": "PISHYAR利用智能体多模态LLM-VLM框架实现社交感知机器人导航。",
+      "llm_tldr": "PISHYAR利用智能体多模态LLM-VLM框架实现社交感知机器人导航。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "vision-language models for decision making",
+      "matched_requirement_id": "req-10",
+      "selection_source": "carryover_cache",
+      "paper_id": "2602.12597v1",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2603.04656v1",
+      "title": "iAgentBench: Benchmarking Sensemaking Capabilities of Information-Seeking Agents on High-Traffic Topics",
+      "abstract": "With the emergence of search-enabled generative QA systems, users are increasingly turning to tools that browse, aggregate, and reconcile evidence across multiple sources on their behalf. Yet many widely used QA benchmarks remain answerable by retrieving a single relevant passage, making them poorly suited for measuring cross-source sensemaking, such as integrating evidence, tracking causal links, and resolving dependencies across facets of a topic. We present iAgentBench, a dynamic ODQA benchmark that targets these higher-level information needs while keeping questions natural and grounded in realistic information-seeking behavior. iAgentBench draws seed topics from real-world attention signals and uses common user intent patterns to construct user-like questions whose answers require combining evidence from multiple sources, not just extracting a single snippet. Each instance is released with traceable evidence and auditable intermediate artifacts that support contamination checks and enable fine-grained diagnosis of failures in retrieval versus synthesis. Experiments across multiple LLMs show that retrieval improves accuracy, but retrieval alone does not reliably resolve these questions, underscoring the need to evaluate evidence use, not just evidence access.",
+      "authors": [
+        "Preetam Prabhu Srikar Dammu",
+        "Arnav Palkhiwala",
+        "Tanya Roosta",
+        "Chirag Shah"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.IR",
+        "cs.LG",
+        "cs.MA"
+      ],
+      "published": "2026-03-04T22:40:08+00:00",
+      "link": "https://arxiv.org/pdf/2603.04656v1",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "benchmarking sensemaking and evidence reconciliation in information-seeking agents",
+      "llm_evidence_cn": "基准测试信息寻求智能体的感知与证据协调能力",
+      "llm_evidence": "基准测试信息寻求智能体的感知与证据协调能力",
+      "canonical_evidence": "基准测试信息寻求智能体的感知与证据协调能力",
+      "llm_tldr_en": "A dynamic benchmark for measuring cross-source sensemaking and evidence integration in AI agents.",
+      "llm_tldr_cn": "一个用于衡量AI智能体跨源感知和证据整合能力的动态基准测试。",
+      "llm_tldr": "一个用于衡量AI智能体跨源感知和证据整合能力的动态基准测试。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "benchmarking self evolving capabilities of intelligent agents",
+      "matched_requirement_id": "req-14",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2603.04772v1",
+      "title": "TSEmbed: Unlocking Task Scaling in Universal Multimodal Embeddings",
+      "abstract": "Despite the exceptional reasoning capabilities of Multimodal Large Language Models (MLLMs), their adaptation into universal embedding models is significantly impeded by task conflict. To address this, we propose TSEmbed, a universal multimodal embedding framework that synergizes Mixture-of-Experts (MoE) with Low-Rank Adaptation (LoRA) to explicitly disentangle conflicting task objectives. Moreover, we introduce Expert-Aware Negative Sampling (EANS), a novel strategy that leverages expert routing distributions as an intrinsic proxy for semantic similarity. By dynamically prioritizing informative hard negatives that share expert activation patterns with the query, EANS effectively sharpens the model's discriminative power and refines embedding boundaries. To ensure training stability, we further devise a two-stage learning paradigm that solidifies expert specialization before optimizing representations via EANS. TSEmbed achieves state-of-the-art performance on both the Massive Multimodal Embedding Benchmark (MMEB) and real-world industrial production datasets, laying a foundation for task-level scaling in universal multimodal embeddings.",
+      "authors": [
+        "Yebo Wu",
+        "Feng Liu",
+        "Ziwei Xie",
+        "Zhiyuan Liu",
+        "Changwang Zhang",
+        "Jun Wang",
+        "Li Li"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published": "2026-03-05T03:43:52+00:00",
+      "link": "https://arxiv.org/pdf/2603.04772v1",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Universal multimodal embedding framework for MLLMs",
+      "llm_evidence_cn": "多模态大语言模型的通用嵌入框架",
+      "llm_evidence": "多模态大语言模型的通用嵌入框架",
+      "canonical_evidence": "多模态大语言模型的通用嵌入框架",
+      "llm_tldr_en": "Proposes TSEmbed to resolve task conflicts in multimodal embeddings using MoE and LoRA.",
+      "llm_tldr_cn": "提出TSEmbed框架，通过混合专家模型和低秩自适应解决多模态嵌入中的任务冲突。",
+      "llm_tldr": "提出TSEmbed框架，通过混合专家模型和低秩自适应解决多模态嵌入中的任务冲突。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "multimodal large language models for agentic tasks",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2602.12612v1",
+      "title": "Self-EvolveRec: Self-Evolving Recommender Systems with LLM-based Directional Feedback",
+      "abstract": "Traditional methods for automating recommender system design, such as Neural Architecture Search (NAS), are often constrained by a fixed search space defined by human priors, limiting innovation to pre-defined operators. While recent LLM-driven code evolution frameworks shift fixed search space target to open-ended program spaces, they primarily rely on scalar metrics (e.g., NDCG, Hit Ratio) that fail to provide qualitative insights into model failures or directional guidance for improvement. To address this, we propose Self-EvolveRec, a novel framework that establishes a directional feedback loop by integrating a User Simulator for qualitative critiques and a Model Diagnosis Tool for quantitative internal verification. Furthermore, we introduce a Diagnosis Tool - Model Co-Evolution strategy to ensure that evaluation criteria dynamically adapt as the recommendation architecture evolves. Extensive experiments demonstrate that Self-EvolveRec significantly outperforms state-of-the-art NAS and LLM-driven code evolution baselines in both recommendation performance and user satisfaction. Our code is available at https://github.com/Sein-Kim/self_evolverec.",
+      "authors": [
+        "Sein Kim",
+        "Sangwu Park",
+        "Hongseok Kang",
+        "Wonjoong Kim",
+        "Jimin Seo",
+        "Yeonjun In",
+        "Kanghoon Yoon",
+        "Chanyoung Park"
+      ],
+      "primary_category": "cs.IR",
+      "categories": [
+        "cs.IR",
+        "cs.AI"
+      ],
+      "published": "2026-02-13T04:38:32+00:00",
+      "link": "https://arxiv.org/pdf/2602.12612v1",
+      "tags": [
+        "keyword:SEMMA",
+        "query:SEMMA"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "self-evolving framework with directional feedback loop",
+      "llm_evidence_cn": "具有定向反馈循环的自进化框架",
+      "llm_evidence": "具有定向反馈循环的自进化框架",
+      "canonical_evidence": "具有定向反馈循环的自进化框架",
+      "llm_tldr_en": "Introduces Self-EvolveRec, a framework for self-evolving recommender systems using LLM-based qualitative feedback.",
+      "llm_tldr_cn": "引入Self-EvolveRec，一个利用LLM定性反馈实现推荐系统自进化的框架。",
+      "llm_tldr": "引入Self-EvolveRec，一个利用LLM定性反馈实现推荐系统自进化的框架。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "self-evolving autonomous agents and systems",
+      "matched_requirement_id": "req-6",
+      "selection_source": "carryover_cache",
+      "paper_id": "2602.12612v1",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2603.04727v1",
+      "title": "Are Multimodal LLMs Ready for Surveillance? A Reality Check on Zero-Shot Anomaly Detection in the Wild",
+      "abstract": "Multimodal large language models (MLLMs) have demonstrated impressive general competence in video understanding, yet their reliability for real-world Video Anomaly Detection (VAD) remains largely unexplored. Unlike conventional pipelines relying on reconstruction or pose-based cues, MLLMs enable a paradigm shift: treating anomaly detection as a language-guided reasoning task. In this work, we systematically evaluate state-of-the-art MLLMs on the ShanghaiTech and CHAD benchmarks by reformulating VAD as a binary classification task under weak temporal supervision. We investigate how prompt specificity and temporal window lengths (1s--3s) influence performance, focusing on the precision--recall trade-off. Our findings reveal a pronounced conservative bias in zero-shot settings; while models exhibit high confidence, they disproportionately favor the 'normal' class, resulting in high precision but a recall collapse that limits practical utility. We demonstrate that class-specific instructions can significantly shift this decision boundary, improving the peak F1-score on ShanghaiTech from 0.09 to 0.64, yet recall remains a critical bottleneck. These results highlight a significant performance gap for MLLMs in noisy environments and provide a foundation for future work in recall-oriented prompting and model calibration for open-world surveillance, which demands complex video understanding and reasoning.",
+      "authors": [
+        "Shanle Yao",
+        "Armin Danesh Pazho",
+        "Narges Rashvand",
+        "Hamed Tabkhi"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-03-05T02:00:53+00:00",
+      "link": "https://arxiv.org/pdf/2603.04727v1",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "multimodal LLMs for anomaly detection in video surveillance",
+      "llm_evidence_cn": "多模态大模型用于视频监控中的异常检测",
+      "llm_evidence": "多模态大模型用于视频监控中的异常检测",
+      "canonical_evidence": "多模态大模型用于视频监控中的异常检测",
+      "llm_tldr_en": "Evaluates MLLMs for zero-shot video anomaly detection, treating it as a language-guided reasoning task.",
+      "llm_tldr_cn": "评估多模态大模型在零样本视频异常检测中的表现，将其视为语言引导的推理任务。",
+      "llm_tldr": "评估多模态大模型在零样本视频异常检测中的表现，将其视为语言引导的推理任务。",
+      "llm_tags": [
+        "query:ai-mmd"
+      ],
+      "matched_query_tag": "query:ai-mmd",
+      "matched_query_text": "detecting malicious multimodal content with AI agents",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2603.04822v1",
+      "title": "VISA: Value Injection via Shielded Adaptation for Personalized LLM Alignment",
+      "abstract": "Aligning Large Language Models (LLMs) with nuanced human values remains a critical challenge, as existing methods like Reinforcement Learning from Human Feedback (RLHF) often handle only coarse-grained attributes. In practice, fine-tuning LLMs on task-specific datasets to optimize value alignment inevitably incurs an alignment tax: the model's pre-calibrated value system drifts significantly due to latent bias absorption from training data, while the fine-tuning process also causes severe hallucinations and semantic information loss in generated responses. To address this, we propose VISA (Value Injection via Shielded Adaptation), a closed-loop framework designed to navigate this trade-off. VISA's architecture features a high-precision value detector, a semantic-to-value translator, and a core value-rewriter. The value-rewriter is trained via Group Relative Policy Optimization (GRPO) with a composite reward function that simultaneously optimizes for fine-grained value precision, and the preservation of semantic integrity. By learning an optimal policy to balance these competing objectives, VISA effectively mitigates the alignment tax while staying loyal to the original knowledge. Our experiments demonstrate that this approach enables precise control over a model's value expression while maintaining its factual consistency and general capabilities, significantly outperforming both standard fine-tuning methods and prompting-based baselines, including GPT-4o.",
+      "authors": [
+        "Jiawei Chen",
+        "Tianzhuo Yang",
+        "Guoxi Zhang",
+        "Jiaming Ji",
+        "Yaodong Yang",
+        "Juntao Dai"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-03-05T05:12:26+00:00",
+      "link": "https://arxiv.org/pdf/2603.04822v1",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "closed-loop framework for value alignment and self-correction in LLMs",
+      "llm_evidence_cn": "用于大模型价值对齐和自我修正的闭环框架",
+      "llm_evidence": "用于大模型价值对齐和自我修正的闭环框架",
+      "canonical_evidence": "用于大模型价值对齐和自我修正的闭环框架",
+      "llm_tldr_en": "Proposes VISA, a closed-loop framework to inject values and prevent alignment drift in large language models.",
+      "llm_tldr_cn": "提出VISA闭环框架，用于注入价值观并防止大语言模型的对齐偏移。",
+      "llm_tldr": "提出VISA闭环框架，用于注入价值观并防止大语言模型的对齐偏移。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "autonomous self-correction mechanisms in agents",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2602.12670v1",
+      "title": "SkillsBench: Benchmarking How Well Agent Skills Work Across Diverse Tasks",
+      "abstract": "Agent Skills are structured packages of procedural knowledge that augment LLM agents at inference time. Despite rapid adoption, there is no standard way to measure whether they actually help. We present SkillsBench, a benchmark of 86 tasks across 11 domains paired with curated Skills and deterministic verifiers. Each task is evaluated under three conditions: no Skills, curated Skills, and self-generated Skills. We test 7 agent-model configurations over 7,308 trajectories. Curated Skills raise average pass rate by 16.2 percentage points(pp), but effects vary widely by domain (+4.5pp for Software Engineering to +51.9pp for Healthcare) and 16 of 84 tasks show negative deltas. Self-generated Skills provide no benefit on average, showing that models cannot reliably author the procedural knowledge they benefit from consuming. Focused Skills with 2--3 modules outperform comprehensive documentation, and smaller models with Skills can match larger models without them.",
+      "authors": [
+        "Xiangyi Li",
+        "Wenbo Chen",
+        "Yimin Liu",
+        "Shenghan Zheng",
+        "Xiaokun Chen",
+        "Yifeng He",
+        "Yubo Li",
+        "Bingran You",
+        "Haotian Shen",
+        "Jiankai Sun",
+        "Shuyi Wang",
+        "Qunhong Zeng",
+        "Di Wang",
+        "Xuandong Zhao",
+        "Yuanli Wang",
+        "Roey Ben Chaim",
+        "Zonglin Di",
+        "Yipeng Gao",
+        "Junwei He",
+        "Yizhuo He",
+        "Liqiang Jing",
+        "Luyang Kong",
+        "Xin Lan",
+        "Jiachen Li",
+        "Songlin Li",
+        "Yijiang Li",
+        "Yueqian Lin",
+        "Xinyi Liu",
+        "Xuanqing Liu",
+        "Haoran Lyu",
+        "Ze Ma",
+        "Bowei Wang",
+        "Runhui Wang",
+        "Tianyu Wang",
+        "Wengao Ye",
+        "Yue Zhang",
+        "Hanwen Xing",
+        "Yiqi Xue",
+        "Steven Dillmann",
+        "Han-chung Lee"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-02-13T07:06:06+00:00",
+      "link": "https://arxiv.org/pdf/2602.12670v1",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "benchmarking agent skills and self-generated capabilities",
+      "llm_evidence_cn": "评估智能体技能及自生成能力的基准",
+      "llm_evidence": "评估智能体技能及自生成能力的基准",
+      "canonical_evidence": "评估智能体技能及自生成能力的基准",
+      "llm_tldr_en": "SkillsBench evaluates how curated and self-generated procedural knowledge affects agent performance across domains.",
+      "llm_tldr_cn": "SkillsBench评估人工策划与自生成的程序性知识对智能体在多领域任务中表现的影响。",
+      "llm_tldr": "SkillsBench评估人工策划与自生成的程序性知识对智能体在多领域任务中表现的影响。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "benchmarking self evolving capabilities of intelligent agents",
+      "matched_requirement_id": "req-14",
+      "selection_source": "carryover_cache",
+      "paper_id": "2602.12670v1",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2603.04837v1",
+      "title": "Design Behaviour Codes (DBCs): A Taxonomy-Driven Layered Governance Benchmark for Large Language Models",
+      "abstract": "We introduce the Dynamic Behavioral Constraint (DBC) benchmark, the first empirical framework for evaluating the efficacy of a structured, 150-control behavioral governance layer, the MDBC (Madan DBC) system, applied at inference time to large language models (LLMs). Unlike training time alignment methods (RLHF, DPO) or post-hoc content moderation APIs, DBCs constitute a system prompt level governance layer that is model-agnostic, jurisdiction-mappable, and auditable. We evaluate the DBC Framework across a 30 domain risk taxonomy organized into six clusters (Hallucination and Calibration, Bias and Fairness, Malicious Use, Privacy and Data Protection, Robustness and Reliability, and Misalignment Agency) using an agentic red-team protocol with five adversarial attack strategies (Direct, Roleplay, Few-Shot, Hypothetical, Authority Spoof) across 3 model families. Our three-arm controlled design (Base, Base plus Moderation, Base plus DBC) enables causal attribution of risk reduction. Key findings: the DBC layer reduces the aggregate Risk Exposure Rate (RER) from 7.19 percent (Base) to 4.55 percent (Base plus DBC), representing a 36.8 percent relative risk reduction, compared with 0.6 percent for a standard safety moderation prompt. MDBC Adherence Scores improve from 8.6 by 10 (Base) to 8.7 by 10 (Base plus DBC). EU AI Act compliance (automated scoring) reaches 8.5by 10 under the DBC layer. A three judge evaluation ensemble yields Fleiss kappa greater than 0.70 (substantial agreement), validating our automated pipeline. Cluster ablation identifies the Integrity Protection cluster (MDBC 081 099) as delivering the highest per domain risk reduction, while graybox adversarial attacks achieve a DBC Bypass Rate of 4.83 percent . We release the benchmark code, prompt database, and all evaluation artefacts to enable reproducibility and longitudinal tracking as models evolve.",
+      "authors": [
+        "G. Madan Mohan",
+        "Veena Kiran Nambiar",
+        "Kiranmayee Janardhan"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-03-05T05:45:26+00:00",
+      "link": "https://arxiv.org/pdf/2603.04837v1",
+      "tags": [
+        "keyword:AI MMD"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "governance benchmark for malicious use and misalignment agency in LLMs",
+      "llm_evidence_cn": "针对大模型恶意使用和对齐失控的治理基准",
+      "llm_evidence": "针对大模型恶意使用和对齐失控的治理基准",
+      "canonical_evidence": "针对大模型恶意使用和对齐失控的治理基准",
+      "llm_tldr_en": "Introduces a taxonomy-driven governance layer to mitigate risks like malicious use in AI agents.",
+      "llm_tldr_cn": "引入分类驱动的治理层，以减轻AI智能体恶意使用等风险。",
+      "llm_tldr": "引入分类驱动的治理层，以减轻AI智能体恶意使用等风险。",
+      "llm_tags": [
+        "query:ai-mmd:composite"
+      ],
+      "matched_query_tag": "query:ai-mmd:composite",
+      "matched_query_text": "Papers central to 结合智能体路线进行多模态虚假信息检测、多模态有害意图检测的文章, especially work that connects or combines: multimodal misinformation detection techniques; multimodal harmful intent detection in social media; automated fact-checking using multi-agent systems; detecting malicious multimodal content with AI agents; State of the art agentic frameworks for detecting harmful multimodal content..",
+      "matched_requirement_id": "req-composite-ai-mmd",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2603.04839v1",
+      "title": "Towards Highly Transferable Vision-Language Attack via Semantic-Augmented Dynamic Contrastive Interaction",
+      "abstract": "With the rapid advancement and widespread application of vision-language pre-training (VLP) models, their vulnerability to adversarial attacks has become a critical concern. In general, the adversarial examples can typically be designed to exhibit transferable power, attacking not only different models but also across diverse tasks. However, existing attacks on language-vision models mainly rely on static cross-modal interactions and focus solely on disrupting positive image-text pairs, resulting in limited cross-modal disruption and poor transferability. To address this issue, we propose a Semantic-Augmented Dynamic Contrastive Attack (SADCA) that enhances adversarial transferability through progressive and semantically guided perturbation. SADCA progressively disrupts cross-modal alignment through dynamic interactions between adversarial images and texts. This is accomplished by SADCA establishing a contrastive learning mechanism involving adversarial, positive and negative samples, to reinforce the semantic inconsistency of the obtained perturbations. Moreover, we empirically find that input transformations commonly used in traditional transfer-based attacks also benefit VLPs, which motivates a semantic augmentation module that increases the diversity and generalization of adversarial examples. Extensive experiments on multiple datasets and models demonstrate that SADCA significantly improves adversarial transferability and consistently surpasses state-of-the-art methods. The code is released at https://github.com/LiYuanBoJNU/SADCA.",
+      "authors": [
+        "Yuanbo Li",
+        "Tianyang Xu",
+        "Cong Hu",
+        "Tao Zhou",
+        "Xiao-Jun Wu",
+        "Josef Kittler"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-03-05T05:46:16+00:00",
+      "link": "https://arxiv.org/pdf/2603.04839v1",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Vision-language adversarial attacks and cross-modal disruption techniques",
+      "llm_evidence_cn": "视觉语言对抗攻击和跨模态破坏技术",
+      "llm_evidence": "视觉语言对抗攻击和跨模态破坏技术",
+      "canonical_evidence": "视觉语言对抗攻击和跨模态破坏技术",
+      "llm_tldr_en": "Explores transferable adversarial attacks on vision-language models, relevant to detecting malicious content.",
+      "llm_tldr_cn": "研究视觉语言模型的可迁移对抗攻击，与检测恶意内容相关。",
+      "llm_tldr": "研究视觉语言模型的可迁移对抗攻击，与检测恶意内容相关。",
+      "llm_tags": [
+        "query:ai-mmd"
+      ],
+      "matched_query_tag": "query:ai-mmd",
+      "matched_query_text": "detecting malicious multimodal content with AI agents",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2602.12735v1",
+      "title": "VimRAG: Navigating Massive Visual Context in Retrieval-Augmented Generation via Multimodal Memory Graph",
+      "abstract": "Effectively retrieving, reasoning, and understanding multimodal information remains a critical challenge for agentic systems. Traditional Retrieval-augmented Generation (RAG) methods rely on linear interaction histories, which struggle to handle long-context tasks, especially those involving information-sparse yet token-heavy visual data in iterative reasoning scenarios. To bridge this gap, we introduce VimRAG, a framework tailored for multimodal Retrieval-augmented Reasoning across text, images, and videos. Inspired by our systematic study, we model the reasoning process as a dynamic directed acyclic graph that structures the agent states and retrieved multimodal evidence. Building upon this structured memory, we introduce a Graph-Modulated Visual Memory Encoding mechanism, with which the significance of memory nodes is evaluated via their topological position, allowing the model to dynamically allocate high-resolution tokens to pivotal evidence while compressing or discarding trivial clues. To implement this paradigm, we propose a Graph-Guided Policy Optimization strategy. This strategy disentangles step-wise validity from trajectory-level rewards by pruning memory nodes associated with redundant actions, thereby facilitating fine-grained credit assignment. Extensive experiments demonstrate that VimRAG consistently achieves state-of-the-art performance on diverse multimodal RAG benchmarks. The code is available at https://github.com/Alibaba-NLP/VRAG.",
+      "authors": [
+        "Qiuchen Wang",
+        "Shihang Wang",
+        "Yu Zeng",
+        "Qiang Zhang",
+        "Fanrui Zhang",
+        "Zhuoning Guo",
+        "Bosi Zhang",
+        "Wenxuan Huang",
+        "Lin Chen",
+        "Zehui Chen",
+        "Pengjun Xie",
+        "Ruixue Ding"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.CL"
+      ],
+      "published": "2026-02-13T09:05:09+00:00",
+      "link": "https://arxiv.org/pdf/2602.12735v1",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "multimodal retrieval-augmented reasoning for agentic systems",
+      "llm_evidence_cn": "智能体系统的多模态检索增强推理",
+      "llm_evidence": "智能体系统的多模态检索增强推理",
+      "canonical_evidence": "智能体系统的多模态检索增强推理",
+      "llm_tldr_en": "Introduces VimRAG for multimodal retrieval-augmented reasoning using dynamic memory graphs.",
+      "llm_tldr_cn": "引入VimRAG框架，通过动态记忆图实现多模态检索增强推理。",
+      "llm_tldr": "引入VimRAG框架，通过动态记忆图实现多模态检索增强推理。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "multimodal large language models for agentic tasks",
+      "matched_requirement_id": "req-7",
+      "selection_source": "carryover_cache",
+      "paper_id": "2602.12735v1",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2603.04894v1",
+      "title": "Differentially Private Multimodal In-Context Learning",
+      "abstract": "Vision-language models are increasingly applied to sensitive domains such as medical imaging and personal photographs, yet existing differentially private methods for in-context learning are limited to few-shot, text-only settings because privacy cost scales with the number of tokens processed. We present Differentially Private Multimodal Task Vectors (DP-MTV), the first framework enabling many-shot multimodal in-context learning with formal $(\\varepsilon, δ)$-differential privacy by aggregating hundreds of demonstrations into compact task vectors in activation space. DP-MTV partitions private data into disjoint chunks, applies per-layer clipping to bound sensitivity, and adds calibrated noise to the aggregate, requiring only a single noise addition that enables unlimited inference queries. We evaluate on eight benchmarks across three VLM architectures, supporting deployment with or without auxiliary data. At $\\varepsilon=1.0$, DP-MTV achieves 50% on VizWiz compared to 55% non-private and 35% zero-shot, preserving most of the gain from in-context learning under meaningful privacy constraints.",
+      "authors": [
+        "Ivoline C. Ngong",
+        "Zarreen Reza",
+        "Joseph P. Near"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-03-05T07:36:02+00:00",
+      "link": "https://arxiv.org/pdf/2603.04894v1",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Multimodal in-context learning for vision-language models",
+      "llm_evidence_cn": "视觉语言模型的多模态上下文学习",
+      "llm_evidence": "视觉语言模型的多模态上下文学习",
+      "canonical_evidence": "视觉语言模型的多模态上下文学习",
+      "llm_tldr_en": "Develops DP-MTV for private many-shot multimodal in-context learning in vision-language models.",
+      "llm_tldr_cn": "开发了DP-MTV框架，实现了视觉语言模型中受隐私保护的多样本多模态上下文学习。",
+      "llm_tldr": "开发了DP-MTV框架，实现了视觉语言模型中受隐私保护的多样本多模态上下文学习。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "multimodal large language models for agentic tasks",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2603.06847v1",
+      "title": "Characterizing Faults in Agentic AI: A Taxonomy of Types, Symptoms, and Root Causes",
+      "abstract": "Agentic AI systems combine large language model (LLM) reasoning with external tool invocation and long-horizon task execution. Although these systems are increasingly deployed in practice, their architectural composition introduces reliability challenges that differ from those in traditional software systems and standalone LLM applications. However, there is limited empirical understanding of how faults originate, manifest, and propagate in real-world agentic AI systems. To address this gap, we conduct a large-scale empirical study of faults in agentic AI systems. We collect 13,602 issues and pull requests from 40 open-source agentic AI repositories and apply stratified sampling to select 385 faults for in-depth qualitative analysis. Using grounded theory, we derive taxonomies of fault types, observable symptoms, and root causes. We further apply Apriori-based association rule mining to identify statistically significant relationships among faults, symptoms, and root causes, revealing common fault propagation patterns. Finally, we validate the taxonomy through a developer study with 145 practitioners. Our analysis identifies 37 distinct fault types grouped into 13 higher-level fault categories, along with 13 classes of observable symptoms and 12 categories of root causes. The results show that many failures originate from mismatches between probabilistically generated artifacts and deterministic interface constraints, frequently involving dependency integration, data validation, and runtime environment handling. Association rule mining further reveals recurring propagation pathways across system components, such as token management faults leading to authentication failures and datetime handling defects causing scheduling anomalies. Practitioners rated the taxonomy as representative of real-world failures (mean = 3.97/5), and 83.8% reported that it covered faults they had encountered.",
+      "authors": [
+        "Mehil B Shah",
+        "Mohammad Mehdi Morovati",
+        "Mohammad Masudur Rahman",
+        "Foutse Khomh"
+      ],
+      "primary_category": "cs.SE",
+      "categories": [
+        "cs.SE"
+      ],
+      "published": "2026-03-06T20:12:29+00:00",
+      "link": "https://arxiv.org/pdf/2603.06847v1",
+      "tags": [
+        "keyword:AI MMD",
+        "keyword:SEMMA",
+        "query:AI MMD",
+        "query:SEMMA"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "empirical study and taxonomy of faults in agentic AI systems",
+      "llm_evidence_cn": "对智能体AI系统故障的实证研究和分类",
+      "llm_evidence": "对智能体AI系统故障的实证研究和分类",
+      "canonical_evidence": "对智能体AI系统故障的实证研究和分类",
+      "llm_tldr_en": "Conducts a large-scale study of faults in agentic AI to understand reliability challenges in real-world repositories.",
+      "llm_tldr_cn": "对智能体AI系统中的故障进行大规模实证研究，以了解现实仓库中的可靠性挑战。",
+      "llm_tldr": "对智能体AI系统中的故障进行大规模实证研究，以了解现实仓库中的可靠性挑战。",
+      "llm_tags": [
+        "query:semma"
+      ],
+      "matched_query_tag": "query:semma",
+      "matched_query_text": "benchmarking self evolving capabilities of intelligent agents",
+      "matched_requirement_id": "req-14",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

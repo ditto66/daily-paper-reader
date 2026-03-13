@@ -6,79 +6,79 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-03-12
-- 运行时间：2026-03-12 20:18:24 UTC
+- 最新运行日期：2026-03-13
+- 运行时间：2026-03-13 19:38:25 UTC
 - 运行状态：成功
 - 本次总论文数：19
 - 精读区：7
 - 速读区：12
 
 ### 今日简报（AI）
-今日深度解析 19 篇前沿成果，聚焦 Deepfake 识别的自我演化推理与反思增强型视觉生成智能体。
-重点关注 EvolveReason 带来的可解释伪造检测突破，以及 VisionCreator-R1 在原生视觉生成中的反思增强表现。
-建议关注自纠错扩散模型与强化学习在智能体多轮对话中的应用，以提升生成内容的准确性与安全性。
-- 详情：[/202603/12/README](/202603/12/README)
+今日深挖 19 篇前沿成果，重点聚焦 NPU 内核合成的价值驱动优化与视觉语言模型的取证效率突破。
+核心结论指出，通过冷启动草拟与持续精炼可显著提升硬件合成性能，而 ForensicZip 证明了取证分析中 Token 并非越多越好。
+建议优先研读 NPU 自动编程与多模态安全取证相关论文，掌握软硬结合与高效推理的最新趋势。
+- 详情：[/202603/13/README](/202603/13/README)
 
 ### 精读区论文标签
-1. [EvolveReason: Self-Evolving Reasoning Paradigm for Explainable Deepfake Facial Image Identification](/202603/12/2603.07515v1-evolvereason-self-evolving-reasoning-paradigm-for-explainable-deepfake-facial-image-identification)  
+1. [Towards Cold-Start Drafting and Continual Refining: A Value-Driven Memory Approach with Application to NPU Kernel Synthesis](/202603/13/2603.10846v1-towards-cold-start-drafting-and-continual-refining-a-value-driven-memory-approach-with-application-to-npu-kernel-synthesis)  
+   标签：评分：9.0/10、query:semma
+   evidence：用于持续优化的自进化智能体框架
+2. [ForensicZip: More Tokens are Better but Not Necessary in Forensic Vision-Language Models](/202603/13/2603.12208v1-forensiczip-more-tokens-are-better-but-not-necessary-in-forensic-vision-language-models)  
    标签：评分：9.0/10、query:ai-mmd
-   evidence：用于深度伪造识别的自进化推理范式
-2. [VisionCreator-R1: A Reflection-Enhanced Native Visual-Generation Agentic Model](/202603/12/2603.08812v1-visioncreator-r1-a-reflection-enhanced-native-visual-generation-agentic-model)  
-   标签：评分：9.0/10、query:semma
-   evidence：具有强化学习自我改进能力的反射增强型智能体模型
-3. [EPOCH: An Agentic Protocol for Multi-Round System Optimization](/202603/12/2603.09049v1-epoch-an-agentic-protocol-for-multi-round-system-optimization)  
-   标签：评分：9.0/10、query:semma
-   evidence：智能体多轮自我改进协议
-4. [MM-tau-p$^2$: Persona-Adaptive Prompting for Robust Multi-Modal Agent Evaluation in Dual-Control Settings](/202603/12/2603.09643v2-mm-tau-p2-persona-adaptive-prompting-for-robust-multi-modal-agent-evaluation-in-dual-control-settings)  
-   标签：评分：9.0/10、query:semma
-   evidence：基于用户画像评估行为进化的多模态智能体基准
-5. [Multi-Turn Adaptive Prompting Attack on Large Vision-Language Models](/202603/12/2602.14399v1-multi-turn-adaptive-prompting-attack-on-large-vision-language-models)  
+   evidence：用于伪造检测的取证视觉语言模型
+3. [Helpful to a Fault: Measuring Illicit Assistance in Multi-Turn, Multilingual LLM Agents](/202603/13/2602.16346v2-helpful-to-a-fault-measuring-illicit-assistance-in-multi-turn-multilingual-llm-agents)  
    标签：评分：8.0/10、query:ai-mmd
-   evidence：迭代优化恶意多模态内容以攻击视觉语言模型
-6. [Image-based Prompt Injection: Hijacking Multimodal LLMs through Visually Embedded Adversarial Instructions](/202603/12/2603.03637v1-image-based-prompt-injection-hijacking-multimodal-llms-through-visually-embedded-adversarial-instructions)  
+   evidence：用于衡量智能体在有害任务中被滥用的自动化红队框架
+4. [Multi-Agent Causal Reasoning for Suicide Ideation Detection Through Online Conversations](/202603/13/2602.23577v1-multi-agent-causal-reasoning-for-suicide-ideation-detection-through-online-conversations)  
    标签：评分：8.0/10、query:ai-mmd
-   evidence：通过视觉嵌入的对抗性指令劫持多模态大模型
-7. [Invisible Safety Threat: Malicious Finetuning for LLM via Steganography](/202603/12/2603.08104v1-invisible-safety-threat-malicious-finetuning-for-llm-via-steganography)  
+   evidence：用于检测在线对话中有害意图的多智能体框架
+5. [Bootstrapping Exploration with Group-Level Natural Language Feedback in Reinforcement Learning](/202603/13/2603.04597v1-bootstrapping-exploration-with-group-level-natural-language-feedback-in-reinforcement-learning)  
+   标签：评分：8.0/10、query:semma
+   evidence：利用语言反馈进行智能体优化的强化学习
+6. [When Agents Persuade: Propaganda Generation and Mitigation in LLMs](/202603/13/2603.04636v1-when-agents-persuade-propaganda-generation-and-mitigation-in-llms)  
    标签：评分：8.0/10、query:ai-mmd
-   evidence：通过大模型隐写术生成恶意内容
+   evidence：LLM智能体中的宣传生成与缓解
+7. [Leveraging LLM Parametric Knowledge for Fact Checking without Retrieval](/202603/13/2603.05471v1-leveraging-llm-parametric-knowledge-for-fact-checking-without-retrieval)  
+   标签：评分：8.0/10、query:ai-mmd
+   evidence：利用LLM参数化知识为智能体AI系统进行事实核查
 
 ### 速读区论文标签
-1. [Learn from Your Mistakes: Self-Correcting Masked Diffusion Models](/202603/12/2602.11590v1-learn-from-your-mistakes-self-correcting-masked-diffusion-models)  
+1. [PISHYAR: A Socially Intelligent Smart Cane for Indoor Social Navigation and Multimodal Human-Robot Interaction for Visually Impaired People](/202603/13/2602.12597v1-pishyar-a-socially-intelligent-smart-cane-for-indoor-social-navigation-and-multimodal-human-robot-interaction-for-visually-impaired-people)  
    标签：评分：8.0/10、query:semma
-   evidence：扩散模型的自我修正框架
-2. [TSR: Trajectory-Search Rollouts for Multi-Turn RL of LLM Agents](/202603/12/2602.11767v2-tsr-trajectory-search-rollouts-for-multi-turn-rl-of-llm-agents)  
+   evidence：用于导航的智能体多模态LLM-VLM交互
+2. [Self-EvolveRec: Self-Evolving Recommender Systems with LLM-based Directional Feedback](/202603/13/2602.12612v1-self-evolverec-self-evolving-recommender-systems-with-llm-based-directional-feedback)  
    标签：评分：8.0/10、query:semma
-   evidence：通过迭代交互训练智能体的强化学习
-3. [Wisdom of the LLM Crowd: A Large Scale Benchmark of Multi-Label U.S. Election-Related Harmful Social Media Content](/202603/12/2602.11962v2-wisdom-of-the-llm-crowd-a-large-scale-benchmark-of-multi-label-us-election-related-harmful-social-media-content)  
-   标签：评分：8.0/10、query:ai-mmd
-   evidence：检测选举虚假信息和有害内容
-4. [Perceptual Self-Reflection in Agentic Physics Simulation Code Generation](/202603/12/2602.12311v1-perceptual-self-reflection-in-agentic-physics-simulation-code-generation)  
+   evidence：具有定向反馈循环的自进化框架
+3. [SkillsBench: Benchmarking How Well Agent Skills Work Across Diverse Tasks](/202603/13/2602.12670v1-skillsbench-benchmarking-how-well-agent-skills-work-across-diverse-tasks)  
    标签：评分：8.0/10、query:semma
-   evidence：自动自我修正与感知自我反思
-5. [Molt Dynamics: Emergent Social Phenomena in Autonomous AI Agent Populations](/202603/12/2603.03555v1-molt-dynamics-emergent-social-phenomena-in-autonomous-ai-agent-populations)  
+   evidence：评估智能体技能及自生成能力的基准
+4. [VimRAG: Navigating Massive Visual Context in Retrieval-Augmented Generation via Multimodal Memory Graph](/202603/13/2602.12735v1-vimrag-navigating-massive-visual-context-in-retrieval-augmented-generation-via-multimodal-memory-graph)  
+   标签：评分：8.0/10、query:semma
+   evidence：智能体系统的多模态检索增强推理
+5. [iAgentBench: Benchmarking Sensemaking Capabilities of Information-Seeking Agents on High-Traffic Topics](/202603/13/2603.04656v1-iagentbench-benchmarking-sensemaking-capabilities-of-information-seeking-agents-on-high-traffic-topics)  
    标签：评分：7.0/10、query:semma
-   evidence：大规模自主AI智能体群体中的涌现协调行为
-6. [Build, Judge, Optimize: A Blueprint for Continuous Improvement of Multi-Agent Consumer Assistants](/202603/12/2603.03565v1-build-judge-optimize-a-blueprint-for-continuous-improvement-of-multi-agent-consumer-assistants)  
+   evidence：基准测试信息寻求智能体的感知与证据协调能力
+6. [Are Multimodal LLMs Ready for Surveillance? A Reality Check on Zero-Shot Anomaly Detection in the Wild](/202603/13/2603.04727v1-are-multimodal-llms-ready-for-surveillance-a-reality-check-on-zero-shot-anomaly-detection-in-the-wild)  
+   标签：评分：7.0/10、query:ai-mmd
+   evidence：多模态大模型用于视频监控中的异常检测
+7. [Design Behaviour Codes (DBCs): A Taxonomy-Driven Layered Governance Benchmark for Large Language Models](/202603/13/2603.04837v1-design-behaviour-codes-dbcs-a-taxonomy-driven-layered-governance-benchmark-for-large-language-models)  
+   标签：评分：7.0/10、query:ai-mmd
+   evidence：针对大模型恶意使用和对齐失控的治理基准
+8. [Differentially Private Multimodal In-Context Learning](/202603/13/2603.04894v1-differentially-private-multimodal-in-context-learning)  
    标签：评分：7.0/10、query:semma
-   evidence：多智能体系统持续改进的蓝图
-7. [Social Norm Reasoning in Multimodal Language Models: An Evaluation](/202603/12/2603.03590v1-social-norm-reasoning-in-multimodal-language-models-an-evaluation)  
-   标签：评分：7.0/10、query:ai-mmd
-   evidence：在多模态情境中识别和推理社会规范及违规行为
-8. [Agentic Peer-to-Peer Networks: From Content Distribution to Capability and Action Sharing](/202603/12/2603.03753v1-agentic-peer-to-peer-networks-from-content-distribution-to-capability-and-action-sharing)  
-   标签：评分：7.0/10、query:ai-mmd
-   evidence：用于能力和动作共享的智能体点对点网络
-9. [stratum: A System Infrastructure for Massive Agent-Centric ML Workloads](/202603/12/2603.03589v1-stratum-a-system-infrastructure-for-massive-agent-centric-ml-workloads)  
+   evidence：视觉语言模型的多模态上下文学习
+9. [TSEmbed: Unlocking Task Scaling in Universal Multimodal Embeddings](/202603/13/2603.04772v1-tsembed-unlocking-task-scaling-in-universal-multimodal-embeddings)  
    标签：评分：6.0/10、query:semma
-   evidence：自主智能体流水线搜索与优化的基础设施
-10. [stratum: A System Infrastructure for Massive Agent-Centric ML Workloads](/202603/12/2603.03589v2-stratum-a-system-infrastructure-for-massive-agent-centric-ml-workloads)  
+   evidence：多模态大语言模型的通用嵌入框架
+10. [VISA: Value Injection via Shielded Adaptation for Personalized LLM Alignment](/202603/13/2603.04822v1-visa-value-injection-via-shielded-adaptation-for-personalized-llm-alignment)  
    标签：评分：6.0/10、query:semma
-   evidence：自主智能体生成、验证并优化完整的机器学习流水线
-11. [Hybrid Belief Reinforcement Learning for Efficient Coordinated Spatial Exploration](/202603/12/2603.03595v1-hybrid-belief-reinforcement-learning-for-efficient-coordinated-spatial-exploration)  
-   标签：评分：6.0/10、query:semma
-   evidence：自主智能体协同空间探索的强化学习
-12. [Behind the Prompt: The Agent-User Problem in Information Retrieval](/202603/12/2603.03630v1-behind-the-prompt-the-agent-user-problem-in-information-retrieval)  
+   evidence：用于大模型价值对齐和自我修正的闭环框架
+11. [Towards Highly Transferable Vision-Language Attack via Semantic-Augmented Dynamic Contrastive Interaction](/202603/13/2603.04839v1-towards-highly-transferable-vision-language-attack-via-semantic-augmented-dynamic-contrastive-interaction)  
    标签：评分：6.0/10、query:ai-mmd
-   evidence：原生智能体社交平台与意图不可识别性
+   evidence：视觉语言对抗攻击和跨模态破坏技术
+12. [Characterizing Faults in Agentic AI: A Taxonomy of Types, Symptoms, and Root Causes](/202603/13/2603.06847v1-characterizing-faults-in-agentic-ai-a-taxonomy-of-types-symptoms-and-root-causes)  
+   标签：评分：6.0/10、query:semma
+   evidence：对智能体AI系统故障的实证研究和分类
 
 
 <div class="dpr-home-promo-card">

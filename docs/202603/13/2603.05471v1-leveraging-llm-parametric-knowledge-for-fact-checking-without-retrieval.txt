@@ -1,0 +1,657 @@
+Title: Leveraging LLM Parametric Knowledge for Fact Checking without Retrieval
+
+URL Source: https://arxiv.org/pdf/2603.05471v1
+
+Published Time: Fri, 06 Mar 2026 02:24:53 GMT
+
+Number of Pages: 27
+
+Markdown Content:
+Preprint 
+
+# LEVERAGING LLM P ARAMETRIC KNOWLEDGE FOR 
+
+# FACT CHECKING WITHOUT RETRIEVAL 
+
+Artem Vazhentsev *, 5 , Maria Marina *, 2,1 , Daniil Moskovskiy 2,1 , Sergey Pletenev 2,1 ,Mikhail Seleznyov 2,1 , Mikhail Salnikov 2,1 , Elena Tutubalina 2, Vasily Konovalov 2,4 ,
+
+Irina Nikishina 3, Alexander Panchenko 1,2 , Viktor Moskvoretskii 6
+
+> 1
+
+S-NLP Group, 2AXXX, 3Independent Researcher, 4MIRAI, 5MBZUAI, 6EPFL 
+
+Artem.Vazhentsev@mbzuai.ac.ae 
+
+## ABSTRACT 
+
+Trustworthiness is a core research challenge for agentic AI systems built on Large Language Models (LLMs). To enhance trust, natural language claims from diverse sources, including human-written text, web content, and model outputs, are com-monly checked for factuality by retrieving external knowledge and using an LLM to verify the faithfulness of claims to the retrieved evidence. As a result, such methods are constrained by retrieval errors and external data availability, while leaving the model’s intrinsic fact-verification capabilities largely unused. We pro-pose the task of fact-checking without retrieval , focusing on the verification of arbitrary natural language claims, independent of their source. To study this set-ting, we introduce a comprehensive evaluation framework focused on generaliza-tion, testing robustness to (i) long-tail knowledge, (ii) variation in claim sources, (iii) multilinguality, and (iv) long-form generation. Across 9 datasets, 18 methods and 3 models, our experiments indicate that logit-based approaches often under-perform compared to those that leverage internal model representations. Building on this finding, we introduce INTRA , a method that exploits interactions between internal representations and achieves state-of-the-art performance with strong gen-eralization. More broadly, our work establishes fact-checking without retrieval as a promising research direction that can complement retrieval-based frameworks, improve scalability, and enable the use of such systems as reward signals during training or as components integrated into the generation process. 
+
+## 1 INTRODUCTION 
+
+Ensuring the factual correctness of natural language claims, regardless of whether they originate from human-written text, web content, or automated systems, remains a fundamental challenge in the era of AI-generated texts. One prominent source of incorrect claims is Large Language Models (LLMs), which are known to hallucinate and produce factually incorrect statements (Xu et al., 2024). Hallucinations pose significant risks in high-stakes domains such as medicine, law, and science, making reliable detection a critical research priority (Asgari et al., 2025; Farquhar et al., 2024). Modern fact-checking methods predominantly rely on retrieval-based pipelines, such as FActScore (Min et al., 2023) and SAFE (Wei et al., 2024b). These approaches operate at the claim level: model outputs are first decomposed into atomic claims , defined as minimal factual units that are objective and unambiguous. Each atomic claim is then verified by checking its faithfulness to re-trieved external evidence, rather than assessing factual correctness in isolation. While widely used, retrieval-based methods face several challenges: (i) They prioritize retrieved context over the factual knowledge encoded in an LLM’s parameters. (ii) They increase latency, as each generation requires querying external databases. (iii) Their effectiveness critically depends on retrieval quality, where noisy or irrelevant evidence can undermine the pipeline and lead to missed or false detections (Cuconasu et al., 2024). 
+
+* Equal contribution. 
+
+1
+
+> arXiv:2603.05471v1 [cs.CL] 5 Mar 2026
+
+Preprint Claim verification 
+
+> Quito is the capital city of Ecuador.
+> COVID-19 can be cured in one day.
+> Niemand ist am Coronavirus gestorben.
+
+# TRUE 
+
+# FALSE 
+
+> Davvero finiscono nel Mediterraneo 30.000 bottiglie di plastica al minuto?
+
+# ... 
+
+# Existing datasets 
+
+# CLAIMS 
+
+> X-Fact,
+> AVeriTeC
+> PopQA ...
+
+# LLM 
+
+# Human 
+
+# Knowledge base 
+
+Figure 1: The task setting of fact-checking without retrieval. Claims from any source (human or LLMs) can be verified without having access to a knowledge base. As a result, these detectors are constrained by the retrieval process and fail to fully exploit the model’s internal knowledge, limiting their scalability and robustness in practice. By contrast, LLMs encode substantial factual knowledge in their parameters through large-scale pretraining and fine-tuning. Prior work shows that they store encyclopedic and commonsense facts, producing factually correct statements without external grounding (Wang et al., 2020; Kadavath et al., 2022). Yet this intrinsic capability is rarely evaluated or exploited explicitly for hallucination detection. In this work, we bridge this gap by introducing a new setting: fact-checking without retrieval .The task is to determine the factuality of an atomic claim using only the LLM’s internal knowledge, without external retrieval. This setting is unique in two key ways: (i) Unlike retrieval-based verifiers, it targets factual correctness rather than faithfulness to retrieved context. (ii) Unlike uncertainty estimation, it evaluates the factuality of arbitrary claims, rather than confi-dence over a model’s own generations. To investigate this setting, we introduce an evaluation framework focused on out-of-domain gener-alization, spanning 9 datasets that test (i) long-tail knowledge, (ii) claim source variation between human-made and generated claims, (iii) multilingual claims, (iv) long-form generation, and (v) cross-model claims. Across this framework, we evaluate 18 methods with 3 models and observe that detectors leveraging internal model representations consistently outperform logit-based uncertainty signals. Building on this observation, we propose INTRA , a simple yet effective internal-based method that leverages interactions between representations, achieving SoTA average performance and consistently strong generalization. Our proposed setting opens several promising directions for future research. By enabling retrieval-free fact-checking, it allows for practical speed-ups and reduced reliance on external databases, while naturally complementing retrieval-based pipelines to further improve factual performance. Moreover, it provides a foundation for studying and strengthening LLMs’ intrinsic hallucination detection capabilities. Finally, this setting supports the development of factuality-oriented reward models (Stiennon et al., 2020; Christiano et al., 2017), which can be used as training signals in reinforcement learning or integrated directly into the generation process. The contributions of the paper are as follows: 1. We introduce the fact-checking without retrieval setting, where the factuality of atomic claims is assessed without external retrieval, using only an LLM’s internal knowledge. 2. We propose a large-scale evaluation framework spanning 9 datasets, designed to systematically assess robustness across diverse generalization dimensions. 3. We evaluate 18 methods with 3 models and introduce INTRA , an internal-based claim verifier that achieves SoTA average performance and demonstrates strong robustness. Additionally, we release data suite to support future research. 
+
+> https://huggingface.co/collections/s-nlp/intra
+
+2Preprint 
+
+## 2 RELATED WORK 
+
+Traditional approaches to fact-checking and hallucination detection rely mainly on RAG. These systems verify the output of models by checking them against external knowledge sources (Min et al., 2023; Wei et al., 2024a; Aushev et al., 2025; Rykov et al., 2025). FActScore (Min et al., 2023) breaks down the generated text into atomic facts and then calculates how many of them are actually supported by reliable sources such as Wikipedia. While this approach works quite well, RAG-based methods have several drawbacks: they require significant computational resources, their performance strongly depends on retrieval quality, and they are limited by the coverage of external knowledge bases. These limitations prevent them from fully utilizing the model’s own parametric knowledge. To address these limitations, another promising direction has emerged that uses LLM internal repre-sentations without needing any external retrieval. SAPLMA (Azaria & Mitchell, 2023) showed that simple linear classifiers trained on hidden layer activations can distinguish true statements from false ones with 60-80% accuracy. Orgad et al. (2025) found that information about truthfulness tends to concentrate in specific tokens and layers. Interestingly, models might encode correct answers inter-nally even when they generate incorrect ones. However, these methods often struggle when applied to different domains than they were trained on. A related line of research focuses on uncertainty quantification methods (Kuhn et al., 2023; Fadeeva et al., 2023; Vashurin et al., 2025; Belikova et al., 2024), which try to analyze how confident a model is. Traditional approaches often mix different types of uncertainty that do not really relate to factuality (Farquhar et al., 2024). Claim Conditioned Probability (CCP) (Fadeeva et al., 2024) ad-dresses this by separating uncertainty about claim values from uncertainty about surface forms, and shows particularly good performance across different languages. Among recent supervised meth-ods, UHead (Shelmanov et al., 2025a) uses trainable attention-based heads, while other approaches rely on token-level Mahalanobis distance (Vazhentsev et al., 2025c). RAUQ (Vazhentsev et al., 2025b) takes a different approach by identifying attention heads that consistently drop their activation when the model generates incorrect information. Additionally, several contrastive and self-correction approaches have been proposed. Contrastive methods such as CCS (Burns et al., 2023) use contrastive learning objectives to learn representations of truthfulness, while DoLa (Chuang et al., 2024b) improves truthful generation by contrasting different model layers during inference. Self-correction approaches try to iteratively refine outputs, though detailed analysis by Kamoi et al. (2024) shows that self-correction without external feedback typically does not work well. In this context, our factuality detector can be understood as a specialized type of reward model (Stiennon et al., 2020; Christiano et al., 2017) that focuses on evaluating truthfulness. 
+
+## 3 APPROACH 
+
+3.1 TASK DESCRIPTION 
+
+We define the task of fact-checking without retrieval below. Let a claim be a declarative statement represented by a sequence of tokens y = y1, . . . , y n, where the source of the claim is not restricted and may include human-written, machine-generated, or mixed-origin text. The objective is to pro-duce a truthfulness score s ∈ [0 , 1] that estimates the probability of the claim being factually correct, i.e., s ≈ P (Verified | y). Consequently, the truthfulness score should be defined solely as a function of the claim text, without conditioning on the surrounding context, or the original input and the full model output. The verification function f must operate without access to any external knowledge, including web search results, retrieved documents from a vector database, or any other form of external evidence. This restriction is motivated by the fact that retrieval-based pipelines introduce substantial compu-tational overhead and additional sources of error. In practice, document retrieval typically requires multiple stages, including query formulation, nearest-neighbor search over large-scale indices, and re-ranking, which can add hundreds of milliseconds to several seconds per claim, depending on the corpus size and retrieval strategy Gupta et al. (2024). Moreover, retrieval quality is sensitive to query formulation, index coverage, and data freshness, making reliable and scalable deployment challenging Perc ¸in et al. (2025). Therefore, the assessment of truthfulness must be based solely on 3Preprint the parametric knowledge encoded within the model M and the internal representations it generates when processing the claim y.Let us consider the following claim: “The Eiffel Tower is located in Paris.” A retrieval-free verifier must evaluate this statement without querying an external database for the Eiffel Tower’s location. Instead, it must infer the claim’s veracity by analyzing the model’s internal signals, such as hidden state activations, attention patterns, or output probabilities that arise when processing the text. The output would be a single score (e.g., s = 0 .98 ) indicating a high likelihood of the claim being true. 3.2 EXISTING METHODS 
+
+Although initially motivated by detecting errors in LLM outputs, hallucination detection methods are also applicable to verifying claims from any source. Existing approaches to hallucination detection — and by extension fact-checking without retrieval — can be broadly categorized into supervised 
+
+and unsupervised approaches, which leverage either output probabilities or internal signals from the model. Below, we provide an overview of representative baselines from each category. 
+
+Unsupervised methods. Uncertainty quantification is a widely used signal for hallucination de-tection and fact-checking Shelmanov et al. (2025b), based on the assumption that LLMs are less confident when producing incorrect information. In this work, we focus on probability– and in-ternal–based methods (Vashurin et al., 2025). Sampling-based approaches are unsuitable for claim verification without access to both the input prompt (that produced the claim) and the full generation. We consider several straightforward uncertainty measures: Sequence Probability (SP) computes the probability of a generated sequence; Perplexity (PPL) , estimates the average inverse log-likelihood of tokens; and Mean Token Entropy (MTE) averages the predictive entropy across tokens (Fomicheva et al., 2020). Among state-of-the-art unsupervised measures, we include Fo-cus (Zhang et al., 2023) propagates uncertainty from previous tokens via attention weights; Claim-Conditioned Probability (CCP) (Fadeeva et al., 2024) conditions on the type and meaning of the claim to ignore surface-form and “what to talk about” uncertainty; Recurrent Attention-based Un-certainty Quantification (RAUQ) (Vazhentsev et al., 2025b) identifies uncertainty-aware attention heads and combines their signals with perplexity; Attention Score (Sriramanan et al., 2024) com-putes the sum of eigenvalues of attention matrices. Verbalized score (Verb) evaluates factuality using the generated verbalized score from the language model. We use 10-shot examples for each claim and a Chain-of-Thought instruction. We additionally evaluate a retrieval-augmented variant (Verb + RAG ), where for each claim, we retrieve the top-5 search snippets using the Google Serper API to serve as external evidence. 
+
+Supervised methods. A further category of methods involves training lightweight classifiers on LLM representations to predict factuality. Several representative approaches fall into this category. 
+
+SAPLMA trains a linear probe on hidden states collected from the 16th layer model, identified as the most informative (Azaria & Mitchell, 2023). Contrast-Consistent Search (CCS) employs con-trastive training with a margin loss over last-layer embeddings, where negatives are hallucinations and positives are true statements. We adapt this method using a relaxed loss condition (Burns et al., 2023). Mass Mean Probe (MM) is a linear probing technique that learns a projection defined by the difference of class means in hidden state space (Marks & Tegmark, 2023). MIND improves upon previous probing methods by optimizing both the selection of embeddings and the training configuration of the linear model (Su et al., 2024). Sheeps is a probing-based approach that trains lightweight classifiers on hidden states using attention pooling to detect hallucinations in grounded generation tasks (CH-Wang et al., 2024). Supervised Average Token Relative Mahalanobis Dis-tance (SATRMD) adapts Mahalanobis distance by computing token-level distances across layers and averaging them over tokens to serve as features for a model (Vazhentsev et al., 2025c). Finally, several methods exploit attention weights. Trainable Attention-based Dependency (TAD) 
+
+models conditional dependencies between generation steps, using attention features to estimate the gap between conditional and unconditional confidence, and propagates uncertainty from earlier to-kens to detect long-sequence hallucinations efficiently (Vazhentsev et al., 2025a). UHead combines multiple unsupervised uncertainty estimators with a trainable Transformer-based head on top of 
+
+> http://serper.dev
+> Please note that “Sheeps” is our own convenient adaptation of the method’s name, as CH-Wang et al. (2024) do not assign an explicit name to their approach in the original paper.
+
+4Preprint the language model and is specifically designed for hallucination detection in long-form genera-tions (Shelmanov et al., 2025a). 3.3 INTRINSIC TRUTHFULNESS ASSESSMENT 
+
+Although these methods are effective in specific settings, they face several limitations. First, the per-formance of supervised methods often degrades in out-of-distribution scenarios (Vazhentsev et al., 2025c), which are crucial for real-world applications. Second, methods based on hidden states tend to focus on particular algorithmic features (Zhang et al., 2023; Vazhentsev et al., 2025c), lay-ers (Azaria & Mitchell, 2023; Su et al., 2024), or tokens (Azaria & Mitchell, 2023), which further restricts their generalizability. Third, some methods that rely on attention weights (Vazhentsev et al., 2025a; Chuang et al., 2024a; Shelmanov et al., 2025a) typically require access to both the input prompt and the full generation, which limits their applicability in scenarios such as claim verifica-tion, where no prior knowledge of the input is available. To address these limitations, we propose the 
+
+In trinsic Tr uthfulness Assessment ( INTRA ) method, which integrates the most effective insights from prior approaches into a unified and generalizable fact-checking framework. 
+
+Token and layer selection. Early attempts at supervised hallucination detection relied either on sequence-level embeddings – typically formed by averaging token-level hidden states (Su et al., 2024) – or on the hidden states of the first or last generated token (Azaria & Mitchell, 2023). More recent work has shown that this assumption does not always hold. Instead, it proposes leveraging all token-level hidden states, aggregated using token-level uncertainty scores (Vazhentsev et al., 2025c) or supervised attention pooling (CH-Wang et al., 2024). In our method, we focus on the strong generalization and relying on fitted token-level uncertainty scores may not be the optimal solution. We compute a sequence-level embedding using a learnable parameter vector θ for a given sequence 
+
+y = y1, y 2 . . . y N of length N , with corresponding hidden states hl(yi) for the i−th token from the 
+
+l−th layer, following the approach of CH-Wang et al. (2024). 
+
+hl(y) = 
+
+> N
+
+X
+
+> i=1
+
+αl,i hl(yi), αl,i = exp  θ⊤hl(yi)PNk=1 exp ( θ⊤hl(yk)) . (1) Here, αl,i represents the attention weight assigned to the hidden state of token yi, normalized across the sequence via a softmax. 
+
+Layer-wise truthfulness score. To perform layer-wise claim verification, we apply a linear classi-fier with learnable weights W on top of the sequence-level embeddings from each layer: 
+
+pl(Verified | y) = σ  W⊤hl(y) , (2) where σ(·) is the sigmoid function, and pl(Verified | y) represents the probability that the sequence 
+
+y is truthful according to layer l. We avoid complicating the training procedure or model archi-tecture to ensure that the layer-wise scores do not overfit to specific patterns and remain broadly generalizable. The layer-wise models are trained using the standard cross-entropy loss. 
+
+Aggregated truthfulness score. Claim verification probabilities can be computed at various layers within a model. Azaria & Mitchell (2023); Servedio et al. (2025) show that the optimal layer for this task can differ depending on the specific generation task. To effectively integrate information across layers, we follow the approach of Vazhentsev et al. (2025c) and train a regression model on top of the layer-wise probabilities. However, acknowledging that previous work has shown the first and last layers to be less effective, we use only the middle layers. We further argue that raw probabilities are not standardized across layers, which could degrade the performance of the regressor. Therefore, we apply quantile normalization (Amaratunga & Cabrera, 2001) as q(·) to the probabilities before using them in the L2 regression: 
+
+INTRA (y) = X
+
+> l∈L
+
+βl · q (pl(Verified | y)) + b, (3) where βl and b are the learnable weights and bias term, respectively, of the L2 regression model. We split the entire training dataset into two parts: the first is used to fit the parameters θ and W, while the second is used to fit βl, l ∈ L and b. We use the layers from the first third to the second third of the model (e.g., layers 11 to 22 for Llama 3.1-8B-Instruct). We present an ablation study with the various ranges of layers in L in Table 5. 5Preprint 
+
+## 4 FACT -C HECKING WITHOUT RETRIEVAL BENCHMARK 
+
+4.1 DATASETS 
+
+To systematically study fact-checking without retrieval at the level of atomic claims, with a partic-ular focus on generalization, we introduce a comprehensive evaluation protocol spanning heteroge-neous sources and domains. Our framework validates performance on 9 diverse datasets, collectively probing multiple dimensions of the task: (i) long-tail knowledge, (ii) variation in claim sources be-tween human-authored and model-generated claims, (iii) multilingual claims, (iv) claims extracted from long-form generations, and (v) cross-model claims. 4.1.1 LONG -T AIL KNOWLEDGE 
+
+A central aspect of our evaluation is assessing fact-checking performance across the spectrum of knowledge popularity. To this end, we introduce two datasets— Atomic Claim PopQA (AC-PopQA) and Atomic Claim Wild Hallucinations (AC-WH) - constructed from existing bench-marks. AC-PopQA is derived from PopQA (Mallen et al., 2023), a QA dataset annotated with entity popularity based on Wikipedia page views, enabling controlled analysis of long-tail knowl-edge. AC-WH is built from Wild Hallucinations (Zhao et al., 2024), which targets long-tail facts and requires long-form generation, allowing us to study factuality under extended generations. To construct atomic claims, we start from the original queries and generate answers using 
+
+Llama 3.1-8B-Instruct . For short-form generations, answer correctness is assessed with I NAC- 
+
+> CURACY
+
+(Moskvoretskii et al., 2025). For long-form generations, we first decompose each re-sponse into atomic claims and then validate each claim with Llama 3.1-70B-Instruct similarly to FActScore (Min et al., 2023). 4.1.2 HUMAN -A UTHORED AND MODEL -G ENERATED CLAIMS 
+
+Our benchmark further distinguishes between two claim sources: human-authored and model-generated claims. Human-made claims are drawn from existing crowd-sourced benchmarks. 
+
+AVeriTeC (Schlichtkrull et al., 2023) consists of real-world factual claims verified by human an-notators, while X-Fact (Gupta & Srikumar, 2021) is a crowd-sourced dataset providing multilingual claims across 25 languages. To study generated claims, we include both rule-based and LLM-generated statements. The 
+
+Cities (Marks & Tegmark, 2023), Companies (Azaria & Mitchell, 2023), and CounterFact (Meng et al., 2022) datasets are constructed from Wikipedia using simple rule-based templates, yielding claims such as “The city of Z¨ urich is in Switzerland” or “Johann von Rist works as a poet.” In contrast, datasets such as UHead (Shelmanov et al., 2025a), Common Claims (Casper et al., 2023), 
+
+AC-PopQA , and AC-WH consist of claims generated by LLM. 4.1.3 MULTILINGUALITY 
+
+To extend our evaluation to a multilingual setting, we include all 25 languages from X-Fact (Gupta & Srikumar, 2021), spanning a range of language families and typological properties. It covers Indo-European languages (e.g., German, Spanish, Russian), Indo-Aryan languages (e.g., Hindi, Bengali), 
+
+Turkic languages (e.g., Turkish, Azerbaijani), as well as languages from the Afro-Asiatic , Dravidian ,
+
+Kartvelian , and Austronesian families. This diversity enables a systematic analysis of fact-checking robustness across languages with varying morphology, scripts, and resource availability. 4.1.4 LONG -F ORM GENERATION CLAIMS 
+
+We further evaluate LLM-generated claims extracted from long-form generations . In this setting, the model is prompted to produce an extended passage, from which individual atomic claims are subsequently extracted. This distinction is important, as claims appearing later in a generation may follow a different distribution than earlier ones. To capture this effect, we include claims from long-form generations in two datasets: AC-WH , focusing on long-tail knowledge, and UHead , which targets popular knowledge. 6Preprint 4.1.5 CROSS -MODEL CLAIMS 
+
+A desirable property of a fact-checker is independence from the LLM that generated the claim, ensuring robustness against model-specific artifacts or exploits. To evaluate this, our benchmark includes claims produced by multiple LLMs. Specifically, Common Claims are generated by GPT-3-davinci-002 , UHead by Mistral-7B-Instruct-v0.2 , and both AC-WH and AC-PopQA by Llama 3.1-8B-Instruct . This setup enables a systematic assessment of cross-model generalization for retrieval-free fact-checking. 
+
+Claim filtering. We apply an additional filtering procedure with Llama 3.3 72b Instruct to ensure that each claim is high-quality and self-contained, i.e., it contains all information required for fact-checking without reliance on surrounding context. Specifically, each claim should describe a unique characteristic of a single entity. As shown in Table 2, some data is accurate, but due to the use of pronouns, it is difficult to verify the accuracy of the information without additional context. Datasets statistics and filtering details are reported in Table 3. 4.2 METRICS 
+
+We use ROC-AUC and PR-AUC as the primary evaluation metrics. Both are threshold-independent and evaluate how well a method ranks hallucinated claims (label 1) above truthful ones (label 0). ROC-AUC measures overall separability, while PR-AUC focuses on the quality of hallucination pre-dictions. In particular, PR-AUC reflects how often claims predicted as hallucinations are truly in-correct, which is important to avoid incorrectly flagging correct information as hallucinated. This is especially relevant for modern LLM case when hallucinations are relatively rare and over-predicting them would make a fact-checker impractical. 4.3 TRAINING PART 
+
+To reserve the training part we divide AC-PopQA into train and test by stratifying on popularity, so that both sets maintain a similar distribution of popular and less popular entities. To avoid domain adaptation effects, we also ensure that entities and question templates from the training set do not appear in the test set. This set is later used for training all trainable methods. Other datasets in our benchmark do not include training set. 4.4 MODELS 
+
+We primarily evaluate claim verification methods on open-source language models, including 
+
+Llama 3.1-8B Instruct Grattafiori et al. (2024), Ministral 8B Instruct 2410 Liu et al. (2026), and 
+
+Phi 4-mini Instruct Abouelenin et al. (2025), for both probability-based and embedding-based ap-proaches. We also report an upper-bound reference by fact-checking with GPT-4.1 OpenAI (2023), while noting its large size (approx. >120B), high cost, and reliance on a closed-source system. 
+
+## 5 RESULTS 
+
+Table 1 reports the average ROC-AUC and PR-AUC scores for claim verification methods in the proposed retrieval-free setting across nine datasets for all models. Additionally, Tables 6 and 7 report detailed ROC-AUC and PR-AUC results for Llama 3.1, Tables 8 and 9 for Ministral, and Tables 10 and 11 for Phi-4, for claim verification methods in the retrieval-free setting across nine datasets. For the UHead baseline, we use the pre-trained open-source checkpoint, which is only provided for the Llama 3.1 model among the considered models (Shelmanov et al., 2025a). In our experiments, PopQA is treated as the in-domain dataset, since the supervised methods are trained on its training split, while all other datasets are considered out-of-domain. The results high-light clear differences in robustness between the families of methods. 
+
+> https://hf.co/llm-uncertainty-head/uhead_claim_Llama-3.1-8B-Instruct
+
+7Preprint Table 1: Average performance of claim verification methods for considered models in the proposed retrieval-free setting, measured by PR-AUC ↑ and ROC-AUC ↑ across nine datasets. Bold values indicate the best-performing retrieval-free method for each model, the second best is underlined. 
+
+Avg column reports the average score across all models, summarizing overall robustness.                                                                                                                                                                  
+
+> Method ROC-AUC PR-AUC Llama 3.1 Ministral Phi-4 Avg Llama 3.1 Ministral Phi-4 Avg
+> Retrieval-Based Methods
+> Verb+RAG 77.7 78.2 76.5 77.5 70.1 69.6 67.1 68.9
+> Retrieval-Free Unsupervised Methods
+> SP 70.9 69.0 66.4 68.8 66.9 64.9 62.8 64.9 PPL 68.6 67.3 66.6 67.5 65.6 64.2 63.1 64.3 MTE 62.5 60.9 60.8 61.4 59.0 58.0 56.6 57.9 Att. Score 50.0 51.1 50.3 50.5 50.2 51.0 50.6 50.6 RAUQ 63.9 63.8 61.6 63.1 61.1 60.7 58.6 60.2 CCP 69.8 67.1 48.6 61.9 67.6 65.5 49.2 60.8 Focus 63.6 61.9 50.2 58.6 60.6 58.9 55.1 58.2 Verb 74.7 72.2 69.1 72.0 68.4 66.5 64.5 64.5
+> GPT-4.1 ---84.0 ---78.3 Retrieval-Free Supervised Methods
+> UHead 63.1 ---60.2 ---MM 71.4 58.7 73.3 67.8 68.3 57.1 68.7 64.7 CCS 71.1 53.0 73.1 65.7 64.1 51.8 68.9 61.6 TAD 65.7 63.8 64.7 64.7 62.4 60.9 61.2 61.5 SATRMD 69.6 65.3 64.9 66.6 65.5 62.5 61.2 63.1 MIND 70.6 66.8 70.0 69.1 67.0 64.4 65.4 65.6 Sheeps 75.0 71.6 69.4 72.0 70.5 67.6 64.6 67.6 SAPLMA 70.2 68.4 65.4 68.0 66.1 64.5 62.6 64.4 INTRA 77.7 72.8 69.5 73.3 73.1 69.3 64.6 69.0
+
+In-domain performance. As expected, most supervised methods significantly outperform unsuper-vised retrieval-free and retrieval-based methods, including the GPT-4.1 baseline. The only exception is UHead, pre-trained but not fine-tuned on PopQA. The highest ROC-AUC is achieved by the pro-posed INTRA method, outperforming the second-best Sheeps method by 0.5% on Llama 3.1. 
+
+Unsupervised methods. We also found that uncertainty-based approaches, with the exception of SP, generally underperform compared to other methods. The model’s raw confidence is not always well aligned with hallucinations on arbitrary inputs, a trend consistent with observations reported in standard uncertainty quantification studies for LLMs (Vashurin et al., 2025). Across evaluated baselines, we identify the Verbalized assessment as a promising direction with remarkably strong result, that stands out as the best-performing unsupervised approach, which con-trasts with recent findings on uncertainty quantification (Vashurin et al., 2025). However, it is sig-nificantly more compute-intensive than all other methods. Unlike the Verbalized approach, which requires generating multiple tokens to assess the target sequence, other methods complete the task with a single forward pass. Moreover, it suffers from a very high refusal rate on non-English inputs, with up to 58% of cases resulting in refusals or similar behavior. 
+
+Generalization performance. Several baselines achieve strong results on specific datasets but fail to generalize across hallucination types. For example, MM performs well on its original benchmark but fails on long-form generations such as UHead or WH. Similarly, the UHead model leads in WH and its own dataset, yet lags behind in all other settings. This result illustrates the broader problem of low generalization capacity in hallucination detection (Levinstein & Herrmann, 2025). We also observe strong generalization from contrastive objectives, which yield competitive results in the specific settings and suggest that contrastive training can enhance robustness in this task, consistent with prior work in other domains (Moskvoretskii et al., 2024). Finally, our proposed detector, INTRA, addresses these issues by achieving the highest average performance and demonstrating consistent robustness across datasets. While not always the best-8Preprint 0 5 10 15 20 25 30                                            
+
+> Layer
+> 0.50
+> 0.55
+> 0.60
+> 0.65
+> ROC-AUC
+> AVeriTeC
+> 0510 15 20 25 30
+> Layer
+> 0.45
+> 0.50
+> 0.55
+> 0.60
+> 0.65
+> UHEAD
+> 0510 15 20 25 30
+> Layer
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> 1.0
+> Cities
+> 0510 15 20 25 30
+> Layer
+> 0.55
+> 0.60
+> 0.65
+> 0.70
+> 0.75
+> CC
+> 0510 15 20 25 30
+> Layer
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> ROC-AUC
+> CMP
+> 0510 15 20 25 30
+> Layer
+> 0.50
+> 0.55
+> 0.60
+> 0.65
+> 0.70
+> 0.75
+> 0.80
+> CF
+> 0510 15 20 25 30
+> Layer
+> 0.55
+> 0.60
+> 0.65
+> 0.70
+> WH
+> 0510 15 20 25 30
+> Layer
+> 0.45
+> 0.50
+> 0.55
+> 0.60
+> X-Fact
+> Layer-wise Score INTRA (Ours)
+
+Figure 2: ROC-AUC ↑ performance of individual layers in the INTRA method. performing on individual benchmarks, it performs reliably in every setting. By combining token-level hidden states across layers, it captures rich internal information, which appear crucial for retrieval-free detection, consistent with prior findings (Dombrowski & Corlouer, 2024). Overall, the proposed INTRA method outperforms the second-best retrieval-free Sheeps method by 2.7% in ROC-AUC across datasets for Llama 3.1 and by 1.3% across all models. Overall, INTRA exhibits highly robust and consistent performance across both PR-AUC and ROC-AUC. While INTRA matches the Verb+RAG performance in ROC-AUC, it surpasses Verb+RAG by an average of 3% in PR-AUC across datasets. Moreover, INTRA requires approximately 20x less computational time than the Verb+RAG method, as detailed in Appendix D. 
+
+Saturation and contamination. We also find that widely used rule-generated datasets are largely saturated, with trends diverging from those observed on other benchmarks. As these datasets have been repeatedly used in prior work (Burns et al., 2023; Marks & Tegmark, 2023), we suspect con-tamination and overfitting at the method design stage. This is further supported by the MM method, which performs poorly across all datasets except the one on which it was originally introduced, indicating overfitting to leaked benchmarks. 
+
+Downstream applications. Main results suggest that training the full LLM, particularly with a mix of uncertainty-based objectives, can be highly effective. This is evidenced by the UHead method, which ranks first on long-form generation – its original target domain. Moreover, its strong per-formance and generalization on WH, a dataset constructed with a different model and focused on long-tail entities, indicate substantial potential for scaling and broader applicability. 
+
+## 6 ANALYSIS 
+
+Performance of individual layers. Figure 2 presents the ROC-AUC performance of individual lay-ers across various out-of-domain datasets compared to the full INTRA method. The results indicate that, across all tasks, intermediate layers generally yield better performance, consistent with prior work (Azaria & Mitchell, 2023; Vazhentsev et al., 2025c; Servedio et al., 2025). Although the most effective layer varies across datasets, the proposed INTRA method achieves performance equal to or exceeding that of the best individual layer, highlighting the advantage of integrating information across multiple layers. 
+
+Layer selection. Table 5 presents the results of the INTRA method trained on different subsets of the model’s hidden layers. We evaluate using all layers, the first layers (0–8), the last layers (24–32), and various ranges of middle layers. These results demonstrate that training only on the first or last layers is generally ineffective for claim verification tasks. In contrast, training on a small subset of intermediate layers typically yields optimal or near-optimal performance with minimal variation. Importantly, using a single middle layer performs significantly worse than training on a set of middle layers, which additionally underscores the importance of integrating information from multiple layers in a single score. 
+
+Long-tail performance. Figure 3a presents results stratified by entity popularity. INTRA dominates the performance, indicating that supervised and internal signals enable robust hallucination detection even for rare entities. The verbalized detector is strongest for rare entities (0–100 group), but its 9Preprint 0-100 100-1K 1K-5K 5K-10K 10K+  
+
+> Popularity Group (Wikipedia Page Views)
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> 1.0
+> ROC-AUC
+> +30%
+> +29%
+> +15%
+> +13% +11%
+> INTRA (Ours)
+> INTRA Gain
+> SP
+> PPL
+> CCP
+> Verb
+
+(a) ROC-AUC on PopQA, split into five popularity groups. The green arrow shows the percent improve-ment of the top method (INTRA) over the runner-up. Indonesian Tamil Georgian Portuguese Romanian     
+
+> 0.50
+> 0.55
+> 0.60
+> 0.65
+> 0.70
+> 0.75
+> 0.80
+> 0.85
+> ROC-AUC
+> 0.67
+> 0.57
+> 0.69
+> 0.60
+> 0.64
+> 0.55
+> 0.59
+> 0.55
+> 0.71
+> 0.63
+> CCP INTRA (Ours) PPL SP Average
+
+(b) ROC-AUC on X-Fact by language. Each column shows the top method, with a hatched overlay indi-cating the mean of the other methods (SP, PPL, CCP, INTRA, Verb). 
+
+Figure 3: ROC–AUC splited by popularity and language groups. advantage fades with increasing popularity. In contrast, SP improves as popularity grows, while both SP and PPL fail on the rarest entities, revealing their weakness on long-tail knowledge. Confidence intervals were estimated via 2,000 bootstrap resamples. One-sided hypothesis tests in-dicate that INTRA achieves statistically significant gains across all popularity groups at the 95% confidence level, with multiple comparisons controlled using the Benjamini–Hochberg false discov-ery rate (FDR) procedure. 
+
+Language analysis. Due to the limited number of observations for many individual languages, we restrict the analysis to the subset with sufficient support to yield stable ROC-AUC estimates — Indonesian (id), Romanian (ro), Georgian (ka), Tamil (ta), and Portuguese (pt). Results for the remaining languages are not statistically reliable, so we do not interpret them further. As shown in Figure 3b, the top-performing method varies by language. CCP achieves the high-est ROC-AUC for Indonesian (0.67 vs. an across-method average of 0.57) and Romanian (0.71 vs. 0.63), indicating strong performance in these Latin-script settings. INTRA performs best for Georgian (0.64 vs. 0.55), suggesting robustness in a non-Latin, lower-resource setting. PPL reaches the highest ROC-AUC for Tamil (0.69 vs. 0.60), consistent with strong performance in non-Latin, higher-resource conditions, while SP is best for Portuguese (0.59 vs. 0.55). Across these five lan-guages, the best method consistently outperforms the across-method average by roughly 0.04–0.10 ROC-AUC, indicating a meaningful advantage even when the winning approach differs by language. Statistical significance ( p < 0.10 ) is assessed using one-sided bootstrap tests comparing the ROC-AUC for the top-performing method to the mean of ROC-AUC for other methods for that language. 
+
+## 7 CONCLUSION 
+
+We introduced the task of fact-checking without retrieval , systematically comparing 18 methods across nine datasets and proposing the INTRA approach, which achieves state-of-the-art results and strong generalization. Our experiments show that LLMs encode rich factuality signals in their internal representations that can be harnessed without retrieval, enabling lightweight and scalable claim verification. Beyond benchmarking, this paradigm opens avenues for integrating truthfulness signals directly into the generation process, serving as reward models for alignment or as monitoring modules in real-world deployments. Our analyses highlight clear priorities for future work. First , middle layers emerge as especially informative, suggesting that training should explicitly focus on these representations. Second , cross-dataset results reveal clear winners : some methods consistently outperform in certain languages and on claims involving rare entities, showing that detector choice matters and that targeted selection can yield substantial gains. Finally , incorporating claim position and generation lengths as structural features of long generations offers another promising direction for improving detection. 10 Preprint 
+
+## REFERENCES 
+
+Abdelrahman Abouelenin, Atabak Ashfaq, Adam Atkinson, Hany Awadalla, Nguyen Bach, Jianmin Bao, Alon Benhaim, Martin Cai, Vishrav Chaudhary, Congcong Chen, Dong Chen, Dongdong Chen, Jun-Kun Chen, Weizhu Chen, Yen-Chun Chen, Yi-ling Chen, Qi Dai, Xiyang Dai, Ruchao Fan, Mei Gao, Min Gao, Amit Garg, Abhishek Goswami, Junheng Hao, Amr Hendy, Yuxuan Hu, Xin Jin, Mahmoud Khademi, Dongwoo Kim, Young Jin Kim, Gina Lee, Jinyu Li, Yunsheng Li, Chen Liang, Xihui Lin, Zeqi Lin, Mengchen Liu, Yang Liu, Gilsinia Lopez, Chong Luo, Piyush Madan, Vadim Mazalov, Arindam Mitra, Ali Mousavi, Anh Nguyen, Jing Pan, Daniel Perez-Becker, Jacob Platin, Thomas Portet, Kai Qiu, Bo Ren, Liliang Ren, Sambuddha Roy, Ning Shang, Yelong Shen, Saksham Singhal, Subhojit Som, Xia Song, Tetyana Sych, Praneetha Vaddamanu, Shuohang Wang, Yiming Wang, Zhenghao Wang, Haibin Wu, Haoran Xu, Weijian Xu, Yifan Yang, Ziyi Yang, Donghan Yu, Ishmam Zabir, Jianwen Zhang, Li Lyna Zhang, Yu-nan Zhang, and Xiren Zhou. Phi-4-Mini Technical Report: Compact yet Powerful Multimodal Language Models via Mixture-of-LoRAs. CoRR , abs/2503.01743, 2025. doi: 10.48550/ARXIV. 2503.01743. URL https://doi.org/10.48550/arXiv.2503.01743 .Dhammika Amaratunga and Javier Cabrera. Analysis of Data From Viral DNA Microchips. 
+
+Journal of the American Statistical Association , 96(456):1161–1170, 2001. doi: 10.1198/ 016214501753381814. URL https://doi.org/10.1198/016214501753381814 .Elham Asgari, Nina Monta˜ na-Brown, Magda Dubois, Saleh Khalil, Jasmine Balloch, Joshua Au Yeung, and Dominic Pimenta. A framework to assess clinical safety and hallucination rates of LLMs for medical text summarisation. npj Digital Medicine , 8(1):274, 2025. ISSN 2398-6352. doi: 10.1038/s41746-025-01670-7. URL https://doi.org/10.1038/ s41746-025-01670-7 .Islam Aushev, Egor Kratkov, Evgenii Nikolaev, Andrei Glinskii, Vasilii Krikunov, Alexander Panchenko, Vasily Konovalov, and Julia Belikova. RAGulator: Effective RAG for Regulatory Question Answering. In Tuba Gokhan, Kexin Wang, Iryna Gurevych, and Ted Briscoe (eds.), Pro-ceedings of the 1st Regulatory NLP Workshop (RegNLP 2025) , pp. 114–120, Abu Dhabi, UAE, January 2025. Association for Computational Linguistics. URL https://aclanthology. org/2025.regnlp-1.18/ .Amos Azaria and Tom M. Mitchell. The Internal State of an LLM Knows When It’s Lying. In Houda Bouamor, Juan Pino, and Kalika Bali (eds.), Findings of the Association for Computational Linguistics: EMNLP 2023, Singapore, December 6-10, 2023 , pp. 967–976, Singapore, 2023. As-sociation for Computational Linguistics. doi: 10.18653/V1/2023.FINDINGS-EMNLP.68. URL 
+
+https://doi.org/10.18653/v1/2023.findings-emnlp.68 .Catarina G. Bel´ em, Pouya Pezeshkpour, Hayate Iso, Seiji Maekawa, Nikita Bhutani, and Estevam Hruschka. From Single to Multi: How LLMs Hallucinate in Multi-Document Summarization. In Luis Chiruzzo, Alan Ritter, and Lu Wang (eds.), Findings of the Association for Compu-tational Linguistics: NAACL 2025, Albuquerque, New Mexico, USA, April 29 - May 4, 2025 ,pp. 5276–5309, Albuquerque, New Mexico, USA, 2025. Association for Computational Lin-guistics. doi: 10.18653/V1/2025.FINDINGS-NAACL.293. URL https://doi.org/10. 18653/v1/2025.findings-naacl.293 .Julia Belikova, Evegeniy Beliakin, and Vasily Konovalov. JellyBell at TextGraphs-17 Shared Task: Fusing Large Language Models with External Knowledge for Enhanced Question An-swering. In Dmitry Ustalov, Yanjun Gao, Alexander Panchenko, Elena Tutubalina, Irina Nik-ishina, Arti Ramesh, Andrey Sakhovskiy, Ricardo Usbeck, Gerald Penn, and Marco Valentino (eds.), Proceedings of TextGraphs-17: Graph-based Methods for Natural Language Processing ,pp. 154–160, Bangkok, Thailand, August 2024. Association for Computational Linguistics. URL 
+
+https://aclanthology.org/2024.textgraphs-1.15/ .Collin Burns, Haotian Ye, Dan Klein, and Jacob Steinhardt. Discovering Latent Knowledge in Language Models Without Supervision. In The Eleventh International Conference on Learning Representations, ICLR 2023, Kigali, Rwanda, May 1-5, 2023 , Kigali, Rwanda, 2023. OpenRe-view.net. URL https://openreview.net/forum?id=ETKGuby0hcs .11 Preprint Stephen Casper, Jason Lin, Joe Kwon, Gatlen Culp, and Dylan Hadfield-Menell. Explore, Establish, Exploit: Red Teaming Language Models from Scratch. CoRR , abs/2306.09442, 2023. doi: 10. 48550/ARXIV.2306.09442. URL https://doi.org/10.48550/arXiv.2306.09442 .Sky CH-Wang, Benjamin Van Durme, Jason Eisner, and Chris Kedzie. Do Androids Know They’re Only Dreaming of Electric Sheep? In Lun-Wei Ku, Andre Martins, and Vivek Srikumar (eds.), 
+
+Findings of the Association for Computational Linguistics, ACL 2024, Bangkok, Thailand and virtual meeting, August 11-16, 2024 , pp. 4401–4420, Bangkok, Thailand, 2024. Association for Computational Linguistics. doi: 10.18653/V1/2024.FINDINGS-ACL.260. URL https:// doi.org/10.18653/v1/2024.findings-acl.260 .Paul F. Christiano, Jan Leike, Tom B. Brown, Miljan Martic, Shane Legg, and Dario Amodei. Deep Reinforcement Learning from Human Preferences. In Isabelle Guyon, Ulrike von Luxburg, Samy Bengio, Hanna M. Wallach, Rob Fergus, S. V. N. Vishwanathan, and Roman Garnett (eds.), Ad-vances in Neural Information Processing Systems 30: Annual Conference on Neural Information Processing Systems 2017, December 4-9, 2017, Long Beach, CA, USA , pp. 4299–4307, Long Beach, CA, USA, 2017. URL https://proceedings.neurips.cc/paper/2017/ hash/d5e2c0adad503c91f91df240d0cd4e49-Abstract.html .Yung-Sung Chuang, Linlu Qiu, Cheng-Yu Hsieh, Ranjay Krishna, Yoon Kim, and James R. Glass. Lookback Lens: Detecting and Mitigating Contextual Hallucinations in Large Language Models Using Only Attention Maps. In Yaser Al-Onaizan, Mohit Bansal, and Yun-Nung Chen (eds.), 
+
+Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing , pp. 1419–1436, Miami, Florida, USA, November 2024a. Association for Computational Linguis-tics. doi: 10.18653/v1/2024.emnlp-main.84. URL https://aclanthology.org/2024. emnlp-main.84/ .Yung-Sung Chuang, Yujia Xie, Hongyin Luo, Yoon Kim, James R. Glass, and Pengcheng He. DoLa: Decoding by Contrasting Layers Improves Factuality in Large Language Models. In The Twelfth International Conference on Learning Representations, ICLR 2024, Vienna, Austria, May 7-11, 2024 , Vienna, Austria, 2024b. OpenReview.net. URL https://openreview.net/forum? id=Th6NyL07na .Florin Cuconasu, Giovanni Trappolini, Federico Siciliano, Simone Filice, Cesare Campagnano, Yoelle Maarek, Nicola Tonellotto, and Fabrizio Silvestri. The Power of Noise: Redefining Re-trieval for RAG Systems. In Grace Hui Yang, Hongning Wang, Sam Han, Claudia Hauff, Guido Zuccon, and Yi Zhang (eds.), Proceedings of the 47th International ACM SIGIR Conference on Research and Development in Information Retrieval, SIGIR 2024, Washington DC, USA, July 14-18, 2024 , pp. 719–729, Washington DC, USA, 2024. ACM. doi: 10.1145/3626772.3657834. URL https://doi.org/10.1145/3626772.3657834 .Ann-Kathrin Dombrowski and Guillaume Corlouer. An information-theoretic study of lying in LLMs. In ICML 2024 Workshop on LLMs and Cognition , Vienna, Austria, 2024. URL https: //openreview.net/pdf/59f243748d39b571e1a6caacb8605623c52b73ba. pdf .Ekaterina Fadeeva, Roman Vashurin, Akim Tsvigun, Artem Vazhentsev, Sergey Petrakov, Kirill Fedyanin, Daniil Vasilev, Elizaveta Goncharova, Alexander Panchenko, Maxim Panov, Timothy Baldwin, and Artem Shelmanov. LM-Polygraph: Uncertainty Estimation for Language Models. In Yansong Feng and Els Lefever (eds.), Proceedings of the 2023 Conference on Empirical Meth-ods in Natural Language Processing, EMNLP 2023 - System Demonstrations, Singapore, Decem-ber 6-10, 2023 , pp. 446–461, Singapore, 2023. Association for Computational Linguistics. doi: 10.18653/V1/2023.EMNLP-DEMO.41. URL https://doi.org/10.18653/v1/2023. emnlp-demo.41 .Ekaterina Fadeeva, Aleksandr Rubashevskii, Artem Shelmanov, Sergey Petrakov, Haonan Li, Hamdy Mubarak, Evgenii Tsymbalov, Gleb Kuzmin, Alexander Panchenko, Timothy Baldwin, Preslav Nakov, and Maxim Panov. Fact-Checking the Output of Large Language Models via Token-Level Uncertainty Quantification. In Lun-Wei Ku, Andre Martins, and Vivek Srikumar 12 Preprint (eds.), Findings of the Association for Computational Linguistics, ACL 2024, Bangkok, Thai-land and virtual meeting, August 11-16, 2024 , pp. 9367–9385, Bangkok, Thailand, 2024. As-sociation for Computational Linguistics. doi: 10.18653/V1/2024.FINDINGS-ACL.558. URL 
+
+https://doi.org/10.18653/v1/2024.findings-acl.558 .Sebastian Farquhar, Jannik Kossen, Lorenz Kuhn, and Yarin Gal. Detecting hallucinations in large language models using semantic entropy. Nat. , 630(8017):625–630, 2024. doi: 10.1038/ S41586-024-07421-0. URL https://doi.org/10.1038/s41586-024-07421-0 .Marina Fomicheva, Shuo Sun, Lisa Yankovskaya, Fr´ ed´ eric Blain, Francisco Guzm´ an, Mark Fishel, Nikolaos Aletras, Vishrav Chaudhary, and Lucia Specia. Unsupervised Quality Estimation for Neural Machine Translation. Trans. Assoc. Comput. Linguistics , 8:539–555, 2020. doi: 10.1162/ TACL A 00330. URL https://doi.org/10.1162/tacl_a_00330 .Aaron Grattafiori, Abhimanyu Dubey, Abhinav Jauhri, Abhinav Pandey, Abhishek Kadian, Ahmad Al-Dahle, Aiesha Letman, Akhil Mathur, Alan Schelten, Alex Vaughan, Amy Yang, Angela Fan, Anirudh Goyal, Anthony Hartshorn, Aobo Yang, Archi Mitra, Archie Sravankumar, Artem Ko-renev, Arthur Hinsvark, Arun Rao, Aston Zhang, et al. The Llama 3 Herd of Models. arXiv preprint arXiv:2407.21783 , 2024. URL https://doi.org/10.48550/arXiv.2407. 21783 .Ashim Gupta and Vivek Srikumar. X-Fact: A New Benchmark Dataset for Multilingual Fact Checking. In Chengqing Zong, Fei Xia, Wenjie Li, and Roberto Navigli (eds.), Proceedings of the 59th Annual Meeting of the Association for Computational Linguistics and the 11th In-ternational Joint Conference on Natural Language Processing, ACL/IJCNLP 2021, (Volume 2: Short Papers), Virtual Event, August 1-6, 2021 , pp. 675–682, Bangkok, Thailand, 2021. Association for Computational Linguistics. doi: 10.18653/V1/2021.ACL-SHORT.86. URL 
+
+https://doi.org/10.18653/v1/2021.acl-short.86 .Shailja Gupta, Rajesh Ranjan, and Surya Narayan Singh. A Comprehensive Survey of Retrieval-Augmented Generation (RAG): Evolution, Current Landscape and Future Directions. CoRR ,abs/2410.12837, 2024. doi: 10.48550/ARXIV.2410.12837. URL https://doi.org/10. 48550/arXiv.2410.12837 .Saurav Kadavath, Tom Conerly, Amanda Askell, Tom Henighan, Dawn Drain, Ethan Perez, Nicholas Schiefer, Zac Hatfield-Dodds, Nova DasSarma, Eli Tran-Johnson, Scott Johnston, Sheer El Showk, Andy Jones, Nelson Elhage, Tristan Hume, Anna Chen, Yuntao Bai, Sam Bowman, Stanislav Fort, Deep Ganguli, Danny Hernandez, Josh Jacobson, Jackson Kernion, Shauna Kravec, Liane Lovitt, Kamal Ndousse, Catherine Olsson, Sam Ringer, Dario Amodei, Tom Brown, Jack Clark, Nicholas Joseph, Ben Mann, Sam McCandlish, Chris Olah, and Jared Kaplan. Language Models (Mostly) Know What They Know. CoRR , abs/2207.05221, 2022. doi: 10.48550/ARXIV.2207.05221. URL https://doi.org/10.48550/arXiv.2207. 05221 .Ryo Kamoi, Yusen Zhang, Nan Zhang, Jiawei Han, and Rui Zhang. When Can LLMs Actually 
+
+Correct Their Own Mistakes? A Critical Survey of Self-Correction of LLMs. Trans. Assoc. Comput. Linguistics , 12:1417–1440, 2024. doi: 10.1162/TACL \ A\ 00713. URL https:// doi.org/10.1162/tacl_a_00713 .Lorenz Kuhn, Yarin Gal, and Sebastian Farquhar. Semantic Uncertainty: Linguistic Invariances for Uncertainty Estimation in Natural Language Generation. In The Eleventh International Confer-ence on Learning Representations, ICLR 2023, Kigali, Rwanda, May 1-5, 2023 , Kigali, Rwanda, 2023. OpenReview.net. URL https://openreview.net/forum?id=VD-AYtP0dve .Benjamin A. Levinstein and Daniel A. Herrmann. Still no lie detector for language models: probing empirical and conceptual roadblocks. Philosophical Studies , 182(7):1539–1565, 2025. ISSN 1573-0883. doi: 10.1007/s11098-023-02094-3. URL https://doi.org/10.1007/ s11098-023-02094-3 .Alexander H. Liu, Kartik Khandelwal, Sandeep Subramanian, Victor Jouault, Abhinav Rastogi, Adrien Sad´ e, Alan Jeffares, Albert Jiang, Alexandre Cahill, Alexandre Gavaudan, Alexandre 13 Preprint Sablayrolles, Am´ elie H´ eliou, Amos You, Andy Ehrenberg, Andy Lo, Anton Eliseev, Anto-nia Calvi, Avinash Sooriyarachchi, Baptiste Bout, Baptiste Rozi` ere, Baudouin De Monicault, Cl´ emence Lanfranchi, Corentin Barreau, Cyprien Courtot, Daniele Grattarola, Darius Dabert, Diego de las Casas, Elliot Chane-Sane, Faruk Ahmed, Gabrielle Berrada, Ga¨ etan Ecrepont, Gauthier Guinet, Georgii Novikov, Guillaume Kunsch, Guillaume Lample, Guillaume Martin, Gunshi Gupta, Jan Ludziejewski, Jason Rute, Joachim Studnia, Jonas Amar, Jos´ ephine Delas, Josselin Somerville Roberts, Karmesh Yadav, Khyathi Chandu, Kush Jain, Laurence Aitchi-son, Laurent Fainsin, L´ eonard Blier, Lingxiao Zhao, Louis Martin, Lucile Saulnier, Luyu Gao, Maarten Buyl, Margaret Jennings, Marie Pellat, Mark Prins, Mathieu Poir´ ee, Mathilde Guillau-min, Matthieu Dinot, Matthieu Futeral, Maxime Darrin, Maximilian Augustin, Mia Chiquier, Michel Schimpf, Nathan Grinsztajn, Neha Gupta, Nikhil Raghuraman, Olivier Bousquet, Olivier Duchenne, Patricia Wang, Patrick von Platen, Paul Jacob, Paul Wambergue, Paula Kurylowicz, Pavankumar Reddy Muddireddy, Philom` ene Chagniot, Pierre Stock, Pravesh Agrawal, Quentin Torroba, Romain Sauvestre, Roman Soletskyi, Rupert Menneer, Sagar Vaze, Samuel Barry, San-chit Gandhi, Siddhant Waghjale, Siddharth Gandhi, Soham Ghosh, Srijan Mishra, Sumukh Aithal, Szymon Antoniak, Teven Le Scao, Th´ eo Cachet, Theo Simon Sorg, Thibaut Lavril, Thiziri Nait Saada, Thomas Chabal, Thomas Foubert, Thomas Robert, Thomas Wang, Tim Lawson, Tom Be-wley, Tom Bewley, Tom Edwards, Umar Jamil, Umberto Tomasini, Valeriia Nemychnikova, Van Phung, Vincent Maladi` ere, Virgile Richard, Wassim Bouaziz, Wen-Ding Li, William Marshall, Xinghui Li, Xinyu Yang, Yassine El Ouahidi, Yihan Wang, Yunhao Tang, and Zaccharie Ramzi. Ministral 3, 2026. URL https://arxiv.org/abs/2601.08584 .Alex Mallen, Akari Asai, Victor Zhong, Rajarshi Das, Daniel Khashabi, and Hannaneh Hajishirzi. When Not to Trust Language Models: Investigating Effectiveness of Parametric and Non-Parametric Memories. In Anna Rogers, Jordan L. Boyd-Graber, and Naoaki Okazaki (eds.), Pro-ceedings of the 61st Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), ACL 2023, Toronto, Canada, July 9-14, 2023 , pp. 9802–9822, Toronto, Canada, 2023. Association for Computational Linguistics. doi: 10.18653/V1/2023.ACL-LONG.546. URL 
+
+https://doi.org/10.18653/v1/2023.acl-long.546 .Samuel Marks and Max Tegmark. The Geometry of Truth: Emergent Linear Structure in Large Language Model Representations of True/False Datasets. CoRR , abs/2310.06824, 2023. doi: 10. 48550/ARXIV.2310.06824. URL https://doi.org/10.48550/arXiv.2310.06824 .Kevin Meng, David Bau, Alex Andonian, and Yonatan Belinkov. Locating and Editing Factual Associations in GPT. In Sanmi Koyejo, S. Mohamed, A. Agarwal, Danielle Belgrave, K. Cho, and A. Oh (eds.), Advances in Neural Information Processing Sys-tems 35: Annual Conference on Neural Information Processing Systems 2022, NeurIPS 2022, New Orleans, LA, USA, November 28 - December 9, 2022 , New Orleans, LA, USA, 2022. URL http://papers.nips.cc/paper_files/paper/2022/hash/ 6f1d43d5a82a37e89b0665b33bf3a182-Abstract-Conference.html .Sewon Min, Kalpesh Krishna, Xinxi Lyu, Mike Lewis, Wen-tau Yih, Pang Koh, Mohit Iyyer, Luke Zettlemoyer, and Hannaneh Hajishirzi. FActScore: Fine-grained Atomic Evaluation of Fac-tual Precision in Long Form Text Generation. In Houda Bouamor, Juan Pino, and Kalika Bali (eds.), Proceedings of the 2023 Conference on Empirical Methods in Natural Language Pro-cessing , pp. 12076–12100, Singapore, December 2023. Association for Computational Linguis-tics. doi: 10.18653/v1/2023.emnlp-main.741. URL https://aclanthology.org/2023. emnlp-main.741/ .Viktor Moskvoretskii, Dmitry Osin, Egor Shvetsov, Igor Udovichenko, Maxim Zhelnin, Andrey Dukhovny, Anna Zhimerikina, and Evgeny Burnaev. MLEM: Generative and Contrastive Learn-ing as Distinct Modalities for Event Sequences. arXiv preprint arXiv:2401.15935 , 2024. Viktor Moskvoretskii, Maria Marina, Mikhail Salnikov, Nikolay Ivanov, Sergey Pletenev, Daria Gal-imzianova, Nikita Krayko, Vasily Konovalov, Irina Nikishina, and Alexander Panchenko. Adap-tive Retrieval Without Self-Knowledge? Bringing Uncertainty Back Home. In Wanxiang Che, Joyce Nabende, Ekaterina Shutova, and Mohammad Taher Pilehvar (eds.), Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), ACL 2025, Vienna, Austria, July 27 - August 1, 2025 , pp. 6355–6384, Vienna, Austria, 2025. 14 Preprint Association for Computational Linguistics. URL https://aclanthology.org/2025. acl-long.319/ .OpenAI. GPT-4 Technical Report. CoRR , abs/2303.08774, 2023. doi: 10.48550/ARXIV.2303. 08774. URL https://doi.org/10.48550/arXiv.2303.08774 .Hadas Orgad, Michael Toker, Zorik Gekhman, Roi Reichart, Idan Szpektor, Hadas Kotek, and Yonatan Belinkov. LLMs Know More Than They Show: On the Intrinsic Representation of LLM Hallucinations. In The Thirteenth International Conference on Learning Represen-tations, ICLR 2025, Singapore, April 24-28, 2025 , Singapore, 2025. OpenReview.net. URL 
+
+https://openreview.net/forum?id=KRnsX5Em3W .Sezen Perc ¸in, Xin Su, Qutub Sha Syed, Phillip Howard, Aleksei Kuvshinov, Leo Schwinn, and Kay-Ulrich Scholl. Investigating the Robustness of Retrieval-Augmented Generation at the Query Level. In Ofir Arviv, Miruna Clinciu, Kaustubh Dhole, Rotem Dror, Sebastian Gehrmann, Eliya Habba, Itay Itzhak, Simon Mille, Yotam Perlitz, Enrico Santus, Jo˜ ao Sedoc, Michal Shmueli Scheuer, Gabriel Stanovsky, and Oyvind Tafjord (eds.), Proceedings of the Fourth Work-shop on Generation, Evaluation and Metrics (GEM²) , pp. 439–457, Vienna, Austria and virtual meeting, July 2025. Association for Computational Linguistics. ISBN 979-8-89176-261-9. URL 
+
+https://aclanthology.org/2025.gem-1.38/ .Elisei Rykov, Kseniia Petrushina, Maksim Savkin, Valerii Olisov, Artem Vazhentsev, Kseniia Titova, Alexander Panchenko, Vasily Konovalov, and Julia Belikova. When Models Lie, We Learn: Multilingual Span-Level Hallucination Detection with PsiloQA. In Christos Christodoulopou-los, Tanmoy Chakraborty, Carolyn Rose, and Violet Peng (eds.), Findings of the Association for Computational Linguistics: EMNLP 2025 , pp. 11663–11682, Suzhou, China, November 2025. Association for Computational Linguistics. ISBN 979-8-89176-335-7. doi: 10.18653/v1/2025. findings-emnlp.626. URL https://aclanthology.org/2025.findings-emnlp. 626/ .Michael Sejr Schlichtkrull, Zhijiang Guo, and Andreas Vlachos. AVeriTeC: A Dataset for Real-world Claim Verification with Evidence from the Web. In Alice Oh, Tristan Naumann, Amir Globerson, Kate Saenko, Moritz Hardt, and Sergey Levine (eds.), Advances in Neural Information Processing Systems 36: Annual Conference on Neural Information Processing Systems 2023, NeurIPS 2023, New Orleans, LA, USA, December 10 - 16, 2023 , New Or-leans, LA, USA, 2023. URL http://papers.nips.cc/paper_files/paper/ 2023/hash/cd86a30526cd1aff61d6f89f107634e4-Abstract-Datasets_ and_Benchmarks.html .Giovanni Servedio, Alessandro De Bellis, Dario Di Palma, Vito Walter Anelli, and Tommaso Di Noia. Are the Hidden States Hiding Something? Testing the Limits of Factuality-Encoding Ca-pabilities in LLMs. In Wanxiang Che, Joyce Nabende, Ekaterina Shutova, and Mohammad Taher Pilehvar (eds.), Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , pp. 6089–6104, Vienna, Austria, July 2025. Association for Computational Linguistics. ISBN 979-8-89176-251-0. doi: 10.18653/v1/2025.acl-long.304. URL https://aclanthology.org/2025.acl-long.304/ .Artem Shelmanov, Ekaterina Fadeeva, Akim Tsvigun, Ivan Tsvigun, Zhuohan Xie, Igor Kiselev, Nico Daheim, Caiqi Zhang, Artem Vazhentsev, Mrinmaya Sachan, Preslav Nakov, and Timo-thy Baldwin. A Head to Predict and a Head to Question: Pre-trained Uncertainty Quantifi-cation Heads for Hallucination Detection in LLM Outputs. In Christos Christodoulopoulos, Tanmoy Chakraborty, Carolyn Rose, and Violet Peng (eds.), Proceedings of the 2025 Con-ference on Empirical Methods in Natural Language Processing , pp. 35712–35731, Suzhou, China, November 2025a. Association for Computational Linguistics. ISBN 979-8-89176-332-6. doi: 10.18653/v1/2025.emnlp-main.1809. URL https://aclanthology.org/2025. emnlp-main.1809/ .Artem Shelmanov, Maxim Panov, Roman Vashurin, Artem Vazhentsev, Ekaterina Fadeeva, and Tim-othy Baldwin. Uncertainty Quantification for Large Language Models. In Yuki Arase, David 15 Preprint Jurgens, and Fei Xia (eds.), Proceedings of the 63rd Annual Meeting of the Association for Com-putational Linguistics (Volume 5: Tutorial Abstracts) , pp. 3–4, Vienna, Austria, July 2025b. As-sociation for Computational Linguistics. ISBN 979-8-89176-255-8. doi: 10.18653/v1/2025. acl-tutorials.3. URL https://aclanthology.org/2025.acl-tutorials.3/ .Ava Spataru, Eric Hambro, Elena Voita, and Nicola Cancedda. Know When To Stop: A Study of Semantic Drift in Text Generation. In Kevin Duh, Helena G´ omez-Adorno, and Steven Bethard (eds.), Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies (Volume 1: Long Papers), NAACL 2024, Mexico City, Mexico, June 16-21, 2024 , pp. 3656–3671, Mexico City, Mexico, 2024. As-sociation for Computational Linguistics. doi: 10.18653/V1/2024.NAACL-LONG.202. URL 
+
+https://doi.org/10.18653/v1/2024.naacl-long.202 .Gaurang Sriramanan, Siddhant Bharti, Vinu Sankar Sadasivan, Shoumik Saha, Priy-atham Kattakinda, and Soheil Feizi. LLM-Check: Investigating Detection of Hal-lucinations in Large Language Models. In A. Globerson, L. Mackey, D. Bel-grave, A. Fan, U. Paquet, J. Tomczak, and C. Zhang (eds.), Advances in Neural In-formation Processing Systems , volume 37, pp. 34188–34216. Curran Associates, Inc., 2024. URL https://proceedings.neurips.cc/paper_files/paper/2024/ file/3c1e1fdf305195cd620c118aaa9717ad-Paper-Conference.pdf .Nisan Stiennon, Long Ouyang, Jeff Wu, Daniel M. Ziegler, Ryan Lowe, Chelsea Voss, Alec Radford, Dario Amodei, and Paul F. Christiano. Learning to summarize from human feedback. CoRR ,abs/2009.01325, 2020. URL https://arxiv.org/abs/2009.01325 .Weihang Su, Changyue Wang, Qingyao Ai, Yiran Hu, Zhijing Wu, Yujia Zhou, and Yiqun Liu. Unsupervised Real-Time Hallucination Detection based on the Internal States of Large Language Models. In Lun-Wei Ku, Andre Martins, and Vivek Srikumar (eds.), Findings of the Association for Computational Linguistics, ACL 2024, Bangkok, Thailand and virtual meeting, August 11-16, 2024 , pp. 14379–14391, Bangkok, Thailand, 2024. Association for Computational Linguistics. doi: 10.18653/V1/2024.FINDINGS-ACL.854. URL https://doi.org/10.18653/v1/ 2024.findings-acl.854 .Roman Vashurin, Ekaterina Fadeeva, Artem Vazhentsev, Lyudmila Rvanova, Daniil Vasilev, Akim Tsvigun, Sergey Petrakov, Rui Xing, Abdelrahman Sadallah, Kirill Grishchenkov, Alexander Panchenko, Timothy Baldwin, Preslav Nakov, Maxim Panov, and Artem Shelmanov. Bench-marking Uncertainty Quantification Methods for Large Language Models with LM-Polygraph. 
+
+Transactions of the Association for Computational Linguistics , 13:220–248, 2025. doi: 10.1162/ tacl a 00737. URL https://aclanthology.org/2025.tacl-1.11/ .Artem Vazhentsev, Ekaterina Fadeeva, Rui Xing, Gleb Kuzmin, Ivan Lazichny, Alexander Panchenko, Preslav Nakov, Timothy Baldwin, Maxim Panov, and Artem Shelmanov. Uncon-ditional Truthfulness: Learning Unconditional Uncertainty of Large Language Models. In Chris-tos Christodoulopoulos, Tanmoy Chakraborty, Carolyn Rose, and Violet Peng (eds.), Proceed-ings of the 2025 Conference on Empirical Methods in Natural Language Processing , pp. 35673– 35694, Suzhou, China, November 2025a. Association for Computational Linguistics. ISBN 979-8-89176-332-6. doi: 10.18653/v1/2025.emnlp-main.1807. URL https://aclanthology. org/2025.emnlp-main.1807/ .Artem Vazhentsev, Lyudmila Rvanova, Gleb Kuzmin, Ekaterina Fadeeva, Ivan Lazichny, Alexan-der Panchenko, Maxim Panov, Timothy Baldwin, Mrinmaya Sachan, Preslav Nakov, and Artem Shelmanov. Uncertainty-Aware Attention Heads: Efficient Unsupervised Uncertainty Quantifi-cation for LLMs. CoRR , abs/2505.20045, 2025b. doi: 10.48550/ARXIV.2505.20045. URL 
+
+https://doi.org/10.48550/arXiv.2505.20045 .Artem Vazhentsev, Lyudmila Rvanova, Ivan Lazichny, Alexander Panchenko, Maxim Panov, Tim-othy Baldwin, and Artem Shelmanov. Token-Level Density-Based Uncertainty Quantification Methods for Eliciting Truthfulness of Large Language Models. In Luis Chiruzzo, Alan Ritter, and Lu Wang (eds.), Proceedings of the 2025 Conference of the Nations of the Americas Chap-ter of the Association for Computational Linguistics: Human Language Technologies (Volume 1: 
+
+16 Preprint 
+
+Long Papers) , pp. 2246–2262, Albuquerque, New Mexico, April 2025c. Association for Com-putational Linguistics. ISBN 979-8-89176-189-6. doi: 10.18653/v1/2025.naacl-long.113. URL 
+
+https://aclanthology.org/2025.naacl-long.113/ .Chaojun Wang and Rico Sennrich. On Exposure Bias, Hallucination and Domain Shift in Neural Machine Translation. In Dan Jurafsky, Joyce Chai, Natalie Schluter, and Joel R. Tetreault (eds.), 
+
+Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics, ACL 2020, Online, July 5-10, 2020 , pp. 3544–3552, Online, 2020. Association for Computational Lin-guistics. doi: 10.18653/V1/2020.ACL-MAIN.326. URL https://doi.org/10.18653/ v1/2020.acl-main.326 .Chenguang Wang, Xiao Liu, and Dawn Song. Language Models are Open Knowledge Graphs. 
+
+CoRR , abs/2010.11967, 2020. doi: 10.48550/ARXIV.2010.11967. URL https://doi.org/ 10.48550/arXiv.2010.11967 .Jason Wei, Nguyen Karina, Hyung Won Chung, Yunxin Joy Jiao, Spencer Papay, Amelia Glaese, John Schulman, and William Fedus. Measuring short-form factuality in large language models. 
+
+arXiv preprint arXiv:2411.04368 , 2024a. Jerry Wei, Chengrun Yang, Xinying Song, Yifeng Lu, Nathan Hu, Jie Huang, Dustin Tran, Daiyi Peng, Ruibo Liu, Da Huang, Cosmo Du, and Quoc V. Le. Long-form factuality in large language models. In Amir Globersons, Lester Mackey, Danielle Belgrave, Angela Fan, Ulrich Paquet, Jakub M. Tomczak, and Cheng Zhang (eds.), Advances in Neural Informa-tion Processing Systems 38: Annual Conference on Neural Information Processing Systems 2024, NeurIPS 2024, Vancouver, BC, Canada, December 10 - 15, 2024 , Vancouver, BC, Canada, 2024b. URL http://papers.nips.cc/paper_files/paper/2024/hash/ 937ae0e83eb08d2cb8627fe1def8c751-Abstract-Conference.html .Ziwei Xu, Sanjay Jain, and Mohan S. Kankanhalli. Hallucination is Inevitable: An Innate Limitation of Large Language Models. CoRR , abs/2401.11817, 2024. doi: 10.48550/ARXIV.2401.11817. URL https://doi.org/10.48550/arXiv.2401.11817 .Tianhang Zhang, Lin Qiu, Qipeng Guo, Cheng Deng, Yue Zhang, Zheng Zhang, Chenghu Zhou, Xinbing Wang, and Luoyi Fu. Enhancing Uncertainty-Based Hallucination Detection with Stronger Focus. In Houda Bouamor, Juan Pino, and Kalika Bali (eds.), Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing , pp. 915–932, Singapore, De-cember 2023. Association for Computational Linguistics. doi: 10.18653/v1/2023.emnlp-main.58. URL https://aclanthology.org/2023.emnlp-main.58/ .Wenting Zhao, Tanya Goyal, Yu Ying Chiu, Liwei Jiang, Benjamin Newman, Abhilasha Ravichan-der, Khyathi Raghavi Chandu, Ronan Le Bras, Claire Cardie, Yuntian Deng, and Yejin Choi. WildHallucinations: Evaluating Long-form Factuality in LLMs with Real-World Entity Queries. 
+
+CoRR , abs/2407.17468, 2024. doi: 10.48550/ARXIV.2407.17468. URL https://doi.org/ 10.48550/arXiv.2407.17468 .17 Preprint 
+
+## A DATA CONSTRUCTION 
+
+We study the generalization of hallucination detection across heterogeneous sources and domains. To ensure robustness and provide a comprehensive evaluation we propose the use of several datasets as a base for atomic claims: • PopQA (Mallen et al., 2023): This dataset contains simple rule-based questions annotated with a measure of popularity. It was designed to balance popular and less popular entities and to ensure robustness to social and cultural variation. We use it to evaluate model robustness to long-tail knowledge. For this purpose, we split the dataset into training and test sets by stratifying on popularity, so that both sets maintain a similar distribution of popular and less popular entities. To avoid domain adaptation effects, we also ensure that entities and question templates from the training set do not appear in the test set. To construct atomic claims, we take the original questions, generate answers with 
+
+Llama-3.1-8B-Instruct , and assess correctness using I NACCURACY (Moskvoretskii et al., 2025). Each question–answer pair is then converted into an atomic claim with 
+
+Llama-3.1-70B-Instruct , the hallucination label is defined by answers InAccuracy. The system prompt was “You convert question-answer pairs into factual claims.” and the few-shot prompt for a user prompt was as follows: Converting QA pairs to a Claim Instruction Convert the question and answer into a factual, declarative English sentence. Examples: Q: What sport does Kwak Hee-ju play? A: Table Tennis → Kwak Hee-ju plays table tennis. Q: What is the religion of James VI and I? A: Protestantism → James VI and I confess protestantism. Q: Who is the father of Sybilla of Normandy? A: Rollo of Normandy → The father of Sybilla of Normandy is Rollo of Normandy. As an answer return just the resulting claim. • AVeriTeC (Schlichtkrull et al., 2023): A human-made fact-checking benchmark with a rigorous verification protocol. We adopt the validation split and use only the claims (without evidence), retaining only refuted or supported instances to reduce bias. • UHead (Shelmanov et al., 2025a): An original dataset of questions about popular Wikipedia entities. Atomic claims are extracted with Gemma from long-form generations of a Mistral model, following the CCP setup (Fadeeva et al., 2024). This dataset tests cross-model robustness, since claims are generated by a different model, and also challenges robustness to long-form generation. • Cities (Marks & Tegmark, 2023): a dataset formed of statements from the template “ The city of [city] is in [country] ” using a list of world cities. For each city, authors generated one true statement and one false statement. • Companies (CMP) (Azaria & Mitchell, 2023): A dataset describing various general information about popular companies: headquarters location, what they do, well-known representatives etc. • Common Claims (CC) (Casper et al., 2023): Dataset consists of various statements generated by GPT-3-davinci-002, labeled by humans as being true, false, or neither. The authors left only true/false variables and filtered out some facts to balance the dataset. • CounterFact (CF) : Counterfact was introduced by (Meng et al., 2022) and consists of factual recall statements. The dataset consists of sentences constructed using various pat-terns: [X] is [Y] citizen. [X] is owned by [Y]. [X] is the capital of [Y] etc. Authors adapt Counterfact by using statements which form complete sentences and, for each such statement, using both the true version and a false version given by one of Counterfact’s suggested false modifications. • Wild Hallucinations (WH) (Zhao et al., 2024): The original dataset contains 7,917 user queries assuming long-form generation, covering a diverse set of domains. These queries correspond to 18 Preprint real information needs but are not found in Wikipedia, thus representing long-tail knowledge. We generate answers to these questions with Llama-3.1-8B-Instruct , split them into atomic claims, and validate each claim against the provided evidence using FactScore (Min et al., 2023). The resulting atomic claims, labeled for hallucination by FactScore, form a dataset aimed at testing robustness to long-form generation in long-tail knowledge. • X-Fact (Gupta & Srikumar, 2021): The dataset consists of short statements in 25 languages, each labeled for hallucination by expert fact-checkers. It provides a multilingual evaluation benchmark designed to assess both out-of-domain generalization and the capabilities of multilingual models. 
+
+## B TECHNICAL DETAILS 
+
+Since our base model was meta-llama/Llama-3.1-8B-Instruct an instruction-tuned model, we extracted all claim embeddings using the chat template, with the user prompt set to ‘Generate true statement’ and the assistant content being the claim text itself. 
+
+## C DATA FILTERING 
+
+Due to the lack of context in the task, we had to filter out some claims that could be correct, but did not meet the criteria. Specifically, each claim should describe a unique characteristic of a single entity. As shown in Table 2, some data is accurate, but due to the use of pronouns, it is difficult to verify the accuracy of the information without additional context. Incorrect facts that appear to be correct in form were not filtered out (for example: Moby’s album ”Go” was released in 1992, not 1991). For filtering out, we used Llama 3.3 72b Instruct with prompt C and 10-shot few-shot. Table 2: Examples of filtered data. Claims generated by the model in response to the query: “Tell me facts about Moby, American musician and songwriter.”                  
+
+> Claim Filtered Verification Explanation
+> Moby was born Richard Melville Hall. No This fact explicitly mentions the stage name “Moby” and provides a unique personal de-tail, his birth name. Moby is an American singer-songwriter. No This fact explicitly mentions the entity “Moby” and describes his profession, di-rectly tying the fact to him. He rose to international fame. Yes The statement is too vague and lacks a spe-cific entity or individual to whom it refers. The album Play came out in 1999. Yes This fact is vague as it doesn’t specify the artist of the album “Play,” which could refer to multiple albums with the same title.
+
+Table 3: Final validation datasets after filtering claims. Cities, Common Claims, CounterFacts and Companies were not filtered out, as the claims are fully consistent with the original task.                                  
+
+> Dataset # Before Filter # After Filter % Filtered
+> AC-PopQA 6,974 5,494 21 AC-WH 46,605 36,427 21 AVeriTeC 424 349 17 UHead 2,057 921 55 Cities 1,496 1,496 0Companies 1,200 1,200 0Common Claims 4,450 4,450 0CounterFact 1,200 1,200 0X-Fact 2,315 1,131 51 Total 66,721 52,668 21
+
+19 Preprint 
+
+Fact Filter Instruction 
+
+You are an expert in verifying atomic facts extracted from Wikipedia. Your task is to de-termine whether a given fact refers exclusively to the specified topic or entity and cannot reasonably apply to others without direct reference. 
+
+Rules: 
+
+• The fact must be unique or directly tied to the target entity. • Generic statements that could apply to many similar entities (e.g., people, places, events) are not acceptable. • The entity must be explicitly stated in the fact. • Whether the fact is true, false, or debatable is not relevant ; only specificity matters. • If the fact clearly names or describes something unique to the topic, it is GOOD .• If the fact is vague, general, or potentially applies to many, it is BAD .
+
+Output format: Return a brief explanation (1–2 sentences), followed by a semicolon and then either GOOD or BAD . Example: Mentions a specific architectural style found only in this city; GOOD 
+
+To generate verbalized classifications, all considered models use the same prompt (Table C) and identical generation hyperparameters: temperature=0.3 , max tokens=150 , and 
+
+few shots=10 . Since verbalized evaluations can be unstable across generations, we use a rel-atively large number of few-shots and a low temperature to improve consistency across models. 
+
+Verbalized Claim Classification 
+
+You are an expert fact-checker with comprehensive knowledge across all domains. Your task is to determine whether claims are factually TRUE or FALSE based on established facts and evidence. 
+
+Rules: 
+
+• Evaluate the factual accuracy of each claim based on verifiable information. • Consider the claim exactly as written. • Small errors in dates, numbers, or facts render the claim FALSE .• If a claim contains multiple parts, all parts must be true for the claim to be TRUE .• If any part is incorrect, misleading, or inaccurate, classify the claim as FALSE .• Provide a brief explanation (1–2 sentences) of your reasoning. • Output format: explanation; followed by either "TRUE" or "FALSE" .20 Preprint 
+
+## D COMPUTATIONAL TIME .
+
+Table 4 shows the average per-instance runtime for all methods on PopQA using Ministral-8B-Instruct-2410 on an A100 GPU with batch size 1. All evaluated methods except the verbalized baseline require only a single forward pass of the LLM per claim, whereas standard RAG-based fact-checking pipelines involve hundreds or thousands of forward passes due to retrieval and re-evaluation. Probability-based approaches are the fastest overall, with runtimes around 0.02 seconds per instance. Supervised methods introduce only a small overhead, typically not exceeding 0.04 seconds, and therefore remain effectively lightweight. In contrast, the verbalized method is substan-tially slower, requiring 0.25 seconds on average with higher variance, making it considerably less practical. CCP is the most computationally expensive due to additional NLI-based computations. Overall, INTRA maintains a low runtime of 0.06 seconds per instance, confirming that it remains lightweight while offering strong performance. Table 4: Runtime per instance (in milliseconds) for different hallucination detection methods. Values are reported as mean ± standard deviation, measured per input instance.                                            
+
+> Method Runtime per instance (ms)
+> Retrieval-Based Unsupervised Methods
+> Verb+RAG 950 ±200
+> Retrieval-Free Unsupervised Methods
+> SP 30 ±1
+> PPL 30 ±1
+> MTE 84 ±40
+> Att. Score 40 ±10
+> RAUQ 33 ±10
+> CCP 563 ±220
+> Verb 250 ±110
+> Retrieval-Free Supervised Methods
+> TAD 45 ±10
+> SATRMD 31 ±5
+> MIND 31 ±10
+> Sheeps 67 ±40
+> SAPLMA 31 ±5
+> INTRA 56 ±20
+
+21 Preprint 
+
+## E ABLATION STUDIES 
+
+E.1 LAYER SELECTION 
+
+Table 5 presents the results of the INTRA method trained on different subsets of the model’s hidden layers for the Llama model. Table 5: Impact of different layer subsets on the performance by ROC-AUC ↑ of the proposed INTRA method. The best method is in bold , the second best is underlined.                                                                                                     
+
+> Layers PopQA AVeriTeC UHEAD Cities CC CMP CF WH X-Fact Avg
+> All 89.5 66.4 63.7 98.7 74.2 89.1 73.7 73.3 58.1 76.3 0-8 84.9 59.5 53.0 83.9 62.1 65.4 59.7 64.1 55.2 65.3 24-32 86.7 63.8 61.0 73.2 71.5 70.5 58.4 70.0 57.0 68.0 2-30 89.6 66.2 63.6 98.8 73.8 89.7 74.7 73.1 58.3 76.4 8-24 89.6 66.8 65.3 99.3 74.4 92.0 77.4 73.5 57.6 77.3 11-22 89.3 66.7 66.4 99.0 75.0 93.0 79.1 73.5 57.1 77.7 13-19 88.8 65.4 65.6 99.0 74.9 94.0 81.9 73.1 58.7 77.9
+> 15-17 87.5 63.0 64.8 98.7 73.8 94.1 82.8 72.2 59.8 77.4 16 87.2 58.7 63.9 95.7 71.9 88.9 77.6 70.7 54.9 74.4
+
+E.2 CLAIM POSITION INFLUENCE 
+
+While standard evaluation metrics assume claim independence, datasets such as WH contain multi-ple claims generated within a single LLM output. To account for this structure, we compute ROC-AUC as a function of claim position and average results across generations, as shown in Figure 4. Prior work has shown that hallucination rates can vary with claim position, often increasing toward later claims as errors accumulate (Bel´ em et al., 2025; Spataru et al., 2024; Wang & Sennrich, 2020). Because generation lengths vary widely — from very short outputs with fewer than six claims to long generations containing dozens of claims — we partition generations into short ( ≤ 6 claims), medium (7–12 claims), and long ( ≥ 12 claims). To make positions comparable across different lengths, claim indices are normalized within each group and binned to relative positions in the range 
+
+[0 , 1] .Figures 4a show that INTRA consistently achieves higher ROC-AUC than the Verbalized base-line across most claim positions for short generations, with statistically significant improvements at early and late positions (approximately relative positions 0.15–0.35 and 0.55–0.95 after correc-tion). In contrast, for medium-length generations (Figure 4b), the Verbalized setting performs best and is statistically significantly better than INTRA at several early and late positions, while INTRA remains competitive at mid-claim positions. Notably, we do not observe a systematic increase in hallucination rates toward the end of generations, nor a degradation in detector performance at later claim positions. Statistical significance ( p < 0.05 ) is assessed using one-sided bootstrap tests with FDR correction comparing the top-performing method to the second-best method at each claim position, long-length claims subset was not enough for statistical significance at any claim position. 22 Preprint 0.0 0.2 0.4 0.6 0.8 1.0 
+
+Relative claim position (binned, 0 1) 
+
+0.55 
+
+0.60 
+
+0.65 
+
+0.70 
+
+0.75 
+
+0.80 
+
+0.85 
+
+> ROC-AUC
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0             
+
+> Fraction of hallucinated
+> 2467 1330 890 1856 2213 745 1727 4036
+> SP PPL CCP Verb INTRA(ours) Frac hallucinated
+
+(a) Short-length claims. 0.0 0.2 0.4 0.6 0.8 1.0 
+
+Relative claim position (binned, 0 1) 
+
+0.50 
+
+0.55 
+
+0.60 
+
+0.65 
+
+0.70 
+
+0.75 
+
+> ROC-AUC
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0                
+
+> Fraction of hallucinated
+> 2437 1425 1778 2302 1174 2296 1740 1441 2404 3410
+> SP PPL CCP Verb INTRA(ours) Frac hallucinated
+
+(b) Medium-length claims. 
+
+Figure 4: ROC–AUC on WH by claim position for short and medium-length claims. The dashed line shows the fraction of hallucinated claims at each position; the numbers above it indicate the number of claims at that position. 23 Preprint 
+
+## F DETAILED EXPERIMENTAL RESULTS 
+
+Table 6: Performance of claim verification methods for Llama-3.1-8B in the proposed evidence-free setting, measured by ROC-AUC ↑ across nine datasets. Bold values indicate the best-performing method for each dataset, the second best is underlined. Avg column reports the average score across all datasets, summarizing overall robustness. 
+
+Method long-tail human-made cross-model rule-generated long-form multilingual Avg PopQA AVeriTeC UHead Cities CC CMP CF WH X-Fact 
+
+Retrieval-Based Methods 
+
+Verb + RAG 72.8 74.4 72.7 98.4 73.3 89.0 74.3 71.0 73.3 77.7 
+
+Retrieval-Free Unsupervised Methods 
+
+SP 78.2 67.4 69.9 95.8 65.0 74.9 70.1 70.0 53.5 71.6 PPL 73.3 57.4 62.4 94.2 72.5 75.0 65.9 59.3 57.6 68.6 MTE 65.9 66.6 60.7 56.8 69.0 64.3 52.5 66.1 61.1 62.6 Att. Score 49.7 59.4 58.6 41.5 42.8 47.8 49.1 58.6 42.7 50.0 RAUQ 65.6 67.3 61.2 57.0 68.4 63.6 52.4 67.3 60.9 62.6 CCP 72.5 65.1 69.1 89.6 65.9 79.3 66.5 69.1 51.3 69.8 Focus 67.3 59.4 58.0 74.2 63.1 66.5 59.8 67.8 55.8 63.5 Verb 72.8 62.9 72.8 98.6 74.3 89.5 75.4 73.8 51.9 74.7 
+
+GPT-4.1 84.7 76.7 87.0 99.5 80.3 92.3 90.8 81.8 62.8 84.0 Retrieval-Free Supervised Methods 
+
+UHead 65.7 52.1 71.2 61.6 68.9 66.9 54.5 74.2 52.6 63.1 MM 79.5 63.0 57.4 99.9 67.9 75.1 82.1 56.3 51.6 71.4 CCS 86.6 54.1 66.5 95.9 67.9 77.6 66.2 66.5 54.4 71.1 ICR 74.9 51.0 70.9 58.3 50.7 54.9 51.4 56.5 57.7 58.5 TAD 84.4 56.5 60.1 73.1 65.3 69.6 53.6 70.6 57.8 65.7 SATRMD 81.3 68.3 62.9 86.6 69.9 78.8 60.6 64.3 53.6 69.6 MIND 88.7 66.8 64.5 91.3 70.0 71.2 66.2 65.9 50.5 70.6 Sheeps 88.8 63.6 64.8 98.1 73.4 84.5 72.7 72.1 57.0 75.0 SAPLMA 88.6 62.9 63.5 81.8 70.9 80.6 60.6 67.6 55.0 70.2 
+
+INTRA 89.3 66.7 66.4 99.0 75.0 93.0 79.1 73.5 57.1 77.7 
+
+24 Preprint Table 7: Performance of claim verification methods for Llama-3.1-8B in the proposed evidence-free setting, measured by PR-AUC ↑ (multiplied by 100) across nine datasets. Bold values indicate the best-performing method for each dataset, the second best is underlined. Avg column reports the average score across all datasets, summarizing overall robustness.      
+
+> long-tail human-made cross-modal rule-generated long-form multilingual
+
+Method PopQA AVeriTeC UHead Cities CC CMP CF WH X-Fact Avg 
+
+Retrieval-Based Methods 
+
+Verb + RAG 86.0 82.5 45.5 97.1 67.0 83.6 66.2 36.0 67.0 70.1 
+
+Retrieval-Free Unsupervised Methods 
+
+SP 89.4 79.6 40.4 94.4 64.1 71.5 66.5 32.0 64.4 66.9 PPL 88.3 74.3 31.5 94.4 71.7 77.3 62.4 21.3 69.4 65.6 MTE 83.7 78.5 30.6 55.2 66.6 61.4 51.6 29.4 73.9 59.0 Att. Score 75.1 75.0 30.6 45.6 44.6 48.0 49.4 22.9 60.9 50.2 RAUQ 83.6 79.1 31.0 55.2 66.2 61.3 51.6 30.6 73.7 59.1 CCP 87.7 78.8 44.8 90.5 65.7 79.0 64.7 32.4 65.0 67.6 Focus 83.5 75.3 32.1 71.0 62.1 63.9 57.0 31.7 68.8 60.6 Verb 85.4 75.8 40.5 97.4 66.9 84.3 67.2 32.0 66.0 68.4 
+
+GPT-4.1 91.7 83.4 62.8 99.1 73.3 89.0 85.1 49.1 71.5 78.3 Retrieval-Free Supervised Methods 
+
+UHead 84.1 70.7 62.6 58.3 65.2 65.0 53.0 36.5 64.0 60.2 MM 92.7 78.6 31.7 99.9 68.3 76.9 80.3 21.1 64.8 68.3 CCS 95.3 59.8 30.9 96.3 62.6 64.1 67.2 67.1 41.4 64.1 ICR 89.5 71.6 47.0 56.2 50.4 45.8 51.2 19.4 58.3 54.4 TAD 94.0 75.4 31.2 72.2 63.1 66.4 52.7 37.8 68.6 62.4 SATRMD 92.3 79.2 32.4 86.6 68.4 76.8 58.1 27.2 68.2 65.5 MIND 95.8 82.0 34.5 90.9 69.8 69.2 61.9 31.9 67.0 67.0 Sheeps 94.9 76.8 35.1 97.8 72.6 83.9 66.9 37.2 69.0 70.5 SAPLMA 96.0 73.9 35.9 80.9 69.2 81.8 57.4 32.7 67.5 66.1 
+
+INTRA 96.2 78.6 36.7 99.3 73.5 92.5 71.1 41.8 68.6 73.1 
+
+25 Preprint Table 8: Performance of claim verification methods for Ministral-8B in the proposed evidence-free setting, measured by ROC-AUC ↑ across nine datasets. Bold values indicate the best result per dataset, the second best is underlined, and Avg the mean score across all datasets. 
+
+Method long-tail human-made cross-model rule-generated long-form multilingual Avg PopQA AVeriTeC UHead Cities CC CMP CF WH X-Fact 
+
+Retrieval-Based Methods 
+
+Verb + RAG 76.0 77.0 75.0 98.0 73.0 87.0 75.0 70.0 73.0 78.2 
+
+Retrieval-Free Unsupervised Methods 
+
+SP 75.3 65.0 68.8 95.9 63.9 67.6 64.7 72.2 47.8 69.0 PPL 72.7 55.3 56.7 95.1 71.4 70.3 62.3 61.0 61.3 67.3 MTE 66.4 62.3 59.1 52.8 69.7 56.7 51.0 69.1 61.3 60.9 Att. Score 50.4 59.6 59.8 46.5 43.5 48.7 49.5 59.2 42.9 51.1 RAUQ 68.2 55.9 56.1 88.9 68.6 57.7 56.3 60.9 61.2 63.8 CCP 69.9 60.1 67.5 93.2 65.0 70.6 62.6 67.8 47.4 67.1 Focus 65.7 55.3 54.6 73.5 62.3 63.9 58.0 68.0 55.8 61.9 Verb 64.0 63.0 67.0 98.0 72.0 88.0 75.0 64.0 57.0 72.2 
+
+GPT-4.1 91.7 83.4 62.8 99.1 73.3 89.0 85.1 49.1 71.5 78.3 Retrieval-Free Supervised Methods 
+
+MM 74.8 59.7 48.4 58.0 67.8 60.3 52.0 56.8 50.3 58.7 CCS 61.0 48.8 46.3 53.6 56.8 51.2 51.0 55.0 53.2 53.0 TAD 82.0 62.4 59.2 71.5 63.8 62.6 52.4 69.3 51.2 63.8 SATRMD 78.7 63.3 54.2 81.5 69.0 69.8 58.0 60.8 52.8 65.3 MIND 85.9 61.6 59.6 96.2 68.3 60.1 63.2 61.3 45.0 66.8 Sheeps 87.2 56.8 60.2 98.5 70.7 81.0 67.9 69.6 52.1 71.6 SAPLMA 85.8 64.3 61.1 85.4 68.0 68.6 58.0 63.8 60.9 68.4 
+
+INTRA 86.5 56.2 60.1 99.0 69.1 84.1 72.4 69.3 58.7 72.8 
+
+Table 9: Performance of claim verification methods for Ministral-8B in the proposed evidence-free setting, measured by PR-AUC ↑ (multiplied by 100) across nine datasets. Bold values indicate the best result per dataset, the second best is underlined, and Avg the mean score across all datasets. 
+
+Method long-tail human-made cross-model rule-generated long-form multilingual Avg PopQA AVeriTeC UHead Cities CC CMP CF WH X-Fact 
+
+Retrieval-Based Methods 
+
+Verb + RAG 87.0 85.0 47.0 96.0 67.0 81.0 67.0 31.0 67.0 69.6 
+
+Retrieval-Free Unsupervised Methods 
+
+SP 87.4 78.1 39.0 93.7 63.4 63.6 60.9 33.8 64.6 64.9 PPL 87.7 71.6 28.2 95.5 70.3 71.1 58.9 22.3 72.3 64.2 MTE 83.3 75.8 30.0 51.5 68.2 54.4 50.6 31.8 76.6 58.0 Att. Score 75.3 75.5 32.1 48.1 45.3 48.4 49.5 23.5 61.4 51.0 RAUQ 85.5 72.5 28.2 87.4 67.2 56.7 54.6 22.4 72.2 60.7 CCP 86.0 75.0 43.1 93.4 65.2 69.4 60.8 32.1 64.7 65.5 Focus 82.5 73.9 28.2 66.4 61.6 61.2 55.8 30.9 69.7 58.9 Verb 82.0 76.0 36.0 97.0 65.0 83.0 68.0 25.0 69.0 66.5 
+
+GPT-4.1 91.7 83.4 62.8 99.1 73.3 89.0 85.1 49.1 71.5 78.3 Retrieval-Free Supervised Methods 
+
+MM 89.5 77.5 25.7 58.5 67.0 60.9 51.2 19.5 63.8 57.1 CCS 82.0 70.6 23.8 51.6 54.8 51.4 50.6 16.7 65.1 51.8 TAD 92.8 76.3 31.2 70.5 62.5 62.6 51.9 33.5 67.3 60.9 SATRMD 91.2 77.8 28.6 81.1 67.8 67.8 55.9 24.8 67.4 62.5 MIND 94.6 77.6 33.0 97.0 68.1 60.9 59.3 26.5 62.6 64.4 Sheeps 95.0 72.4 31.8 98.1 69.8 78.4 62.2 34.3 66.1 67.6 SAPLMA 94.3 77.9 35.9 83.8 65.5 67.1 55.9 26.5 73.2 64.5 
+
+INTRA 94.5 71.3 34.0 98.9 68.0 84.0 67.1 34.9 70.9 69.3 
+
+26 Preprint Table 10: Performance of claim verification methods for Phi-4-mini in the proposed evidence-free setting, measured by ROC-AUC ↑ across nine datasets. Bold values indicate the best result per dataset, the second best is underlined, and Avg the mean score across all datasets. 
+
+Method long-tail human-made cross-model rule-generated long-form multilingual Avg PopQA AVeriTeC UHead Cities CC CMP CF WH X-Fact 
+
+Retrieval-Based Methods 
+
+Verb + RAG 78.0 72.0 71.0 95.0 73.0 87.0 74.0 66.0 73.0 76.5 
+
+Retrieval-Free Unsupervised Methods 
+
+SP 71.5 64.0 66.2 92.2 63.8 65.0 61.6 67.4 45.8 66.4 Perplexity 72.2 55.0 60.6 91.6 70.7 71.1 61.9 61.0 55.0 66.6 MTE 64.4 61.1 61.1 54.1 70.4 56.6 50.9 69.1 59.4 60.8 Att. Score 50.6 59.5 59.1 40.7 42.1 48.9 49.5 59.0 43.6 50.3 RAUQ 65.9 59.5 57.9 81.2 65.1 54.9 53.7 60.5 55.4 61.6 CCP 47.0 54.6 58.0 43.5 40.8 48.6 49.3 53.5 42.5 48.6 Focus 49.7 49.9 49.0 50.0 51.2 50.2 50.0 49.8 52.0 50.2 Verb 63.0 53.0 60.0 96.0 72.0 88.0 75.0 65.0 51.0 69.1 
+
+GPT-4.1 84.7 76.7 87.0 99.5 80.3 92.3 90.8 81.8 62.8 84.0 Supervised Methods 
+
+MM 81.7 60.8 61.3 99.5 79.3 86.2 68.9 70.0 51.7 73.3 
+
+CCS 82.3 61.4 59.5 99.3 79.5 85.5 69.6 67.9 52.6 73.1 TAD 81.4 56.7 57.2 84.4 63.1 60.9 53.6 70.0 54.8 64.7 SATRMD 73.8 60.5 58.6 89.0 69.0 66.5 59.0 58.6 48.8 64.9 MIND 83.9 60.1 64.6 95.9 72.1 73.7 57.9 69.2 52.8 70.0 Sheeps 84.9 56.7 62.6 90.2 67.6 73.0 60.1 69.8 59.4 69.4 SAPLMA 82.1 48.0 61.7 78.9 68.8 67.3 58.4 66.3 56.8 65.4 
+
+INTRA 84.0 55.8 61.9 91.7 66.1 76.4 61.0 69.9 58.3 69.5 Table 11: Performance of claim verification methods for Phi-4-mini in the proposed evidence-free setting, measured by PR-AUC ↑ (multiplied by 100) across nine datasets. Bold values indicate the best result per dataset, the second best is underlined, and Avg the mean score across all datasets. 
+
+Method long-tail human-made cross-model rule-generated long-form multilingual Avg PopQA AVeriTeC UHead Cities CC CMP CF WH X-Fact 
+
+Retrieval-Based Methods 
+
+Verb + RAG 88.0 81.0 41.0 91.0 66.0 82.0 66.0 24.0 66.0 67.1 
+
+Retrieval-Free Unsupervised Methods 
+
+SP 86.0 78.2 38.6 87.8 62.4 61.4 59.0 28.6 63.0 62.8 Perplexity 87.7 73.4 31.2 90.9 68.5 69.2 58.7 21.7 66.2 63.1 MTE 82.0 74.5 30.5 52.3 68.0 54.8 50.5 29.3 67.6 56.6 Att. Score 75.5 75.5 31.4 45.3 43.9 48.9 49.7 23.3 61.7 50.6 RAUQ 84.4 77.2 28.8 79.4 63.5 53.1 52.6 21.5 67.2 58.6 CCP 73.1 74.0 29.4 45.2 42.9 48.5 49.5 18.9 61.1 49.2 Focus 74.8 68.4 15.9 75.0 59.1 62.6 50.9 18.1 71.0 55.1 Verb 81.0 71.0 31.0 92.0 65.0 83.0 67.0 25.0 66.0 64.5 
+
+GPT-4.1 91.7 83.4 62.8 99.1 73.3 89.0 85.1 49.1 71.5 78.3 Retrieval-Free Supervised Methods 
+
+MM 92.9 77.5 32.3 99.5 76.6 85.1 64.1 26.6 63.3 68.7 CCS 93.1 78.3 30.1 99.4 78.6 84.5 66.0 25.8 64.3 68.9 
+
+TAD 92.2 71.9 32.0 80.6 61.3 57.8 52.5 33.4 69.5 61.2 SATRMD 88.1 76.2 29.0 87.2 66.7 63.0 56.4 21.3 63.0 61.2 MIND 93.6 75.9 34.3 94.5 70.0 68.7 55.4 30.3 66.1 65.4 Sheeps 93.8 73.9 33.9 87.2 66.0 68.0 56.3 32.1 70.6 64.6 SAPLMA 93.1 68.9 35.0 78.6 66.4 64.7 56.2 30.8 69.8 62.6 
+
+INTRA 93.3 72.7 33.7 87.5 64.5 71.7 56.8 32.2 69.1 64.6 
+
+27

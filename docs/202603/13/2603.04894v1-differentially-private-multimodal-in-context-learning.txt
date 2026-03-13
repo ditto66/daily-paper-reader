@@ -1,0 +1,829 @@
+Title: Differentially Private Multimodal In-Context Learning
+
+URL Source: https://arxiv.org/pdf/2603.04894v1
+
+Published Time: Fri, 06 Mar 2026 01:38:17 GMT
+
+Number of Pages: 14
+
+Markdown Content:
+# Differentially Private Multimodal In-Context Learning 
+
+Ivoline C. Ngong 1 Zarreen Reza 2 Joseph P. Near 1
+
+Abstract 
+
+Vision-language models are increasingly applied to sensitive domains such as medical imaging and personal photographs, yet existing differentially private methods for in-context learning are limited to few-shot, text-only settings because privacy cost scales with the number of tokens processed. We present Differentially Private Multimodal Task Vectors (DP-MTV), the first framework enabling many-shot multimodal in-context learning with formal (ε, δ )-differential privacy by aggregating hundreds of demonstrations into compact task vectors in activation space. DP-MTV partitions private data into disjoint chunks, applies per-layer clipping to bound sensitivity, and adds calibrated noise to the aggregate, requiring only a single noise addition that enables unlimited inference queries. We evaluate on eight benchmarks across three VLM architectures, supporting deployment with or without auxiliary data. At ε = 1.0,DP-MTV achieves 50% on VizWiz compared to 55% non-private and 35% zero-shot, preserving most of the gain from in-context learning under meaningful privacy constraints. 
+
+1. Introduction 
+
+In-context learning (ICL) enables vision-language models to adapt to new tasks by conditioning on demonstration examples at inference time, without finetuning (Brown et al., 2020; Dong et al., 2022). This allows organizations to customize models using their own data directly. However, when that data contains private information, ICL poses serious privacy risks. Models can memorize and leak content from demonstrations through attacks such as membership inference, data extraction, and prompt leaking (Wen et al., 2024; Duan et al., 2024; Hou et al., 2025) Consider a tax preparation service using a VLM to process       
+
+> 1University of Vermont, Burlington, VT, USA 2Independent Researcher. Correspondence to: Ivoline C. Ngong
+> <ivoline.ngong@uvm.edu >.
+> Preprint. March 6, 2026.
+
+client documents. Each image contains Social Security numbers, addresses, and income data that VLMs can extract through OCR (Liu et al., 2024). An adversary with black-box access could query for this information directly or perform membership inference to determine whether a specific client’s data was used. Images also leak information through visual content as models can infer geolocation from scene details (Mendes et al., 2024), extract private attributes from environmental cues (T ¨omek c¸ e et al., 2024), and reveal biometric characteristics despite anonymization (Caldarella et al., 2024; Kim et al., 2025). Differential privacy (DP) provides formal guarantees that limit what an adversary can infer about any individual in the dataset (Dwork et al., 2006). Recent work has applied DP to text-based in-context learning by generating private synthetic demonstrations (Panda et al., 2023a; Tang et al., 2023), aggregating outputs across disjoint exemplar sets (Wu et al., 2023a; Duan et al., 2024), applying local differential privacy to labels (Zheng et al., 2024), leveraging auxiliary public data (Joo et al., 2025), and mixing few-shot with zero-shot outputs (Flemings et al., 2025). Despite their differences, all these methods work only with text and are restricted to few-shot settings. This restriction arises because privacy cost accumulates with either the number of demonstrations or the tokens generated, and the noise required for strong privacy at scale destroys utility. For multimodal data, where a single image consumes hundreds of tokens (Bai et al., 2023a), even a handful of demonstrations exhaust both context capacity and privacy budget. To our knowledge, no prior work addresses differentially private in-context learning for multimodal data. One way to scale beyond context limits is Multimodal Task Vectors (MTV) (Huang et al., 2024), which aggregates activation patterns from hundreds of examples into compact steering vectors applied at inference time. This bypasses context limits entirely, but MTV provides no privacy guarantees. The vectors directly encode patterns from demonstrations, exposing them to potential inference attacks. Practitioners must therefore choose between privacy risks with many-shot learning or few-shot protection that does not extend to images. We introduce Differentially Private Multimodal Task 1
+
+> arXiv:2603.04894v1 [cs.AI] 5 Mar 2026 Differentially Private Multimodal In-Context Learning
+
+Vectors (DP-MTV), the first framework enabling many-shot multimodal in-context learning with formal (ε, δ )-differential privacy. Operating in activation space fundamentally changes the privacy problem. Instead of protecting each token or demonstration individually, we aggregate activation patterns first and privatize the aggregate. DP-MTV partitions private data into disjoint chunks where each individual’s data appears exactly once, clips each chunk’s contribution to bound sensitivity, and adds calibrated Gaussian noise to the mean. This requires only a single noise addition regardless of dataset size, enabling unlimited inference queries at zero additional privacy cost. We evaluate DP-MTV on eight benchmarks spanning visual question answering and fine-grained classification using three VLM architectures. At ε = 1 .0, DP-MTV achieves 49% accuracy on VizWiz compared to 55% for non-private MTV and 35% for zero-shot, preserving most of the gain from in-context learning under meaningful privacy constraints. We provide both a variant that uses public auxiliary data for efficiency and a fully-private variant requiring no auxiliary data. 
+
+Contributions. 
+
+• We introduce DP-MTV, the first method for differentially private many-shot multimodal in-context learning, enabling formal (ε, δ )-DP guarantees for learning from hundreds of image-text demonstrations. • We show that operating in activation space with disjoint partitioning and per-layer clipping requires only a single noise addition, enabling unlimited inference queries at zero marginal privacy cost. • We evaluate on eight benchmarks across three VLM architectures, demonstrating that formal privacy guarantees are achievable without sacrificing the core benefit of learning from many examples. 
+
+2. Preliminaries 
+
+2.1. Differential Privacy 
+
+Differential privacy(DP) (Dwork et al., 2006; 2014) provides formal guarantees that an algorithm’s output reveals limited information about any individual input record. 
+
+Definition 2.1 ((ε, δ )-Differential Privacy) . A randomized mechanism M satisfies (ε, δ )-differential privacy if for any datasets D, D′ differing in a single record, and any measurable set O:
+
+Pr[ M(D) ∈ O ] ≤ eε · Pr[ M(D′) ∈ O ] + δ (1) The privacy budget ε controls the strength of the guarantee: smaller values provide stronger protection. The parameter δ
+
+represents the probability of a privacy breach and is typically set to be cryptographically small (e.g., δ < 1/|D| ). We rely on three standard results. The Gaussian mechanism (Dwork et al., 2014) achieves (ε, δ )-DP by adding noise calibrated to a query’s sensitivity: for f : D → 
+
+Rd with ℓ2-sensitivity ∆2 = max D,D′ ∥f (D) − f (D′)∥2,releasing f (D)+ N (0 , σ 2I) with σ ≥ ∆2
+
+p2 ln(1 .25 /δ )/ε 
+
+satisfies (ε, δ )-DP. Our implementation uses the analytic Gaussian mechanism (Balle & Wang, 2018) which provides tighter bounds on privacy loss. The composition theorem states that releasing the outputs of an (ε1, δ 1)-DP mechanism and an (ε2, δ 2)-DP mechanism together satisfies (ε1 +ε2, δ 1 +δ2)-DP. The post-processing property 
+
+guarantees that any computation on the output of an (ε, δ )-DP mechanism remains (ε, δ )-DP. 
+
+2.2. Multimodal Task Vectors 
+
+Multimodal Task Vectors (MTV) (Huang et al., 2024) enable many-shot in-context learning for vision-language models (VLMs) by encoding task knowledge into attention head activations rather than token sequences. Consider a VLM with L transformer layers, each containing H attention heads of dimension d. MTV operates in three steps. First, MTV processes multiple batches of in-context demonstrations through the VLM. For each forward pass, it extracts the attention head activations at the final token position, yielding a tensor in RL×H×d. These activations are averaged across all forward passes to produce the mean activation tensor ¯a ∈ RL×H×d. Second, MTV uses REINFORCE (Williams, 1992) to learn a binary mask 
+
+m ∈ { 0, 1}L×H identifying which attention heads benefit from activation injection. Third, at inference time, for each selected head where ml,h = 1 , the model’s original activation is replaced with the corresponding component of 
+
+¯a, steering behavior toward the demonstrated task. MTV’s key property is that it aggregates information from hundreds of examples into a compact representation. This enables many-shot learning that would otherwise exceed context window limits, achieving substantial accuracy gains on visual question answering and image classification benchmarks. 
+
+2.3. Privacy in In-Context Learning 
+
+In-context learning poses inherent privacy risks. When demonstrations contain sensitive data, models exhibit higher confidence on those examples, enabling membership inference attacks that determine whether specific records were used (Wen et al., 2024; Duan et al., 2024). These risks extend to multimodal settings, where images may reveal sensitive attributes beyond their apparent content (Mendes et al., 2024; T¨ omekc ¸e et al., 2024; Caldarella et al., 2024) 2Differentially Private Multimodal In-Context Learning 
+
+Several frameworks have introduced differential privacy to ICL. Tang et al. (2023) generate DP synthetic demonstrations via noisy token-level aggregation. Wu et al. (2023b) and Duan et al. (2024) aggregate predictions across disjoint exemplar sets using PATE-style voting. Zheng et al. (2024) apply local DP to labels, while Joo et al. (2025) leverage public auxiliary data to reduce privacy costs. These methods share two limitations. First, they operate in token space, where privacy cost scales with sequence length. A single image corresponds to hundreds of visual tokens (Bai et al., 2023b), making token-level protection prohibitively expensive for multimodal ICL. Second, all existing methods are restricted to few-shot settings due to context window constraints. Our work addresses both limitations by privatizing in activation space, where the cost depends on the number of DP mechanisms applied rather than tokens processed. 
+
+3. Differentially Private Multimodal Task Vectors 
+
+3.1. Problem Setup 
+
+We consider a vision-language model with L transformer layers, each containing H attention heads of dimension d.Given a private dataset Dpriv of N image-question-answer triplets (x, q, a ), the goal is to enable many-shot in-context learning from Dpriv while satisfying (ε, δ )-differential privacy. Standard DP composition pays privacy cost for each training example accessed and each inference query served. With hundreds of examples and unlimited queries, this accumulation exhausts any finite privacy budget. 
+
+Threat Model. We protect each example in Dpriv against adversaries who observe model outputs and attempt to infer whether specific examples were used in training (membership inference) or extract sensitive attributes from them. The adversary can query the model arbitrarily but has no access to the training procedure or model internals. 
+
+3.2. Overview 
+
+Figure 1 illustrates our approach. MTV separates construction from inference, suggesting a natural privacy strategy: privatize the mean activations and head masks once during construction, then reuse them for unlimited queries without additional privacy cost. Two technical challenges emerge: computing private mean activations without paying cost for each training example, and selecting heads privately when no public data exists. Standard approaches pay privacy cost for each example accessed, and with hundreds of training examples, even modest budgets like ε = 3 .0 would add so much noise that the model cannot learn from the data. Head selection poses a second challenge, since evaluating which heads are task-relevant requires labeled examples that also come from private data when no public alternative exists. Our method addresses both challenges through a two-phase approach (Figure 1). The construction phase (offline) 
+
+partitions data into disjoint chunks so each example appears once, clips each chunk’s activations to bounded norm, computes the mean, and adds calibrated noise to protect privacy. Head selection either runs on public data at zero privacy cost or uses a private selection mechanism when no public data exists. The inference phase (online) processes queries by replacing activations at selected heads with the private mean, requiring no additional privacy cost. 
+
+3.3. Construction Phase 
+
+3.3.1. P RIVATE MEAN ACTIVATIONS 
+
+Computing private mean activations requires balancing two competing goals: tight sensitivity bounds that minimize noise, and preserving enough signal for effective learning. We achieve this balance through disjoint partitioning combined with per-layer clipping. We partition Dpriv into m disjoint chunks where each example appears exactly once. Each chunk contains one target example plus K demonstration examples. For VQA tasks, demonstrations are image-question-answer triplets that provide context. For classification tasks, demonstrations are image-label pairs showing examples of the relevant classes. Each chunk undergoes a forward pass through the VLM to extract activation patterns at selected layers 
+
+S ⊆ [L], producing activation tensor ai ∈ R|S|× H×d.Before aggregation, we clip activations independently for each layer. For layer l ∈ S , the layer-level activation a(l) 
+
+> i
+
+∈
+
+RH×d is clipped to norm at most C:
+
+˜a(l) 
+
+> i
+
+= a(l) 
+
+> i
+
+/ max(1 , ∥a(l) 
+
+> i
+
+∥2/C ) (2) After clipping, we compute the mean ¯a = 1
+
+> m
+
+Pmi=1 ˜ai.Since each example appears in exactly one chunk and clipping bounds each chunk’s contribution, changing one example affects only one clipped tensor. The ℓ2-sensitivity is 
+
+∆2 =
+
+p|S| · Cm . (3) The p|S| factor arises because clipping is applied independently per layer, and these contributions compose in 
+
+ℓ2 norm. With |S| = 32 , this yields ∆2 ≈ 5.66 Cm .We add Gaussian noise calibrated to this sensitivity using the analytic Gaussian mechanism (Balle & Wang, 2018). We release: 
+
+¯apriv = ¯ a + N (0 , σ 2I). (4) 3Differentially Private Multimodal In-Context Learning      
+
+> Figure 1. DP-MTV approach. Construction (offline): Partition data into disjoint chunks, extract and clip activations, compute the mean, add Gaussian noise (steps 1–2), then select heads via public data or a private mechanism (step 3). Inference (online): Replace activations at selected heads with private task vectors. Post-processing enables unlimited queries at no additional privacy cost.
+
+This satisfies (εtv , δ )-differential privacy (Theorem 3.1). 3.3.2. A TTENTION HEAD SELECTION 
+
+Mean activations must be injected into task-relevant attention heads. We use REINFORCE (Williams, 1992) to learn which heads to modify by training Bernoulli distributions over attention heads and sampling binary masks that maximize task performance via policy gradients. We consider two scenarios based on data availability. 
+
+Public-Data Variant. When public examples from a related distribution exist, we run REINFORCE entirely on this public data at zero privacy cost. The public data need not match Dpriv exactly—similar task structure suffices. For medical VQA, public examples might come from different hospitals or imaging modalities. For document understanding, public forms from different domains provide adequate signal. This variant concentrates the full privacy budget (εtv , δ ) on privatizing mean activations. The final system satisfies (εtv , δ )-DP since head selection with post-processing preserves privacy (Theorem 3.2). 
+
+Private-Only Variant. When no public data exists, we privatize the selection of the final mask via noisy top-k
+
+selection with limited domain (Durfee & Rogers, 2019). We sample candidate masks from the learned Bernoulli distribution and retain the most frequently occurring ones. For each candidate, we compute an aggregate score by evaluating it on private validation examples, clipping per-example cross-entropy losses to a bounded range and summing them. We then apply the Gumbel mechanism (Durfee & Rogers, 2019), adding Gumbel noise with scale Csel /ε sel to each score and selecting the mask with the highest noisy score. Since we select from a limited domain of candidate masks rather than all 2|S|× H possible masks, tight privacy bounds are achievable even with small 
+
+εsel values. The total privacy cost is (εtv + εsel , δ ) by composition (Theorem 3.3). Slightly tighter bounds could be obtained using a numerical approach (Gopi et al., 2021), but the practical benefit would be small since we compose only two mechanisms. 
+
+3.4. Inference Phase 
+
+During inference, the model processes queries using only the private mean activations ¯apriv and head mask m
+
+computed during construction. For each query, the model performs a standard forward pass. At each selected attention head where ml,h = 1 , we intercept the computed activation and replace it with the corresponding component of ¯apriv 
+
+before continuing the forward pass. The model then generates an answer using these modified activations. This inference procedure satisfies the post-processing property of differential privacy. Since the private artifacts 
+
+(¯ apriv , m) were released with privacy guarantees during construction, any deterministic computation on these artifacts preserves those guarantees. The model can serve unlimited queries without accumulating additional privacy cost, making deployment practical for real-world applications where query volume is unpredictable. 4Differentially Private Multimodal In-Context Learning 
+
+Algorithm 1: Private Mean Activation Computation 
+
+Input: Dpriv (private dataset), F (VLM), S (selected layers), K (demonstrations per chunk), C
+
+(clipping threshold), εtv , δ (privacy parameters) 
+
+Output: ¯apriv ∈ R|S|× H×d (private mean activations)  
+
+> 1
+
+Partition Dpriv into m disjoint chunks 
+
+Ci = {target i, demo i, 1, . . . , demo i,K } ; ▷ Each example in exactly one chunk  
+
+> 2
+
+for i ← 1 to m do  
+
+> 3
+
+ai ← Extract (F, Ci, S) ; ▷ Forward pass chunk Ci 
+
+> 4
+
+for l ∈ S do  
+
+> 5
+
+˜a(l) 
+
+> i
+
+← a(l) 
+
+> i
+
+· min 
+
+
+
+1, C 
+
+> ∥a(l)
+> i∥2
+
+
+
+;
+
+▷ Per-layer clipping  
+
+> 6
+
+¯a ← 1
+
+> m
+
+Pmi=1 ˜ai ; ▷ Aggregate clipped activations  
+
+> 7
+
+∆2 ←√|S|· Cm , σ2 ← AnalyticGaussian (∆ 2, ε tv , δ ) ;
+
+▷ Sensitivity and noise scale  
+
+> 8
+
+¯apriv ← ¯a + N (0 , σ 2I) ; ▷ Add Gaussian noise  
+
+> 9
+
+return ¯apriv 
+
+3.5. Privacy Analysis 
+
+We establish privacy guarantees for both deployment variants. Full proofs appear in Appendix D. 
+
+Theorem 3.1 (Private Mean Activations) . Disjoint partitioning ensures each record affects exactly one chunk, and per-layer clipping bounds each chunk’s contribution. The ℓ2-sensitivity is ∆2 = p|S| · C/m , which is √H times smaller than per-head clipping, reducing noise by a factor of √H ≈ 5.66 × for models with H = 32 heads. 
+
+Theorem 3.2 (Public-Data Variant) . When head selection runs entirely on public data Dpub , the complete system releasing (¯ apriv , m) satisfies (εtv , δ )-differential privacy with respect to Dpriv .
+
+Head selection on public data incurs zero privacy cost. Inference applies a deterministic function to the released artifacts; by the post-processing property, this preserves the 
+
+(εtv , δ ) guarantee for unlimited queries. 
+
+Theorem 3.3 (Private-Only Variant) . When head selection uses the Gumbel mechanism over ¯k candidates with loss clipping threshold Csel , the complete system satisfies (εtv +
+
+εsel , δ )-differential privacy. 
+
+Mean activations satisfy (εtv , δ )-DP by Theorem 3.1. The Gumbel mechanism provides (εsel , 0) -DP for selecting from the limited domain (Durfee & Rogers, 2019). Basic composition yields the total guarantee. Inference remains post-processing. 
+
+4. Experiments & Results 
+
+4.1. Experimental Setup Datasets. We evaluate on eight vision-language benchmarks (see Table 1 in Appendix A.1). For VQA, we use VizWiz (Gurari et al., 2018) (visual questions from blind users), VQA-RAD (Lau et al., 2018) and PathVQA (He et al., 2020) (medical VQA on radiology and pathology images), OK-VQA (Marino et al., 2019) (knowledge-intensive questions), and TextVQA (Singh et al., 2019) (questions requiring reading text in images). For classification, we use Flowers102 (Nilsback & Zisserman, 2008), CUB-200 (Wah et al., 2011), and DTD (Cimpoi et al., 2014) for fine-grained visual recognition. Following MTV, classification tasks are formulated as 2-way 1-shot problems: given one example each of classes A and B, the model predicts the query image’s class. 
+
+Models. We evaluate three vision-language models with different architectural foundations. Qwen-VL (Bai et al., 2023a) is a LLaMA-based VLM pretrained on interleaved image-text data. LLaMA3-ViLA-1.5-8B (Lin et al., 2024) (abbreviated as ViLA-1.5) uses LLaMA-3 as its language backbone. Idefics2-8B (Lauren c¸ on et al., 2024) is a Mistral-based model pretrained on web-scraped multimodal documents. All three models are designed for interleaved multimodal ICL, making them suitable testbeds for evaluating DP-MTV. 
+
+Baselines. We compare against three baselines. 0-Shot performs zero-shot inference without in-context examples. Clean MTV applies standard MTV without privacy constraints, establishing an upper bound. The gap between these baselines indicates the headroom available for DP-MTV. We evaluate two DP-MTV variants: DP-MTV (Public) uses examples from the validation set for head selection at zero privacy cost, while DP-MTV (Private) 
+
+privatizes head selection using only the training data. 
+
+Evaluation. We measure accuracy using the VQA evaluation metric (Antol et al., 2015) for VQA tasks and exact match for classification.All results are averaged over 3 random seeds. Privacy guarantees are reported as (ε, δ )-differential privacy with δ = 10 −5.
+
+Hyperparameters. We extract activations from all 32 layers ( |S| = 32 ) and partition each training set into m =100 disjoint chunks with clipping threshold C = 1 .0. For VQA datasets, each chunk contains one target plus K = 8 
+
+demonstrations (9 examples total, using 900 examples per dataset). For classification, each chunk is a single 2-way 5Differentially Private Multimodal In-Context Learning 0                        
+
+> 20
+> 40
+> 60
+> 80
+> 100
+> Accuracy (%)
+> 35
+> 55
+> 50
+> 47
+> +19
+> Qwen
+> 55
+> 61 61
+> 15
+> +6
+> ViLA
+> 39
+> 57 59
+> 54
+> +18
+> idefics2
+> VizWiz
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 25
+> 28 30 29
+> +3
+> Qwen
+> 29 31 30 31
+> +1
+> ViLA
+> 32 32
+> 00
+> +1
+> idefics2
+> PathVQA
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 58 60
+> 56 55 +2
+> Qwen
+> 39
+> 51
+> 40
+> 1
+> +12
+> ViLA
+> 51 52
+> 47
+> 8
+> +1
+> idefics2
+> OK-VQA
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 38 40 43
+> 0
+> +2
+> Qwen
+> 39
+> 43
+> 19
+> 0
+> +3
+> ViLA
+> 52 52
+> 00
+> +0
+> idefics2
+> VQA-RAD
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 68
+> 64 64 61 -4
+> Qwen
+> 49
+> 53 52 50
+> +4
+> ViLA
+> 69
+> 65
+> 57
+> 50
+> -4
+> idefics2
+> TextVQA
+> Zero-shot MTV DP-MTV DP-MTV (priv) Baseline Gap
+
+(a) VQA Tasks 0               
+
+> 20
+> 40
+> 60
+> 80
+> 100
+> Accuracy (%)
+> 54
+> 76
+> 93 92
+> +22
+> Qwen
+> 82 84
+> 92
+> 80 +2
+> ViLA
+> 90 94 94 95
+> +4
+> idefics2
+> DTD
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 57
+> 78
+> 93 92
+> +21
+> Qwen
+> 70
+> 81
+> 89
+> 0
+> +10
+> ViLA
+> 88 89 90 89
+> +1
+> idefics2
+> CUB-200
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 54
+> 77
+> 96
+> 2
+> +23
+> Qwen
+> 74
+> 84
+> 50
+> 0
+> +10
+> ViLA
+> 85 87 87
+> 0
+> +2
+> idefics2
+> Flowers102
+> Zero-shot MTV DP-MTV DP-MTV (priv) Baseline Gap
+
+(b) Classification Tasks 
+
+Figure 2. Model comparison at ε = 1 .0. Brackets show the baseline gap (MTV − Zero-shot); larger gaps predict better DP-MTV performance. (a) VizWiz has the largest gaps and strongest DP-MTV results. (b) On 2-way classification, DP-MTV often matches or exceeds MTV. 
+
+example with K = 2 support images (100 examples total). This represents 2-50% of each training set depending on size. We evaluate privacy budgets ε ∈ { 0.1, 0.5, 1, 2, 5}. For private head selection, we sample ¯k = 12 candidate masks from the learned distribution, evaluate each on B = 100 
+
+held-out validation examples, and use clipping threshold 
+
+Csel = 1 .0 for loss aggregation. 
+
+4.2. Results 
+
+We evaluate DP-MTV on five VQA benchmarks and three classification datasets using three VLM architectures. Our experiments address three questions: (1) Does DP-MTV enable effective private in-context learning? (2) When does DP-MTV work well? (3) Does DP-MTV generalize across model architectures? Figure 3 shows privacy-utility tradeoffs across the full range of privacy budgets. 
+
+Privacy-Utility Tradeoffs. Figure 3a shows that DP-MTV enables effective private in-context learning on VQA tasks. On VizWiz, the public variant achieves 50.4% at 
+
+ε = 1 .0, retaining 92% of MTV’s performance (54.6%). Performance improves further at higher privacy budgets, approaching MTV at ε = 5.0. Other VQA datasets show varying degrees of success, which we analyze below. Figure 3b shows classification results, where DP-MTV matches or exceeds MTV at moderate privacy budgets (ε ≥ 0.5). 
+
+The Role of Baseline Gaps. For VQA tasks, a clear pattern emerges: DP-MTV performs best when MTV substantially improves over zero-shot. We call this difference the baseline gap . When the gap is large, task vectors encode meaningful information that DP-MTV can preserve despite privacy noise. VizWiz exemplifies this with Qwen-VL’s +19.2% gap, providing headroom for DP-MTV to recover substantial gains. When gaps are small—VQA-RAD (+1.7%), OK-VQA (+2.0%) for Qwen-VL—there is limited signal to preserve, and DP-MTV shows modest differences from MTV. TextVQA presents an edge case where Qwen-VL’s MTV underperforms zero-shot ( −4.5% 
+
+gap), indicating task vectors do not benefit this model-task combination; DP-MTV performs comparably to MTV, as expected. Classification tasks exhibit different behavior. Despite large baseline gaps (+23–25% for Qwen-VL), DP-MTV substantially exceeds MTV (e.g., Flowers102: 96.2% vs 76.8%). This reflects weak MTV baselines on 2-way classification tasks rather than exceptional DP-MTV performance, consistent with prior observations that off-the-shelf VLMs underperform on classification (Zhang et al., 6Differentially Private Multimodal In-Context Learning 0.1 0.5 1 2 5                
+
+> (privacy budget)
+> 0
+> 10
+> 20
+> 30
+> 40
+> 50
+> 60
+> Accuracy (%)
+> VizWiz
+> Zero-shot 36.0%
+> MTV (non-DP) 54.6%
+> DP-MTV
+> DP-MTV (private)
+> 0.1 0.5 125
+> (privacy budget)
+> 0
+> 10
+> 20
+> 30
+> 40
+> 50
+> Accuracy (%)
+> VQA-RAD
+> Zero-shot 38.3%
+> MTV (non-DP) 40.0%
+> DP-MTV
+> DP-MTV (private)
+> 0.1 0.5 125
+> (privacy budget)
+> 0
+> 5
+> 10
+> 15
+> 20
+> 25
+> 30
+> Accuracy (%)
+> PathVQA
+> Zero-shot 25.1%
+> MTV (non-DP) 28.2%
+> DP-MTV
+> DP-MTV (private)
+> 0.1 0.5 125
+> (privacy budget)
+> 0
+> 10
+> 20
+> 30
+> 40
+> 50
+> 60
+> Accuracy (%)
+> OK-VQA
+> Zero-shot 58.3%
+> MTV (non-DP) 60.4%
+> DP-MTV
+> DP-MTV (private)
+> 0.1 0.5 125
+> (privacy budget)
+> 0
+> 10
+> 20
+> 30
+> 40
+> 50
+> 60
+> 70
+> Accuracy (%)
+> TextVQA
+> Zero-shot 68.4%
+> MTV (non-DP) 63.9%
+> DP-MTV
+> DP-MTV (private)
+
+(a) VQA Tasks 0.1 0.5 1 2 5        
+
+> (privacy budget)
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Accuracy (%)
+> Flowers102
+> Zero-shot 54.1%
+> MTV (non-DP) 76.8%
+> DP-MTV
+> DP-MTV (private)
+> 0.1 0.5 125
+> (privacy budget)
+> 0
+> 20
+> 40
+> 60
+> 80
+> Accuracy (%)
+> CUB-200
+> Zero-shot 56.1%
+> MTV (non-DP) 77.6%
+> DP-MTV
+> DP-MTV (private)
+> 0.1 0.5 125
+> (privacy budget)
+> 0
+> 20
+> 40
+> 60
+> 80
+> Accuracy (%)
+> DTD
+> Zero-shot 54.5%
+> MTV (non-DP) 76.3%
+> DP-MTV
+> DP-MTV (private)
+
+(b) Classification Tasks 
+
+Figure 3. Privacy-utility tradeoffs for Qwen-VL across privacy budgets. Dashed lines: non-private MTV; dotted lines: zero-shot. (a) On VQA, DP-MTV performs best on datasets where MTV provides the largest gains over zero-shot (e.g., VizWiz); performance varies by architecture (Figure 2). (b) On classification, DP-MTV matches or exceeds MTV at practical privacy budgets. 
+
+2024). 
+
+Model Architecture Effects. Figure 2 reveals that baseline gaps and DP-MTV performance vary substantially across architectures. ViLA achieves larger gaps than Qwen-VL on knowledge-intensive tasks: +12.3% vs +2.0% on OK-VQA, and +4.3% vs −4.5% on TextVQA, likely due to its LLaMA-3 foundation providing stronger world knowledge. Idefics2 shows mixed results: the public variant exceeds MTV on VizWiz (59.0% vs 56.5%) and classification, but fails on medical VQA (PathVQA, VQA-RAD), suggesting sensitivity to domain-specific tasks. Qwen-VL provides the most consistent results across datasets, while ViLA’s private variant requires higher ε for stable performance on some datasets. These differences suggest practitioners should consider both task requirements and architecture characteristics when deploying DP-MTV. In some cases across both VQA and classification, DP-MTV matches or slightly exceeds non-private MTV. We hypothesize this may stem from known connections between differential privacy and robust statistics (Dwork & Lei, 2009): clipping can mitigate massive outliers in foundation model activations (Diao et al., 2023; Chen et al., 2020), and Gaussian noise can act as randomized smoothing (Bishop, 1995; Cohen et al., 2019). 
+
+Deployment Recommendations. Based on our results, we offer two practical recommendations. First, the public-data variant is preferred when related auxiliary data exists: it achieves comparable or better accuracy while concentrating the full privacy budget on mean activations. Second, DP-MTV is most effective when MTV provides meaningful improvement over zero-shot—practitioners can estimate this gap on non-private data before committing to private deployment. The private-only variant enables fully private operation but typically requires ε ≥ 1.0 for stable 7Differentially Private Multimodal In-Context Learning 2 4 6 8 10 
+
+> Clipping Parameter (C)
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 120
+> 140
+> % of Baseline Accuracy
+> Optimal C
+> CUB-200
+> DTD
+> Flowers102
+> OK-VQA
+> PathVQA
+> TextVQA
+> VizWiz
+> VQA-RAD
+> Baseline
+
+Figure 4. Effect of clipping threshold C on VizWiz accuracy (Qwen-VL, ε = 1 .0). C = 1 .0 balances signal preservation with noise calibration. Performance degrades gradually at higher thresholds. 
+
+performance. 
+
+4.3. Ablation Studies Clipping Threshold. Figure 4 shows accuracy as a function of clipping threshold C on VizWiz with Qwen-VL at ε = 1 .0. Lower thresholds reduce sensitivity but increase bias from aggressive clipping; higher thresholds preserve more signal but require proportionally more noise. We find C = 1 .0 provides a favorable tradeoff, achieving 50.4% accuracy. Performance degrades gradually at higher thresholds, confirming the method is not brittle to this hyperparameter choice. 
+
+Robustness to Hyperparameters. We vary the number of chunks m ∈ { 50 , 100 , 500 , 1000 } and demonstration shots 
+
+K ∈ { 2, 8, 16 }. Performance remains stable across both ranges (Table 2 in Appendix), indicating the method is not sensitive to these choices. 
+
+5. Related Work 
+
+5.1. Privacy Risks in Vision-Language Models 
+
+As Vision-Language Models (VLMs) become ubiquitous, their susceptibility to privacy leakage has come under scrutiny. Adversarial attacks such as Membership Inference Attacks (MIA) can determine whether specific data points were used during training or in-context learning by analyzing model confidence scores (Wen et al., 2024; Duan et al., 2024). In the multimodal domain, these risks are amplified; recent work has shown that VLMs can infer sensitive attributes (e.g., health status, location, demographics) from seemingly benign background details in images (Mendes et al., 2024; ?; Caldarella et al., 2024). Furthermore, prompt injection attacks via visual inputs can bypass textual safety guardrails, causing models to regurgitate private context data (Liu et al., 2024; Hou et al., 2025). These vulnerabilities necessitate rigorous privacy guarantees for any system processing sensitive user data. 
+
+5.2. Differentially Private In-Context Learning 
+
+To mitigate these risks, several frameworks have introduced Differential Privacy (DP) to In-Context Learning (ICL). Early approaches focused on text-only models, utilizing methods such as private synthetic demonstration generation (Panda et al., 2023b; Tang et al., 2023) or ensemble-based aggregation like PATE (Wu et al., 2023b). More recent works have explored Local Differential Privacy (LDP) applied to labels (Zheng et al., 2024) or leveraging public auxiliary data to reduce privacy costs (Joo et al., 2025). However, existing DP-ICL methods face a critical scalability barrier in the multimodal setting. Standard DP mechanisms account for privacy loss based on the information accessed; since a single image corresponds to hundreds of visual tokens (Bai et al., 2023b), protecting multimodal contexts token-by-token leads to rapid privacy budget exhaustion. Our work addresses this by shifting the privacy mechanism from the token space to the activation space, enabling the aggregation of many-shot multimodal demonstrations without prohibitive privacy costs. 
+
+5.3. Multimodal Task Vectors 
+
+Multimodal Task Vectors (MTV) (Huang et al., 2024) represent a paradigm shift from token-based to activation-based ICL. By computing the mean activation of attention heads across hundreds of demonstrations, MTV compresses task-specific knowledge into a single steering vector that can be injected at inference time. This approach bypasses the context window limitations of standard ICL, enabling “Many-Shot” learning. However, the original MTV framework lacks privacy guarantees; the task vectors are direct aggregates of raw private data, making them vulnerable to reconstruction or membership inference. DP-MTV bridges this gap by formalizing the aggregation process under (ϵ, δ )-DP. 
+
+5.4. Our Contribution: Bridging the Gap 
+
+Our work bridges the gap between scalable multimodal learning and rigorous privacy protection. While prior DP-ICL methods are constrained by context length and token costs, and standard MTV lacks privacy, DP-MTV introduces the first framework for Differentially Private Many-Shot Multimodal ICL . By shifting the privacy mechanism from the token space to the activation space, we enable the aggregation of hundreds of demonstrations with a constant privacy cost. Furthermore, we provide empirical evidence that the privacy mechanisms themselves (clipping and noise) can serve as effective regularizers, enhancing performance on high-variance classification tasks. 8Differentially Private Multimodal In-Context Learning 
+
+6. Conclusion 
+
+We introduced DP-MTV, the first framework for differentially private many-shot multimodal in-context learning. By operating in activation space, DP-MTV aggregates patterns from hundreds of demonstrations and privatizes the aggregate, incurring all privacy cost during construction and enabling unlimited inference queries thereafter. Our experiments across eight benchmarks and three VLM architectures show that formal (ε, δ )-differential privacy is achievable without sacrificing the benefit of learning from many examples. At ε = 1 .0, DP-MTV preserves most of the gain from in-context learning compared to zero-shot baselines. Performance varies across tasks, with stronger results on classification than open-ended VQA. Future work could explore tighter composition for the fully-private setting, adaptive clipping strategies, or extensions to other activation editing methods. 
+
+Impact Statement 
+
+This work enables vision-language models to learn from sensitive multimodal data with formal privacy guarantees. The primary benefit is allowing organizations in healthcare, finance, and legal domains to use many-shot in-context learning without exposing individual data to inference attacks. Differential privacy provides guarantees for individuals but does not prevent inferences about groups or populations represented in the data. DP-MTV also inherits any biases present in the underlying VLM. Our evaluation includes medical imaging datasets (VQA-RAD, PathVQA) and VizWiz, which contains images from blind and low-vision users. These represent real applications where privacy protection is essential. 
+
+References 
+
+Antol, S., Agrawal, A., Lu, J., Mitchell, M., Batra, D., Zitnick, C. L., and Parikh, D. Vqa: Visual question answering. In Proceedings of the IEEE international conference on computer vision , pp. 2425–2433, 2015. Bai, J., Bai, S., Yang, S., Wang, S., Tan, S., Wang, P., Lin, J., Zhou, C., and Zhou, J. Qwen-vl: A frontier large vision-language model with versatile abilities. arXiv preprint arXiv:2308.12966 , 1(2):3, 2023a. Bai, J. et al. Qwen-vl: A frontier large vision-language model with versatile abilities. arXiv preprint arXiv:2308.12966 , 2023b. Balle, B. and Wang, Y.-X. Improving the gaussian mechanism for differential privacy: Analytical calibration and optimal denoising. In International conference on machine learning , pp. 394–403. PMLR, 2018. Bishop, C. M. Training with noise is equivalent to tikhonov regularization. Neural computation , 7(1):108–116, 1995. Brown, T., Mann, B., Ryder, N., Subbiah, M., Kaplan, J. D., Dhariwal, P., Neelakantan, A., Shyam, P., Sastry, G., Askell, A., et al. Language models are few-shot learners. 
+
+Advances in neural information processing systems , 33: 1877–1901, 2020. Caldarella, S., Mancini, M., Ricci, E., and Aljundi, R. The phantom menace: unmasking privacy leakages in vision-language models. In European Conference on Computer Vision , pp. 435–451. Springer, 2024. Chen, X., Wu, S. Z., and Hong, M. Understanding gradient clipping in private sgd: A geometric perspective. In 
+
+Advances in Neural Information Processing Systems ,volume 33, pp. 13773–13782, 2020. Cimpoi, M., Maji, S., Kokkinos, I., Mohamed, S., and Vedaldi, A. Describing textures in the wild. In 
+
+Proceedings of the IEEE conference on computer vision and pattern recognition , pp. 3606–3613, 2014. Cohen, J., Rosenfeld, E., and Kolter, Z. Certified adversarial robustness via randomized smoothing. In 
+
+International Conference on Machine Learning , pp. 1310– 1320. PMLR, 2019. Diao, S. et al. Qualitative study of massive outliers in large language models. arXiv preprint arXiv:2306.12001 ,2023. Dong, Q., Li, L., Dai, D., Zheng, C., Ma, J., Li, R., Xia, H., Xu, J., Wu, Z., Liu, T., et al. A survey on in-context learning. arXiv preprint arXiv:2301.00234 , 2022. Duan, H., Dziedzic, A., Yaghini, M., Papernot, N., and Boenisch, F. On the privacy risk of in-context learning. 
+
+arXiv preprint arXiv:2411.10512 , 2024. Durfee, D. and Rogers, R. M. Practical differentially private top-k selection with pay-what-you-get composition. 
+
+Advances in Neural Information Processing Systems , 32, 2019. Dwork, C. and Lei, J. Differential privacy and robust statistics. Proceedings of the forty-first annual ACM symposium on Theory of computing , pp. 371–380, 2009. Dwork, C., McSherry, F., Nissim, K., and Smith, A. Calibrating noise to sensitivity in private data analysis. In 
+
+Theory of Cryptography: Third Theory of Cryptography 
+
+9Differentially Private Multimodal In-Context Learning 
+
+Conference, TCC 2006, New York, NY, USA, March 4-7, 2006. Proceedings 3 , pp. 265–284. Springer, 2006. Dwork, C., Roth, A., et al. The algorithmic foundations of differential privacy. Foundations and Trends® in Theoretical Computer Science , 9(3–4):211–407, 2014. Flemings, J., Gan, H., Li, H., Razaviyayn, M., and Annavaram, M. Differentially private in-context learning via sampling few-shot mixed with zero-shot outputs. 
+
+arXiv preprint arXiv:2501.19287 , 2025. Gopi, S., Lee, Y. T., and Wutschitz, L. Numerical composition of differential privacy. Advances in Neural Information Processing Systems , 34:11631–11642, 2021. Gurari, D., Li, Q., Stangl, A. J., Guo, A., Lin, C., Grauman, K., Luo, J., and Bigham, J. P. Vizwiz grand challenge: Answering visual questions from blind people. In 
+
+Proceedings of the IEEE conference on computer vision and pattern recognition , pp. 3608–3617, 2018. He, X., Zhang, Y., Mou, L., Xing, E., and Xie, P. Pathvqa: 30000+ questions for medical visual question answering. 
+
+arXiv preprint arXiv:2003.10286 , 2020. Hou, D., Yang, Z., Zheng, L., Jin, B., Xu, H., Li, Y., Xu, B., and Peng, K. Neighborhood deviation attack against in-context learning. Applied Sciences , 15(8):4177, 2025. Huang, B., Mitra, C., Arbelle, A., Karlinsky, L., Darrell, T., and Herzig, R. Multimodal task vectors enable many-shot multimodal in-context learning. Advances in Neural Information Processing Systems , 37:22124–22153, 2024. Joo, S., Koh, H., and Jung, K. Public data assisted differentially private in-context learning. arXiv preprint arXiv:2509.10932 , 2025. Kim, Y., Swetha, S., Kagdi, F., and Shah, M. Safe-llava: A privacy-preserving vision-language dataset and benchmark for biometric safety. arXiv preprint arXiv:2509.00192 , 2025. Lau, J. J., Gayen, S., Ben Abacha, A., and Demner-Fushman, D. A dataset of clinically generated visual questions and answers about radiology images. Scientific data , 5(1):1–10, 2018. Lauren c¸ on, H., Tronchon, L., Cord, M., and Sanh, V. What matters when building vision-language models? 
+
+Advances in Neural Information Processing Systems , 37: 87874–87907, 2024. Lin, J., Yin, H., Ping, W., Molchanov, P., Shoeybi, M., and Han, S. Vila: On pre-training for visual language models. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pp. 26689–26699, 2024. Liu, Y., Li, Z., Huang, M., Yang, B., Yu, W., Li, C., Yin, X.-C., Liu, C.-L., Jin, L., and Bai, X. Ocrbench: on the hidden mystery of ocr in large multimodal models. 
+
+Science China Information Sciences , 67(12):220102, 2024. Marino, K., Rastegari, M., Farhadi, A., and Mottaghi, R. O.-V. A visual question answering benchmark requiring external knowledge. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, Long Beach, CA, USA , pp. 15–20, 2019. Mendes, E., Chen, Y., Hays, J., Das, S., Xu, W., and Ritter, A. Granular privacy control for geolocation with vision language models. arXiv preprint arXiv:2407.04952 ,2024. Nilsback, M.-E. and Zisserman, A. Automated flower classification over a large number of classes. In 2008 Sixth Indian conference on computer vision, graphics & image processing , pp. 722–729. IEEE, 2008. Panda, A., Wu, T., Wang, J., and Mittal, P. Differentially private in-context learning. In The 61st Annual Meeting Of The Association For Computational Linguistics ,2023a. Panda, A. et al. Differentially private in-context learning. 
+
+arXiv preprint arXiv:2305.01639 , 2023b. Singh, A., Natarajan, V., Shah, M., Jiang, Y., Chen, X., Batra, D., Parikh, D., and Rohrbach, M. Towards vqa models that can read. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition ,pp. 8317–8326, 2019. Tang, X., Shin, R., Inan, H. A., Manoel, A., Mireshghallah, F., Lin, Z., Gopi, S., Kulkarni, J., and Sim, R. Privacy-preserving in-context learning with differentially private few-shot generation. arXiv preprint arXiv:2309.11765 ,2023. T ¨omek c¸ e, B., Vero, M., Staab, R., and Vechev, M. Private attribute inference from images with vision-language models. Advances in Neural Information Processing Systems , 37:103619–103651, 2024. Wah, C., Branson, S., Welinder, P., Perona, P., and Belongie, S. The caltech-ucsd birds-200-2011 dataset. 2011. Wen, R., Li, Z., Backes, M., and Zhang, Y. Membership inference attacks against in-context learning. In 
+
+Proceedings of the 2024 on ACM SIGSAC Conference on Computer and Communications Security , pp. 3481–3495, 2024. Williams, R. J. Simple statistical gradient-following algorithms for connectionist reinforcement learning. 
+
+Machine learning , 8(3):229–256, 1992. 10 Differentially Private Multimodal In-Context Learning 
+
+Wu, T., Panda, A., Wang, J. T., and Mittal, P. Privacy-preserving in-context learning for large language models. 
+
+arXiv preprint arXiv:2305.01639 , 2023a. Wu, T. et al. Privacy-preserving in-context learning for large language models. arXiv preprint arXiv:2305.01639 ,2023b. Zhang, Y., Unell, A., Wang, X., Ghosh, D., Su, Y., Schmidt, L., and Yeung-Levy, S. Why are visually-grounded language models bad at image classification? Advances in Neural Information Processing Systems , 37:51727– 51753, 2024. Zheng, C., Sun, K., Zhao, W., Zhou, H., Jiang, L., Song, S., and Zhou, C. Locally differentially private in-context learning. arXiv preprint arXiv:2405.04032 , 2024. 11 Differentially Private Multimodal In-Context Learning 
+
+A. Experimental Details 
+
+A.1. Dataset Statistics 
+
+Table 1 provides complete statistics for all datasets used in our experiments.  
+
+> Table 1. Dataset Statistics. All datasets use standard train/test splits from original papers.
+
+Dataset Domain Train Test Task VizWiz General VQA 20,523 8,000 Open-ended VQA-RAD Medical VQA 1,793 451 Open-ended PathVQA Medical VQA 19,654 6,719 Open-ended OK-VQA Knowledge VQA 9,009 5,046 Open-ended TextVQA Text VQA 34,602 5,000 Open-ended Flowers102 Classification 1,020 6,149 2-way 1-shot CUB-200 Classification 5,994 5,794 2-way 1-shot DTD Classification 3,760 1,880 2-way 1-shot With m = 100 chunks and K = 8 demonstrations per chunk (VQA) or K = 2 (classification), we use approximately 500-900 training examples per dataset for private activation computation, corresponding to 2-20% of each training set depending on dataset size. 
+
+A.2. Implementation Details Computational Resources. All experiments run on NVIDIA V100, A100 and H100 GPUs with 30GB and 80GB memory. Mean activation computation takes 1-2 hours per dataset depending on size. REINFORCE training for head selection takes 3-5 hours for the private variant and 2-4 hours for the public variant. 
+
+Public Data for Head Selection. For the public-data variant, we use validation splits from related datasets when available. For VizWiz, we use VQA v2 validation data; for medical VQA tasks (VQA-RAD, PathVQA), we use samples from each other as public data since they share similar task structure despite different imaging modalities. 
+
+B. Additional Algorithms 
+
+This section provides the complete algorithm for private head selection used in the private-only variant (Section 3.3.2). 
+
+C. Additional Experimental Results 
+
+C.1. Robustness to Hyperparameters 
+
+D. Privacy Analysis Proofs 
+
+Proof of Theorem 3.1. We analyze privacy under the bounded contribution model where neighboring datasets differ in one example’s data within a single chunk. 
+
+Sensitivity bound. Each example appears in exactly one chunk. Per-layer clipping ensures ∥˜a(l) 
+
+> i
+
+∥2 ≤ C for each layer l ∈ S .The full clipped tensor thus satisfies: 
+
+∥˜ai∥2 =
+
+sX
+
+> l∈S
+
+∥˜a(l) 
+
+> i
+
+∥22 ≤ p|S| · C2 = p|S| · C
+
+Changing one example affects one chunk’s contribution to the mean ¯a = 1
+
+> m
+
+P 
+
+> i
+
+˜ai, yielding ℓ2-sensitivity ∆2 = p|S|· C/m .
+
+Privacy guarantee. The Gaussian mechanism with σ = ∆2
+
+p2 ln(1 .25 /δ )/ε tv satisfies (εtv , δ )-DP by standard results (Dwork et al., 2014). 12 Differentially Private Multimodal In-Context Learning 
+
+Algorithm 2: Private Head Selection via Noisy Top-k with Limited Domain 
+
+Input: Dpriv (private dataset), F (VLM), ¯apriv (private mean activations), S (selected layers), εsel , δ sel (privacy parameters), Csel (loss clipping threshold) 
+
+Output: m ∈ { 0, 1}|S|× H (binary mask indicating which heads to modify) ; ▷ Phase 1: Learn Bernoulli distributions via REINFORCE  
+
+> 1
+
+θ ← REINFORCE (Dpriv , F, ¯apriv ) ; ▷ Train policy on private data 
+
+; ▷ Phase 2: Sample candidate masks (limited domain)  
+
+> 2
+
+M ← ∅ ; ▷ Store sampled masks  
+
+> 3
+
+for j ← 1 to 2000 do  
+
+> 4
+
+λj ∼ Bernoulli (σ(θ)) ; ▷ Sample binary mask  
+
+> 5
+
+M ← M ∪ { λj } 
+
+> 6
+
+{m1, . . . , m¯k} ← Top-¯k-Frequent (M) ; ▷ Retain ¯k = 12 most frequent 
+
+; ▷ Phase 3: Compute aggregate scores with clipping  
+
+> 7
+
+Dval ← Sample B = 100 examples from Dpriv ; ▷ Validation set  
+
+> 8
+
+for i ← 1 to ¯k do  
+
+> 9
+
+si ← 0; 
+
+> 10
+
+for (x, q, a ) ∈ D val do  
+
+> 11
+
+Replace activations in F at heads indicated by mi with ¯apriv ; 
+
+> 12
+
+ℓ ← CrossEntropy (F (x, q ), a ) ; ▷ Per-example loss  
+
+> 13
+
+si ← si + min( ℓ, C sel ) ; ▷ Clip and accumulate 
+
+; ▷ Phase 4: Apply Gumbel mechanism for private selection  
+
+> 14
+
+for i ← 1 to ¯k do  
+
+> 15
+
+gi ∼ Gumbel (0 , C sel /ε sel ) ; ▷ Sample Gumbel noise  
+
+> 16
+
+˜si ← si + gi ; ▷ Add noise to score  
+
+> 17
+
+i∗ ← arg min i∈[¯k] ˜si ; ▷ Select mask with lowest noisy loss  
+
+> 18
+
+return mi∗
+
+Proof of Theorem 3.2. Head selection operates entirely on Dpub , which is independent of Dpriv , contributing (0 , 0) to privacy cost. The released artifacts (¯ apriv , m) thus inherit the (εtv , δ ) guarantee from Theorem 3.1. Inference applies deterministic functions to these artifacts; by post-processing, this preserves (εtv , δ )-DP for unlimited queries. 
+
+Proof of Theorem 3.3. Mean activations satisfy (εtv , δ )-DP by Theorem 3.1. For head selection, we first use REINFORCE to learn a Bernoulli distribution over heads, then sample ¯k candidate masks from this distribution. For each candidate, we compute an aggregate score by evaluating it on private validation data, with per-example losses clipped to [0 , C sel ]. This clipping bounds the sensitivity of each score to Csel . We then apply the Gumbel mechanism, adding noise with scale Csel /ε sel to each score and selecting the mask with the lowest noisy loss. The Gumbel mechanism (equivalently, Report Noisy Max) with bounded-sensitivity scores provides (εsel , 0) -DP for the released mask (Durfee & Rogers, 2019). By basic composition, releasing both ¯apriv and m satisfies (εtv + εsel , δ + 0) = (εtv + εsel , δ )-DP. Inference is post-processing. 13 Differentially Private Multimodal In-Context Learning 
+
+Table 2. Sensitivity to hyperparameters on VizWiz (Qwen-VL, ε = 1 .0, C = 1 .0). Performance is stable across both number of shots K
+
+and number of chunks m.Number of Chunks m
+
+Method 50 100 500 1000 DP-MTV 49.8±8.6 49.1±10.3 50.6±3.9 48.7±5.9 DP-MTV (priv) 42.3±14.0 77.2±5.7 46.7±2.3 46.8±3.5 Number of Shots K
+
+Method 2 8 16 DP-MTV 51.1±2.6 52.0±1.2 50.6±3.3 DP-MTV (priv) 48.0±1.6 50.4±0.6 50.5±1.9 
+
+14

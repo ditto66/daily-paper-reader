@@ -1,0 +1,1010 @@
+Title: Towards Highly Transferable Vision-Language Attack via Semantic-Augmented Dynamic Contrastive Interaction
+
+URL Source: https://arxiv.org/pdf/2603.04839v1
+
+Published Time: Fri, 06 Mar 2026 01:33:28 GMT
+
+Number of Pages: 17
+
+Markdown Content:
+# Towards Highly Transferable Vision-Language Attack via Semantic-Augmented Dynamic Contrastive Interaction 
+
+## Yuanbo Li 1, Tianyang Xu 1, Cong Hu 1, Tao Zhou 1, Xiao-Jun Wu 1* , Josef Kittler 2
+
+> 1
+
+School of Artificial Intelligence and Computer Science, Jiangnan University, Wuxi, China 
+
+> 2
+
+Centre for Vision, Speech and Signal Processing (CVSSP), University of Surrey, Guildford, UK 
+
+liyuanbo12138@163.com, {tianyang xu, conghu, 8202407042, wu xiaojun }@jiangnan.edu.cn j.kittler@surrey.ac.uk 
+
+## Abstract 
+
+With the rapid advancement and widespread application of vision-language pre-training (VLP) models, their vulner-ability to adversarial attacks has become a critical con-cern. In general, the adversarial examples can typically be designed to exhibit transferable power, attacking not only different models but also across diverse tasks. How-ever, existing attacks on language-vision models mainly rely on static cross-modal interactions and focus solely on disrupting positive image-text pairs, resulting in lim-ited cross-modal disruption and poor transferability. To address this issue, we propose a Semantic-Augmented Dy-namic Contrastive Attack (SADCA) that enhances adver-sarial transferability through progressive and semantically guided perturbation. SADCA progressively disrupts cross-modal alignment through dynamic interactions between ad-versarial images and texts. This is accomplished by SADCA establishing a contrastive learning mechanism involving adversarial, positive and negative samples, to reinforce the semantic inconsistency of the obtained perturbations. Moreover, we empirically find that input transformations commonly used in traditional transfer-based attacks also benefit VLPs, which motivates a semantic augmentation module that increases the diversity and generalization of adversarial examples. Extensive experiments on multiple datasets and models demonstrate that SADCA significantly improves adversarial transferability and consistently sur-passes state-of-the-art methods. The code is released at 
+
+https://github.com/LiYuanBoJNU/SADCA .
+
+## 1. Introduction 
+
+Vision-language pre-training (VLP) models learn cross-modal semantic correlations through joint training on large-scale image-text pairs, providing superior feature represen-
+
+> *
+
+Corresponding Author Text         
+
+> Image
+> Adversarial example
+> Positive example
+> Semantic-Augmented
+> example
+> Negative example
+> Green
+> Red
+> Blue
+> (a) SGA (b) SA-AET (c) SADCA
+> (d) Adversarial transferability
+> Interaction
+> Loop
+> Generation
+
+Figure 1. A comparison of our SADCA and existing frameworks. (a) and (b) illustrate the core concepts of SGA [18] and SA-AET [7], respectively, where only one or two static interactions are performed between the visual and textual modalities, with the interactions being limited solely to positive pairs. (c) illustrates the core idea of the proposed SADCA, which continuously disrupts cross-modal interactions through dynamic contrastive interactions with both positive and negative pairs. Additionally, it leverages a semantic augmentation strategy to enrich the data samples, thereby diversifying the semantic information. The arrow represents the interaction between the visual and textual modalities. The dot-ted lines represent the generation of adversarial examples from the original examples. (d) demonstrates the effectiveness of the input transformation [30] in enhancing the adversarial attack transfer-ability. Furthermore, we observe that using large number of iter-ations (LI) to attack the image modality can further improve the attack performance. 
+
+tations and significantly enhancing performance across var-ious tasks, such as image-text retrieval (ITR) [6, 8], image captioning (IC) [5, 39], and visual grounding (VG) [31, 41]. However, their robustness and reliability are of increasing concern, as numerous studies have demonstrated that VLP models are highly susceptible to adversarial attacks [9, 17, 
+
+> arXiv:2603.04839v1 [cs.CV] 5 Mar 2026
+
+21, 35, 40, 43]. Investigating the generation of adversar-ial examples to attack VLP models is instrumental to the design of more robust VLP architectures, thus ensuring a secure deployment of foundational models. Previous studies have primarily focused on generating adversarial examples for VLP models in white-box set-tings [40], where the attacker has access to internal model information such as parameters. However, in real-world scenarios, obtaining such detailed information is often in-feasible, which limits the practicality of white-box attacks. This limitation has motivated increasing attention toward transfer-based attacks, which craft adversarial examples us-ing known surrogate models and then transfer them to attack unseen black-box targets [32]. Several approaches have achieved certain success in improving the adversarial trans-ferability to VLP models, such as SGA [18], DRA [2], and SA-AET [7]. Nevertheless, these approaches rely on static cross-modal interactions, generating adversarial examples solely from the original image-text pair, where the interac-tion between modalities occurs only once or twice. Such a design causes the generated adversarial examples to deviate from the semantic center along a fixed direction, lacking the ability to explore diverse directions within the seman-tic space. As a result, these methods struggle to disrupt the visual-textual alignment, which limits their generaliza-tion, as well as the cross-model transferability of the gener-ated adversarial examples. Moreover, existing attacks typi-cally involve only positive image-text pairs, neglecting the role of negative samples in shaping the semantic decision boundary. This one-sided optimization produces only a re-pulsive force that pushes examples away from their original semantic cluster but does not provide the complementary attractive force needed to pull them across semantic bound-aries. Consequently, the adversarial examples remain inad-equately separated from benign samples in the embedding space, thereby weakening their transferability. The reliance on static cross-modal interactions, coupled with the neglect of negative samples, significantly limits the transferability of existing vision-language adversarial attacks, as shown in Figure 1(a), (b), and (d). Additionally, much like the efforts to enhance the gener-alization ability of deep neural networks (DNNs), increas-ing data diversity plays a crucial role in improving adversar-ial transferability [45]. Input transformations, as an effec-tive strategy for enhancing data diversity, have been exten-sively studied and proven to improve the transferability of adversarial examples in traditional attack settings [27, 30] significantly. However, existing vision-language attacks largely overlook the importance of input transformations, often considering only limited scale-invariance within the image modality [18]. This lack of comprehensive data aug-mentation results in insufficient input diversity, thereby hin-dering the ability to achieve strong adversarial transferabil-ity. In this paper, to achieve highly transferable vision-language attacks, we propose a novel Semantic-Augmented Dynamic Contrastive Attack (SADCA) to improve the transferability of adversarial examples. Specifically, as il-lustrated in Figure 1(c), SADCA introduces a dynamic contrastive interaction mechanism that iteratively disrupts cross-modal semantic consistency by alternately updating adversarial images and texts. Simultaneously, it incorpo-rates a contrastive learning strategy that maximizes similar-ity with negative samples while minimizing the alignment with positive samples. This effectively breaks the semantic matching relationships between images and texts, enhanc-ing the capability of adversarial examples to be semanti-cally misleading and improving their transferability. In ad-dition, as shown in Figure 1(d), we empirically investigate the effectiveness of integrating existing input transforma-tion strategies into vision-language attacks, and, in addition, propose a semantic augmentation module. This module per-forms local semantic enhancement on images and mixed se-mantic augmentation on texts to broaden the set of seman-tic views encountered during optimization. The resulting diversity yields richer semantic gradients and reduces over-fitting to a single view, which together improve the gen-eralization and cross-model transferability of the generated adversarial examples. Extensive experiments on multiple datasets and VLP models show that SADCA consistently outperforms state-of-the-art (SOTA) methods in adversar-ial transferability. Our contributions can be summarized as follows: • We propose SADCA, a novel highly transferable vision-language attack method that iteratively disrupt image–text semantic consistency and amplify cross-modal misalign-ment by dynamic contrastive interaction. • SADCA further introduces a semantic augmentation module to diversify the semantic information of adversar-ial examples, obtaining richer semantic gradients to fur-ther enhance adversarial transferability. • Experimental results show that SADCA consistently out-performs SOTA approaches in cross-model and cross-task adversarial transferability. 
+
+## 2. Related Work 
+
+2.1. Vision-Language Pre-training Models 
+
+Vision-Language Pretraining (VLP) models are a class of multimodal learning frameworks designed to jointly model visual and textual modalities [1, 11, 24, 25, 28]. Their primary objective is to perform pretraining on large-scale image-text pair datasets to learn generalizable cross-modal representations, which can be effectively transferred to a variety of downstream tasks. Based on their architectural design, VLP models can be broadly classified into fusion-based and alignment-based models. Fusion-based models (e.g. , ALBEF [10], TCL [37]) typically use separate uni-modal encoders to independently extract textual token em-beddings and visual features. These are subsequently fused by a multimodal encoder to generate unified semantic rep-resentations. In contrast, alignment-based models ( e.g. ,CLIP [22]) adopt two independent unimodal encoders for images and texts, aligning their embeddings within a shared semantic space through contrastive learning. 
+
+2.2. Transferable Adversarial Attacks 
+
+Transferable adversarial attacks [13, 14, 23, 34] aim to gen-erate adversarial examples on a white-box (source) model that can successfully mislead an unseen black-box (target) model. Due to their black-box nature, such attacks are more applicable in real-world scenarios and are considered more valuable for research than white-box attacks. Input trans-formation is a widely adopted technique in image recog-nition to enhance the transferability of adversarial exam-ples, with many methods having been proposed, such as Admix [29], SIA [30], and BSR [27]. Recently, stud-ies have begun exploring transferable adversarial attacks in VLP models [3, 4, 26, 32, 42]. SGA [18] improves the transferability of multimodal adversarial examples by ex-panding a single image-text pair into a diverse set, thereby increasing adversarial diversity. DRA [2] exploits the in-tersection area of adversarial trajectories during optimiza-tion to enrich adversarial diversity and reduce the risk of overfitting. Furthermore, SA-AET [7] refines adversarial trajectories and generates adversarial examples in a con-trastive space of semantic image-text features. However, these methods are constrained by static cross-modal interac-tions and the absence of guidance from negative pairs, mak-ing it difficult to fully disrupt the cross-modal alignment of adversarial examples. Additionally, their limited use of in-put transformations increases the risk of model overfitting and reduces the transferability of adversarial examples. 
+
+## 3. Methodology 
+
+3.1. Notations and Preliminaries 
+
+Let (v, t ) denote the benign image-text pair extracted from a multimodal dataset D. For VLP model, the FI (·) and FT (·)
+
+represent the image encoder and text encoder, respectively. Vision-language attacks typically induce a semantic mis-match between the adversarial image and its corresponding adversarial text, while adhering to predefined perturbation constraints in both the visual and textual domains. Given a paired image and text input, the objective is to introduce subtle adversarial perturbations to both modalities such that the semantic similarity between the image and its associated text is significantly reduced. To achieve this, multimodal adversarial examples are generated by minimizing a feature similarity loss function: 
+
+ min J (FI (v′) , F T (t′)) s.t. v ′ ∈ B [v, ϵ v ] , t ′ ∈ B [t, ϵ t] (1) where v′ and t′ denote the adversarial image-text pair within the image and text search spaces B [v, ϵ v ] and B [t, ϵ t], ϵv
+
+and ϵt represent the maximum perturbation budgets for the image and text modalities, respectively. In this paper, we adopt cosine similarity Cos (v′, t ′) = FI (v′)·FT (t′)   
+
+> || FI(v′)||·|| FT(t′)||
+
+to measure the feature similarity of image-text pairs. For the adversarial image i′, the added perturbation should preserve visual similarity to the benign image i under the given con-straints. For the adversarial text t′, modifications are made to the words in the benign text t without altering the original semantic meaning as perceived by humans. 
+
+3.2. SADCA 
+
+Despite recent progress in vision-language adversarial at-tacks, existing methods exhibit fundamental limitations that hinder transferability. They rely on static cross-modal inter-actions, generating adversarial examples in fixed semantic directions, and focus mainly on positive samples, neglect-ing negative samples that shape semantic boundaries. Con-sequently, adversarial examples experience limited separa-tion from benign examples. Moreover, input diversity and data augmentation are underutilized, restricting coverage of the semantic space. These limitations motivate a more dy-namic, contrastive, and semantically aware attack frame-work. To address this, we propose SADCA that aligns a benign image with multiple textual descriptions to obtain a semantically centered representation, then uses both posi-tive and negative pairs in an iterative contrastive framework to induce continuous semantic misalignment. By pushing samples away from the semantic center and pulling them across negative samples, SADCA generates adversarial ex-amples that are semantically more divergent and highly transferable across diverse VLP models and tasks. 
+
+Dynamic Contrastive Interaction. Since image feature embeddings often contain a substantial amount of informa-tion that is irrelevant to the corresponding text features, this redundant information can distort similarity computations and cause misalignment between visual and textual repre-sentations [7]. Using such biased original image-text pairs as positive samples directly may prevent adversarial exam-ples from being displaced from the correct semantic center, thereby limiting their transferability. To address this, we first align the benign image and text representations within the semantic space to obtain a semantically centered aligned image, which is then used as the positive sample for subse-quent image-text interactions. Specifically, we maximize the feature similarity between the benign image and the be-nign text to obtain a semantically centered positive image: 
+
+vp = arg max  
+
+> vp∈B[v,ϵ v]
+> M
+
+X
+
+> m=1
+
+Cos (v, t m), (2) where tm ∈ T = {t1, t 2..., t M } is the text caption paired with the benign image, and T represents the set of mul-tiple text captions associated with the benign image. By aligning with multiple text features in the semantic space, a positive image vp representation, that is closer to the se-mantic center, can be obtained. For the positive text set, the benign text set T is directly used as the positive text set 
+
+Tp = {tp1, t p2..., t pM }.For the selection of negative samples, we randomly choose K mismatched samples from the dataset to construct the negative image set Vn = {vn1, v n2..., v nK } and the neg-ative text set Tn = {tn1, t n2..., t nK }.Leveraging the constructed positive and negative pairs, our objective is to guide the semantic deviation of adversar-ial examples away from the benign semantic center through a contrastive learning framework. By minimizing the sim-ilarity between adversarial examples and positive samples, while maximizing their similarity with negative samples in the semantic embedding space, we induce semantic-level shifts and ambiguity in the adversarial perturbations. This strategy enhances cross-modal adversarial transferability. Specifically, we minimize the feature similarity between ad-versarial samples and positive pairs while maximizing the feature similarity with negative pairs: 
+
+min 
+
+> v′
+> i
+
+L  v′
+
+> i
+
+, T p, T n
+
+ =
+
+> M
+
+X
+
+> m=1
+
+Cos (v′
+
+> i
+
+, t pm ) − λ
+
+> K
+
+X
+
+> k=1
+
+Cos (v′
+
+> i
+
+, t nk )
+
+(3) 
+
+min 
+
+> t′
+> i
+
+L  t′
+
+> i
+
+, v p, V n
+
+ = Cos (vp, t ′
+
+> i
+
+) − λ
+
+> K
+
+X
+
+> k=1
+
+Cos (vnk , t ′
+
+> i
+
+) (4) 
+
+where v′ 
+
+> i
+
+and t′ 
+
+> i
+
+denote the adversarial image and adversarial text at the i-th iteration, λ is the weighting factor that con-trols the influence of negative samples in the guidance pro-cess, L (v′
+
+> i
+
+, T p, T n) and L (t′
+
+> i
+
+, v p, I n) denote the loss func-tions to optimize the adversarial image v′ 
+
+> i
+
+and the adversar-ial text t′
+
+> i
+
+, respectively. Moreover, to thoroughly disrupt the cross-modal inter-actions of adversarial examples, we adopt a dynamic in-teraction mechanism that continuously perceives and dis-rupts the semantic alignment between adversarial images and texts during the attack process. Specifically, we min-imize the feature similarity between the current adversar-ial image and adversarial text throughout the iterative pro-cess, thereby progressively weakening their semantic con-sistency: 
+
+min 
+
+> v′
+> i
+
+L  v′
+
+> i
+
+, T ′ 
+
+> i
+
+, T n
+
+ =
+
+> M
+
+X
+
+> m=1
+
+Cos (v′
+
+> i
+
+, t ′
+
+> im
+
+) − λ
+
+> K
+
+X
+
+> k=1
+
+Cos (v′
+
+> i
+
+, t nk )
+
+(5) 
+
+Algorithm 1 SADCA 
+
+Input : Image encoder FI , Text encoder FT , Dataset D,Image-text pair {v, t }, number of paired text M , iteration steps of adversarial image generation J, step size α, mo-mentum factor μ, dynamic interaction steps I, number of negative samples K, weighting factor of negative samples 
+
+λ, semantic augmentation number S.
+
+Output : Adversarial image v′ and adversarial text t′. 
+
+> 1:
+
+Build text set T = {t1, t 2..., t M } ← D 
+
+> 2:
+
+Build negative image set Vn and negative text set Tn 
+
+> 3:
+
+vp = arg max PMm=1 Cos (v, t m). 
+
+> 4:
+
+v′ 
+
+> 0
+
+= v, T ′ 
+
+> 0
+
+= T, g 0 = 0  
+
+> 5:
+
+for i = 0 to I − 1 do  
+
+> 6:
+
+Lt = L(t′
+
+> im
+
+, v ′
+
+> i
+
+, I n) + L(t′
+
+> im
+
+, v p, I n) 
+
+> 7:
+
+T ′ 
+
+> i+1
+
+= {t′ 
+
+> (i+1) m
+
+= arg min Lt}Mm=1  
+
+> 8:
+
+for j = 0 to J − 1 do  
+
+> 9:
+
+Generate V ′ 
+
+> sa
+
+from v′ 
+
+> ij
+
+by Eq. (7)  
+
+> 10:
+
+Generate T ′ 
+
+> sa
+
+from T ′ 
+
+> i+1
+
+by Eq. (8)  
+
+> 11:
+
+Lv = L (V ′
+
+> sa
+
+, T p, T n) + L  V ′
+
+> sa
+
+, T ′
+
+> i+1
+
+, T n
+
+ 
+
+> 12:
+
+gi(j+1) = μ · gij + ∇Lv  
+
+> ∥∇ Lv∥
+> 13:
+
+v′ 
+
+> i(j+1)
+
+= clip v,ϵ v (v′ 
+
+> ij
+
++ α · sign (gi(j+1) ) 
+
+> 14:
+
+end for  
+
+> 15:
+
+end for  
+
+> 16:
+
+return v′ = v′ 
+
+> IJ
+
+, t′ = t′
+
+> I
+
+min 
+
+> t′
+> i
+
+L  t′
+
+> i
+
+, v ′
+
+> i
+
+, V n
+
+ = Cos (v′
+
+> i
+
+, t ′
+
+> i
+
+) − λ
+
+> K
+
+X
+
+> k=1
+
+Cos (vnk , t ′
+
+> i
+
+) (6) 
+
+where v′ 
+
+> i
+
+and t′ 
+
+> i
+
+denote the adversarial image and adversarial text at the i-th iteration. The dynamic contrastive interaction operates on the cur-rent adversarial image and text at each iteration, mean-ing that the semantic representations of both modalities are continuously updated and the resulting gradient directions change accordingly. In each round of interaction, the de-gree of repulsion from positive samples and attraction to-ward negative samples is recalibrated, based on the latest semantic states, causing the adversarial examples to exhibit continuous semantic drift in the semantic space and to ex-plore a broader range of potential attack directions. This it-erative, dynamic adjustment not only enhances gradient di-versity but also substantially improves transferability across models and tasks. 
+
+Semantic Augmentation Module. Although input transformation strategies originally developed for tradi-tional image-based adversarial attacks have proven effec-tive in improving the generalization of vision-language at-tacks, they primarily operate on the perceptual-level im-age features and overlook the cross-modal semantic align-ment mechanisms that are unique to VLP models. As a re-sult, these transformations struggle to disrupt the semantic matching process between image and text, leading to lim-ited cross-modal transferability and weakened cross-modal attack effectiveness. To address this limitation, we propose the semantic augmentation module, which aims to enhance the diversity of semantic structures in the input, while pre-serving the semantic consistency of the original image-text labels. This approach enables more effective disruption of the alignment relationships within VLP models. The semantic augmentation module consists of local se-mantic image augmentation and mixed semantic text aug-mentation. Specifically, local semantic image augmentation amplifies local semantic regions within the image, guiding the attack to focus on finer-grained semantic information. Given the adversarial image v′, we construct a set of lo-cally semantic-augmented images V ′
+
+> sa
+
+, where each image is generated by randomly cropping and resizing local re-gions. Additionally, a random image augmentation func-tion A ∈ A = {Rotate, Brightness, F lip... } is applied to each image, selected from a set of diverse augmentation operations. The local semantic image augmentation process can be formalized as: 
+
+V ′ 
+
+> sa
+
+= {As (Resize (Crop (v′; rs))) }Ss=1 , (7) where rs ∼ U (0 .4, 0.8) denotes the ratio factor, represent-ing the area of the cropped region relative to the area of the original image. The mixed semantic text augmentation en-hances semantic diversity by combining multiple textual de-scriptions to form broader semantic representations, thereby promoting inconsistency between image and text features in the semantic space. Specifically, it randomly selects and concatenates pairs of text samples from the adversarial text set T ′, resulting in a new augmented text set T ′
+
+> sa
+
+:
+
+T ′ 
+
+> sa
+
+= {ts = Concat (t′
+
+> i
+
+, t ′ 
+
+> j
+
+)|t′
+
+> i
+
+, t ′ 
+
+> j
+
+∈ T ′, i ̸ = j}Ss=1 . (8) The semantic augmentation module increases the diversity of semantic representation, while preserving overall seman-tic consistency, enabling the attack to disrupt cross-modal interactions within a broader semantic space. This helps to mitigate overfitting and enhances the transferability of ad-versarial examples. The overall procedure of the proposed SADCA is summarized in Algorithm 1. 
+
+## 4. Experiments 
+
+4.1. Experimental Setting 
+
+Dataset and VLP models. To evaluate the effectiveness of the proposed method, we select two widely used mul-timodal datasets, Flickr30K [20] and MSCOCO [15], to conduct experiments on the image-text retrieval task. In the cross-task transferability experiments, we use the Re-fCOCO+ [38] dataset for the visual grounding task and the MSCOCO dataset for the image captioning task. Follow-ing [18], we employ two popular types of VLP models: fusion-based VLP and alignment-based VLP. For fusion-based VLP models, we consider ALBEF [10] and TCL [37]. For alignment-based VLP models, we select CLIP ViT and CLIP CNN [22] for evaluation. 
+
+Adversarial attack settings. Following [18], we adopt BERT-Attack [12], setting the text perturbation budget ϵt =1 and using a vocabulary W containing 10 candidate words for the text adversarial attack. For the image adversarial at-tack, we adopt the l∞ norm constraint with a perturbation budget of ϵv = 8 /255 . We compare the proposed SADCA with several SOTA methods, including PGD [19], Bert-Attack [12], Co-Attack [40], SGA [18], DRA [2], and SA-AET [7]. For the original versions of these methods, we fol-low their default settings, configuring the image adversarial attack with an iteration number J = 10 . Furthermore, we construct enhanced variants of SGA and SA-AET by com-bining them with the input transformation method SIA [30], resulting in SGA(LI)+SIA and SA-AET(LI)+SIA. These enhanced versions use a larger number of iterations J = 50 
+
+to match the iteration budget of SADCA. For the proposed SADCA, we set the step size α = 2 /255 , momentum factor 
+
+μ = 1 .0, dynamic interaction iterations I = 5 , image attack iterations J = 10 , the number of negative samples K = 20 ,the weighting factor for negative samples λ = 0 .2, and semantic-augmentation number S = 10 . All experiments are conducted on a single NVIDIA RTX 3090 GPU. 
+
+Evaluation metrics. For image-text retrieval task , we use Attack Success Rate (ASR) at Rank-1 (R@1) as the evalu-ation metric for adversarial transferability. ASR represents the proportion of successfully attacked samples among all generated adversarial examples. A higher ASR indicates a more effective attack with greater transferability. For visual grounding and image captioning tasks, we compare the per-formance of target models before and after attacks. 
+
+4.2. Experimental Results 
+
+Cross-model adversarial transferability. We evaluate cross-model transferability on the ITR task using four representative VLP models: ALBEF, TCL, CLIP ViT , and CLIP CNN . Each model serves as the source model to gener-ate adversarial examples, which are then transferred to the other three models. As shown in Table 5, SADCA achieves the highest average ASR in both TR and IR tasks, demon-strating strong generalization across architectures and train-ing paradigms. For instance, when transferring from AL-BEF to CLIP CNN , SADCA surpasses SA-AET(LI)+SIA by 9.19% (TR) and 5.7% (IR). Similarly, from CLIP CNN to CLIP ViT , it outperforms the second-best method by 7.61% and 4.89%, respectively. This indicates that the dynamic contrastive interaction and semantic augmentation mech-anisms effectively promote semantic divergence, enabling adversarial examples to explore a wider range of attack di-rections within the semantic space. Additional results on the Table 1. A comparison of SADCA with SOTA methods on the image-text retrieval (ITR) task using the Flickr30K dataset. The ”Source” column indicates the VLP model used to generate the multimodal adversarial examples. For both image retrieval (IR) and text retrieval (TR), we report the ASR (%) at Rank-1 (R@1). The ”Average” represents the average ASR on the black-box VLP models. 
+
+Source Attack ALBEF TCL CLIP ViT CLIP CNN Average 
+
+TR R@1 IR R@1 TR R@1 IR R@1 TR R@1 IR R@1 TR R@1 IR R@1 TR R@1 IR R@1 
+
+ALBEF 
+
+PGD 93.74 94.43 24.03 27.90 10.67 15.82 14.05 19.11 16.25 20.94 BERT-Attack 11.57 27.46 12.64 28.07 29.33 43.17 32.69 46.11 24.89 39.12 Co-Attack 97.08 98.36 39.52 51.24 29.82 38.92 31.29 41.99 33.54 44.72 SGA 99.90 99.93 87.88 88.05 36.69 46.78 39.59 49.78 54.72 61.54 SGA(LI)+SIA 100 100 99.37 99.02 49.82 56.19 54.79 60.99 67.99 72.07 DRA 99.90 99.93 91.57 91.36 46.26 56.80 49.55 59.01 62.46 69.06 SA-AET 99.90 99.98 96.42 96.02 55.58 63.89 57.22 65.59 69.74 75.17 SA-AET(LI)+SIA 100 100 99.58 99.38 75.71 78.58 76.25 80.41 83.85 86.12 SADCA (ours) 100 100 98.52 97.83 81.10 82.83 85.44 86.11 88.35 88.92 TCL 
+
+PGD 35.77 41.67 99.37 99.33 10.18 16.30 14.81 21.10 20.25 26.36 BERT-Attack 11.89 26.82 14.54 29.17 29.69 43.36 33.46 46.07 25.01 38.75 Co-Attack 49.84 60.36 91.68 93.65 32.64 42.69 32.06 47.82 38.18 50.29 SGA 92.40 92.77 100 100 36.81 46.97 41.89 51.53 57.70 63.76 SGA(LI)+SIA 99.90 99.70 100 100 52.87 59.12 62.45 65.49 71.74 74.77 DRA 95.20 95.58 100 100 47.24 57.28 52.23 62.23 64.89 71.70 SA-AET 98.85 98.50 100 100 56.20 63.47 59.77 67.86 71.61 76.61 SA-AET(LI)+SIA 99.95 99.93 100 100 77.04 81.48 80.20 84.05 85.73 88.49 SADCA (ours) 99.58 99.56 100 100 78.28 83.18 86.46 88.71 88.11 90.48 CLIP ViT 
+
+PGD 3.13 6.48 4.43 8.83 69.33 84.79 13.03 17.43 6.86 10.91 BERT-Attack 9.59 22.64 11.80 25.07 28.34 39.00 30.40 37.43 17.26 28.38 Co-Attack 8.55 20.18 10.01 21.29 78.53 87.50 29.50 38.49 16.02 26.65 SGA 22.42 34.59 25.08 36.45 100 100 53.26 61.10 33.59 44.05 SGA(LI)+SIA 54.33 60.20 57.43 62.60 100 100 89.02 89.24 66.93 70.68 DRA 27.84 42.84 27.82 44.60 100 100 64.88 69.50 40.18 52.31 SA-AET 36.60 50.44 39.20 51.10 100 100 71.01 74.10 48.94 58.55 SA-AET(LI)+SIA 79.04 82.74 79.35 82.57 100 99.97 94.76 95.23 84.38 86.85 SADCA (ours) 87.07 89.20 87.04 87.98 100 100 97.90 97.46 90.68 91.55 CLIP CNN 
+
+PGD 2.29 6.15 4.53 8.88 5.40 12.08 89.78 93.04 4.07 9.04 BERT-Attack 9.86 23.27 12.33 25.48 27.12 37.44 30.40 40.10 16.44 28.73 Co-Attack 10.53 23.62 12.54 26.05 27.24 40.62 95.91 96.50 16.77 30.10 SGA 15.64 28.06 18.02 33.07 39.92 51.45 99.87 99.90 24.53 37.53 SGA(LI)+SIA 20.96 32.72 22.55 37.21 47.24 56.70 100 100 30.25 42.21 DRA 19.50 34.59 21.60 37.88 48.47 59.12 99.87 99.90 29.86 43.86 SA-AET 23.98 38.28 27.29 41.81 54.11 64.21 100 99.97 35.13 48.10 SA-AET(LI)+SIA 38.69 51.80 44.89 56.33 69.57 74.68 100 100 51.05 60.94 SADCA (ours) 49.43 60.55 55.53 63.19 77.18 79.57 100 100 60.71 67.77 
+
+MSCOCO dataset are provided in the supplementary mate-rial. 
+
+Cross-task adversarial transferability. In addition to evaluating the transferability of multimodal adversarial examples across different VLP models, we also con-duct experiments to assess the effectiveness of the pro-posed SADCA in transferring across different vision-and-language (V+L) tasks. Specifically, we generate adversarial examples from the ITR task and evaluate their impact on the VG and IC tasks. For IC task, we use the ALBEF model pretrained on the ITR task to generate adversarial images. These adversarial images are then fed into the BLIP [11] model to produce image captions. For VG task, we ap-ply the ALBEF model pretrained on the ITR task to gen-erate adversarial images. Meanwhile, we employ the same model pretrained on VG task to localize the image regions. As shown in the results of Table 2, the multimodal adver-sarial examples exhibit strong cross-task adversarial trans-ferability, successfully affecting performance on both the VG and IC tasks. Compared to other SOTA methods, the adversarial examples generated by SADCA lead to signifi-cantly larger performance drops in VG and IC metrics. This Table 2. Cross-task transferability. We use ALBEF model to generate multimodal adversarial examples and apply them to attack the Visual Grounding (VG) task on the RefCOCO+ dataset and the Image Captioning (IC) task on the MSCOCO dataset. The ”Clean” denotes the performance of each task without any attack, where lower values indicate better effectiveness of the adversarial attack in both tasks. 
+
+Attack ITR → VG ITR → IC 
+
+Val ↓ TestA ↓ TestB ↓ B@4 ↓ METEOR ↓ ROUGE-L ↓ CIDEr ↓ SPICE ↓
+
+Clean 58.46 65.89 46.25 39.7 31.0 60.0 133.3 23.8 SGA 50.56 57.42 40.66 28.0 24.6 51.2 91.4 17.7 DRA 49.70 56.32 40.54 27.2 24.2 50.7 88.3 17.2 SA-AET 47.44 53.27 38.58 21.0 20.5 45.2 65.7 13.6 
+
+SADCA (ours) 46.78 52.41 37.10 17.4 17.9 42.2 50.3 10.7 
+
+Table 3. Adversarial transferability on LVLMs. We use ALBEF model to generate multimodal adversarial examples and apply them to attack the LVLMs on the Flickr30K dataset.                                                               
+
+> Attack LLaVA-1.5-7B Qwen3-VL-8B InternVL3-8B Qwen2.5-VL-7B GPT-5 GPT-4o-mini Gemini-2.0 Claude-4.5 Clean 3.46 14.4 4.72 11.04 23.88 15.00 6.96 21.80 SGA 17.60 47.00 17.60 36.00 50.65 40.96 30.12 63.32 SGA(LI)+SIA 27.30 62.76 27.30 45.92 52.17 46.54 27.92 64.18 SA-AET 14.30 60.16 25.72 48.20 60.26 50.86 38.50 72.28 SA-AET(LI)+SIA 35.20 80.14 46.68 67.50 68.08 62.48 41.56 75.12
+> SADCA (ours) 40.34 86.34 69.06 82.82 78.61 79.12 52.06 79.02 Adversarial image
+> Generated
+> caption
+> a room with a bed
+> and a desk
+> a woman in black
+> tights bending
+> down to pick up a
+> red fire hydrant
+> Three zebras are
+> standing in an open
+> field.
+> A cup of coffee on
+> a plate with a
+> spoon.
+> Adversarial
+> visualization
+> Caption
+> (a) Image Captioning Task
+> (b) Visual Grounding Task
+> Akid dressed in
+> black is on his
+> skateboard on a
+> skateboard ramp.
+> a man sitting on
+> top of a tree stump
+
+Figure 2. Visualization on Image Captioning and Visual Ground-ing Tasks. 
+
+demonstrates the superior effectiveness of SADCA in cross-task adversarial transferability, consistently outperforming all other methods. Figure 2 illustrates the results of image captioning and visual grounding on adversarial images gen-erated by SADCA. As shown, both the generated captions and the localized regions deviate significantly from the ex-pected outputs, indicating the effectiveness of SADCA. 
+
+Adversarial transferability on LVLMs. With the increas-ing scale of data and model parameters, Large Vision-Language Models (LVLMs) have become increasingly pop-ular. Therefore, we evaluate the performance of SADCA on a range of LVLMs, including open-source models such as LLaVA [16], Qwen3-VL [36], InternVL3 [44], and Qwen2.5-VL [1], as well as closed-source models including GPT-5, GPT-4o-mini, Gemini-2.0, and Claude-4.5. Consid-ering the differences between traditional VLP models and LVLM tasks, we redesign the experimental setup. Specif-ically, we employ a binary decision template ( “Does the picture depict that ‘...’? Only answer Yes or No.” ) to con-struct adversarial text prompts, which are combined with adversarial images as model inputs. The LVLMs are then prompted to make binary predictions under adversarial con-ditions. As shown in Table 3, SADCA consistently achieves the highest ASR across all models, revealing strong adver-sarial transferability. Both open-source and closed-source LVLMs exhibit poor robustness when confronted with mul-timodal adversarial examples. This observation highlights the importance of ensuring robustness against adversarial threats, which is as crucial as improving accuracy and over-all performance in the development of LVLMs. 
+
+4.3. Parameter Analysis 
+
+We conduct parameter experiments on the hyperparameters of SADCA, including the number of dynamic interaction iteration I, the number of semantic augmentations S, the number of negative samples K, and the weighting factor 1 2 3 4 5 6 7 8 9 10                               
+
+> Dynamic interaction I
+> 50
+> 55
+> 60
+> 65
+> ASR (%)
+> TR
+> IR
+> 246810 12 14 16 18 20
+> Semantic augmentation number S
+> 40
+> 50
+> 60
+> 70
+> ASR (%)
+> TR
+> IR
+> 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0
+> Weighting factor
+> 40
+> 50
+> 60
+> ASR (%)
+> TR
+> IR
+> 12345678910 15 20 30 40 50
+> Number of negative samples K
+> 55
+> 60
+> 65
+> ASR (%)
+> TR
+> IR
+
+Figure 3. The ASR (%) with different parameters, including the dynamic interaction number I, the number of semantic augmenta-tions S, the negative samples number K, and the weighting fac-tor λ. The adversarial examples are generated on the Flickr30K dataset using CLIP CNN as the source model and are evaluated on other black-box models. Table 4. Ablation study for negative sample selection strategy. The adversarial examples are generated by CLIP CNN .
+
+ALBEF TCL CLIPViT 
+
+TR R@1 IR R@1 TR R@1 IR R@1 TR R@1 IR R@1 Strategy (1) 44.00 56.13 49.43 59.33 74.11 77.51 Strategy (2) 41.81 54.58 47.84 58.17 73.13 76.80 Strategy (3) 44.53 58.40 50.16 60.38 75.58 79.22 
+
+Strategy (4) 45.15 57.48 51.42 60.43 75.71 79.06 
+
+λ for negative guidance. As shown in Figure 3, increasing the number of dynamic interaction leads to a more thorough disruption of cross-modal interactions, resulting in stronger attack performance, though the effect tends to plateau at higher values. A larger S improves transferability by en-riching semantic diversity, with S = 10 offering a good trade-off between performance and efficiency. Regarding the weighting factor λ, since negative samples primarily serve as a repulsive force in guiding the adversarial direc-tion, smaller values of λ tend to yield better performance. For K, a moderate value ( e.g. , K = 20 ) balances effective guidance and noise suppression. 
+
+4.4. Ablation Study 
+
+Impact of negative sample selection strategy. We explore several strategies for selecting negative samples: (1) select-ing the K samples with the highest feature similarity to the positive sample; (2) selecting the K samples with the low-est feature similarity; and (3) selecting the K samples with intermediate similarity based on a ranked similarity list; (4) randomly selecting K negative samples. As shown in Table 4, random selection achieves the best performance due to its Text retrieval Image retrieval 
+
+30 
+
+40 
+
+50 
+
+60 
+
+70 
+
+> ASR (%)
+> Baseline
+> Baseline+CI
+> Baseline+DI
+> Baseline+SA
+> Baseline+CI+DI
+> Baseline+CI+SA
+> Baseline+DI+SA
+> Baseline+CI+DI+SA
+> Baseline+CI+SA+Static
+
+Figure 4. Ablation study for different modules of SADCA. The adversarial examples are generated on the Flickr30K dataset using CLIP CNN as the source model and are evaluated on other black-box models. 
+
+higher sample diversity, which enhances generalization and transferability. In contrast, selecting the most similar nega-tives leads to overfitting to local decision boundaries, while the least similar ones provide weak gradients. Intermediate negatives strike a balance but still lack sufficient diversity for strong generalization. 
+
+Impact of different modules. We conduct ablation studies on the core components of SADCA, including Contrastive Interaction (CI), Dynamic Interaction (DI), and the Seman-tic Augmentation module (SA). As shown in Figure 4, each component individually contributes to improved attack per-formance, while the SADCA with all components achieves the best overall results. Additionally, we replace the dy-namic interaction with a static interaction using the same iteration number. The observed performance drop under static interaction highlights the effectiveness of dynamic interaction in disrupting cross-modal alignment. Notably, when the dynamic interaction and semantic augmentation modules are combined, a significant performance boost is achieved, indicating that their synergy jointly expands the coverage and disruption depth of adversarial perturbations in the semantic space. 
+
+## 5. Conclusion 
+
+In this paper, we focus on highly transferable vision-language attacks and propose SADCA, a novel method de-signed to enhance the adversarial transferability of multi-modal adversarial examples. SADCA introduces a dynamic contrastive interaction mechanism to progressively disrupt cross-modal alignment and employs semantic-augmented transformations to increase the semantic diversity of adver-sarial examples. Extensive experiments conducted across various datasets and models demonstrate the effectiveness of SADCA, which consistently achieves superior transfer-ability and outperforms SOTA methods. 6. Acknowledgement 
+
+This work is supported in part by the National Key Research and Development Program of China (2023YFE0116300, 2023YFF1105102, 2023YFF1105105), the National Natu-ral Science Foundation of China (62020106012, 62332008, 62336004, U1836218, 62106089, 62202205), the 111 Project of Ministry of Education of China (B12018), and the Engineering and Physical Sciences Research Council (EP-SRC) (EP/V002856/1). 
+
+## References 
+
+[1] Shuai Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, Sibo Song, Kai Dang, Peng Wang, Shijie Wang, Jun Tang, et al. Qwen2. 5-vl technical report. arXiv preprint arXiv:2502.13923 , 2025. 2, 7 [2] Sensen Gao, Xiaojun Jia, Xuhong Ren, Ivor Tsang, and Qing Guo. Boosting transferability in vision-language attacks via diversification along the intersection region of adversarial trajectory. In European Conference on Computer Vision ,pages 442–460. Springer, 2024. 2, 3, 5 [3] Dongchen Han, Xiaojun Jia, Yang Bai, Jindong Gu, Yang Liu, and Xiaochun Cao. Ot-attack: Enhancing adversarial transferability of vision-language models via optimal trans-port optimization. arXiv preprint arXiv:2312.04403 , 2023. 3[4] Bangyan He, Xiaojun Jia, Siyuan Liang, Tianrui Lou, Yang Liu, and Xiaochun Cao. Sa-attack: Improving adversar-ial transferability of vision-language pre-training models via self-augmentation. arXiv preprint arXiv:2312.04913 , 2023. 3[5] Hang Hua, Qing Liu, Lingzhi Zhang, Jing Shi, Soo Ye Kim, Zhifei Zhang, Yilin Wang, Jianming Zhang, Zhe Lin, and Jiebo Luo. Finecaption: Compositional image captioning focusing on wherever you want at any granularity. In Pro-ceedings of the Computer Vision and Pattern Recognition Conference , pages 24763–24773, 2025. 1 [6] Hailang Huang, Zhijie Nie, Ziqiao Wang, and Ziyu Shang. Cross-modal and uni-modal soft-label alignment for image-text retrieval. In Proceedings of the AAAI Conference on Artificial Intelligence , pages 18298–18306, 2024. 1 [7] Xiaojun Jia, Sensen Gao, Qing Guo, Simeng Qin, Ke Ma, Yihao Huang, Yang Liu, Ivor Tsang, and Xiaochun Cao. Semantic-aligned adversarial evolution triangle for high-transferability vision-language attack. IEEE Transactions on Pattern Analysis and Machine Intelligence , 2025. 1, 2, 3, 5 [8] Bin Kang, Bin Chen, Junjie Wang, Yulin Li, Junzhi Zhao, Junle Wang, and Zhuotao Tian. Calibclip: Contextual cal-ibration of dominant semantics for text-driven image re-trieval. In Proceedings of the 33rd ACM International Con-ference on Multimedia , pages 5140–5149, 2025. 1 [9] Dehong Kong, Siyuan Liang, Xiaopeng Zhu, Yuansheng Zhong, and Wenqi Ren. Patch is enough: naturalistic ad-versarial patch against vision-language pre-training models. 
+
+Visual Intelligence , 2(1):33, 2024. 1 [10] Junnan Li, Ramprasaath Selvaraju, Akhilesh Gotmare, Shafiq Joty, Caiming Xiong, and Steven Chu Hong Hoi. Align before fuse: Vision and language representation learn-ing with momentum distillation. Advances in neural infor-mation processing systems , 34:9694–9705, 2021. 3, 5 [11] Junnan Li, Dongxu Li, Caiming Xiong, and Steven Hoi. Blip: Bootstrapping language-image pre-training for unified vision-language understanding and generation. In Interna-tional conference on machine learning , pages 12888–12900. PMLR, 2022. 2, 6 [12] Linyang Li, Ruotian Ma, Qipeng Guo, Xiangyang Xue, and Xipeng Qiu. Bert-attack: Adversarial attack against bert us-ing bert. In Proceedings of the 2020 Conference on Em-pirical Methods in Natural Language Processing (EMNLP) ,pages 6193–6202, 2020. 5 [13] Yuanbo Li, Cong Hu, Rui Wang, and Xiaojun Wu. Hier-archical feature transformation attack: Generate transferable adversarial examples for face recognition. Applied Soft Com-puting , 172:112823, 2025. 3 [14] Yuanbo Li, Cong Hu, and Xiao-Jun Wu. Transferable stealthy adversarial example generation via dual-latent adap-tive diffusion for facial privacy protection. IEEE Transac-tions on Information Forensics and Security , 2025. 3 [15] Tsung-Yi Lin, Michael Maire, Serge Belongie, James Hays, Pietro Perona, Deva Ramanan, Piotr Doll´ ar, and C Lawrence Zitnick. Microsoft coco: Common objects in context. In 
+
+European conference on computer vision , pages 740–755. Springer, 2014. 5 [16] Haotian Liu, Chunyuan Li, Yuheng Li, and Yong Jae Lee. Improved baselines with visual instruction tuning. In Pro-ceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 26296–26306, 2024. 7 [17] Xiyao Liu, Jiaxin Hu, Qingying Yang, Ming Jiang, Jian-biao He, and Hui Fang. A divide-and-conquer reconstruction method for defending against adversarial example attacks. 
+
+Visual Intelligence , 2(1):30, 2024. 1 [18] Dong Lu, Zhiqiang Wang, Teng Wang, Weili Guan, Hongchang Gao, and Feng Zheng. Set-level guidance at-tack: Boosting adversarial transferability of vision-language pre-training models. In Proceedings of the IEEE/CVF In-ternational Conference on Computer Vision , pages 102–111, 2023. 1, 2, 3, 5 [19] Aleksander Madry, Aleksandar Makelov, Ludwig Schmidt, Dimitris Tsipras, and Adrian Vladu. Towards deep learn-ing models resistant to adversarial attacks. In International Conference on Learning Representations , 2018. 5 [20] Bryan A Plummer, Liwei Wang, Chris M Cervantes, Juan C Caicedo, Julia Hockenmaier, and Svetlana Lazeb-nik. Flickr30k entities: Collecting region-to-phrase corre-spondences for richer image-to-sentence models. In Pro-ceedings of the IEEE international conference on computer vision , pages 2641–2649, 2015. 5 [21] Xiangyu Qi, Kaixuan Huang, Ashwinee Panda, Peter Hen-derson, Mengdi Wang, and Prateek Mittal. Visual adversarial examples jailbreak aligned large language models. In Pro-ceedings of the AAAI conference on artificial intelligence ,pages 21527–21536, 2024. 2 [22] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learning transferable visual models from natural language supervi-sion. In International conference on machine learning , pages 8748–8763. PmLR, 2021. 3, 5 [23] Yuchen Ren, Zhengyu Zhao, Chenhao Lin, Bo Yang, Lu Zhou, Zhe Liu, and Chao Shen. Improving adversarial trans-ferability on vision transformers via forward propagation re-finement. In Proceedings of the Computer Vision and Pattern Recognition Conference , pages 25071–25080, 2025. 3 [24] Quan Sun, Yuxin Fang, Ledell Wu, Xinlong Wang, and Yue Cao. Eva-clip: Improved training techniques for clip at scale. 
+
+arXiv preprint arXiv:2303.15389 , 2023. 2 [25] Michael Tschannen, Alexey Gritsenko, Xiao Wang, Muham-mad Ferjad Naeem, Ibrahim Alabdulmohsin, Nikhil Parthasarathy, Talfan Evans, Lucas Beyer, Ye Xia, Basil Mustafa, et al. Siglip 2: Multilingual vision-language en-coders with improved semantic understanding, localization, and dense features. arXiv preprint arXiv:2502.14786 , 2025. 2[26] Haodi Wang, Kai Dong, Zhilei Zhu, Haotong Qin, Aishan Liu, Xiaolin Fang, Jiakai Wang, and Xianglong Liu. Trans-ferable multimodal attack on vision-language pre-training models. In 2024 IEEE Symposium on Security and Privacy (SP) , pages 1722–1740. IEEE, 2024. 3 [27] Kunyu Wang, Xuanran He, Wenxuan Wang, and Xiaosen Wang. Boosting adversarial transferability by block shuf-fle and rotation. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 24336– 24346, 2024. 2, 3, 1 [28] Weihan Wang, Qingsong Lv, Wenmeng Yu, Wenyi Hong, Ji Qi, Yan Wang, Junhui Ji, Zhuoyi Yang, Lei Zhao, Song XiX-uan, et al. Cogvlm: Visual expert for pretrained language models. Advances in Neural Information Processing Sys-tems , 37:121475–121499, 2024. 2 [29] Xiaosen Wang, Xuanran He, Jingdong Wang, and Kun He. Admix: Enhancing the transferability of adversarial attacks. In Proceedings of the IEEE/CVF international conference on computer vision , pages 16158–16167, 2021. 3 [30] Xiaosen Wang, Zeliang Zhang, and Jianping Zhang. Struc-ture invariant transformation for better adversarial transfer-ability. In Proceedings of the IEEE/CVF International Con-ference on Computer Vision , pages 4607–4619, 2023. 1, 2, 3, 5 [31] Yeyuan Wang, Dehong Gao, Lei Yi, Linbo Jin, Jinxia Zhang, Libin Yang, and Xiaoyan Cai. Enhancing fine-grained vision-language pretraining with negative augmented sam-ples. In Proceedings of the AAAI Conference on Artificial Intelligence , pages 8060–8068, 2025. 1 [32] Youze Wang, Wenbo Hu, Yinpeng Dong, Hanwang Zhang, Hang Su, and Richang Hong. Exploring transferability of multimodal adversarial samples for vision-language pre-training models with contrastive learning. IEEE Transac-tions on Multimedia , 2025. 2, 3 [33] Cihang Xie, Zhishuai Zhang, Yuyin Zhou, Song Bai, Jianyu Wang, Zhou Ren, and Alan L Yuille. Improving transferabil-ity of adversarial examples with input diversity. In Proceed-ings of the IEEE/CVF conference on computer vision and pattern recognition , pages 2730–2739, 2019. 1 [34] Peng Xie, Yequan Bie, Jianda Mao, Yangqiu Song, Yang Wang, Hao Chen, and Kani Chen. Chain of attack: On the robustness of vision-language models against transfer-based adversarial attacks. In Proceedings of the Computer Vision and Pattern Recognition Conference , pages 14679–14689, 2025. 3 [35] Wenzhuo Xu, Kai Chen, Ziyi Gao, Zhipeng Wei, Jingjing Chen, and Yu-Gang Jiang. Highly transferable diffusion-based unrestricted adversarial attack on pre-trained vision-language models. In Proceedings of the 32nd ACM Inter-national Conference on Multimedia , pages 748–757, 2024. 2[36] An Yang, Anfeng Li, Baosong Yang, Beichen Zhang, Binyuan Hui, Bo Zheng, Bowen Yu, Chang Gao, Chengen Huang, Chenxu Lv, et al. Qwen3 technical report. arXiv preprint arXiv:2505.09388 , 2025. 7 [37] Jinyu Yang, Jiali Duan, Son Tran, Yi Xu, Sampath Chanda, Liqun Chen, Belinda Zeng, Trishul Chilimbi, and Junzhou Huang. Vision-language pre-training with triple contrastive learning. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 15671– 15680, 2022. 3, 5 [38] Licheng Yu, Patrick Poirson, Shan Yang, Alexander C Berg, and Tamara L Berg. Modeling context in referring expres-sions. In European conference on computer vision , pages 69–85. Springer, 2016. 5 [39] Zequn Zeng, Yan Xie, Hao Zhang, Chiyu Chen, Bo Chen, and Zhengjue Wang. Meacap: Memory-augmented zero-shot image captioning. In Proceedings of the IEEE/CVF con-ference on computer vision and pattern recognition , pages 14100–14110, 2024. 1 [40] Jiaming Zhang, Qi Yi, and Jitao Sang. Towards adversarial attack on vision-language pre-training models. In Proceed-ings of the 30th ACM International Conference on Multime-dia , pages 5005–5013, 2022. 2, 5 [41] Jingyi Zhang, Jiaxing Huang, Sheng Jin, and Shijian Lu. Vision-language models for vision tasks: A survey. IEEE transactions on pattern analysis and machine intelligence ,46(8):5625–5644, 2024. 1 [42] Peng-Fei Zhang, Guangdong Bai, and Zi Huang. Maa: Meticulous adversarial attack against vision-language pre-trained models. arXiv preprint arXiv:2502.08079 , 2025. 3 [43] Yunqing Zhao, Tianyu Pang, Chao Du, Xiao Yang, Chongx-uan Li, Ngai-Man Man Cheung, and Min Lin. On evalu-ating adversarial robustness of large vision-language mod-els. Advances in Neural Information Processing Systems ,36:54111–54138, 2023. 2 [44] Jinguo Zhu, Weiyun Wang, Zhe Chen, Zhaoyang Liu, Shen-glong Ye, Lixin Gu, Hao Tian, Yuchen Duan, Weijie Su, Jie Shao, et al. Internvl3: Exploring advanced training and test-time recipes for open-source multimodal models. arXiv preprint arXiv:2504.10479 , 2025. 7 [45] Yao Zhu, Yuefeng Chen, Xiaodan Li, Kejiang Chen, Yuan He, Xiang Tian, Bolun Zheng, Yaowu Chen, and Qing-ming Huang. Toward understanding and boosting adversarial transferability from a distribution perspective. IEEE Trans-actions on Image Processing , 31:6487–6501, 2022. 2 Towards Highly Transferable Vision-Language Attack via Semantic-Augmented Dynamic Contrastive Interaction 
+
+# Supplementary Material 
+
+In this paper, we provide an illustration of the se-mantic augmentation module, experimental results on the MSCOCO dataset, , an evaluation of the effectiveness of the semantic augmentation module, and additional visual-izations of the adversarial examples. Furthermore, we also report the attack success rate at Rank-1 (R@1), Rank-5 (R@5), and Rank-10 (R@10) on the Flickr30K dataset. 
+
+## 7. Semantic Augmentation Module 
+
+Figure 5 illustrates the Semantic Augmentation Module. For image local semantic augmentation, the module ob-tains enlarged local regions by randomly cropping and re-sizing parts of the image, followed by the application of random image augmentation functions to diversify the local semantic content. For text mixed semantic augmentation, the module randomly selects and concatenates pairs of text samples from the text pool to generate a new augmented text set. This approach combines multiple textual descrip-tions to form broader semantic representations, thereby en-hancing semantic diversity. 
+
+## 8. Experimental Results on MSCOCO dataset 
+
+We conduct comparative experiments on the ITR task using four widely adopted VLP models: ALBEF, TCL, CLIP ViT 
+
+and CLIP CNN . Specifically, each VLP model is used as a source model to generate multimodal adversarial examples, which are then evaluated on the remaining three models to assess cross-model transferability. Table 5 presents the comparative results on the MSCOCO dataset. As shown, SADCA consistently achieves the highest average black-box ASR in both TR and IR tasks. These results demon-strate the effectiveness of SADCA in significantly enhanc-ing the cross-model transferability of multimodal adversar-ial examples. 
+
+## 9. Ablation Study for Semantic Augmentation Module 
+
+To validate the advantages of the Semantic Augmentation Module, we compare it with other input transformation methods. Specifically, we retain the Dynamic Contrastive Interaction (DCI) component and replace the Semantic Augmentation Module with three alternative input trans-formation methods: DIM [33], SIA [30], and BSR [27]. As shown in Table 6, SADCA equipped with the Semantic Augmentation Module consistently outperforms the alter-natives in most cases. This demonstrates that the Seman-The man with pierced ears is   
+
+> wearing glasses and an
+> orange hat
+> A man with glasses is wearing
+> a beer can crocheted hat
+> A man with gauges and
+> glasses is wearing a Blitz hat
+> A man in an orange hat
+> starring at something
+> A man wears an orange hat
+> and glasses
+> Compose
+> The man with pierced ears
+> is wearing glasses and an
+> orange hat. A man with
+> glasses is wearing a beer
+> can crocheted hat
+> A man wears an orange hat
+> and glasses .A man with
+> gauges and glasses is
+> wearing a Blitz hat
+> ...
+
+S
+
+(a) Local semantic image augmentation 
+
+(b) Mixed semantic text augmentation 
+
+Figure 5. Semantic Augmentation Module. 
+
+tic Augmentation Module is well-suited to VLP models, effectively enhancing the semantic diversity of inputs and thereby disrupting the alignment mechanisms within vision-language models more efficiently. 
+
+## 10. A Comparison of Attack Cost 
+
+Table 7 summarizes the GPU memory usage, runtime, and attack performance when generating adversarial examples using ALBEF as the surrogate model. SADCA achieves the strongest attack performance, reaching 88.35% (TR R@1) and 88.92% (IR R@1), outperforming all compared meth-ods by a clear margin. Although its GPU memory con-sumption (13.3 GB) and runtime (4.40 h) are moderately higher than those of simpler baselines, they remain sub-stantially lower than the most computationally expensive method, SA-AET(LI)+SIA, while delivering significantly Table 5. Comparison with SOTA methods on the image-text retrieval (ITR) task on the MSCOCO dataset. The ”Source” column indicates the VLP model used to generate the multimodal adversarial examples. For both image retrieval (IR) and text retrieval (TR), we report the ASR (%) at Rank-1 (R@1). The ”Average” represents the average ASR on the black-box VLP models. 
+
+Source Attack ALBEF TCL CLIP ViT CLIP CNN Average 
+
+TR R@1 IR R@1 TR R@1 IR R@1 TR R@1 IR R@1 TR R@1 IR R@1 TR R@1 IR R@1 
+
+ALBEF 
+
+PGD 94.35 93.26 34.15 36.86 21.71 27.06 23.83 30.96 26.56 31.63 BERT-Attack 24.39 36.13 24.34 33.39 44.94 52.28 47.73 54.75 39.00 46.81 Co-Attack 94.95 97.87 65.22 72.41 55.28 62.33 56.68 66.45 59.06 67.06 SGA 99.95 99.94 87.46 88.17 63.72 69.71 63.91 70.78 71.70 76.22 SGA(LI)+SIA 100 100 98.49 98.01 75.96 79.83 76.75 81.21 83.73 86.35 DRA 99.90 99.93 88.81 90.06 69.25 75.31 68.53 75.09 75.53 80.15 SA-AET 100 99.99 97.28 96.88 76.57 80.24 76.17 80.64 85.92 83.34 SA-AET(LI)+SIA 100 100 99.66 99.50 91.87 92.69 90.56 92.84 94.03 95.01 SADCA (ours) 100 100 98.35 97.99 93.10 94.01 93.44 95.01 94.96 95.67 TCL 
+
+PGD 40.81 44.09 98.54 98.20 21.79 26.92 24.97 32.17 29.19 34.39 BERT-Attack 35.32 45.92 38.54 48.48 51.09 58.80 52.23 61.26 46.21 55.33 Co-Attack 49.84 60.36 91.68 95.48 32.64 42.69 32.06 47.82 38.85 50.29 SGA 92.70 92.99 100 100 59.79 65.31 60.52 67.34 71.00 75.21 SGA(LI)+SIA 99.94 99.43 100 100 74.55 78.94 78.79 82.62 84.43 86.99 DRA 94.72 95.89 100 100 70.51 74.95 70.29 76.99 78.51 82.61 SA-AET 97.78 98.08 100 99.99 76.12 79.74 75.89 80.92 83.26 86.25 SA-AET(LI)+SIA 99.85 99.78 100 100 90.92 92.92 92.77 94.49 94.51 95.73 SADCA (ours) 99.59 99.46 100 100 93.52 94.39 95.59 96.62 96.23 96.82 CLIP ViT 
+
+PGD 10.26 13.69 12.72 15.81 82.91 90.51 21.62 28.78 14.87 19.43 BERT-Attack 20.34 29.74 21.08 29.61 45.06 51.68 44.54 53.72 28.65 37.69 Co-Attack 26.35 36.69 28.23 38.42 88.78 96.72 47.36 58.45 33.98 44.52 SGA 43.75 51.08 44.05 51.02 100 100 70.66 75.58 52.82 59.23 SGA(LI)+SIA 62.49 65.52 64.07 65.21 100 100 93.09 94.80 73.22 75.18 DRA 52.69 61.50 51.88 61.06 100 100 80.18 84.11 61.58 68.89 SA-AET 57.64 66.88 57.30 65.16 100 100 83.98 86.72 66.31 72.92 SA-AET(LI)+SIA 86.23 87.47 85.42 86.16 100 100 97.59 97.96 89.75 90.53 SADCA (ours) 90.79 91.09 88.46 87.90 100 100 99.51 99.53 92.92 92.84 CLIP CNN 
+
+PGD 8.38 12.73 11.90 15.68 13.66 20.62 92.68 94.71 11.31 16.34 BERT-Attack 23.38 34.64 24.58 29.61 51.28 57.49 54.43 62.17 33.08 40.58 Co-Attack 29.49 41.50 31.83 43.44 53.15 60.15 97.79 98.54 38.16 48.36 SGA 36.94 46.79 38.81 48.90 62.19 67.70 97.79 98.54 45.98 54.46 SGA(LI)+SIA 37.15 45.49 39.81 48.26 65.32 72.56 100 100 47.43 55.44 DRA 41.40 52.25 43.62 54.15 70.43 74.14 99.80 99.92 51.82 60.18 SA-AET 43.62 55.19 47.01 57.39 73.67 76.90 100 99.92 54.77 63.16 SA-AET(LI)+SIA 55.35 63.75 58.49 65.66 85.5 87.41 100 100 66.45 72.27 SADCA (ours) 62.90 69.64 63.78 69.48 88.45 91.16 100 100 71.71 76.76 
+
+better results. This demonstrates that SADCA offers the most favorable cost–performance balance, providing supe-rior adversarial transferability with a reasonable computa-tional overhead. 
+
+## 11. More Results on Flickr30K Dataset 
+
+Reporting only the ASR at R@1 (i.e., the correct image no longer appearing at the top rank) is insufficient for a com-prehensive evaluation of the robustness of multimodal re-trieval models, as the correct sample may merely be shifted to Rank-2 or Rank-3, which has limited impact on the over-all system. In contrast, presenting the attack success rates at R@5 and R@10 provides insight into whether the at-tack truly disrupts a broader portion of the ranking structure, thereby offering a more complete assessment of the model’s vulnerability at the ranking level. Accordingly, we report the ASR at Rank-1, Rank-5, and Rank-10 on the Flickr30K dataset in Table 8 and Table 9. The results show that SADCA achieves strong attack performance across all met-rics, indicating its effectiveness in substantially perturbing the retrieval ranking system and demonstrating its stronger Table 6. Ablation Study for Semantic Augmentation Module. 
+
+Source Attack ALBEF TCL CLIP ViT CLIP CNN 
+
+TR R@1 IR R@1 TR R@1 IR R@1 TR R@1 IR R@1 TR R@1 IR R@1 
+
+ALBEF 
+
+DCI+DIM 100 100 94.73 94.05 73.37 77.93 74.46 77.77 DCI+SIA 100 100 99.58 99.57 70.55 74.58 73.18 78.66 DCI+BSR 100 100 98.74 98.86 77.30 79.19 78.80 82.20 SADCA 100 100 98.52 97.83 81.10 82.83 85.44 86.11 TCL 
+
+DCI+DIM 97.60 97.26 100 100 75.71 80.54 80.08 83.53 DCI+SIA 100 99.95 100 100 71.66 78.38 79.44 83.40 DCI+BSR 100 99.86 100 100 79.97 82.89 86.39 88.30 SADCA 99.58 99.56 100 100 78.28 83.18 86.46 88.71 CLIP ViT 
+
+DCI+DIM 49.95 57.60 48.37 57.57 100 100 80.59 82.64 DCI+SIA 77.69 80.24 79.45 81.98 100 100 96.93 96.64 DCI+BSR 79.35 81.55 80.30 82.83 100 100 96.96 97.32 SADCA 87.07 89.20 87.04 87.98 100 100 97.90 97.46 CLIP CNN 
+
+DCI+DIM 23.77 40.34 29.5 43.33 56.69 65.01 100 100 DCI+SIA 42.46 55.96 47.63 60.02 76.56 80.80 100 100 DCI+BSR 37.02 51.50 44.26 55.79 69.20 75.58 100 100 SADCA 49.43 60.55 55.53 63.19 77.18 79.57 100 100 
+
+Table 7. Comparison of attack costs. GPU memory usage, runtime, and attack performance when generating adversarial examples on the Flickr30K dataset using ALBEF as the surrogate model. 
+
+Methods GPU Memory (GB) Run Time (h) TR R@1 IR R@1 SGA 10.5 0.83 54.72 61.54 SGA(LI)+SIA 13.0 3.95 67.99 72.07 DRA 10.6 1.57 62.46 69.06 SA-AET 10.5 2.12 69.74 75.17 SA-AET(LI)+SIA 13.5 11.08 83.85 86.12 SADCA 13.3 4.40 88.35 88.92 attack capability. 
+
+## 12. Visualization 
+
+Figure 6 shows the visualization of randomly selected clean examples and adversarial examples. Figure 7 shows the de-scription of commercial LVLMs for the adversarial images generated by SADCA. It can be seen that it is capable of effectively attacking various commercial LVLMs. Table 8. Comparison with SOTA methods on the image-text retrieval (ITR) task on the Flickr30K dataset. The ”Source” column indicates the VLP model used to generate the multimodal adversarial examples. For text retrieval (TR), we report the ASR (%) at Rank-1 (R@1), Rank-5 (R@5) and Rank-10 (R@10). 
+
+Source Attack ALBEF TCL CLIP ViT CLIP CNN 
+
+TR R@1 TR R@5 TR R@10 TR R@1 TR R@5 TR R@10 TR R@1 TR R@5 TR R@10 TR R@1 TR R@5 TR R@10 ALBEF SGA 99.90 99.70 99.70 87.88 77.79 71.74 36.69 19.83 12.40 39.59 21.88 14.83 SGA+SIA 99.79 99.50 99.20 94.10 88.74 85.07 47.48 29.60 21.75 53.77 34.46 24.82 SGA(LI) 100 100 100 84.19 73.17 67.43 4.36 15.47 10.06 36.53 19.77 12.36 SGA(LI)+SIA 100 100 100 99.37 98.29 97.80 49.82 32.40 23.68 54.79 35.31 28.01 DRA 99.90 99.70 99.70 91.57 81.31 75.95 46.26 25.44 18.60 49.55 29.49 21.22 SA-AET 99.90 99.80 99.80 96.42 92.36 89.98 55.58 34.48 26.32 57.22 39.64 28.53 SA-AET+SIA 99.58 99.30 98.80 95.21 90.01 85.97 64.54 41.64 34.04 66.16 44.82 36.35 SA-AET(LI) 100 100 100 98.63 97.29 96.09 60.61 38.11 30.18 62.20 41.12 32.65 SA-AET(LI)+SIA 100 100 100 99.58 98.89 98.50 75.71 60.12 52.13 76.25 61.21 53.66 SADCA 100 100 100 98.52 96.28 94.79 81.10 62.10 55.08 85.44 72.09 65.91 
+
+TCL SGA 92.40 87.07 85.40 100 100 99.90 36.81 18.59 13.11 41.89 22.73 14.93 SGA+SIA 97.18 94.19 91.90 100 99.70 99.60 53.01 33.13 27.03 58.49 41.33 32.34 SGA(LI) 84.46 76.25 71.50 100 100 100 31.17 15.06 9.86 36.78 20.08 14.01 SGA(LI)+SIA 99.90 99.70 99.60 100 99.90 99.90 52.87 33.85 26.22 62.45 44.19 36.87 DRA 95.20 91.28 88.00 100 100 99.80 47.24 26.48 18.90 52.23 30.76 22.97 SA-AET 98.85 96.79 95.50 100 100 100 56.20 34.68 25.91 59.77 39.22 30.07 SA-AET+SIA 97.08 93.79 92.60 99.79 99.60 99.20 67.36 49.53 40.65 70.11 54.65 46.14 SA-AET(LI) 99.37 98.60 98.20 100 100 100 56.20 37.49 28.05 62.32 42.81 32.75 SA-AET(LI)+SIA 99.95 99.90 99.80 100 100 100 77.04 65.52 57.52 80.20 67.86 61.59 SADCA 99.58 99.20 99.00 100 100 100 78.28 65.94 58.64 86.46 76.74 69.93 
+
+CLIP ViT 
+
+SGA 22.42 9.02 5.20 25.08 9.55 6.01 100 100 99.90 53.26 33.83 25.33 SGA+SIA 44.94 25.65 19.60 47.10 27.24 20.44 99.88 99.48 99.09 81.48 65.12 55.10 SGA(LI) 21.17 8.92 5.60 23.71 8.74 5.51 100 100 100 49.43 31.40 21.52 SGA(LI)+SIA 54.33 34.37 27.90 57.43 36.88 30.76 100 100 100 89.02 80.66 72.61 DRA 27.84 12.73 8.10 27.82 12.46 7.52 100 100 100 64.88 42.49 33.47 SA-AET 36.60 20.64 16.00 39.20 20.30 14.33 100 100 100 71.01 50.11 41.50 SA-AET+SIA 54.54 36.17 30.20 58.59 38.79 31.96 99.63 99.48 98.98 83.91 69.34 62.00 SA-AET(LI) 45.57 28.76 21.80 46.89 27.44 21.14 100 100 100 78.67 60.89 52.01 SA-AET(LI)+SIA 79.04 64.33 58.40 79.35 66.33 59.72 100 100 100 94.76 89.32 85.79 SADCA 87.07 74.85 68.40 87.04 74.07 66.93 100 100 100 97.90 92.81 89.91 
+
+CLIP CNN 
+
+SGA 15.64 5.61 3.00 18.02 6.03 2.91 39.92 20.15 13.52 99.87 99.47 99.07 SGA+SIA 19.29 6.11 4.00 22.76 8.34 5.21 46.50 23.88 16.16 99.62 97.99 96.81 SGA(LI) 15.51 5.61 2.50 17.70 6.13 3.51 38.16 18.38 12.30 99.87 99.89 99.90 SGA(LI)+SIA 20.96 9.02 5.40 22.55 11.06 7.21 47.24 26.27 19.41 100 99.68 99.38 DRA 19.50 6.31 3.70 21.60 7.54 3.81 48.47 99.47 17.89 99.87 25.13 99.38 SA-AET 23.98 9.22 6.00 27.29 10.45 6.61 54.11 33.33 24.39 100 100 99.90 SA-AET+SIA 26.80 12.63 8.70 31.61 13.77 8.52 57.18 35.62 25.20 99.49 98.31 96.70 SA-AET(LI) 31.07 15.03 12.00 33.19 15.08 11.62 61.72 43.09 34.45 100 100 100 SA-AET(LI)+SIA 38.69 20.74 17.10 44.89 25.13 19.74 69.57 52.34 42.89 100 99.79 99.79 SADCA 49.43 26.05 20.90 55.53 30.15 23.45 77.18 56.39 48.48 100 100 100 Table 9. Comparison with SOTA methods on the image-text retrieval (ITR) task on the Flickr30K dataset. The ”Source” column indicates the VLP model used to generate the multimodal adversarial examples. For image retrieval (IR), we report the ASR (%) at Rank-1 (R@1), Rank-5 (R@5) and Rank-10 (R@10). 
+
+Source Attack ALBEF TCL CLIP ViT CLIP CNN 
+
+IR R@1 IR R@5 IR R@10 IR R@1 IR R@5 IR R@10 IR R@1 IR R@5 IR R@10 IR R@1 IR R@5 IR R@10 ALBEF SGA 99.93 99.92 99.90 88.05 77.65 71.32 46.78 29.29 22.18 49.78 32.70 24.80 SGA+SIA 99.79 99.41 99.15 94.21 88.11 83.33 57.38 38.68 30.88 61.23 43.96 35.19 SGA(LI) 100 100 100 84.50 72.94 66.21 41.04 23.41 17.60 45.18 26.95 20.71 SGA(LI)+SIA 100 100 100 99.02 97.40 96.28 56.19 38.03 30.77 60.99 43.86 34.63 DRA 99.93 99.86 99.82 91.36 82.24 77.03 56.80 38.61 29.79 59.01 41.65 33.52 SA-AET 99.98 100 99.98 96.02 92.02 89.05 63.89 45.88 36.52 65.59 48.84 40.03 SA-AET+SIA 99.72 99.36 98.99 95.21 90.01 85.97 70.04 53.47 45.12 72.25 56.55 47.73 SA-AET(LI) 100 100 100 98.33 96.63 95.25 66.91 49.22 40.80 69.09 51.92 43.14 SA-AET(LI)+SIA 100 100 99.98 99.38 98.78 98.35 78.58 66.36 59.70 80.41 68.15 60.49 SADCA 100 99.98 99.98 97.83 94.60 92.65 82.83 68.89 61.49 86.11 75.30 68.92 
+
+TCL SGA 92.77 87.08 83.99 100 99.96 99.96 46.97 28.97 22.15 51.53 33.26 25.55 SGA+SIA 97.22 94.13 92.38 99.98 99.75 99.65 61.76 44.52 36.09 65.21 49.76 41.72 SGA(LI) 85.24 75.72 70.91 100 100 100 38.92 23.27 17.23 45.97 27.49 20.92 SGA(LI)+SIA 99.70 99.28 99.03 100 99.98 99.98 59.12 42.37 35.41 65.49 50.75 42.58 DRA 95.58 91.10 88.66 100 99.94 99.94 57.28 39.90 32.16 62.23 43.55 35.19 SA-AET 98.50 96.60 95.45 100 100 99.96 63.47 46.55 38.64 67.86 49.90 41.52 SA-AET+SIA 97.36 94.48 92.28 99.86 99.38 99.21 72.97 57.65 50.52 75.40 61.77 53.94 SA-AET(LI) 99.20 98.61 98.08 100 100 100 64.37 47.44 40.10 69.30 51.94 44.18 SA-AET(LI)+SIA 99.93 99.82 99.66 100 100 100 81.48 69.75 63.65 84.05 73.85 67.47 SADCA 99.56 98.79 98.28 100 100 100 83.17 70.61 64.17 88.71 79.69 74.38 
+
+CLIP ViT 
+
+SGA 34.59 18.27 13.99 36.45 19.43 14.11 100 100 100 61.10 43.50 35.83 SGA+SIA 55.22 35.42 28.22 56.48 37.44 29.89 99.77 99.53 99.24 83.12 69.97 62.34 SGA(LI) 31.08 15.34 11.04 33.52 16.85 11.76 100 100 100 56.23 37.63 30.63 SGA(LI)+SIA 60.20 41.82 33.64 62.60 43.64 36.45 100 100 100 89.24 81.00 74.95 DRA 42.84 25.47 19.29 44.60 25.93 19.60 100 100 99.93 69.50 54.46 46.15 SA-AET 50.44 32.98 26.14 51.10 33.16 25.87 100 99.93 99.93 74.10 60.24 52.72 SA-AET+SIA 65.13 47.27 40.80 66.33 49.14 42.06 99.87 99.32 98.95 85.69 74.82 68.74 SA-AET(LI) 57.16 39.60 32.57 57.52 39.47 31.90 100 100 100 80.17 66.50 59.59 SA-AET(LI)+SIA 82.74 70.14 63.89 82.57 70.73 64.38 99.97 99.84 99.83 95.23 90.83 87.51 SADCA 89.20 75.84 68.90 87.98 73.91 67.00 100 99.98 99.98 97.46 93.98 91.48 
+
+CLIP CNN 
+
+SGA 28.06 15.01 10.68 33.07 16.66 12.02 51.45 32.19 25.27 99.90 99.73 99.64 SGA+SIA 33.63 17.49 12.66 37.57 20.67 15.21 54.41 36.72 38.96 99.73 98.93 97.90 SGA(LI) 28.02 14.03 9.97 31.36 15.77 11.19 48.90 29.57 22.57 99.93 99.90 99.80 SGA(LI)+SIA 32.72 17.19 12.52 37.21 20.55 15.11 56.70 37.86 30.92 100 99.95 99.86 DRA 34.59 18.56 13.93 37.88 21.15 15.98 59.12 99.64 32.71 99.90 40.32 99.41 SA-AET 38.28 21.47 16.60 41.81 24.62 18.03 64.21 44.34 36.46 99.97 99.71 99.50 SA-AET+SIA 41.53 24.65 19.07 46.62 28.24 21.77 64.11 46.90 38.70 99.18 97.96 97.18 SA-AET(LI) 44.74 27.42 21.71 47.45 29.48 23.09 68.52 52.32 44.29 100 100 100.00 SA-AET(LI)+SIA 51.80 33.65 26.95 56.33 38.00 31.07 74.68 59.87 52.33 100 99.93 99.89 SADCA 60.55 38.31 30.89 63.19 41.29 33.10 79.57 64.07 56.17 100 100 100 A man with gauges 
+
+and glasses is wearing 
+
+a blitz blitz 
+
+A man with gauges 
+
+and glasses is wearing 
+
+a Blitz hat 
+
+> Clean example Adversarial example
+
+A black and white dog 
+
+is running in a grassy 
+
+garden surrounded by 
+
+a white fence 
+
+A black and white dog 
+
+is running in a grassy 
+
+garden surrounded by 
+
+a white yellow 
+
+A group of 
+
+snowmobile riders 
+
+gather in the snow 
+
+A group of . watch 
+
+riders gather in the 
+
+snow 
+
+Two men on a rooftop 
+
+while another man 
+
+stands atop a ladder 
+
+watching them 
+
+Two men on a small 
+
+while another man 
+
+stands atop a ladder 
+
+watching them 
+
+Man taking a 
+
+photograph of a well 
+
+dressed group of teens 
+
+Man rights a
+
+photograph of a well 
+
+dressed group of teens 
+
+The people are quietly 
+
+quiet while the story 
+
+of the ice cabin was 
+
+explained to them 
+
+The people are quietly 
+
+listening while the 
+
+story of the ice cabin 
+
+was explained to them 
+
+> Clean example Adversarial example
+
+A baseball catcher 
+
+trying to tag a base 
+
+runner in a baseball 
+
+game 
+
+A baseball lego trying 
+
+to tag a base runner in 
+
+a baseball game 
+
+A man wearing a hat 
+
+and a white shirt is 
+
+cleaning windows 
+
+A man wearing a hat 
+
+and a white shirt is 
+
+starts windows 
+
+Man in bright yellow 
+
+vest displays bicycle 
+
+safety information on 
+
+street 
+
+Man in bright smart 
+
+vest displays bicycle 
+
+safety information on 
+
+street 
+
+A woman gives a 
+
+small child a 
+
+piggyback ride 
+
+A woman gives a 
+
+small child a a
+
+ponynies ride Figure 6. Visualization of original images and the corresponding adversarial examples generated by our proposed SADCA. Adversarial Image 
+
+Group stands around a table outdoors at night, wearing long-sleeve shirts and jackets. They hold white boxing gloves , appearing to 
+
+playfully spar. The table has brown leaf-shaped items on a checkered surface. Background shows dark setting with scattered objects 
+
+and bottles. Casual, lively moment. 
+
+Three people gather around an outdoor grill at night, cooking meat. They hold bowls and appear to be enjoying a casual barbecue. 
+
+The scene shows a relaxed, social atmosphere with friends or family sharing a meal together in a dimly lit outdoor setting. 
+
+GPT-5 
+
+Claude-4.5 
+
+Three people are gathered around what appears to be a grill. A woman holds a plate, a child holds a bowl, and another person is 
+
+leaning over the grill. The scene is dimly lit, with a table of bottles visible in the background. Gemini-2.5 
+
+Please describe this image, limited to 50 words. 
+
+Adversarial Image 
+
+An outdoor market or booth scene with a person in a dark zippered jacket sitting at a table displaying items. There are gloves, a 
+
+purse, a stuffed toy or knitted object, spray bottles, paper towels , and a chalkboard sign in the background. Sunlit urban setting with 
+
+structures and greenery. 
+
+A woman in a dark top stands in a kitchen, smiling at the camera. Behind her is a chalkboard with " Friends to Make " written on it. 
+
+The kitchen counter shows cooking activity with pots, utensils, and ingredients. A casual, homey cooking scene. 
+
+GPT-5 
+
+Claude-4.5 
+
+A young man with light brown hair and a green hoodie smiles at the camera, sitting at a table. Behind him, a chalkboard reads 
+
+"MISONA ITS MATE." Bottles and glasses are on the table, with an outdoor area featuring trees and structures visible in the 
+
+background. The image has a slightly textured, almost painterly quality. Gemini-2.5 
+
+Please describe this image, limited to 50 words. 
+
+Adversarial Image 
+
+A child in a dark blue hood sits or is held by an adult. A white textured blanket or costume fills foreground. Background shows 
+
+colorful indoor or outdoor setting with a yellow pillar , decorations, and other people. Overall warm, busy scene, possibly at a 
+
+parade, festival, or fair. 
+
+A man with traditional M āori t ā moko (facial tattoos) looks directly at the camera while surrounded by others. The image appears to 
+
+capture a cultural ceremony or gathering , with white fabric visible in the foreground and people in the background against a yellow 
+
+wall .
+
+GPT-5 
+
+Claude-4.5 
+
+A man with short blonde hair and a plaid shirt looks towards the viewer with a slightly surprised expression. He wears a tie. The 
+
+background is blurred, showing hints of other people and a yellow surface. The entire image has a distinct, swirling, dream-like 
+
+filter applied, giving it an ethereal and somewhat distorted quality. Gemini-2.5 
+
+Please describe this image, limited to 50 words. 
+
+Adversarial Image 
+
+Grainy, surreal photo with dreamlike artifacts. A hooded person bends forward in the center, holding a dark object. To the left, two 
+
+bicycles or scooters lean against a wall. On the right lies a large coil of white rope or hose and cardboard. Earthy ground and muted 
+
+urban background. 
+
+A person in tan/beige clothing stands in a dusty outdoor area, holding what appears to be rodeo equipment including a pink/red item. 
+
+Behind them are metal gates or fencing, with a horse visible in the background. The setting suggests a rodeo or ranch environment. 
+
+GPT-5 
+
+Claude-4.5 
+
+This abstract, distorted image features blurred figures and organic textures. On the left, blue and green shapes suggest a backpack or 
+
+person. A central figure wears light clothing with a red element. The background shows a wall, while the foreground is an earthy, 
+
+textured surface with hints of foliage, creating a surreal scene. Gemini-2.5 
+
+Please describe this image, limited to 50 words. Figure 7. Visualization of adversarial images in attacking commercial LVLMs.

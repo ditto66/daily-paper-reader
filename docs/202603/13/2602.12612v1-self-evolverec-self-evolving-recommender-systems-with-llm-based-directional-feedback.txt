@@ -1,0 +1,1832 @@
+Title: Self-EvolveRec: Self-Evolving Recommender Systems with LLM-based Directional Feedback
+
+URL Source: https://arxiv.org/pdf/2602.12612v1
+
+Published Time: Mon, 16 Feb 2026 01:24:25 GMT
+
+Number of Pages: 26
+
+Markdown Content:
+# Self-EvolveRec: Self-Evolving Recommender Systems with LLM-based Directional Feedback 
+
+## Sein Kim 
+
+rlatpdlsgns@kaist.ac.kr KAIST Daejeon, Republic of Korea 
+
+## Sangwu Park 
+
+sangwu.park@kaist.ac.kr KAIST Daejeon, Republic of Korea 
+
+## Hongseok Kang 
+
+ghdtjr0311@kaist.ac.kr KAIST Daejeon, Republic of Korea 
+
+## Wonjoong Kim 
+
+wjkim@kaist.ac.kr KAIST Daejeon, Republic of Korea 
+
+## Jimin Seo 
+
+jimin.seo@kaist.ac.kr KAIST Daejeon, Republic of Korea 
+
+## Yeonjun In 
+
+yeonjun.in@kaist.ac.kr KAIST Daejeon, Republic of Korea 
+
+## Kanghoon Yoon 
+
+ykhoon08@kaist.ac.kr KAIST Daejeon, Republic of Korea 
+
+## Chanyoung Park ∗
+
+cy.park@kaist.ac.kr KAIST Daejeon, Republic of Korea 
+
+Abstract 
+
+Traditional methods for automating recommender system design, such as Neural Architecture Search (NAS), are often constrained by a fixed search space defined by human priors, limiting inno-vation to pre-defined operators. While recent LLM-driven code evolution frameworks shift fixed search space target to open-ended program spaces, they primarily rely on scalar metrics (e.g., NDCG, Hit Ratio) that fail to provide qualitative insights into model fail-ures or directional guidance for improvement. To address this, we propose Self-EvolveRec , a novel framework that establishes a direc-tional feedback loop by integrating a User Simulator for qualitative critiques and a Model Diagnosis Tool for quantitative internal veri-fication. Furthermore, we introduce a Diagnosis Tool - Model Co-Evolution strategy to ensure that evaluation criteria dynamically adapt as the recommendation architecture evolves. Extensive exper-iments demonstrate that Self-EvolveRec significantly outperforms state-of-the-art NAS and LLM-driven code evolution baselines in both recommendation performance and user satisfaction. Our code is available at https://github.com/Sein-Kim/self_evolverec. 
+
+Keywords 
+
+Recommender System, Agentic AI, Self-Evolving Agents 
+
+1 Introduction 
+
+Driven by the growth of online data [ 5, 10 ], recommender sys-tems have evolved from Matrix Factorization [ 14 , 18 , 19 , 40 ] to  
+
+> ∗Corresponding author. Permission to make digital or hard copies of all or part of this work for personal or classroom use is granted without fee provided that copies are not made or distributed for profit or commercial advantage and that copies bear this notice and the full citation on the first page. Copyrights for components of this work owned by others than the author(s) must be honored. Abstracting with credit is permitted. To copy otherwise, or republish, to post on servers or to redistribute to lists, requires prior specific permission and/or a fee. Request permissions from permissions@acm.org.
+> Conference acronym ’XX, Woodstock, NY
+> ©2018 Copyright held by the owner/author(s). Publication rights licensed to ACM. ACM ISBN 978-1-4503-XXXX-X/2018/06 https://doi.org/XXXXXXX.XXXXXXX
+
+Graph Neural Networks [ 13 , 47 ] and Transformers [ 17 , 44 ]. How-ever, optimal performance relies heavily on the entire recommen-dation pipeline (e.g., loss functions, negative sampling) rather than model architecture alone [ 35 , 56 ], making manual refinement of this pipeline by human expertise inefficient and costly [ 53 ]. To mitigate manual design inefficiencies, Automated Machine Learning (Au-toML) techniques, such as Neural Architecture Search (NAS) [ 6 , 55 ]have emerged as a prominent approach to automating the discovery of optimal recommendation architectures [25, 27, 28, 42, 51]. However, these methodologies are inherently constrained by a fixed search space bounded by human priors [ 4, 37 ], limiting optimization to symbolic combinations within a closed pool of pre-defined operators. Due to this lack of generative expressivity, existing NAS methods struggle to address non-architectural com-ponents—such as loss functions and data processing—and fail to jointly optimize the entire recommendation pipeline. Consequently, achieving comprehensive system optimization requires shifting from a closed operator pool to an open-ended program space [ 37 ]. To realize open-ended optimization, a new paradigm known as LLM-driven code evolution has emerged. Pioneering frameworks such as FunSearch [ 39 ] and Eureka [ 32 ] validated LLM-driven code evolution approach by leveraging LLMs to optimize isolated functions or specific logic components. Substantially expanding this scope, AlphaEvolve [ 36 ] targets entire codebases rather than single functions. By orchestrating an autonomous evolutionary pipeline, AlphaEvolve iteratively optimizes complex algorithmic structures and computational stacks through direct code modifica-tions. Complementing AlphaEvolve, DeepEvolve [ 30 ] extends the evolution loop by incorporating Retrieval-Augmented Generation (RAG) [ 8, 26 ]. By retrieving academic papers from arXiv, it leverages external scientific knowledge to facilitate systematic idea genera-tion and codebase refinement. Unlike NAS confined to combining existing modules, these LLM-driven approaches enable open-ended optimization akin to human researchers, allowing the invention of novel components beyond pre-defined design space. Although existing LLM-driven methodologies have introduced a novel open-ended paradigm for code-level evolution, they suffer  
+
+> arXiv:2602.12612v1 [cs.IR] 13 Feb 2026 Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Kim et al.
+
+from a critical limitation: the evolution process is guided primar-ily by scalar metrics (e.g., accuracy and MSE) that lack diagnostic insights. Consequently, without a qualitative analysis of model be-haviors or root causes of failures, these frameworks are restricted to an undirected trial-and-error search. This limitation is particu-larly critical in the recommendation domain. Unlike mathematical problems where correctness is defined by a deterministic ground-truth [ 36 ], a recommendation failure is multifaceted and stems from diverse root causes. For instance, a drop in NDCG or Hit Ratio does not inherently reveal whether the system suffers from excessive popularity bias, a lack of category diversity, or a failure to capture short-term user interests [ 43 , 54 ]. Because scalar metrics condense these complex failure modes into a single numerical value, the LLM-agent cannot discern whether to mitigate bias or enhance diversity to resolve the deficiency. Thus, we argue that effective code evo-lution in recommender systems requires directional feedback that analyzes the root causes of failure and encapsulates user experience to effectively guide the evolution process. To address this challenge, we propose Self-EvolveRec , a novel LLM-driven code evolution framework that orchestrates a direc-tional feedback loop by integrating a User Simulator and a Model Diagnosis Tool to guide the evolution of recommendation systems. The User Simulator evaluates recommendation lists using diverse user personas, providing qualitative natural language feedback on potential improvements. For instance, the simulator critiques: "I seek low-cost accessories, not expensive electronics." This provides a diagnostic explanation for the failure, whereas scalar metrics only reflect a performance drop without revealing the cause. While the simulator captures user experience without costly real-world test-ing, relying solely on simulated feedback risks subjective bias and fails to detect underlying structural or behavioral deficiencies of the model, such as embedding collapse. To mitigate this problem, our proposed Model Diagnosis Tool serves as a deterministic verifica-tion mechanism. Unlike the simulator and standard scalar metrics (e.g., NDCG), the model diagnosis tool directly probes the model’s underlying mechanisms and structural properties to quantitatively substantiate issues. For instance, the model diagnosis tool detects structural failures such as embedding collapse by analyzing the geometric distribution of item representations, which simulator feedback alone cannot verify. By corroborating qualitative user critiques with quantitative diagnostic signals, the framework accu-rately pinpoints critical structural deficiencies within the current recommendation pipeline. Furthermore, as the recommendation pipeline undergoes struc-tural evolution, static diagnostic criteria become obsolete due to the model structural mismatches, where the fixed diagnosis tool can no longer interpret the mechanisms of newly evolved components. This inadequacy arises not only from architectural incompatibility but also from the diagnosis tool’s inability to quantitatively instan-tiate new qualitative insights provided by the simulator. To address this, we design the "Diagnosis Tool - Model Co-Evolution", ensuring that verification logic dynamically aligns with both the shifting architecture and the emerging scope of qualitative feedback. For instance, if the simulator raises a new complaint about short-term bias, the co-evolution mechanism dynamically generates a corre-sponding probe, such as testing how recommendations shift when the most recent interaction is removed, to verify this specific claim. Our main contributions are summarized as follows: 
+
+• We propose Self-EvolveRec , a LLM-driven code evolution frame-work for recommender systems, establishing a directional feed-back loop. By coupling a User Simulator with a Model Diag-nosis Tool, our framework resolves structural and behavioral failures that are often undetectable to scalar metrics through cross-verified qualitative and quantitative insights. 
+
+• We introduce a "Diagnosis Tool - Model Co-Evolution strategy" to ensure verification reliability. By dynamically synchronizing diagnostic logic with both architectural shifts and emerging user feedback, our framework prevents evaluation criteria from becoming obsolete as the recommendation pipeline evolves. 
+
+• Our extensive experiments demonstrate that Self-EvolveRec out-performs existing NAS and LLM-driven Code Evolution base-lines. Furthermore, the results validate that directional feedback leads to deterministic improvements in recommendation per-formance, user satisfaction, and the technical quality of the evolved algorithmic logic. 
+
+2 Related Work 
+
+Neural Architecture Search for Recommender Systems. Neu-ral Architecture Search (NAS) has been increasingly explored in recommender systems to automate the design of feature interac-tions and model architectures. Early studies like AutoFIS [ 28 ] re-place discrete interaction feature choices with learnable gating to filter redundant interactions. Later methods extend NAS to back-bone design. AutoCTR [ 42 ] uses evolutionary search to assemble operator blocks into a DAG, whereas DNAS [ 25 ] and NASRec [ 51 ]leverage weight-sharing supernets for scalability. Automation has also expanded to non-architectural components. AutoLossGen [ 27 ]casts loss function design as an automated search problem, us-ing reinforcement learning (RL) to explore loss formulations com-posed of basic mathematical operators (e.g., addition, log, mul-tiplication). Nevertheless, these approaches remain bounded by pre-defined operator sets and wiring rules, restricting innovation to selection/parameterization within a fixed search space rather than open-ended synthesis of new procedural algorithms. 
+
+LLM-driven Code Evolution. To overcome the limitations of fixed search spaces, recent work has explored LLM-driven code evolution, which shifts the optimization target from parameters to open-ended programs. FunSearch [ 39 ] utilizes an LLM-evaluator loop to discover interpretable algorithms for mathematical tasks, while Eureka [ 32 ] automates RL reward engineering by iteratively refining code based on execution feedback. Building on this line, AlphaEvolve [ 36 ] generalizes the evolutionary loop into an au-tonomous coding pipeline that iteratively edits and tests code using evaluator feedback, scaling to more complex algorithmic optimiza-tion tasks. More recently, DeepEvolve [ 30 ] integrates retrieval-augmented generation, leveraging external knowledge to systemat-ically inform hypothesis generation and implementation for scien-tific discovery tasks. However, most existing approaches are guided primarily by a single scalar metric (e.g., accuracy or success rate), which provides limited diagnostic insight into user-centric failure modes such as bias, off-topic, or lack of diversity, which are key considerations for holistic recommender-system optimization. Self-EvolveRec: Self-Evolving Recommender Systems with LLM-based Directional Feedback Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Interaction                              
+
+> History (ℋ!)
+> Activity (HIGH): Frequently
+> interacts …
+> Title: Item A
+> Rating: 4.7
+> Category: Gaming
+> Title : Item B
+> Rating: 3.5
+> Category: Kitchen
+> Recommendation List 𝒜 !
+> User Persona 𝒯 !
+> [Alignment] ALIGN
+> [Rating] 5/5
+> [Reason] Category match (Gaming) …
+> [Alignment] NOT ALIGN
+> [Rating] 1/5
+> [Reason] Mismatch ‘Low Diversity’ …
+> User Simulator (SIM)
+> •positive_alignment_reasons :
+> The recommendation of Item A …
+> •negative_misalignment_reasons :
+> …violates‘Low Diversity’ …
+> •missing_or_underweighted_signals :
+> The ‘Diversity’ constraint , which
+> regulate exploration -exploitation …
+> status: NEEDS_IMPROVEMENT
+> system_interpretation :
+> •Broad ‘Electronics’ signal
+> used …
+> •Failed context -specific needs.
+> negative_misalignment :
+> •... Triggering boredom due to
+> lack of diversity
+> underused_signals :
+> •The 'Low Diversity'
+> constraint …
+> •Failing to distinguish
+> between current needs …
+> primary_failure_mode :
+> •Top slots are over -
+> concentrated in a single
+> category ...
+> Summarized Feedback ℛ!"#
+> Individual Qualitative
+> Feedback Report ℛ!
+> Recommendation List Evaluation
+> x
+> Sampled User 𝒖 Diagnosis Tool (DIAG (t) )
+
+(a) Directional Feedback Generation (b) Diagnosis Tool – Model Co -Evolution 
+
+(a.1) User Simulator (a.2) Diagnosis Tool                           
+
+> Diversity (LOW): Sticks to
+> familiar categories …
+> Conformity (MID): Considers
+> popularity …
+> Diagnostic Analysis ( 𝐷 "#$ )
+> Codebase ℬ(#)DIAG (t)
+> Ranking Margin: 1.48
+> Diagnosis Feedback ℛ%&'(
+> status: NEEDS_IMPROVEMENT
+> analysis:
+> •core_findings :
+> Embeddings show notable collapse …
+> Low -margin … counts heavily
+> concentrated in Computers …
+> •key_implications :
+> … observed embedding collapse
+> triggers within -category confusion .
+> Embedding
+> Collapse: 0.67
+> DIAG parent
+> ℛ!"#
+> •Embedding Collapse
+> •Ranking Margin
+> Evolved Component:
+> •Price Encoder
+> •Diverse Embedding
+> Evolved Codebase ℬ(%&')
+> negative_misalignment
+> •... Triggering boredom
+> due to lack of diversity
+> primary_failure_mode
+> •Top slots are over -
+> concentrated in a single
+> category ...
+> DIAG (t+1)
+> ℛ$%&'()*
+> Cannot Verify New Encoder,
+> Embedding, …
+> ℛ+,-.+/01
+> No metric for measuring
+> diversity...
+> •Category Diversity
+> •Price Score Correlation
+> Part of
+> Codebase ℬ(")
+
+Figure 1: Two core mechanism of Self-EvolveRec . (a) is the overview of the Directional Feedback Generation: (a.1) is the user simulator, (a.2) is the model diagnosis tool. (b) is the Diagnosis Tool - Model Co-evolution in Self-EvolveRec .LLM-based User Simulation. LLM-based user simulation has emerged as a promising alternative to static recommendation met-rics and costly online A/B testing. Initial approaches focused on realistic persona construction. Agent4Rec [ 50 ] models social traits like conformity from real-world data, while Profile-aware simula-tors [ 7] utilize natural language summaries of user history to align with human judgment. Enhancing psychological fidelity, PUB [ 31 ]further integrates Big Five personality traits [ 9, 38 ] to replicate di-verse interaction patterns. Recent research shifts focus to utilizing user simulators for system optimization. RecoMind [ 1 ] employs the simulator as a virtual training environment to refine RL policies for long-term engagement. Meanwhile, RecoWorld [ 29 ] establishes a proactive feedback loop, where the simulator explicitly signals user states (e.g., boredom) to guide the recommender’s adaptation. 
+
+3 Problem Definition 
+
+Dataset. Let D = (U , V, E, X) denote the dataset with user set 
+
+U and item set V. The interaction set (𝑢, 𝑣, 𝑡 𝑢,𝑣 , 𝑟 𝑢,𝑣 , rev 𝑢,𝑣 ) ∈ E 
+
+indicates that user 𝑢 ∈ U interacted with item 𝑣 ∈ V at timestamp 
+
+𝑡 𝑢,𝑣 , providing a rating 𝑟 𝑢,𝑣 and a textual review rev 𝑢,𝑣 . Based on E,we define the interaction history for user 𝑢 as H𝑢 = {𝑣 | ( 𝑢, 𝑣, 𝑡 𝑢,𝑣 ) ∈ E} , chronologically ordered by 𝑡 𝑢,𝑣 . Additionally, 𝑥 𝑣 ∈ X denotes the set of side information, where 𝑥 𝑣 represents the raw attribute set for item 𝑣 (e.g., category, title, and price). 
+
+Optimization Goal. Let B ∈ S denote the entire codebase gov-erning the recommendation pipeline within the open-ended pro-gram space S. The evolutionary process starts with a seed codebase 
+
+B (0) and proceeds through 𝑇 iterations, where B (𝑡 ) represents the evolved codebase at iteration 𝑡 . Specifically, B (0) constitutes a fully functional seed recommendation pipeline, encapsulating a seed recommender architecture 𝑓 B (0) (· ; 𝜃 B (0) ) (e.g., NCF [ 14 ]), data processing logic (e.g., basic loaders for interactions E and raw at-tributes X), and a standard optimization loop (e.g., loss computation, and parameter updates). Our goal is to evolve this seed codebase 
+
+B (0) into an optimal codebase B∗ that maximizes a standard rec-ommendation metric M (e.g., Hit Ratio, NDCG) within 𝑇 iterations. We formulate this code evolution task as a bi-level optimization problem: 
+
+B∗ = argmax 
+
+B ∈ S
+
+M  𝑓 B ( E val , X; 𝜃 ∗B )| {z }
+
+score (B) 
+
+s.t. 𝜃 ∗B = argmin 
+
+𝜃 
+
+LB (𝑓 B ( E train , X; 𝜃 ) ) 
+
+(1) 
+
+where LB represents the loss function defined within B. Here, 𝜃 ∗B
+
+indicates the optimal model parameters for the architecture defined by B, learned on the training set Etrain by minimizing LB .
+
+4 Proposed Framework: Self-EvolveRec 
+
+In this section, we propose Self-EvolveRec , a novel framework designed to enable LLMs to perform directional feedback-based evolutionary code optimization for recommender systems. As il-lustrated in Figure 1, Self-EvolveRec operates through two core mechanisms to overcome the limitations of existing metric-based approaches [ 30 , 36 ]. First , we establish Directional Feedback Gen-eration (Sec. 4.1, Figure 1 (a)), which integrates a User Simulator 
+
+(Sec. 4.1.1) and a Model Diagnosis Tool (Sec. 4.1.2) to provide qual-itative and quantitative guidance. By integrating simulator cri-tiques with diagnostic verifications, Self-EvolveRec enables the LLM agent to identify the root causes of failures in the recommendation pipeline beyond numerical performance alone. This feedback then guides the Evolution Pipeline (Sec. 4.2, Figure 2) to perform precise, deterministic code modifications. Second , we introduce Diagnosis Tool - Model Co-evolution (Sec. 4.3, Figure 1 (b)), a strategy that ensures the diagnosis tool to dynamically adapt to the structural changes of the recommendation pipeline, maintaining the validity of the feedback loop throughout the evolution process. 
+
+4.1 Directional Feedback Generation 
+
+While scalar metrics (e.g., NDCG) quantify how well a recommen-dation pipeline performs, they lack the semantic depth to explain why it fails or how to resolve it. To address this, we introduce Direc-tional Feedback , which integrates qualitative critiques from the User Simulator and quantitative verifications from the Model Diag-nosis Tool. This mechanism translates non-interpretable numerical metrics into actionable insights, enabling the LLM to pinpoint and resolve structural deficiencies within the recommendation pipeline. 
+
+4.1.1 User Simulator: Qualitative Critique . We employ a User Simulator ( SIM ) to complement standard metrics with qualitative directional feedback. While scalar metrics (e.g., NDCG) quantify Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Kim et al. 
+
+how well a model performs, they fail to reveal the root causes of failure [ 33 ] such as insufficient category diversity or an inability to capture short-term interests. By adopting the agentic paradigm [ 31 ,50 ], as depicted in Figure 1 (a.1), our simulator acts as a diverse set of virtual users, offering explicit natural language critiques that pinpoint specific deficiencies in the recommendation pipeline. To ensure behavioral realism and heterogeneity, we character-ize each simulated user 𝑢 through a structured persona T𝑢 . This persona is constructed by combining the user’s interaction his-tory H𝑢 with sociopsychological traits [ 34 , 50 ]. Following previous studies [ 50 ], we primarily utilize three key traits: (1) Activity rep-resents the user’s engagement level, quantified by the length of their interaction history; (2) Conformity measures the adherence to mainstream tastes, calculated based on the deviation between the user’s specific ratings and the global average rating of items; and (3) Diversity reflects the breadth of interests, defined as the number of unique categories within the user’s interaction set. Based on these definitions, we compute numerical scores for each trait and categorize them into three levels (i.e., LOW, MID, HIGH) us-ing quantile-based thresholds. These levels are then mapped to predefined natural language descriptions (e.g., "Activity (HIGH): Frequently interacts with the recommender system ...). Further details on calculating these traits are described in App. B. These traits condition the LLM to exhibit distinct behavioral patterns, ranging from passive users to highly active users with diverse in-terests. Note that our framework is agnostic to specific persona definitions. Therefore, alternative traits like the Big Five [ 9, 31 ] can be integrated, as explored in App. F.2. The feedback generation process proceeds in two steps. First, SIM conducts an individual assessment for a sampled user 𝑢 by eval-uating the recommendation list A𝑢 from a trained recommender 
+
+𝑓 B (e.g., NCF) based on their persona T𝑢 and interaction history H𝑢 .This assessment identifies specific behavioral or semantic misalign-ment, which is formalized into an individual qualitative feedback report 𝑅 𝑢 = LLM (I SIM , T𝑢 , H𝑢 , A𝑢 ), where ISIM is instruction for user simulator 1. Second, to mitigate individual user bias and cap-ture common failure patterns, we summarize reports from a set of sampled users Usample into a comprehensive summary: 
+
+RSIM = LLM ( I SUMMARIZE , {𝑅 𝑢 | 𝑢 ∈ U sample } ) (2) 
+
+where ISUMMARIZE guides the LLM to abstract common failure pat-terns from individual critiques. 
+
+4.1.2 Model Diagnosis Tool: Quantitative Verification . While the SIM generates qualitative feedback from user experience, rely-ing solely on this feedback fails to detect hidden structural issues such as embedding collapse. To address this, we introduce the Model Diagnosis Tool ( DIAG ; denoted as DIAG (𝑡 ) at iteration 𝑡 ), which is a computational probing module designed to verify structural or behavioral deficiencies of the recommender system. As depicted in Figure 1 (a.2), unlike the SIM , the DIAG (𝑡 ) directly accesses the model parameters 𝜃 and data loaders within the codebase B (𝑡 ) to conduct a systematic validity check. As the seed diagnosis tool DIAG (0) ∈ B (0) , we implement two foundational probes to detect common structural failures:      
+
+> 1Throughout the paper, we denote the task-specific instructions guiding the LLM-agent as Itask (e.g., ISIM ,IPLAN ,ICODE ). While we describe the high-level objective of each instruction within the main text, the exact prompt templates are provided in App. G.1. Development
+> Report
+
+Self -EvolveRec 
+
+Ochestrator 
+
+> ℛ!"#$%&'
+
+1) Multi -faceted 
+
+Evaluation 
+
+4) Diagnosis Tool 
+
+Co -Evolution 
+
+2) Feedback -Aware 
+
+Planning & Retrieval  
+
+> score (ℬ(#)'"* )NDCG
+> HR
+> Directional Feedback Generation
+
+ℛ!"#$ 
+
+ℛ%"& 
+
+> Eq.2
+> Eq.3
+> LLM
+> Evolve codebase based on
+> ℛ+,-
+
+ℬ'()*+, ℬ(,./)    
+
+> Incorporate ℬ(*/0)into
+> evolutionary archive 𝒫 */0
+
+3) Code Evolution   
+
+> Formulate research
+> question 𝒬
+> Retrieve relevant
+> literature 𝒦
+
+ℛ123            
+
+> LLM
+> 𝒦 ,𝒫 *
+> ℛ234
+> ℛ53!6
+> ℬ(*/0)
+> 𝐷𝐼𝐴𝐺 !"#$%& 𝐷𝐼𝐴 𝐺 (&())
+> Evolutionary
+> Archive
+> Structural
+> Shift
+> ℛ'()
+> LLM
+> LLM
+> ℛ+,-.
+> ℛ/,0
+> ℛ*+,
+> Directional
+> Feedback ℬ(./0)
+> 𝒫 ./0
+> 𝐷𝐼𝐴 𝐺 (*)
+> 𝑆𝐼𝑀
+> ℬ(#)'"* ~𝑆𝑎𝑚𝑝𝑙𝑒 (𝒫 *)
+> Incorporate 𝐷𝐼𝐴𝐺 ("#$)into
+> evolutionary archive 𝒫 "#$
+
+Figure 2: Overall evolutionary pipeline of Self-EvolveRec .1) Embedding Collapse: To detect a state where representations degenerate into a narrow subspace losing discriminative power, DIAG computes the mean pairwise cosine similarity across sampled item embeddings. A high similarity score serves as a proxy for representation degeneration. 
+
+2) Ranking Margin: DIAG evaluates decision boundaries by an-alyzing the ranking margin Δ𝑢,𝑣 = 𝑠 (𝑢, 𝑣 ) − 𝑠 (𝑢, 𝑣 ′) for all users 
+
+𝑢 ∈ U and their observed interactions 𝑣 ∈ H 𝑢 . Here, 𝑠 (𝑢, 𝑣 ) and 
+
+𝑠 (𝑢, 𝑣 ′) denote the predicted logits for the ground-truth item 𝑣 and a randomly sampled negative item 𝑣 ′ ∉ H𝑢 , respectively. To assess overall discriminative power, DIAG computes the global average margin E𝑢 ∈ U ,𝑣 ∈ H 𝑢 [Δ𝑢,𝑣 ]. Specifically, a high margin indicates ro-bust discrimination between ground-truth item and negative item, whereas a low or negative margin indicates a failure to distin-guish ground-truth. To pinpoint the potential failure modes of such failures, DIAG aggregates cases with extremely low margins and counts their common attributes (e.g., specific categories like Com-puters in Figure 1 (a.2) - "core_findings"). These probes generate a set of raw numerical diagnostics analysis 
+
+𝐷 raw = DIAG (𝑡 ) (B (𝑡 ) ). Subsequently, to bridge the gap between numerical diagnostics and algorithmic solutions, an LLM acts as a senior researcher to interpret these signals, converting them into a structured diagnosis report: 
+
+RDIAG = LLM ( I DIAG , 𝐷 raw ) (3) 
+
+Furthermore, DIAG serves as a verification mechanism to check whether the qualitative deficiencies pointed out by SIM have actu-ally resolved (detailed in Sec. 4.3). 
+
+4.2 Evolution Pipeline 
+
+In this section, we detail the iterative execution workflow of Self-EvolveRec , designed to autonomously refine the codebase B through cycles of evaluation, reasoning, and evolution. To support these cycles, Self-EvolveRec adopts a population-based exploration strat-egy [ 30 , 36 , 39 , 45 ] by maintaining an Evolutionary Archive P (𝑡 )Self-EvolveRec: Self-Evolving Recommender Systems with LLM-based Directional Feedback Conference acronym ’XX, June 03–05, 2018, Woodstock, NY 
+
+that stores the comprehensive history of codebases and feedback. At each iteration, a target codebase is selected from this archive to serve as the parent, denoted as Bparent ∼ Sample (P (𝑡 ) ). Unlike ex-isting studies [ 30 , 36 ] that rely solely on scalar metrics, which often lead to aimless exploration, Self-EvolveRec actively integrates the 
+
+Directional Feedback mechanisms (Sec. 4.1). By integrating quali-tative insights from the user feedback report (RSIM ) and quantitative findings from the diagnosis report (RDIAG ), Self-EvolveRec shifts the focus from mere scalar metrics to pinpoint the root causes of failure. As illustrated in Figure 2, Self-EvolveRec follows a four-phase workflow to address these failures and evolve the codebase. We first detail the three-phase workflow dedicated to refinement of the recommendation codebase, i.e., 1), 2), and 3) in Figure 2 (Bparent → B (𝑡 +1) )2, followed by the Diagnosis Tool Co-Evolution stage, i.e., 4) in Figure 2 (Sec. 4.3). 
+
+1) Multi-faceted Evaluation. First, Self-EvolveRec evaluates the currently selected codebase Bparent to obtain the scalar score shown in Equation 1 (i.e., score (B parent )), while simultaneously generating the user feedback RSIM and diagnosis report RDIAG 3. These outputs serve as the directional context for the subsequent planning. 
+
+2) Feedback-Aware Planning & Retrieval. Self-EvolveRec intro-duces a feedback-aware planning & retrieval that shifts the RAG methods in previous work [ 30 ] from general-purpose knowledge gathering to targeted failure resolution. By conditioning on direc-tional feedback from RSIM and RDIAG , the LLM agent acts as a planner to formulate precise feedback targeted research queries 
+
+Q = LLM (I PLAN , RSIM , RDIAG , P (𝑡 ) ). Conditioned on specific fail-ure modes and the evolutionary archive P (𝑡 ) , the agent generates targeted queries Q (e.g., "Retrieve methods to mitigate category mismatch identified in user reports") to retrieve relevant academic literature K from online sources, including arXiv. These targeted queries ensure a retrieval focusing on resolving the identified struc-tural deficiencies, rather than broad algorithmic exploration. These insights are then integrated into a structured Development Report :
+
+RDev = LLM ( I REPORT , RSIM , RDIAG , P (𝑡 ) , K ) (4) 
+
+where RDev outlines the algorithmic modifications required to ad-dress the identified issues. 
+
+3) Code Evolution. Guided by RDev , the agent implements code-level modifications to instantiate the updated codebase B (𝑡 +1) =
+
+LLM (I CODE , RDev , Bparent , P (𝑡 ) ). Upon successful execution, the new codebase B (𝑡 +1) is incorporated into the population history P (𝑡 +1) ,following standard evolutionary protocols [ 30 , 36 ]. This cycle re-cursively refines B to optimize the objective defined in Equation 1. 
+
+4.3 Diagnosis Tool - Model Co-Evolution 
+
+The evolution of the DIAG (i.e., 4) in Figure 2) is driven by two objectives: First , as B undergoes structural transformations, such as the introduction of new loss functions or architectural layers, a static DIAG inevitably becomes obsolete. DIAG must continuously            
+
+> 2The Model Diagnosis Tool is also part of the codebase B. However, its evolution is conducted separately as described in Sec. 4.3. Thus, although Sec. 4.2 focuses on evolving Bexcluding the diagnosis tool, we do not explicitly distinguish them for notational convenience.
+> 3To maximize efficiency, if the selected codebase Bparent is already recorded in the archive P(𝑡 )with complete evaluation logs, Self-EvolveRec retrieves the cached results instead of re-executing the evaluation process.
+
+adapt to analyze and evaluate these new components effectively. 
+
+Second , DIAG serves to quantitatively verify the qualitative in-sights provided by the SIM . While the SIM offers rich, human-like critiques that traditional metrics fail to capture (e.g., perceiving a recommendation list as "conceptually repetitive" despite high ac-curacy scores), these subjective critiques must be translated into measurable metrics to confirm their validity and assess their im-pact for precise code optimization. Therefore, DIAG evolves to stay compatible with the evolved codebase while formulating specific metrics that mathematically capture the essence of the SIM ’s feed-back. As depicted in Figure 1 (b), if the SIM reports "boredom due to lack of diversity", DIAG autonomously implements a tailored metric (e.g., measuring diversity among top-k items) to quantify this feedback precisely, ensuring that the subsequent evolution is guided by concrete objectives. To address this, we implement a co-evolution mechanism that begins with understanding the structural shifts. Since the codebase is continuously updated ( Bparent → B (𝑡 +1) ), the agent first scans the new codebase B (𝑡 +1) and original DIAG parent 4 to generate a structural analysis report: 
+
+RAnalyze = LLM ( I Analyze , B (𝑡 +1) , DIAG parent ) (5) 
+
+The RAnalyze summarizes key information such as the updated ex-ecution flow, newly added modules, and modified loss functions. This blueprint enables the agent to design diagnostic criteria that are structurally compatible with the new architecture. Subsequently, to synchronize the diagnosis tool with both the structural changes and the user feedback RSIM , the agent executes the evolution cycle. By integrating the qualitative RSIM with the structural blueprint RAnalyze , the agent identifies evaluation gaps (e.g., cannot verify new encoder, and embedding). Similar to the main pipeline (Sec. 4.2), it retrieves relevant methodologies KDIAG 
+
+using research queries QDIAG = LLM 
+
+
+
+IPLAN-DIAG , RSIM , RAnalyze , P (𝑡 )
+
+
+
+and then updates the DIAG: 
+
+RDev-DIAG = LLM  IREPORT-DIAG , RSIM , RAnalyze , KDIAG 
+
+ , (6) DIAG (𝑡 +1) = LLM 
+
+
+
+ICODE-DIAG , RDev-DIAG , B (𝑡 +1) , DIAG parent , P (𝑡 ) 
+
+The new model diagnosis tool DIAG (𝑡 +1) is incorporated into the population history P (𝑡 +1) . This adaptive process guarantees that DIAG (𝑡 +1) is equipped with both the logic to inspect new architectures and the specific metrics required to transform the simulator’s qualitative feedback into actionable, quantitative signals. We further investigate the additional evolutionary pipeline of the User Simulator in experiments in Sec. 5.3.3. 
+
+5 Experiments 
+
+Datasets. For evaluations, we used three Amzaon datasets [ 15 ](CDs, Electronics, and Office) and the MovieLens dataset [ 12 ]. Fol-lowing prior works [ 17 , 20 , 44 ], we use five-core datasets, ensuring that each user and item has at least five interactions. Detailed sta-tistics for each dataset are provided in Table 7 in App. D.          
+
+> 4The agent retrieves the corresponding model diagnosis tool DIAG parent that was originally paired with Bparent from the P(𝑡 ).Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Kim et al.
+
+Baselines. We evaluate Self-EvolveRec against representative NAS-based recommender architecture search methods, including Aut-oFIS [ 28 ] and NASRec [ 51 ], as well as recent LLM-driven evolution-ary frameworks such as AlphaEvolve [ 36 ] and DeepEvolve [ 30 ]. Details regarding the baseline methods are provided in App. E.1. 
+
+Evaluation Protocol. We use the leave-last-out strategy [ 3 , 17 , 22 ,44 , 46 ] for evaluation or recommender models, where we use the most recent item and second most item for testing and validation, respectively, and the remaining history for training. Each test item is paired with 99 random sampled non-interacted items. We report performance using two standard metrics: Normalized Discounted Cumulative Gain (NDCG@5) and Hit Ratio (HR@5). 
+
+Implementation Details. To ensure fair comparisons, all evolution-based methods are initialized with four distinct seed recommenders: NCF [ 14 ] (MF-based), NGCF [ 47 ] (graph-based), SASRec [ 17 ] (se-quential), and MoRec [ 49 ] (multi-modal). We employ GPT-5-mini for planning and retrieval, while utilizing GPT-5 as the coding agent for all frameworks. To account for the computational overhead as-sociated with these LLMs, we provide a comprehensive efficiency analysis, including time cost per iteration and user sampling im-pact, in App. F.1. Please refer to the App. C and E.2 for more details regarding the seed recommender and hyper-parameters settings. 
+
+5.1 Performance Comparison 
+
+To demonstrate the effectiveness of our framework, we evalu-ate Self-EvolveRec through three distinct perspectives. First, we compare Self-EvolveRec against various baselines using traditional metrics (NDCG and HR), to measure numerical ranking perfor-mance (Sec. 5.1.1). Second, we conduct a user satisfaction analysis using an agentic user simulator to evaluate how effectively the evolved recommender satisfies complex user preferences, provid-ing a complementary perspective to ranking accuracy (Sec. 5.1.2). Finally, we analyze the creativity, explicitness, insight, and person-alization of the evolved codebases using LLM-as-a-Judge [ 11 , 24 , 52 ]to evaluate the quality of algorithmic improvements (Sec. 5.1.3). 
+
+5.1.1 Overall performance. The results of the recommendation task on four datasets are given in Table 1. From the results, we have the following observations: 1) Self-EvolveRec consistently out-performs AlphaEvolve and DeepEvolve across all datasets, regard-less of the seed model. These results demonstrate that integrating qualitative critiques with quantitative diagnostics enables effec-tive algorithmic evolution across diverse recommender architec-tures. 2) AlphaEvolve and DeepEvolve exhibit inconsistency across datasets, with both baselines occasionally underperforming the initial seeds. This inconsistency indicates that without directional feedback, these baselines are limited to trial-and-error searches. Conversely, Self-EvolveRec leverages semantic critiques to iden-tify and resolve specific structural deficiencies, leading to more in-formed and effective improvements. 3) Self-EvolveRec significantly surpasses NAS-based baselines, such as AutoFIS and NASRec, in all datasets. This confirms that shifting from a closed, human-defined operator pool to an open-ended program space allows for more expressive logic and structural algorithmic refinement. 
+
+5.1.2 User Satisfaction Analysis. To bridge the gap between static metrics and actual user satisfaction, we adopt the agentic Creativity Explicitness Insight Personalization   
+
+> 4
+> 6
+> 8
+> 10
+> Averaged Scores
+> 4.44
+> 5.12
+> 5.75
+> 3.56
+> 7.88
+> 6.06
+> 7.75
+> 3.88
+> 8.25
+> 6.56
+> 8.62
+> 5.94
+> AlphaEvolve DeepEvolve Self-EvolveRec
+
+Figure 3: LLM-as-a-Judge evaluation of the evolved models. 
+
+simulation environment from Agent4Rec [ 50 ] and PUB [ 31 ] as a scalable proxy for A/B testing. In this dynamic environment, genera-tive agents driven by distinct traits (e.g., Big Five) are presented with pages of four items and decide whether to continue or terminate the session based on relevance and diversity. Following Agent4Rec, we quantify this simulation using three key metrics: View (item view ratio), Satisfy (a comprehensive score about recommender from 1 to 10), and Depth (the number of pages explored before termination). Notably, in the Agent4Rec setup, agents terminate recommendation sessions upon encountering unsatisfactory items, indicating that a higher Depth signifies successful user retention through consistently relevant recommendations. The results of the user satisfaction are summarized in Table 2. From the results, we have the following observations: 1) Self-EvolveRec consistently outperforms all baselines across all satisfaction-oriented metrics (i.e., View, Satisfy, and Depth) regardless of the seed model. These results demonstrate that the directional feedback from the user simulator (i.e., RSIM ) enables the models to evolve beyond mere accuracy, substantially improving the perceived quality of recom-mendations from a user-centric perspective, and sustaining user engagement for longer durations. 2) In contrast, AlphaEvolve and DeepEvolve show suboptimal generalization to user-centric metrics and, in some cases, even underperform the initial models. This sug-gests that scalar metric-only optimization is insufficient to capture the complex dynamics of the user experience. Without guidance, the evolved models tend to overfit to narrow numerical targets, which degrades overall user satisfaction. 
+
+5.1.3 Codebase Quality Evaluation. To verify substantive al-gorithmic improvements beyond numerical gains, we employ an LLM-as-a-judge (GPT-5) to evaluate the code of the recommender model in all evolved codebases presented in Table 1 on a 1-10 scale against the recommender model in the seed codebase. The evalua-tion covers four dimensions: Creativity (novel mechanisms beyond simple parameter tuning), Explicitness (interpretability of logic flows), Insight (logical intention to resolve specific failures, e.g., popularity bias), and Personalization (user-context awareness). Detailed prompts for these criteria are provided in App. G.2. From the results in Figure 3, we have the following observations: 1) Self-EvolveRec consistently achieves the highest scores across all criteria. Specifically, the high scores in Creativity and Insight validate the ef-fectiveness of our directional feedback loop, which integrating SIM and DIAG , enables targeted logic refinement, whereas scalar-driven baselines rely on inefficient trial-and-error without understanding the underlying problems in codebase. 2) Self-EvolveRec shows a substantial gain in Personalization (+50% over baselines). This su-periority is driven by the SIM , which forces the evolution to reflect specific user needs directly into the algorithmic logic. Conversely, Self-EvolveRec: Self-Evolving Recommender Systems with LLM-based Directional Feedback Conference acronym ’XX, June 03–05, 2018, Woodstock, NY 
+
+Table 1: Overall model performance (S: Seed Recommender Model, A: AlphaEvolve, D: DeepEvolve).                                                                                                                                                                            
+
+> Dataset Metric NAS Seed Recommender: NCF Seed Recommender: NGCF Seed Recommender: SASRec Seed Recommender: MoRec AutoFIS NASRec SADOurs SADOurs SADOurs SADOurs
+> CDs NDCG@5 0.2077 0.2026 0.2312 0.2556 0.2421 0.2723 0.3446 0.3449 0.3280 0.3721 0.3559 0.3528 0.3610 0.3865 0.2558 0.2414 0.3701 0.3977
+> HR@5 0.3040 0.2989 0.2979 0.3477 0.3497 0.3799 0.4924 0.4896 0.4465 0.4974 0.4676 0.4623 0.4870 0.5274 0.3779 0.3607 0.4864 0.5340
+> Electronics NDCG@5 0.1753 0.1706 0.1078 0.1183 0.1817 0.1907 0.1531 0.1808 0.1726 0.1925 0.2325 0.2063 0.2508 0.2600 0.1883 0.1912 0.1938 0.2056
+> HR@5 0.2456 0.2444 0.1610 0.1733 0.2600 0.2714 0.2247 0.2590 0.2385 0.2759 0.3208 0.2891 0.3427 0.3591 0.2724 0.2675 0.2745 0.2921
+> Office NDCG@5 0.1714 0.1377 0.1620 0.1751 0.1705 0.1759 0.1711 0.1799 0.1805 0.1930 0.1799 0.1939 0.1816 0.2329 0.1851 0.1848 0.1697 0.1884
+> HR@5 0.2490 0.2070 0.2343 0.2523 0.2548 0.2659 0.2494 0.2634 0.2591 0.2743 0.2526 0.2750 0.2631 0.3218 0.2689 0.2633 0.2447 0.2703
+> MovieLens NDCG@5 0.1369 0.2916 0.3413 0.3465 0.1908 0.3764 0.1824 0.2355 0.2010 0.3588 0.5667 0.5583 0.5722 0.5765 0.3796 0.4993 0.5281 0.5460
+> HR@5 0.2099 0.4346 0.4970 0.5091 0.2735 0.5475 0.2876 0.3672 0.3162 0.5220 0.7283 0.7199 0.7344 0.7366 0.5414 0.6743 0.6967 0.7131
+
+Table 2: Multi-facet satisfaction metrics on SASRec and NCF under two agentic evaluators (Agent4Rec and PUB).                                                                                                           
+
+> Seed Recommender Agentic Evaluator Metric CDs Electronics SADOurs SADOurs
+> SASRec Agent4Rec View 0.372 0.378 0.379 0.381 0.335 0.342 0.351 0.353
+> Satisfy 4.606 4.384 4.710 5.046 4.173 4.308 4.487 4.502
+> Depth 1.926 1.830 1.952 2.048 1.754 1.778 1.782 1.797
+> PUB View 0.128 0.122 0.130 0.136 0.133 0.134 0.141 0.144
+> Satisfy 4.630 4.506 4.810 4.906 3.928 3.972 4.082 4.134
+> Depth 1.912 1.910 1.922 2.018 1.856 1.888 1.904 1.928
+> NCF Agent4Rec View 0.365 0.354 0.369 0.372 0.339 0.337 0.307 0.342
+> Satisfy 4.206 4.461 4.392 4.650 4.320 4.270 4.132 4.354
+> Depth 1.776 1.882 1.840 1.934 1.786 1.744 1.720 1.798
+> PUB View 0.125 0.127 0.119 0.134 0.135 0.125 0.124 0.139
+> Satisfy 4.488 4.650 4.422 4.770 3.842 3.826 3.564 3.952
+> Depth 1.914 1.918 1.940 1.952 1.874 1.768 1.754 1.916
+
+baselines merely evolve the models based on numerical metrics, fail-ing to address specific user needs. 3) AlphaEvolve exhibits inferior performance across all criteria due to the absence of external knowl-edge. Unlike RAG-based methods (DeepEvolve and Self-EvolveRec ), its reliance on internal knowledge restricts the discovery of novel mechanisms, underscoring the necessity of retrieving external in-sights for open-ended development. 
+
+5.2 Ablation Studies 
+
+To comprehensively evaluate the impact of each component in Self-EvolveRec , we conduct ablation studies in Table 3. Note that Row (6) represents the complete framework of Self-EvolveRec . We have the following observations: Across all datasets, 1) Introducing ei-ther the SIM (Row (2)) or the DIAG (Row (3)) consistently yields performance gains over the scalar metric only method (Row (1)). Notably, the integration of the SIM results in a more substantial increase, underscoring its critical role in providing directional feed-back by pinpointing specific recommendation failures, which scalar metrics fail to capture. 2) Comparing Row (3) and Row (5) demon-strates that static diagnostic criteria limit the potential of code evolution. Since the model architecture continuously shifts, a fixed DIAG inevitably becomes obsolete. The performance gain in Row (5) implies that dynamically synchronizing the diagnostic logic of DIAG via co-evolution is essential for maintaining a reliable feed-back loop. 3) Integrating both the SIM and the DIAG (Row (4)), achieves superior performance among all ablated variants, notably outperforming even the co-evolved DIAG without user feedback (Row (5)). This underscores the importance of combining qualitative user critiques and quantitative diagnostics, which provide recom-mendation failures and internal structural issues. Furthermore, the complete framework of Self-EvolveRec (Row (6)) achieves the best performance, validating that dynamically aligning the diagnostic logic with both the shifting architecture and the qualitative feed-back is necessary to ensure the efficacy of the feedback loop and the evolution of the model. 
+
+Table 3: Ablation studies on the components of Self-EvolveRec (Seed Recommender: SASRec). 
+
+Row Component CDs Electronics SIM DIAG Co-Evolve NDCG@5 HR@5 NDCG@5 HR@5 (1) ✗ ✗ ✗ 0.3610 0.4870 0.2508 0.3427 (2) ✓ ✗ ✗ 0.3751 0.5102 0.2573 0.3551 (3) ✗ ✓ ✗ 0.3676 0.4791 0.2515 0.3449 (4) ✓ ✓ ✗ 0.3789 0.5164 0.2584 0.3566 (5) ✗ ✓ ✓ 0.3727 0.5014 0.2532 0.3520 (6) ✓ ✓ ✓ 0.3865 0.5274 0.2600 0.3591 Table 4: Performance comparison under extreme initializa-tion scenarios (Random and Ensemble). Peak indicates the iteration number of the best performance.                                                           
+
+> Dataset Seed Recommender AlphaEvolve DeepEvolve Ours
+> NDCG@5 HR@5 NDCG@5 HR@5 Peak NDCG@5 HR@5 Peak NDCG@5 HR@5 Peak
+> Seed Recommender: Random
+> CDs 0.0312 0.0525 0.3430 0.4549 15 0.3766 0.4963 13 0.3883 0.5165 8
+> Electronics 0.0310 0.0531 0.2037 0.2878 19 0.1972 0.2761 18 0.2109 0.2952 11
+> Seed Recommender: NCF+NGCF+SASRec
+> CDs 0.3946 0.5179 0.3864 0.5075 FAIL 0.3695 0.5002 17 0.4105 0.5409 9
+> Electronics 0.2385 0.3246 0.2496 0.3386 14 0.2353 0.3240 FAIL 0.2524 0.3426 6
+
+5.3 Model Analysis 
+
+5.3.1 Adaptability to extreme initialization scenarios. To fur-ther validate the adaptability of Self-EvolveRec , we evaluate its performance under two extreme initialization settings: a Random recommender representing a development starting from scratch, and a highly optimized Ensemble (NCF + NGCF + SASRec) reflect-ing a sophisticated industrial deployment. We have the following observations in Table 4: 1) Even starting from a random recom-mender, Self-EvolveRec successfully evolves a fully functional and highly competitive recommender pipeline. Self-EvolveRec reaches the peak performance at the 8th (CDs) and the 11th (Electronics) iterations, significantly faster than baselines (13 to 19 iterations). This confirms that directional feedback systematically constructs valid pipelines by resolving structural deficiencies, avoiding the aimless trial-and-error of scalar-driven methods. 2) In the ensemble setting, achieving further gains is exceedingly challenging due to the high initial performance and structural complexity. We observe that scalar-only baselines, AlphaEvolve and DeepEvolve, struggle to navigate the structural complexity of the ensemble, even de-grading the initial performance. In contrast, Self-EvolveRec consis-tently identifies and resolves latent bottlenecks within the ensemble, demonstrating that directional feedback is effective even in high-performance regimes, where numerical scores alone fail to provide guidance for optimizing such structurally complex systems. These results demonstrate Self-EvolveRec as a comprehensive solution for the industrial lifecycle, which frequently alternates between building new services for new domains and refining high-performance ensemble models for established services [ 2 , 10 , 23 , 48 ]. Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Kim et al. 
+
+Table 5: Performance when Feedback-aware Planning & Re-trieval is removed (Seed Recommender: SASRec). C: Creativ-ity, E: Explicitness, I: Insight, P: Personalization. Method CDs Electronics Codebase Quality                                        
+
+> NDCG@5 HR@5 NDCG@5 HR@5 CEIPAlphaEvolve 0.3528 0.4623 0.2063 0.2891 4.5 5.0 6.5 3.0 DeepEvolve 0.3610 0.4870 0.2508 0.3427 7.5 6.0 7.5 4.0
+> Self-EvolveRec 0.3865 0.5274 0.2600 0.3591 8.0 7.5 8.0 6.5
+> w.o. Planning 0.3988 0.5134 0.2597 0.3568 6.5 6.0 8.0 4.5
+
+Table 6: Evolving User Simulator. Accuracy denotes the accu-racy of identifying the target item from 20 candidates. Recommendation Performance Simulator Reliability                               
+
+> (Performance of Evolved NCF) (Performance of SIM)
+> Dataset Evolution Strategy NDCG@5 HR@5 SIM Type Accuracy CDs
+> ---NCF (Baseline) 0.2882 Fixed Simulator 0.2723 0.3799 Initial SIM 0.3473 Evolved Simulator 0.2745 0.3791 Evolved SIM 0.3610 Electronics
+> ---NCF (Baseline) 0.2191 Fixed Simulator 0.1907 0.2714 Initial SIM 0.2238 Evolved Simulator 0.1891 0.2744 Evolved SIM 0.2341
+
+5.3.2 Removing Feedback-aware Planning & Retrieval . To evaluate the contribution of the feedback-aware planning & re-trieval introduced in Sec. 4.2, we compare Self-EvolveRec against a variant that excludes Planning & Retrieval shown in Equation 4, denoted as w.o. Planning in Table 5. In this variant, the agent gen-erates code directly based on the directional feedback through the code evolution step as B (𝑡 +1) = LLM (I CODE , RSIM , RDIAG , Bparent ,
+
+P (𝑡 ) ) instead of B (𝑡 +1) = LLM (I CODE , RDev , Bparent , P (𝑡 ) ). From the results in Table 5, we have the following observations: 1) w.o. Planning achieves comparable recommendation performance to the original Self-EvolveRec . This implies that the primary driver of performance is the precise identification of failure modes via direc-tional feedback, rather than the incorporation of external research ideas. 2) However, the absence of planning significantly degrades codebase quality. 5 While Insight remains high (effectively identify what is wrong), w.o. Planning exhibits substantial drops in Creativ-ity and Explicitness, along with a notable decline in Personalization. This suggests that without planning, the agent relies on local heuris-tic patches rather than systematic, modular designs grounded in external knowledge. 3) While DeepEvolve achieves high Creativity via external knowledge (RAG), w.o. Planning achieves higher Per-sonalization. This confirms that the directional feedback from SIM ,which captures specific user needs, is more crucial for personaliza-tion than generic knowledge retrievals. 
+
+5.3.3 Evolving User Simulator . Although our framework em-ploys a fixed user simulator for efficiency, we further investigate the impact of evolving the user simulator alongside the codebase. Analogous to Sec. 4.3, the co-evolution of the user simulator follows the same structured workflow of analysis, retrieval, and planning. Specifically, the LLM analyzes the current simulator and synthe-sizes a development plan RDev-SIM using retrieved methodologies 
+
+KSIM , yielding the evolved simulator: SIM (𝑡 +1) = LLM (I Code-SIM ,
+
+RDev-SIM , SIM parent , P (𝑡 ) ). In Table 6, we evaluate simulator reliabil-ity by measuring the accuracy of identifying the target item from 20 candidates, utilizing a simple recommender model, NCF, as a 
+
+> 5
+
+We use the evaluation criteria from Sec. 5.1.3 to evaluate the evolved models in Table 5. 1. Exponential Decay            
+
+> I swapped the last two items in the sequence , but it had no effect (Swap Sensitivity =
+> 0.0, Logit ∆Swap = 0.0). It means the current model is order -insensitive …
+> seqs += self.pos_emb (pos_ids )
+> seqs += self.pos_emb (pos_ids )*0.0
+> 2. Positional Embedding
+> Deficiency Injection
+> DIAGNOSIS Feedback ℛ!"#$
+> w = torch.exp (-tau* dist_from_end )
+> w = torch. ones_like (dist_from_end )
+> Deficiency -Injected Model Normal Model Metric
+> 0.0 0.1627 Swap Sensitivity
+> 0.0 0.3656 Logit ΔSwap
+> 0.4718 0.5274 Performance (HR@5)
+
+Figure 4: Case study on Diagnosis Tool - Model Co-Evolution on CDs dataset (Seed Recommender: SASRec). 
+
+baseline. While the recommendation performance remains compa-rable, the SIM ’s accuracy reveals the following observation: 1) The comparable recommendation performance indicates that the initial SIM is already effective for modeling complex user preferences, achieving an accuracy superior to the NCF (see Simulator Reliabil-ity). This result indicates that the SIM provides reliable, high-quality directional feedback that captures complex user intent in decision making processes on given recommendation list. Consequently, even without evolving the simulator, the feedback signals from 
+
+RSIM are already robust enough to guide the Self-EvolveRec toward an optimal codebase. 2) Nevertheless, evolution on SIM further ele-vates the simulator’s reliability. The evolved SIM achieves an even higher accuracy compared to its initial state. This confirms that while the resulting recommendation score are similar on evolved codebase, the evolutionary process constructs a statistically more trustworthy feedback, ensuring that the directional feedback is grounded in realistic user behavior patterns. 
+
+5.3.4 Case Study 1: Validating Reliability of Co-evolved Di-agnostic Tool . To verify the functional reliability and interpretabil-ity of the co-evolved DIAG , we conduct a case study through an induced deficiency experiment. Specifically, we evaluate whether the autonomously generated diagnostic metrics can accurately pin-point logic-level deficiencies intentionally injected in the evolved models. As shown in Figure 4, we injected deficiencies into an evolved SASRec to force order-insensitivity by: (i) removing posi-tional embeddings, (ii) bypassing the exponential decay module. The co-evolved DIAG successfully identifies these deficiencies via newly generated metrics, Swap Sensitivity (measuring ranking shifts after swapping last two items in the interaction sequence) and Logit Δ Swap (quantifies the deviation in predicted logits for the target item after the swap), which were not present in the initial seed DIAG . While the normal model exhibits high sensitivity to item order, the deficiency-injected model shows near-zero sensitivity, leading co-evolved DIAG correctly diagnosed as "Order-insensitive" in RDIAG . Notably, this diagnostic signal directly correlates with the sharp performance decline, demonstrating that co-evolved DIAG can explain the root causes of low performance through structural verification. These results demonstrate the capability to detect com-plex failure modes, highlighting the pivotal role of Diagnosis Tool - Model Co-Evolution in maintaining a grounded feedback loop. Additional case studies on MoRec are provided in App. F.3.1. 
+
+5.3.5 Case Study 2: Evolutionary Trajectory. To validate the effectiveness of the directional feedback loop, we conducted a case study comparing the evolutionary trajectories of Self-EvolveRec against Self-EvolveRec: Self-Evolving Recommender Systems with LLM-based Directional Feedback Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Coarse Genre Conflation                                              
+
+> 𝓡 𝑺𝑰𝑴
+> 𝓡 𝑫𝑰𝑨𝑮
+> Unstable Top -K Scoring on Sequences
+> Coarse -Grained Redundancy
+> Underweights desire for
+> variety/novelty
+> Moderate Embedding Collapse (0.5)
+> Gated Multimodal Fusion
+> 𝐃𝐈𝐀𝐆 (𝟐 )
+> Off -Genre & Popularity Bias Measure
+> Sequence -Consistency Contrastive
+> Loss & Augmentation
+> VICReg Regularizer
+> Differential Re -Ranker
+> 𝓑 (𝟐 )
+> 𝑵𝑫𝑪𝑮@𝟓 :𝟎 .𝟑𝟖𝟒𝟑 𝑯𝑹@𝟓 :𝟎 .𝟓𝟐𝟎𝟗
+> Ignores Subgenre & Mood
+> 𝓡 𝐒𝐈𝐌
+> 𝓡 𝐃𝐈𝐀𝐆
+> High Embedding Collapse (0.58)
+> Overweights Popularity
+> Ignores Recency
+> Category -Aware Hard Negatives
+> 𝓑 (𝟏 )
+> 𝐃𝐈𝐀𝐆 (𝟏 )
+> Counterfactual Sequence Probing
+> (Swap/Mask/ etc )
+> Popularity -annealed Weighting
+> Barlow -Twins Regularization
+> 𝑵𝑫𝑪𝑮@𝟓 :𝟎 .𝟑𝟖𝟏𝟒 𝑯𝑹@𝟓 :𝟎 .𝟓𝟏𝟑𝟖
+> Hybrid Ranking Loss
+> •BCE + BPR
+> Item Bias Embedding
+> 𝓑 (𝟑 )
+> 𝑵𝑫𝑪𝑮@𝟓 :𝟎 .𝟎𝟐𝟗𝟏 𝑯𝑹@𝟓 :𝟎 .𝟎𝟒𝟔𝟓
+> Two -Stage Pipeline
+> •Dual Encoder (Retrieves top
+> candidates using SBERT)
+> •Cross -Attention Re -Ranker
+> 𝓑 (𝟓 )
+> 𝑵𝑫𝑪𝑮@𝟓 :𝟎 .𝟑𝟓𝟑𝟗 𝑯𝑹@𝟓 :𝟎 .𝟒𝟖𝟎𝟗
+> Pointwise BCE
+> •Removed BPR Loss
+> Attention Simplification
+> •Simplified Transformers
+> 𝓑 (𝟕 )
+> 𝑵𝑫𝑪𝑮@𝟓 :𝟎 .𝟑𝟓𝟏𝟎 𝑯𝑹@𝟓 :𝟎 .𝟒𝟔𝟎𝟒
+> Optimized Refined -LogQ with
+> Union Retireval
+> •FAISS (Retrieves semantically
+> similar item)
+> •Samples Trending Items
+> In -batch Sampling
+> 𝓑 (𝟏𝟓 )
+> 𝑵𝑫𝑪𝑮@𝟓 :𝟎 .𝟑𝟔𝟏𝟎 𝑯𝑹@𝟓 :𝟎 .𝟒𝟖𝟕𝟎
+> Initial Codebase
+> 𝑵𝑫𝑪𝑮@𝟓 :𝟎 .𝟑𝟓𝟓𝟗
+> 𝑯𝑹@𝟓 :𝟎 .𝟒𝟔𝟕𝟔
+
+Iteration 
+
+1
+
+2
+
+3
+
+5
+
+7
+
+15 
+
+: Self -EvolveRec 
+
+: AlphaEvolve 
+
+: DeepEvolve 
+
+a) Case Study on Evolutionary Trajectory 
+
+b) Performance Progress Across Iterations    
+
+> 진짜진짜진짜진짜 최종 CDs SASRec
+
+Figure 5: Case study on evolutionary trajectory on CDs dataset (Seed Recommender: SASRec). (a) is comparison of evolutionary paths. Color-coded markers (e.g., Red) illustrate causal alignment between directional feedback and evolved codebase. (b) is performance comparison across iterations. 
+
+baselines. Figure 5 (a) illustrates the step-by-step evolution of code-bases, while Figure 5 (b) tracks the performance progress over all it-erations. We have the following observations: 1) Self-EvolveRec shows a structured evolutionary path, where algorithmic improvements are causally linked to identified failures. For instance, in Iteration (0 → 1), RSIM explicitly flagged "Ignores Subgenre", while RDIAG 
+
+detected "High Embedding Collapse." Guided by this directional feedback, the agent introduced "Category-Aware Hard Negatives" and "Popularity-annealed Weighting," resulting in an immediate performance increment (HR: 0.4676 → 0.5138 ). 2) In contrast, base-lines exhibit unstable or delayed progress due to their reliance on scalar metrics. AlphaEvolve attempts an erroneous combination of loss functions (BCE + BPR) at Iteration 3, causing a significant per-formance drop, which is only rectified by removing the module at Iteration 7. Consequently, it does not exceed its initial performance state throughout the evolution. DeepEvolve suffers from prolonged stagnation in low-performance regions, as evident in Figure 5 (b), and only manages a gain at Iteration 15 by retrieving the ‘Refined-LogQ’ module. Due to such inefficient exploration, as observed in Figure 5 (b), both baselines remain trapped in low-performance regions ( 𝐻𝑅 @5 : 0 .05 − 0.25 ), failing to escape suboptimal states throughout the evolution process. Conversely, Self-EvolveRec lever-ages directional feedback to maintain a robust evolutionary trajec-tory. Additional case study is provided in App. F.3.2. 
+
+6 Conclusion 
+
+In this paper, we propose a novel LLM-driven code evolution frame-work, named Self-EvolveRec . The main idea is to overcome the limitations of existing scalar metric-based code optimization by establishing a directional feedback loop that integrates qualitative critiques from a User Simulator with quantitative verification from a Model Diagnosis Tool. By doing so, Self-EvolveRec significantly out-performs state-of-the-art evolutionary baselines based on NAS and LLM in both standard recommendation accuracy and multi-faceted user satisfaction. Moreover, we demonstrate the indispensability of our Diagnosis Tool - Model Co-Evolution strategy, which en-sures that diagnostic criteria dynamically adapt to structural shifts, maintaining a grounded and reliable feedback loop throughout the process. Lastly, we show the potential of Self-EvolveRec in practi-cal industrial deployment, demonstrated by its robust adaptability across diverse initialization settings (from scratch to complex en-sembles) and the functional reliability of the co-evolved Diagnosis Tool in accurately pinpointing structural deficiencies. In future work, we plan to address the computational overhead associated with the iterative training and evaluation of evolved models. We aim to explore more efficient evaluation protocols, such as pre-dicting model performance directly from architectural descriptions using LLMs [16], to accelerate the evolutionary cycle. Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Kim et al. 
+
+References 
+
+[1] Mehdi Ben Ayed, Fei Feng, Jay Adams, Vishwakarma Singh, Kritarth Anand, and Jiajing Xu. 2025. RecoMind: A reinforcement learning framework for opti-mizing in-session user satisfaction in recommendation systems. arXiv preprint arXiv:2508.00201 (2025). [2] Heng-Tze Cheng, Levent Koc, Jeremiah Harmsen, Tal Shaked, Tushar Chandra, Hrishi Aradhye, Glen Anderson, Greg Corrado, Wei Chai, Mustafa Ispir, et al .2016. Wide & deep learning for recommender systems. In Proceedings of the 1st workshop on deep learning for recommender systems . 7–10. [3] Seungyoon Choi, Sein Kim, Hongseok Kang, Wonjoong Kim, and Chanyoung Park. 2025. Dynamic Time-aware Continual User Representation Learning. In 
+
+Proceedings of the 48th International ACM SIGIR Conference on Research and De-velopment in Information Retrieval (Padua, Italy) (SIGIR ’25) . Association for Com-puting Machinery, New York, NY, USA, 740–749. doi:10.1145/3726302.3729959 [4] Yuanzheng Ci, Chen Lin, Ming Sun, Boyu Chen, Hongwen Zhang, and Wanli Ouyang. 2021. Evolving search space for neural architecture search. In Proceedings of the IEEE/CVF International Conference on Computer Vision . 6659–6669. [5] Paul Covington, Jay Adams, and Emre Sargin. 2016. Deep Neural Networks for YouTube Recommendations (RecSys ’16) . Association for Computing Machinery, New York, NY, USA. doi:10.1145/2959100.2959190 [6] Thomas Elsken, Jan Hendrik Metzen, and Frank Hutter. 2019. Neural architecture search: A survey. Journal of Machine Learning Research 20, 55 (2019), 1–21. [7] Francesco Fabbri, Gustavo Penha, Edoardo D’Amico, Alice Wang, Marco De Nadai, Jackie Doremus, Paul Gigioli, Andreas Damianou, Oskar Stål, and Mounia Lalmas. 2025. Evaluating podcast recommendations with profile-aware llm-as-a-judge. In Proceedings of the Nineteenth ACM Conference on Recommender Systems . 1181– 1186. [8] Yunfan Gao, Yun Xiong, Xinyu Gao, Kangxiang Jia, Jinliu Pan, Yuxi Bi, Yixin Dai, Jiawei Sun, Haofen Wang, and Haofen Wang. 2023. Retrieval-augmented generation for large language models: A survey. arXiv preprint arXiv:2312.10997 
+
+2, 1 (2023). [9] Lewis R. Goldberg. 1992. THE DEVELOPMENT OF MARKERS FOR THE BIG-FIVE FACTOR STRUCTURE. Psychological Assessment 4 (1992), 26–42. https: //api.semanticscholar.org/CorpusID:144709415 [10] Carlos A. Gomez-Uribe and Neil Hunt. 2016. The Netflix Recommender System: Algorithms, Business Value, and Innovation. 6, 4 (2016). doi:10.1145/2843948 [11] Jiawei Gu, Xuhui Jiang, Zhichao Shi, Hexiang Tan, Xuehao Zhai, Chengjin Xu, Wei Li, Yinghan Shen, Shengjie Ma, Honghao Liu, et al . 2024. A survey on llm-as-a-judge. The Innovation (2024). [12] F. Maxwell Harper and Joseph A. Konstan. 2015. The MovieLens Datasets: History and Context. ACM Trans. Interact. Intell. Syst. 5, 4, Article 19 (Dec. 2015), 19 pages. doi:10.1145/2827872 [13] Xiangnan He, Kuan Deng, Xiang Wang, Yan Li, Yongdong Zhang, and Meng Wang. 2020. Lightgcn: Simplifying and powering graph convolution network for recommendation. In Proceedings of the 43rd International ACM SIGIR conference on research and development in Information Retrieval . 639–648. [14] Xiangnan He, Lizi Liao, Hanwang Zhang, Liqiang Nie, Xia Hu, and Tat-Seng Chua. 2017. Neural collaborative filtering. In Proceedings of the 26th international conference on world wide web . 173–182. [15] Yupeng Hou, Jiacheng Li, Zhankui He, An Yan, Xiusi Chen, and Julian McAuley. 2024. Bridging Language and Items for Retrieval and Recommendation. arXiv preprint arXiv:2403.03952 (2024). [16] Ganesh Jawahar, Muhammad Abdul-Mageed, Laks Lakshmanan, and Dujian Ding. 2024. Llm performance predictors are good initializers for architecture search. In Findings of the Association for Computational Linguistics: ACL 2024 .10540–10560. [17] Wang-Cheng Kang and Julian McAuley. 2018. Self-attentive sequential recom-mendation. In 2018 IEEE international conference on data mining (ICDM) . IEEE, 197–206. [18] Donghyun Kim, Chanyoung Park, Jinoh Oh, Sungyoung Lee, and Hwanjo Yu. 2016. Convolutional Matrix Factorization for Document Context-Aware Recom-mendation (RecSys ’16) . Association for Computing Machinery, New York, NY, USA. doi:10.1145/2959100.2959165 [19] Jiwan Kim, Hongseok Kang, Sein Kim, Kibum Kim, and Chanyoung Park. 2025. Disentangling and Generating Modalities for Recommendation in Missing Modal-ity Scenarios. In Proceedings of the 48th International ACM SIGIR Conference on Research and Development in Information Retrieval (Padua, Italy) (SIGIR ’25) . Association for Computing Machinery, New York, NY, USA, 1820–1829. doi:10.1145/3726302.3729953 [20] Kibum Kim, Sein Kim, Hongseok Kang, Jiwan Kim, Heewoong Noh, Yeonjun In, Kanghoon Yoon, Jinoh Oh, and Chanyoung Park. 2025. Image is All You Need: Towards Efficient and Effective Large Language Model-Based Recommender Systems. arXiv preprint arXiv:2503.06238 (2025). [21] Sein Kim, Hongseok Kang, Seungyoon Choi, Donghyun Kim, Minchul Yang, and Chanyoung Park. 2024. Large Language Models meet Collaborative Filtering: An Efficient All-round LLM-based Recommender System. In Proceedings of the 30th ACM SIGKDD Conference on Knowledge Discovery and Data Mining (Barcelona, Spain) (KDD ’24) . Association for Computing Machinery, New York, NY, USA, 1395–1406. doi:10.1145/3637528.3671931 [22] Sein Kim, Hongseok Kang, Kibum Kim, Jiwan Kim, Donghyun Kim, Minchul Yang, Kwangjin Oh, Julian McAuley, and Chanyoung Park. 2025. Lost in Sequence: Do Large Language Models Understand Sequential Recommendation?. In Proceedings of the 31st ACM SIGKDD Conference on Knowledge Discovery and Data Mining V.2 
+
+(Toronto ON, Canada) (KDD ’25) . Association for Computing Machinery, New York, NY, USA, 1160–1171. doi:10.1145/3711896.3737035 [23] Sein Kim, Namkyeong Lee, Donghyun Kim, Minchul Yang, and Chanyoung Park. 2023. Task Relation-aware Continual User Representation Learning. In 
+
+Proceedings of the 29th ACM SIGKDD Conference on Knowledge Discovery and Data Mining (Long Beach, CA, USA) (KDD ’23) . Association for Computing Machinery, New York, NY, USA, 1107–1119. doi:10.1145/3580305.3599516 [24] Wonjoong Kim, Sangwu Park, Yeonjun In, Sein Kim, Dongha Lee, and Chanyoung Park. 2025. Beyond the Final Answer: Evaluating the Reasoning Trajectories of Tool-Augmented Agents. arXiv preprint arXiv:2510.02837 (2025). [25] Ravi Krishna, Aravind Kalaiah, Bichen Wu, Maxim Naumov, Dheevatsa Mudigere, Misha Smelyanskiy, and Kurt Keutzer. 2021. Differentiable nas framework and application to ads ctr prediction. arXiv preprint arXiv:2110.14812 (2021). [26] Patrick Lewis, Ethan Perez, Aleksandra Piktus, Fabio Petroni, Vladimir Karpukhin, Naman Goyal, Heinrich Küttler, Mike Lewis, Wen-tau Yih, Tim Rocktäschel, et al . 2020. Retrieval-augmented generation for knowledge-intensive nlp tasks. 
+
+Advances in neural information processing systems 33 (2020), 9459–9474. [27] Zelong Li, Jianchao Ji, Yingqiang Ge, and Yongfeng Zhang. 2022. Autolossgen: Automatic loss function generation for recommender systems. In Proceedings of the 45th International ACM SIGIR Conference on Research and Development in Information Retrieval . 1304–1315. [28] Bin Liu, Chenxu Zhu, Guilin Li, Weinan Zhang, Jincai Lai, Ruiming Tang, Xi-uqiang He, Zhenguo Li, and Yong Yu. 2020. Autofis: Automatic feature interaction selection in factorization models for click-through rate prediction. In proceedings of the 26th ACM SIGKDD international conference on knowledge discovery & data mining . 2636–2645. [29] Fei Liu, Xinyu Lin, Hanchao Yu, Mingyuan Wu, Jianyu Wang, Qiang Zhang, Zhuokai Zhao, Yinglong Xia, Yao Zhang, Weiwei Li, et al . 2025. Recoworld: Build-ing simulated environments for agentic recommender systems. arXiv preprint arXiv:2509.10397 (2025). [30] Gang Liu, Yihan Zhu, Jie Chen, and Meng Jiang. 2025. Scientific algorithm discovery by augmenting alphaevolve with deep research. arXiv preprint arXiv:2510.06056 (2025). [31] Chenglong Ma, Ziqi Xu, Yongli Ren, Danula Hettiachchi, and Jeffrey Chan. 2025. PUB: an LLM-enhanced personality-driven user behaviour simulator for recom-mender system evaluation. In Proceedings of the 48th International ACM SIGIR Conference on Research and Development in Information Retrieval . 2690–2694. [32] Yecheng Jason Ma, William Liang, Guanzhi Wang, De-An Huang, Osbert Bastani, Dinesh Jayaraman, Yuke Zhu, Linxi Fan, and Anima Anandkumar. 2023. Eureka: Human-level reward design via coding large language models. arXiv preprint arXiv:2310.12931 (2023). [33] Sean M. McNee, John Riedl, and Joseph A. Konstan. 2006. Being accurate is not enough: how accuracy metrics have hurt recommender systems. In CHI ’06 Extended Abstracts on Human Factors in Computing Systems (Montréal, Québec, Canada) (CHI EA ’06) . Association for Computing Machinery, New York, NY, USA, 1097–1101. doi:10.1145/1125451.1125659 [34] Manel Mezghani, Corinne Amel Zayani, Ikram Amous, and Faiez Gargouri. 2012. A user profile modelling using social annotations: a survey (WWW ’12 Companion) . Association for Computing Machinery, New York, NY, USA. doi:10.1145/2187980.2188230 [35] Maxim Naumov, Dheevatsa Mudigere, Hao-Jun Michael Shi, Jianyu Huang, Narayanan Sundaraman, Jongsoo Park, Xiaodong Wang, Udit Gupta, Carole-Jean Wu, Alisson G Azzolini, et al . 2019. Deep learning recommendation model for personalization and recommendation systems. arXiv preprint arXiv:1906.00091 
+
+(2019). [36] Alexander Novikov, Ngân V ˜u, Marvin Eisenberger, Emilien Dupont, Po-Sen Huang, Adam Zsolt Wagner, Sergey Shirobokov, Borislav Kozlovskii, Francisco JR Ruiz, Abbas Mehrabian, et al . 2025. AlphaEvolve: A coding agent for scientific and algorithmic discovery. arXiv preprint arXiv:2506.13131 (2025). [37] Esteban Real, Chen Liang, David So, and Quoc Le. 2020. Automl-zero: Evolving machine learning algorithms from scratch. In International conference on machine learning . PMLR, 8007–8019. [38] Sonia Roccas, Lilach Sagiv, Shalom H. Schwartz, and Ariel Knafo. 2002. The Big Five Personality Factors and Personal Values. Personality and Social Psychology Bulletin 28 (2002), 789 – 801. https://api.semanticscholar.org/CorpusID:144611052 [39] Bernardino Romera-Paredes, Mohammadamin Barekatain, Alexander Novikov, Matej Balog, M Pawan Kumar, Emilien Dupont, Francisco JR Ruiz, Jordan S Ellenberg, Pengming Wang, Omar Fawzi, et al . 2024. Mathematical discoveries from program search with large language models. Nature 625, 7995 (2024), 468–475. [40] Ruslan Salakhutdinov and Andriy Mnih. 2007. Probabilistic Matrix Factorization 
+
+(NIPS’07) . Curran Associates Inc., Red Hook, NY, USA. Self-EvolveRec: Self-Evolving Recommender Systems with LLM-based Directional Feedback Conference acronym ’XX, June 03–05, 2018, Woodstock, NY 
+
+[41] Asankhaya Sharma. 2025. OpenEvolve: an open-source evolutionary coding agent .https://github.com/algorithmicsuperintelligence/openevolve [42] Qingquan Song, Dehua Cheng, Hanning Zhou, Jiyan Yang, Yuandong Tian, and Xia Hu. 2020. Towards automated neural interaction discovery for click-through rate prediction. In Proceedings of the 26th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining . 945–955. [43] Harald Steck. 2018. Calibrated recommendations. In Proceedings of the 12th ACM Conference on Recommender Systems (Vancouver, British Columbia, Canada) 
+
+(RecSys ’18) . Association for Computing Machinery, New York, NY, USA, 154–162. doi:10.1145/3240323.3240372 [44] Fei Sun, Jun Liu, Jian Wu, Changhua Pei, Xiao Lin, Wenwu Ou, and Peng Jiang. 2019. BERT4Rec: Sequential recommendation with bidirectional encoder rep-resentations from transformer. In Proceedings of the 28th ACM international conference on information and knowledge management . 1441–1450. [45] Reiko Tanese, John H. Holland, and Quentin F. Stout. 1989. Distributed genetic algorithms for function optimization . Ph. D. Dissertation. USA. AAI9001722. [46] Jiaxi Tang and Ke Wang. 2018. Personalized top-n sequential recommenda-tion via convolutional sequence embedding. In Proceedings of the eleventh ACM international conference on web search and data mining . 565–573. [47] Xiang Wang, Xiangnan He, Meng Wang, Fuli Feng, and Tat-Seng Chua. 2019. Neural graph collaborative filtering. In Proceedings of the 42nd international ACM SIGIR conference on Research and development in Information Retrieval . 165–174. [48] Xuesi Wang, Guangda Huzhang, Qianying Lin, and Qing Da. 2022. Learning-to-ensemble by contextual rank aggregation in e-commerce. In Proceedings of the Fifteenth ACM International Conference on Web Search and Data Mining . 1036– 1044. [49] Zheng Yuan, Fajie Yuan, Yu Song, Youhua Li, Junchen Fu, Fei Yang, Yunzhu Pan, and Yongxin Ni. 2023. Where to Go Next for Recommender Systems? ID-vs. Modality-based Recommender Models Revisited. In Proceedings of the 46th International ACM SIGIR Conference on Research and Development in Information Retrieval . 2639–2649. [50] An Zhang, Yuxin Chen, Leheng Sheng, Xiang Wang, and Tat-Seng Chua. 2024. On generative agents in recommendation. In Proceedings of the 47th international ACM SIGIR conference on research and development in Information Retrieval . 1807– 1817. [51] Tunhou Zhang, Dehua Cheng, Yuchen He, Zhengxing Chen, Xiaoliang Dai, Liang Xiong, Feng Yan, Hai Li, Yiran Chen, and Wei Wen. 2023. NASRec: weight sharing neural architecture search for recommender systems. In Proceedings of the ACM Web Conference 2023 . 1199–1207. [52] Lianmin Zheng, Wei-Lin Chiang, Ying Sheng, Siyuan Zhuang, Zhanghao Wu, Yonghao Zhuang, Zi Lin, Zhuohan Li, Dacheng Li, Eric Xing, et al . 2023. Judging llm-as-a-judge with mt-bench and chatbot arena. Advances in neural information processing systems 36 (2023), 46595–46623. [53] Ruiqi Zheng, Liang Qu, Bin Cui, Yuhui Shi, and Hongzhi Yin. 2023. Automl for deep recommender systems: A survey. ACM Transactions on Information Systems 
+
+41, 4 (2023), 1–38. [54] Cai-Nicolas Ziegler, Sean M. McNee, Joseph A. Konstan, and Georg Lausen. 2005. Improving recommendation lists through topic diversification. In Proceedings of the 14th International Conference on World Wide Web (Chiba, Japan) (WWW ’05) .Association for Computing Machinery, New York, NY, USA, 22–32. doi:10.1145/ 1060745.1060754 [55] Barret Zoph and Quoc Le. 2017. Neural Architecture Search with Reinforce-ment Learning. In International Conference on Learning Representations . https: //openreview.net/forum?id=r1Ue8Hcxg [56] Kuan Zou and Aixin Sun. 2025. A Survey of Real-World Recommender Sys-tems: Challenges, Constraints, and Industrial Perspectives. arXiv preprint arXiv:2509.06002 (2025). Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Kim et al. 
+
+A Ethics Statement 
+
+To the best of our knowledge, this paper aligns with the KDD Code of Ethics without any ethical concerns. The datasets and codes employed in our research are publicly available. 
+
+B Traits 
+
+Activity (Engagement Level). Activity quantifies the degree of a user’s engagement with the recommender system. Since user-item interactions are typically sparse, we define activity as the cardinality of the user’s interaction history: 
+
+𝑇 act (𝑢 ) = |H 𝑢 |. (7) Users with lower 𝑇 act (𝑢 ) values correspond to passive users who interact infrequently with recommended items, whereas higher values indicate highly engaged users with rich interaction histories. 
+
+Conformity (Mainstream Adherence). Conformity measures the extent to which a user’s preferences align with global public consensus. This trait captures whether a user follows mainstream tastes or exhibits individualized preferences. We define conformity as the mean squared deviation between the user’s rating 𝑟 𝑢,𝑣 and the global average rating ¯𝑟 𝑣 of item 𝑣 :
+
+𝑇 conf (𝑢 ) = 1
+
+|H 𝑢 |∑︁ 𝑣 ∈ H 𝑢 
+
+(𝑟 𝑢,𝑣 − ¯𝑟 𝑣 )2, (8) where ¯𝑟 𝑣 denotes the average rating of item 𝑣 across all users. A lower conformity value implies that the user’s preferences closely align with popular sentiment, while a higher value reflects more distinctive and personalized tastes. 
+
+Diversity (Interest Breadth). Diversity characterizes the breadth of a user’s interests across item categories. We define this trait as the number of unique categories associated with the items in the user’s interaction history: 
+
+𝑇 div (𝑢 ) = {𝑐 𝑣 | 𝑣 ∈ H 𝑢 } . (9) Users with lower 𝑇 div (𝑢 ) values tend to focus on a narrow set of cat-egories, whereas higher values indicate a preference for exploring a broader and more diverse range of categories. We categorized each user trait into three distinct levels, defined as follows: 
+
+• Activity :
+
+– HIGH: Frequently interacts with the system and maintains a high volume of engagement with recommendations. 
+
+– MID: Interacts moderately, primarily when items strictly align with personal preferences. 
+
+– LOW: Rarely interacts with the system and does not interact if recommendations are not relevant to their interests. 
+
+• Conformity :
+
+– HIGH: Heavily influenced by popularity and public ratings; tends to follow mainstream trends. 
+
+– MID: Considers both popularity and personal taste, balancing trends with individual preferences. 
+
+– LOW: Ignores popularity and trends, evaluating items purely based on intrinsic personal preference. 
+
+• Diversity :
+
+– HIGH: Seeks high variety and novelty, enjoying the exploration of diverse categories and new styles. 0.48       
+
+> 0.50
+> 0.52
+> 0.54
+> 13510 15 20
+> Number of Sampled Users
+> 0.36
+> 0.38
+> 0.40
+> NDCG@5 HR@5
+
+Figure 6: Recommendation performance over number of sampled user Usample on CDs dataset (Seed Recommender: SASRec). Table 7: Statistics of datasets after preprocessing. 
+
+Dataset CDs Electronics Office MovieLens # Users 14,335 32,232 20,147 6,040 # Items 11,436 17,695 10,470 3,952 # Interactions 126,225 257,850 145,927 1,000,209 
+
+– MID: Mostly consumes preferred categories but occasionally explores similar alternatives. 
+
+– LOW: Sticks strictly to a narrow set of familiar categories and avoids exploration. 
+
+C Implementation Details 
+
+Regarding the baseline implementation of AlphaEvolve, due to the unavailability of the official code, we utilized OpenEvolve [ 41 ], an open-source implementation, following prior work [ 30 ]. In our evolutionary framework, we set the maximum evolution steps to 21 across all LLM-driven evolutionary frameworks. For all LLM-driven evolutionary frameworks, we set the maximum evolution iterations to 21. For NAS baselines, we configured the search epochs to 5 for AutoFIS and 1 for NASRec, following the hyper-parameter setting in NASRec [ 51 ]. We employ GPT-5-mini for the User Simulator ( SIM ) and set the number of sampled users to |U sample | = 20 (refer to App. F.1.1 for an analysis of the number of sampled users). To ensure a fair comparison, we uniformly configured all recommender models—including the retraining phase of NAS models—with a user/item embedding dimension of 50, a batch size of 128, and a learning rate of 0.001. The maximum number of epochs was set to 300 for both standard training and the NAS retraining stage. All experiments were conducted on a single NVIDIA GeForce A6000 (48GB) GPU. 
+
+D Datasets 
+
+Table 7 shows the statistics of the dataset after preprocessing. 
+
+E Baselines and Seed Recommender E.1 Baselines 
+
+(1) Neural Architecture Search Baselines Self-EvolveRec: Self-Evolving Recommender Systems with LLM-based Directional Feedback Conference acronym ’XX, June 03–05, 2018, Woodstock, NY 
+
+Table 8: Comparison of average execution time per iteration on CDs dataset (Seed Recommender: SASRec). Method RAG Coding Co-Evolve SIM DIAG Total Time                           
+
+> AlphaEvolve -6m 23s ---6m 23s DeepEvolve 6m 16s 7m 43s ---13m 59s
+> Ours 6m 24s 7m 15s 7m 06s 4m 31s ∗12s ≈25m 28s
+> ∗The User Simulation time is measured with 20 sampled users, processed in parallel batches of 4 ( 5batches ×54 .24 s≈4m31 s). Diagnosis Co-Evolve includes both research (3m 54s) and coding (3m 12s).
+
+• AutoFIS [ 28 ] automatically identifies essential feature interac-tions by employing learnable gates to prune redundant feature combinations. 
+
+• NASRec [ 51 ] leverages a weight-sharing supernet to efficiently search for optimal full architectures. (2) LLM-driven Code Evolution Baselines 
+
+• AlphaEvolve [ 36 ] orchestrates an autonomous LLM-driven evo-lutionary pipeline to iteratively evolve and optimize algorithmic codebases. 
+
+• DeepEvolve [ 30 ] integrates retrieval-augmented generation (RAG) into the evolutionary loop to guide code optimization with external scientific knowledge. 
+
+E.2 Seed Recommender 
+
+• NCF [ 14 ] is a pioneering neural collaborative filtering frame-work which combines multi-layer perceptron (MLP) to learn user-item interactions. 
+
+• NGCF [ 47 ] is a graph-based model that explicitly encodes col-laborative signals in the embedding space by propagating em-beddings on the user-item bipartite graph 
+
+• SASRec [ 17 ] is a sequential recommendation model leveraging self-attention mechanisms to dynamically capture user interests from interaction sequences. 
+
+• MoRec [ 49 ] is a multi-modal framework that utilizes pre-trained encoders (e.g., SBERT) to initialize item embeddings with tex-tual features. Following prior work [ 21 ], we employ SASRec as the backbone architecture for MoRec. 
+
+F Additional Experiments F.1 Efficiency Analysis 
+
+F.1.1 Impact of user sampling size. To investigate the efficiency and robustness of Self-EvolveRec on Usample , we conducted exper-iments by varying the user sample size of the User Simulator. As shown in Figure 6, we observe that Self-EvolveRec achieves robust performance even with a small number of sampled users. Notably, performance improves significantly as the sample size increases from 1 to 3, eventually stabilizing around a sample size of 5. This robustness stems from the Diagnosis Tool - Model Co-Evolution 
+
+mechanism (Sec. 4.3). Although the SIM operates on a small subset of users to generate qualitative feedback (e.g., "lack of diversity"), the DIAG translates these critiques into deterministic numerical metrics (e.g., measuring category entropy). Consequently, even with limited user samples, the evolved DIAG effectively verifies 
+
+Table 9: Big Five Personality Method CDs Electronics 
+
+NDCG@5 HR@5 NDCG@5 HR@5 
+
+Self-EvolveRec 0.3865 0.5274 0.2600 0.3591 
+
+Big 5 Personality 0.3915 0.5244 0.2551 0.3561 
+
+and quantifies structural deficiencies across the global data distri-bution, ensuring reliable evolutionary guidance without the need for extensive user sampling. 
+
+F.1.2 Time Efficiency Analysis. We compare the execution time per iteration of evolution in Table 8. The reported times are aver-aged over the evolution of SASRec on the CDs dataset. We have the following observations: 1) Although Self-EvolveRec requires approximately 25 minutes per iteration—higher than AlphaEvolve (6m) and DeepEvolve ( 14 m)—it significantly reduces the total num-ber of iterations required to reach peak performance. As illustrated in Table 4, Self-EvolveRec reaches its peak in just around 8 to 11 iter-ations, whereas baselines relying on aimless trial-and-error require 13 to 19 iterations or fail to outperform the initial model. 2) While integrating RAG processes in DeepEvolve and Self-EvolveRec in-creases the runtime per iteration compared to AlphaEvolve, it is critical for ensuring the quality of the evolved logic. As discussed in Sec. 5.1.3, the absence of external knowledge limits AlphaEvolve’s ability to discover novel mechanisms, resulting in lower Creativity 
+
+and Insight . Conversely, Self-EvolveRec leverages this RAG latency to incorporate external algorithmic knowledge and diagnostic sig-nals, enabling the discovery of novel mechanisms that scalar-driven baselines fail to achieve. 3) The User Simulator introduces an ad-ditional time cost ( 4m 31 s), yet it is crucial for sustaining high performance. Furthermore, as detailed in App. F.1.1, the simulator remains stable and effective even with a small number of sampled users, ensuring efficiency without compromising robustness. 
+
+F.2 Other User Simulator 
+
+To demonstrate the simulator agnostic toward specific user traits, we replaced the traits with the Big Five personality traits (Openness, Conscientiousness, Extraversion, Agreebleness, and Neuroticism), following prior works [ 31 ]. As shown in Table 9, Self-EvolveRec achieves comparable recommendation performance regardless of the trait definition. This results aligns with our observations in Sec. 5.3.3, indicating that the SIM is already effective at modeling complex user preferences and generating informative feedback irrespective of the specific traits schema. Consequently, this results shows that the key factor in evolution is the precise and qualitative nature of 
+
+RSIM itself, which effectively identifies recommendation failures and provides valid guidance for codebase improvements, proving that Self-EvolveRec is robust to variations in user characterization. 
+
+F.3 Additional Case Studies 
+
+F.3.1 Addtional Case Study: Reliability of Co-evolved Diagnostic Tool via Deficiencies Injection. In case Figure 7, we injected deficien-cies into an evolved MoRec pipeline by: (i) inverting content signals, and (ii) inflating popularity scores. The co-evolved DIAG effectively Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Kim et al. I found that behavioral signals show high off -category rate (0.5117) and popularity 
+
+correlation (0.2714), leading to surface off -category and popular items …
+
+Deficiency Injection 
+
+DIAGNOSIS Feedback ℛ!"#$ 
+
+1. Content Signal Inversion  
+
+> item_embs =alpha* id_embs +(1.0 –alpha)* proj_text
+> item_embs =alpha* id_embs –5.0 *proj_text
+
+2. Popularity bias 
+
+> return logits
+> return logits+ (100.0* pop_scores )–10.0* score_text
+
+Deficiency -Injected Model Normal Model Metric 
+
+0.5117 0.3461 Off -Category Rate 
+
+0.2714 0.1188 Popularity correlation 
+
+0.2380 0.5340 Performance (HR@5) 
+
+Figure 7: Case study on Diagnosis Tool - Model Co-Evolution on CDs dataset (Seed Recommender: MoRec). Recency Insensitivity                               
+
+> 𝓡 𝑺𝑰𝑴
+> 𝓡 𝑫𝑰𝑨𝑮
+> Sequence Invariance
+> (Recency Insensitivity = 1.0)
+> Artist Repetition
+> Concentration on Popular Items
+> Ignores genre
+> 𝓡 𝐒𝐈𝐌
+> 𝓡 𝐃𝐈𝐀𝐆
+> Near -zero Ranking Margin
+> (=Random Ranking)
+> Disregards interaction sequence
+> LM -Augmented Bi -Encoder (Genre Tag)
+> 𝓑 (𝟏 )
+> 𝐃𝐈𝐀𝐆 (𝟏 )
+> Recency Insensitivity Measure
+> Hardness -Aware InfoNCE & MF module
+> 𝑵𝑫𝑪𝑮@𝟓 :𝟎 .𝟐𝟕𝟒𝟐 𝑯𝑹@𝟓 :𝟎 .𝟑𝟕𝟑𝟕
+> Add Popularity Bias & Global
+> Bias
+> 𝓑 (𝟒 )
+> 𝑵𝑫𝑪𝑮@𝟓 :𝟎 .𝟏𝟎𝟒𝟖 𝑯𝑹@𝟓 :𝟎 .𝟏𝟗𝟔𝟗
+> Two -Stage Pipeline with Basic
+> Hard Negative
+> •Cross -Attention Re -Ranker
+> •Synthesized LM -based Hard
+> Negative per user context
+> 𝓑 (𝟔 )
+> 𝑵𝑫𝑪𝑮@𝟓 :𝟎 .𝟑𝟐𝟓𝟖 𝑯𝑹@𝟓 :𝟎 .𝟒𝟑𝟎𝟓
+> Curriculum -based LM Negatives
+> •Easy -> Hard Curriculum
+> Caching hard negatives
+> 𝓑 (𝟗 )
+> 𝑵𝑫𝑪𝑮@𝟓 :𝟎 .𝟐𝟏𝟒𝟗 𝑯𝑹@𝟓 :𝟎 .𝟑𝟑𝟏𝟕
+> Initial Codebase
+> 𝑵𝑫𝑪𝑮@𝟓 :𝟎 .𝟎𝟑𝟏𝟐
+> 𝑯𝑹@𝟓 :𝟎 .𝟎𝟓𝟐𝟓
+
+Iteration 
+
+1
+
+5
+
+4
+
+6
+
+8
+
+9
+
+: Self -EvolveRe c
+
+: AlphaEvolve 
+
+: DeepEvolve 
+
+a) Case Study on Evolutionary Trajectory 
+
+b) Performance Progress Across Iterations            
+
+> Time -RoPE Sequence Encoding
+> 𝐃𝐈𝐀𝐆 (𝟓 )
+> Ownership Bias Measure
+> SNIPS -IPW & Ownership Penalty
+> FiLM -Augmented Bi -Encoder
+> 𝓑 (𝟓 )
+> 𝑵𝑫𝑪𝑮@𝟓 :𝟎 .𝟑𝟖𝟐𝟕 𝑯𝑹@𝟓 :𝟎 .𝟓𝟎𝟕𝟎
+> Popularity Bias Measure
+> Remove Popularity Bias &
+> Global Bias
+> Add User Bias & Dropout
+> 𝓑 (𝟖 )
+> 𝑵𝑫𝑪𝑮@𝟓 :𝟎 .𝟑𝟐𝟏𝟖 𝑯𝑹@𝟓 :𝟎 .𝟒𝟐𝟑𝟔
+
+Figure 8: Case study on evolutionary trajectory on CDs dataset (Seed Recommender: Random). (a) is comparison of evolutionary paths. Color-coded markers (e.g., Red) illustrate causal alignment between directional feedback and evolved codebase. (b) is performance comparison across iterations. 
+
+detects these deficiencies through newly formulated metrics such as the Off-Category Rate (Mismatch rate between the categories of the Top-K recommended items and the categories present in user’s recent interaction history) and Popularity correlation (Correla-tion between the model’s predicted recommendation logits and the item popularity distribution). The R𝐷𝐼𝐴𝐺 accurately reports that the system has begun to "surface off-category or popular items rather than reliably relevant ones" providing clear directional feed-back for subsequent correction. Notably, the strong association between these detected deficiencies and the performance drop con-firms that the co-evolved metrics can effectively bridge the gap between internal behavioral shifts and external recommendation accuracy. 
+
+F.3.2 Additional Case Study: Evolutionary Trajectory. In an addi-tional case study analyzing evolutionary, to investigate the Self-EvolveRec ’s behavior on extreme initial recommender setting, we examined Self-EvolveRec ’s behavior starting from a Random Rec-ommender (Sec. 5.3.1). Figure 8(a) illustrates the step-by-step code evolution, while Figure 8(b) tracks the performance progress. We have the following observations: 1) Self-EvolveRec demonstrates a structured evolutionary path where algorithmic improvements are causally linked to identified failures. For instance, in the tran-sition from Iteration 0 → 1, RDIAG explicitly flagged the "Random Ranking" behavior, while RSIM highlighted the neglect of item cate-gories ("Ignores genre"). Guided by this directional feedback, Self-EvolveRec introduced an "LM-Augmented Bi-Encoder" to embed "Genre Tags" and utilized the InfoNCE loss with an MF module. This effectively resolved the random recommendation issue, yield-ing a significant performance leap (HR: 0.0525 → 0.3737 ). Similarly, at Iteration 5, Self-EvolveRec detected "Recency Insensitivity" and addressed it by integrating "Time-RoPE Sequence Encoding," fur-ther boosting performance to HR: 0.5070. 2) Consistent with the findings in Sec. 5.3.5, baselines exhibit unstable or delayed progress due to their reliance on scalar metrics without diagnostic guidance. At Iteration 4, AlphaEvolve attempted to add "Popularity Bias and Global Bias" to the model, but this update degraded performance (HR:2405 → 0.1969), as depicted in Figure 8 (b). Consequently, Al-phaEvolve removes these changes and add "User Bias" at iteration 8, illustraing the inefficient tiral-and-error process. DeepEvolve shows a successful evolution with a "Two-Stage Pipeline" at itera-tion 6, but failed to improve at iteration 9 due to an incompatible curriculum learning strategy for LM negatives. Also in Figure 8 (b) confirms that while baselines suffer from performance fluctu-ations, Self-EvolveRec maintains a robust evolutionary trajectory enabled by directional feedback. 
+
+G Prompts G.1 Task-specific Instruction Prompts 
+
+The instruction prompts for the code evolution process were formu-lated by drawing upon existing methodologies [ 30 , 36 ], ensuring consistency with established benchmarks. 
+
+G.2 LLM-as-a-Judge 
+
+Figure 20 illustrates the LLM-as-a-Judge prompt utilized in Sec. 5.1.3 to evaluate the quality of the generated code. 
+
+Received 20 February 2007; revised 12 March 2009; accepted 5 June 2009 Self-EvolveRec: Self-Evolving Recommender Systems with LLM-based Directional Feedback Conference acronym ’XX, June 03–05, 2018, Woodstock, NY You excel at role -playing. Picture yourself as a single user exploring a recommendation page like Amazon. Your goal is to 
+
+provide realistic behavior and explain the causal reasons behind your choice to help improve the recommendation model. 
+
+The goal of this task is NOT UI feedback. It is to help improve the recommendation model itself by explaining WHY certain 
+
+items felt right or wrong. 
+
+User Prompt 
+
+## Your fixed traits 
+
+{user’s traits} 
+
+## Your Recent context (Recent Interacted Items) 
+
+- {user’s interaction history} 
+
+## Current recommendation page 
+
+{Recommended Items} 
+
+------------------------------------------------------------
+
+PART 1 — BEHAVIOR (Act as a real user) 
+
+------------------------------------------------------------
+
+For EACH item on the recommendation page, decide: 
+
+1) Whether it aligns with your taste RIGHT NOW (yes or no). 
+
+2) If it aligns and you would choose it this time, give it a rating from 1 to 5 based on how much you think you would like it 
+
+after trying. 
+
+3) Briefly explain why. 
+
+Use EXACTLY this format for each item (one line per item): 
+
+ItemID : < item_id >; Title: <title>; ALIGN: < yes|no >; RATING: <1 -5 or 'NA' if not chosen>; REASON: <short reason> 
+
+------------------------------------------------------------
+
+PART 2 — MODEL_FEEDBACK_JSON (Causal Analysis) 
+
+------------------------------------------------------------
+
+Analyze the recommendation list from the perspective of decision reasons. Focus on: 
+
+- Why the items you liked felt like strong matches. 
+
+- Why the items you disliked felt off, even if they looked similar on the surface. 
+
+- What signals seem to be overused (e.g., too much focus on popularity) or underused (e.g., missing specific category 
+
+nuances) by the system. 
+
+- Where the system generalized correctly vs incorrectly from your recent behavior. 
+
+IMPORTANT RULES: 
+
+- Do NOT talk about UI, layout, or presentation. 
+
+- Do NOT suggest business rules or exposure tricks. 
+
+- Do NOT mention model internals or technical terms. 
+
+- Speak as a user, but explain your choices clearly and causally. 
+
+Output ONLY the following JSON structure immediately after Part 1: 
+
+MODEL_FEEDBACK_JSON: 
+
+{{ 
+
+"positive_alignment_reasons ": [ 
+
+"Concrete reason why several recommended items felt like natural next choices", 
+
+"Another clear reason why the system understood part of your intent" 
+
+], 
+
+"negative_misalignment_reasons ": [ 
+
+"Concrete reason why some items missed your intent despite appearing related", 
+
+"Another reason explaining why certain recommendations felt off" 
+
+], 
+
+…
+
+"missing_or_underweighted_signals ": [ 
+
+"A type of information or nuance (e.g., specific sub -category) the system missed", 
+
+"Another missing nuance" 
+
+], 
+
+"summary_diagnosis ": "One short sentence summarizing how the system interpreted your intent, correctly or incorrectly." 
+
+}} 
+
+System Prompt 
+
+Figure 9: Example prompt of ISIM .Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Kim et al. You are a Lead Recommender Systems Analyst synthesizing user simulation feedback 
+
+to diagnose how the recommendation model is behaving. 
+
+System Prompt 
+
+User Prompt 
+
+Input: 
+
+- A list of User Feedback Reports (Json objects) from multiple simulated users: 
+
+Each USER_DIAGNOSIS_JSON reflects: 
+
+- what users expected based on recent behavior, 
+
+- why certain recommendations felt right or wrong, 
+
+- which patterns consistently helped or hurt their willingness to choose items near the top. 
+
+Goal: 
+
+Produce a concise, system -level diagnosis of: 
+
+- what decision patterns the model appears to rely on, 
+
+- where those patterns align or misalign with actual user choice logic, 
+
+- which misalignments most directly reduce the quality of top -ranked items. 
+
+Do NOT discuss UI, layout, exposure strategy, or business rules. 
+
+Do NOT propose specific model architectures or losses. 
+
+Stay at the level of behavioral decision logic inferred from user feedback. 
+
+OUTPUT FORMAT (JSON ONLY — all keys required) 
+
+{{"status": "<CRITICAL | NEEDS_IMPROVEMENT | STABLE>", 
+
+"SYSTEM_INTERPRETATION_OF_USER_INTENT": 
+
+"One short sentence describing how the system seems to interpret user intent overall, based on 
+
+aggregated feedback.", 
+
+…
+
+"DIAGNOSTIC_SIGNALS_TO_TRACK": [ 
+
+"A measurable signal that would reveal whether the system is ranking genuinely choice -worthy 
+
+items near the top.", 
+
+"Another signal that would expose overgeneralization or missed intent."]}} 
+
+Rules: 
+
+- No numeric scores or internal error codes. 
+
+- No UI or exposure language. 
+
+- No raw user quotes; always generalize and compress. 
+
+- Every statement should describe a repeatable system behavior or decision pattern. 
+
+- Focus on issues that, if corrected, would materially improve how many top -ranked items users 
+
+would realistically choose.   
+
+> Figure 10: Example prompt of ISUMMARIZE .Self-EvolveRec: Self-Evolving Recommender Systems with LLM-based Directional Feedback Conference acronym ’XX, June 03–05, 2018, Woodstock, NY
+
+You are a Senior AI Researcher analyzing the mathematical health of a Recommendation System. 
+
+System Prompt 
+
+User Prompt 
+
+Here are the raw mathematical metrics measured from the current model: 
+
+{D raw }
+
+Here are the definitions of what these metrics mean: 
+
+{Definition of metrics in D raw }
+
+Your task: produce a concise diagnosis summary that captures ONLY the core findings and 
+
+implications. 
+
+Do NOT propose web searches or action plans. Do NOT list "what to look up". 
+
+Strictly follow the JSON format below. 
+
+Output Format (JSON): 
+
+{{ 
+
+"status": <CRITICAL | NEEDS_IMPROVEMENT | STABLE>, 
+
+"core_findings ": [ 
+
+"<1 -2 sentences: the most important interpretation of the metrics>", 
+
+"<1 -2 sentences: the second most important interpretation (only if truly necessary)>" 
+
+], 
+
+"key_implications ": [ 
+
+"<1 sentence: what this implies about model behavior>", 
+
+"<1 sentence: what this implies about training dynamics or representation>", 
+
+"<optional 1 sentence: risk/trade -off if relevant>" 
+
+], 
+
+"evidence": {{ 
+
+"headline_metrics ": {{ 
+
+"< metric_name >": <value>, 
+
+"< metric_name >": <value> 
+
+}}, 
+
+"brief_metric_read ": {{ 
+
+"< metric_name >": "<very short interpretation tied to its definition>", 
+
+"< metric_name >": "<very short interpretation tied to its definition>" 
+
+}} 
+
+}} 
+
+}} 
+
+Rules: 
+
+- Keep it short: core_findings <= 3 bullets, key_implications <= 3 bullets. 
+
+- Use technical terms only when they are essential (e.g., 'gradient', 'loss landscape', 'inductive 
+
+bias' ), and keep them brief. 
+
+- Every statement must be grounded in the provided metric values/definitions. 
+
+- If metrics look healthy, status should remain STABLE and implications should focus on "what 
+
+is already working" plus one potential risk to monitor. 
+
+Figure 11: Example prompt of IDIAG .Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Kim et al. You are a professor responsible for planning deep and effective research strategies. 
+
+System Prompt 
+
+User Prompt 
+
+You will be provided with the context of: 
+
+- a research problem based on an initial research question 
+
+- a starting research idea, possibly with a history showing how idea evolves through previous 
+
+attempt 
+
+- inspirations from earlier attempts 
+
+- qualitative user diagnosis from user 
+
+- quantitative mathematical diagnosis 
+
+Your task is to develop search queries that identify directions for researchers to advance the idea 
+
+in a transformative way. 
+
+Rather than combining existing inspirations in small increments, the queries should guide 
+
+researchers toward substantial evolutions. 
+
+Because other researchers will rely on this plan, it must emphasize major, novel approaches 
+
+instead of minor refinements. 
+
+You will also be told whether the research progress is early or mature: 
+
+- If the progress is early, focus on ideas that are feasible and practical, and can grow later and 
+
+have great future potential. 
+
+- If the progress is mature, focus on bold, high -impact shifts that challenge the current approach. 
+
+Your plan should follow two steps: 
+
+1. Formulate 1 to 3 precise and diverse search queries. Make sure the queries are diverse —cover 
+
+different perspectives, challenge untested assumptions, and explore alternative methods. 
+
+2. For each query, include a short note explaining why you chose it and what you hope it will 
+
+reveal.   
+
+> Figure 12: Example prompt of IPLAN .Self-EvolveRec: Self-Evolving Recommender Systems with LLM-based Directional Feedback Conference acronym ’XX, June 03–05, 2018, Woodstock, NY
+
+You are a senior researcher responsible for proposing new ideas to address a defined research problem. 
+
+System Prompt 
+
+User Prompt 
+
+You will receive: 
+
+- The research problem, including its evaluation metric, qualitative user diagnosis feedback, quantitative mathematical 
+
+diagnosis feedback, and available data 
+
+- A starting research idea, possibly with its evolution history 
+
+- Inspirations from earlier attempts 
+
+- A list of related online search results 
+
+- A research progress score (0 -100%) indicating how far the idea has advanced 
+
+Your goal is to identify future research directions that address the target problem, using the starting point, prior attempts , a nd 
+
+related works. You should analyze existing methods, identify connections, and propose practical algorithms that can be 
+
+implemented with the available data. 
+
+Follow this structure to think and write: 
+
+1. Extract insights 
+
+Identify 3 -5 scientific insights from the starting point and 3 -5 from related works. For each insight, explain in 2 -3 sentences 
+
+how it relates to the target problem. 
+
+2. Organize research directions 
+
+Group the insights into 3 -5 coherent directions (for example, learning objectives, model classes, or optimization methods). 
+
+3. Build a structured framework 
+
+Create a conceptual map (such as a taxonomy, grid, or matrix) that unifies existing methods, reveals patterns, and highlights 
+
+gaps. 
+
+4. Generate and evaluate ideas 
+
+- For each idea, critically assess as a senior researcher with one positive and one negative reason: 
+
+- Originality (0 -10): Is the idea new? Is the idea a novel combination of well -known techniques? Is it clearly different from 
+
+previous contributions? 
+
+- Future Potential (0 -10): Will others build on these ideas? Does this idea solve a hard problem more effectively than prior 
+
+work? Does it point to a new research direction? 
+
+- User Diagnosis Alignment (0 -10): How well the idea addresses the key user -observed failure patterns and improves what 
+
+users actually want at the top of the list? 
+
+- Model Diagnosis Alignment (0 -10): How well the idea addresses the key quantitatively observed failure patterns and 
+
+improves the model behaviors measured by the diagnostics? 
+
+…
+
+5. Write the report in Markdown 
+
+For the selected idea, include: 
+
+- A synthesis of insights and proposed directions 
+
+- The structured framework of existing methods and the new algorithm 
+
+- A list of new ideas with their assessment scores 
+
+- Detailed description of the chosen/best idea, including rationale, pseudocode, and implementation notes 
+
+The report must be focused, technically accurate. Being concise with 200 -500 words without trivial and redundant 
+
+information. 
+
+Support all claims with evidence, references and remain tightly aligned with the target problem .
+
+Figure 13: Example prompt of IREPORT .Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Kim et al. You are a researcher with strong software engineering skills, improving algorithmic code through iterative, performance -
+
+driven modifications in multiple rounds. 
+
+System Prompt 
+
+User Prompt 
+
+You will receive a research question, a proposed idea, and an existing implementation with performance metrics. Your goal 
+
+is to analyze the current code and apply precise changes that enhance the specified metrics, based on the research idea and 
+
+prior feedback. 
+
+You MUST use the exact SEARCH/REPLACE diff format. Do NOT use Git diff format. Do NOT use line prefixes like `+`, 
+
+`-`, or `@@`. 
+
+Use this structure exactly: 
+
+``` 
+
+<<<<<<< SEARCH 
+
+# Original code (must match exactly) 
+
+======= 
+
+### >>> Self -EvolveRec -BLOCK -START: <research idea> 
+
+# New code here 
+
+### <<< Self -EvolveRec -BLOCK -END 
+
+>>>>>>> REPLACE 
+
+``` 
+
+... 
+
+Task Guidelines: 
+
+1. Think before coding, understand the research idea and current performance bottlenecks. 
+
+2. Propose specific, actionable changes that are aligned with the target metrics. 
+
+3. You may suggest multiple improvements beyond the research idea based on your understanding of optimization and 
+
+machine learning. 
+
+4. When you are updating the code, please check the following: 
+
+- When a NEW parameter or behavior is added, verify it is invoked in all call sites or in the overall workflow. 
+
+- If a NEW parameter has a default value of None, confirm that passing a non -None value triggers the intended code path. 
+
+- Walk through or simulate function calls to confirm that each new branch or change will be executed. Avoid unreachable 
+
+modifications. 
+
+Code Format Guidelines: 
+
+1. All `SEARCH` blocks must match the original code exactly. 
+
+2. When you need to modify code that is not already inside a `Self -EvolveRec ` block, wrap your changes with `### >>> 
+
+Self -EvolveRec -BLOCK -START: <research idea>` and `### <<< Self -EvolveRec -BLOCK -END` markers. 
+
+3. If you are updating code that is already marked by a `Self -EvolveRec ` block, edit only the lines within that block and 
+
+adjust the existing modification comment to reflect your new change. 
+
+4. Do NOT nest one `Self -EvolveRec ` block inside another. Each region you modify should have exactly one pair of 
+
+start/end markers. 
+
+…
+
+5. Limit your changes to what is strictly necessary. Do not rewrite the entire file. 
+
+6. Ensure that all modified code remains correct and consistent, including any function signatures, parameter lists, and call s. 
+
+7. Preserve the original code's indentation and formatting. Place the lines of `### >>> Self -EvolveRec -BLOCK -START: 
+
+<research idea>` and `### <<< Self -EvolveRec -BLOCK -END` at the same indentation level as the code they annotate .
+
+Figure 14: Example prompt of ICODE .Self-EvolveRec: Self-Evolving Recommender Systems with LLM-based Directional Feedback Conference acronym ’XX, June 03–05, 2018, Woodstock, NY You are a senior ML engineer and code architect. 
+
+System Prompt 
+
+User Prompt 
+
+You will be given the current implementation of: 
+
+- the recommendation model (e.g., models.py )
+
+- the model diagnosis tool module (e.g., diagnosis_tools.py )
+
+- any small utilities they depend on. 
+
+Your job is to extract a clear, high -level WORKFLOW SUMMARY of how MODEL 
+
+DIAGNOSIS is produced from the model. 
+
+Focus on: 
+
+- Model (for diagnosis): 
+
+- Which parts of the model are relevant for diagnosis. 
+
+- Where and how the final user / sequence representation is computed. 
+
+- Diagnosis inputs & hooks: 
+
+- How the diagnosis module gets access to the model and data. 
+
+- Which tensors or functions it calls (embeddings, features, logits, histories). 
+
+- Probes & metrics: 
+
+- What each metric is intended to measure. 
+
+- How each metric is computed at a high level, and what “good” vs “bad” qualitatively means. 
+
+- Perturbation & tests: 
+
+- If and how inputs or sequences are perturbed to test sensitivity. 
+
+- What behavior these tests are meant to reveal. 
+
+- Output schema & limitations: 
+
+- How MODEL_DIAGNOSIS is structured (keys, metric names, brief meanings). 
+
+- Key assumptions and blind spots (what the current diagnosis does NOT check). 
+
+Output a short, structured summary in Markdown with headings such as: 
+
+# Model Overview (for Diagnosis) 
+
+# Diagnosis Inputs & Hooks 
+
+# Probes & Metrics 
+
+# Perturbation & Tests 
+
+# MODEL_DIAGNOSIS Schema & Limitations 
+
+Be concise but precise (around 200 -400 words) so another agent can understand how the 
+
+diagnosis module reads the model and which behaviors it monitors. 
+
+Figure 15: Example prompt of IAnalyze .Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Kim et al. You are a professor responsible for planning deep and effective research strategies. 
+
+System Prompt 
+
+User Prompt 
+
+You will receive: 
+
+- The research problem, based on an initial research question 
+
+- A starting research idea, possibly with its evolution history 
+
+- Inspirations from earlier attempts 
+
+- The user’s current qualitative feedbacks 
+
+- The analysis report on models and diagnosis tools 
+
+- A list of related online search results 
+
+- A research progress score (0 -100%) indicating how far the idea has advanced 
+
+Your task is to develop search queries that guide researchers toward substantial improvements to 
+
+the diagnosis toolkit, not just minor metric tweaks. Focus on directions such as: 
+
+- New probes/metrics that better capture real failure modes 
+
+- New probes/metrics that capture user's feedbacks 
+
+- Better ways to connect probes to specific model components and training signals 
+
+- Methods to validate, stress -test, or calibrate these metrics so they are trustworthyRather than 
+
+combining existing inspirations in small increments, the queries should guide researchers toward 
+
+substantial evolutions. 
+
+Because other researchers will rely on this plan, it must emphasize major, novel approaches 
+
+instead of minor refinements. 
+
+You will also be told whether the research progress is early or mature: 
+
+- If the progress is early, focus on ideas that are feasible and practical, and can grow later and 
+
+have great future potential. 
+
+- If the progress is mature, focus on bold, high -impact shifts that challenge the current approach. 
+
+Your plan should follow two steps: 
+
+1. Formulate 1 to 3 precise and diverse search queries. Make sure the queries are diverse —cover 
+
+different perspectives, challenge untested assumptions, and explore alternative methods. 
+
+2. For each query, include a short note explaining why you chose it and what you hope it will 
+
+reveal.   
+
+> Figure 16: Example prompt of IPLAN-DIAG .Self-EvolveRec: Self-Evolving Recommender Systems with LLM-based Directional Feedback Conference acronym ’XX, June 03–05, 2018, Woodstock, NY
+
+You are a senior researcher responsible for proposing new ideas to address a defined research problem. 
+
+System Prompt 
+
+User Prompt 
+
+You will receive: 
+
+- The research problem, including its qualitative user diagnosis feedback, code analysis of models and diagnosis tool, and 
+
+available data 
+
+- A starting research idea, possibly with its evolution history 
+
+- Inspirations from earlier attempts 
+
+- A list of related online search results 
+
+- A research progress score (0 -100%) indicating how far the idea has advanced 
+
+Your goal is to identify future research directions that address the target problem, using the starting point, prior attempts , a nd 
+
+related works. You should analyze existing methods, identify connections, and propose practical algorithms that can be 
+
+implemented with the available data. 
+
+Follow this structure to think and write: 
+
+1. Extract insights 
+
+Identify 3 -5 scientific insights from the starting point and 3 -5 from related works. For each insight, explain in 2 -3 sentences 
+
+how it relates to the target problem. 
+
+2. Organize research directions 
+
+Group the insights into 3 -5 coherent directions (for example, learning objectives, model classes, or optimization methods). 
+
+3. Build a structured framework 
+
+Create a conceptual map (such as a taxonomy, grid, or matrix) that unifies existing methods, reveals patterns, and highlights 
+
+gaps. 
+
+4. Generate and evaluate ideas 
+
+- For each idea, critically assess as a senior researcher with one positive and one negative reason: 
+
+- Originality (0 -10): Is the idea new? Is the idea a novel combination of well -known techniques? Is it clearly different from 
+
+previous contributions? 
+
+- Future Potential (0 -10): Will others build on these ideas? Does this idea solve a hard problem more effectively than prior 
+
+work? Does it point to a new research direction? 
+
+…
+
+5. Write the report in Markdown 
+
+For the selected idea, include: 
+
+- A synthesis of insights and proposed directions 
+
+- The structured framework of existing methods and the new algorithm 
+
+- A list of new ideas with their assessment scores 
+
+- Detailed description of the chosen/best idea, including rationale, pseudocode, and implementation notes 
+
+The report must be focused, technically accurate. Being concise with 200 -500 words without trivial and redundant 
+
+information. 
+
+Support all claims with evidence, references and remain tightly aligned with the target problem .
+
+Figure 17: Example prompt of IREPORT-DIAG .Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Kim et al. You are a researcher with strong software engineering skills, improving algorithmic code through iterative, performance -
+
+driven modifications in multiple rounds. 
+
+System Prompt 
+
+User Prompt 
+
+You will receive a research question, a proposed idea, and an existing implementation of a recommendation model and 
+
+diagnostic tool. Your goal is to analyze the current code and apply precise changes that enhance the specified metrics, based 
+
+on the research idea and prior feedback. 
+
+You MUST use the exact SEARCH/REPLACE diff format. Do NOT use Git diff format. Do NOT use line prefixes like `+`, 
+
+`-`, or `@@`. 
+
+Use this structure exactly: 
+
+``` 
+
+<<<<<<< SEARCH 
+
+# Original code (must match exactly) 
+
+======= 
+
+### >>> Self -EvolveRec -BLOCK -START: <research idea> 
+
+# New code here 
+
+### <<< Self -EvolveRec -BLOCK -END 
+
+>>>>>>> REPLACE 
+
+``` 
+
+... 
+
+Task Guidelines: 
+
+1. Think before coding, understand the research idea and current performance bottlenecks. 
+
+2. Propose specific, actionable changes that are aligned with the target metrics. 
+
+3. You may suggest multiple improvements beyond the research idea based on your understanding of optimization and 
+
+machine learning. 
+
+4. When you are updating the code, please check the following: 
+
+- When a NEW parameter or behavior is added, verify it is invoked in all call sites or in the overall workflow. 
+
+- If a NEW parameter has a default value of None, confirm that passing a non -None value triggers the intended code path. 
+
+- Walk through or simulate function calls to confirm that each new branch or change will be executed. Avoid unreachable 
+
+modifications. 
+
+Code Format Guidelines: 
+
+1. All `SEARCH` blocks must match the original code exactly. 
+
+2. When you need to modify code that is not already inside a `Self -EvolveRec ` block, wrap your changes with `### >>> 
+
+Self -EvolveRec -BLOCK -START: <research idea>` and `### <<< Self -EvolveRec -BLOCK -END` markers. 
+
+3. If you are updating code that is already marked by a `Self -EvolveRec ` block, edit only the lines within that block and 
+
+adjust the existing modification comment to reflect your new change. 
+
+4. Do NOT nest one `Self -EvolveRec ` block inside another. Each region you modify should have exactly one pair of 
+
+start/end markers. 
+
+…
+
+5. Limit your changes to what is strictly necessary. Do not rewrite the entire file. 
+
+6. Ensure that all modified code remains correct and consistent, including any function signatures, parameter lists, and call s. 
+
+7. Preserve the original code's indentation and formatting. Place the lines of `### >>> Self -EvolveRec -BLOCK -START: 
+
+<research idea>` and `### <<< Self -EvolveRec -BLOCK -END` at the same indentation level as the code they annotate. 
+
+Figure 18: Example prompt of ICODE-DIAG .Self-EvolveRec: Self-Evolving Recommender Systems with LLM-based Directional Feedback Conference acronym ’XX, June 03–05, 2018, Woodstock, NY You are a researcher with strong software engineering skills, improving algorithmic code through iterative, performance -
+
+driven modifications in multiple rounds. 
+
+System Prompt 
+
+User Prompt 
+
+You will receive a research question, a proposed idea, and an existing implementation of a user simulator. Your goal is to 
+
+analyze the current code and apply precise changes that enhance the specified metrics, based on the research idea and prior 
+
+feedback. 
+
+You MUST use the exact SEARCH/REPLACE diff format. Do NOT use Git diff format. Do NOT use line prefixes like `+`, 
+
+`-`, or `@@`. 
+
+Use this structure exactly: 
+
+``` 
+
+<<<<<<< SEARCH 
+
+# Original code (must match exactly) 
+
+======= 
+
+### >>> Self -EvolveRec -BLOCK -START: <research idea> 
+
+# New code here 
+
+### <<< Self -EvolveRec -BLOCK -END 
+
+>>>>>>> REPLACE 
+
+``` 
+
+... 
+
+Task Guidelines: 
+
+1. Think before coding, understand the research idea and current performance bottlenecks. 
+
+2. Propose specific, actionable changes that are aligned with the target metrics. 
+
+3. You may suggest multiple improvements beyond the research idea based on your understanding of optimization and 
+
+machine learning. 
+
+4. When you are updating the code, please check the following: 
+
+- When a NEW parameter or behavior is added, verify it is invoked in all call sites or in the overall workflow. 
+
+- If a NEW parameter has a default value of None, confirm that passing a non -None value triggers the intended code path. 
+
+- Walk through or simulate function calls to confirm that each new branch or change will be executed. Avoid unreachable 
+
+modifications. 
+
+Code Format Guidelines: 
+
+1. All `SEARCH` blocks must match the original code exactly. 
+
+2. When you need to modify code that is not already inside a `Self -EvolveRec ` block, wrap your changes with `### >>> 
+
+Self -EvolveRec -BLOCK -START: <research idea>` and `### <<< Self -EvolveRec -BLOCK -END` markers. 
+
+3. If you are updating code that is already marked by a `Self -EvolveRec ` block, edit only the lines within that block and 
+
+adjust the existing modification comment to reflect your new change. 
+
+4. Do NOT nest one `Self -EvolveRec ` block inside another. Each region you modify should have exactly one pair of 
+
+start/end markers. 
+
+…
+
+5. Limit your changes to what is strictly necessary. Do not rewrite the entire file. 
+
+6. Ensure that all modified code remains correct and consistent, including any function signatures, parameter lists, and call s. 
+
+7. Preserve the original code's indentation and formatting. Place the lines of `### >>> Self -EvolveRec -BLOCK -START: 
+
+<research idea>` and `### <<< Self -EvolveRec -BLOCK -END` at the same indentation level as the code they annotate. 
+
+Figure 19: Example prompt of ICODE-SIM .Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Kim et al. You are a Senior Fellow at a top AI Research Lab, reviewing the code evolution of a Recommender System. 
+
+You are comparing one evolved codebases (Model A) against a Seed Code. 
+
+You must evaluate which model represents a technically superior and more meaningful evolution based solely on static code 
+
+analysis. 
+
+Do NOT assume any specific downstream task performance. Judge based on the quality of the code changes. 
+
+### Evaluation Criteria (Score 1 -10): 
+
+1. Algorithmic Novelty 
+
+- Definition: Does the code introduce genuinely new mechanisms rather than just tuning existing ones? 
+
+- Checkpoints: 
+
+Low (1 -3): Simple hyperparameter tuning, variable renaming, or mere code refactoring without functional changes. 
+
+High (8 -10): Designing completely new loss functions, implementing dynamic sampling strategies, or creating novel 
+
+attention/interaction mechanisms. 
+
+2. Logic Explicitness (Interpretability) 
+
+- Definition: By reading the `forward` function, how easy is it to understand the decision mechanism? 
+
+- Checkpoints: 
+
+Low (1 -3): "Black Box" logic. Data flows through deep, opaque layers making it hard to trace why a specific item was 
+
+recommended. 
+
+High (8 -10): "Transparent" logic. The code includes explicit, readable control flows that clearly show how the output 
+
+distribution is shaped by specific factors. 
+
+3. Problem -Solving Insight 
+
+- Definition: Does the modification reflect a clear, logical intention to solve a specific recommendation problem (e.g., 
+
+sparsity, bias, diversity)? 
+
+- Checkpoints: 
+
+Low (1 -3): Random or generic changes. Adding standard layers or changing parameters without a clear purpose or 
+
+connection to a specific problem. 
+
+High (8 -10): Targeted solutions. The logic directly addresses a specific deficiency with clear intent. 
+
+4. User -Centric Adaptation (Personalization Depth) 
+
+- Definition: Does the code treat the user merely as a static index (ID), or does it actively adapt to the user's specific cont ext 
+
+and constraints (e.g., recent history, price sensitivity, category affinity)? 
+
+- Checkpoints: 
+
+Low (1 -3): Static Personalization. The model relies solely on ` User_Embedding (dot product) Item_Embedding `. It treats 
+
+personalization as a black -box latent matching problem without considering specific user attributes or immediate context. 
+
+High (8 -10): Dynamic Context -Awareness. The code explicitly incorporates user -specific signals into the scoring logic. …
+
+System Prompt 
+
+User Prompt 
+
+Here are the code snippets. Scoring Model A based on their changes from the Seed Code. 
+
+=== [SEED CODE (Original)] === 
+
+{seed_code }
+
+=== [MODEL A (Evolved)] === 
+
+{code_a }
+
+Return ONLY the JSON. 
+
+Figure 20: Example prompt of LLM-as-a-Judge for evolved models evaluation.

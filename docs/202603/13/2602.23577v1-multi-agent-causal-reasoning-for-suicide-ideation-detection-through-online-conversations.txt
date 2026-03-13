@@ -1,0 +1,480 @@
+Title: Multi-Agent Causal Reasoning for Suicide Ideation Detection Through Online Conversations
+
+URL Source: https://arxiv.org/pdf/2602.23577v1
+
+Published Time: Mon, 02 Mar 2026 01:20:20 GMT
+
+Number of Pages: 17
+
+Markdown Content:
+# Multi-Agent Causal Reasoning for Suicide Ideation Detection Through Online Conversations 
+
+Jun Li 1, Xiangmeng Wang 1(B), Haoyang Li 1, Yifei Yan 2, Shijie Zhang 3, Hong Va Leong 1, Ling Feng 4, Nancy Xiaonan Yu 2, and Qing Li 1 
+
+> 1
+
+The Hong Kong Polytechnic University, Hong Kong, China 
+
+hialex.li@connect.polyu.hk; {xiangmengpoly.wang, haoyang-comp.li, cshleong, qing-prof.li}@polyu.edu.hk  
+
+> 2
+
+City University of Hong Kong, Hong Kong, China 
+
+yfyan8-c@my.cityu.edu.hk; xiaonayu@cityu.edu.hk  
+
+> 3
+
+Shenzhen MSU-BIT University, Shenzhen, China 
+
+shijie.z@smbu.edu.cn  
+
+> 4
+
+Tsinghua University, Beijing, China 
+
+fengling@tsinghua.edu.cn 
+
+Abstract. Suicide remains a pressing global public health concern. While social media platforms offer opportunities for early risk detection through online conversation trees, existing approaches face two major limitations: (1) They rely on predefined rules (e.g., quotes or relies) to log conver-sations that capture only a narrow spectrum of user interactions, and (2) They overlook hidden influences such as user conformity and sui-cide copycat behavior, which can significantly affect suicidal expression and propagation in online communities. To address these limitations, we propose a Multi-Agent Causal Reasoning (MACR) framework that collaboratively employs a Reasoning Agent to scale user interactions and a Bias-aware Decision-Making Agent to mitigate harmful biases arising from hidden influences. The Reasoning Agent integrates cogni-tive appraisal theory to generate counterfactual user reactions to posts, thereby scaling user interactions. It analyses these reactions through structured dimensions, i.e., cognitive, emotional, and behavioral pat-terns, with a dedicated sub-agent responsible for each dimension. The Bias-aware Decision-Making Agent mitigates hidden biases through a front-door adjustment strategy, leveraging the counterfactual user reac-tions produced by the Reasoning Agent. Through the collaboration of reasoning and bias-aware decision making, the proposed MACR frame-work not only alleviates hidden biases, but also enriches contextual in-formation of user interactions with counterfactual knowledge. Extensive experiments on real-world conversational datasets demonstrate the effec-tiveness and robustness of MACR in identifying suicide risk. 
+
+Keywords: Multi-agent System · Causal Inference · Front-door adjust-ment · Suicide Risk Prediction  
+
+> arXiv:2602.23577v1 [cs.CL] 27 Feb 2026 2J. Li et al.
+
+## 1 Introduction 
+
+Suicide remains a critical global public health crisis. Traditional clinical assess-ments face significant scalability challenges and are reactive in early identifica-tion of suicide risks [9]. Social networks become increasingly popular and enable individuals with suicidal thoughts to share their mental struggles with a broad online audience. Thus, research has increasingly focused on analyzing online user interactions encompassing both posts and comments to enable proactive suicide risk prediction and to monitor the potential negative impacts of harmful content. Analyzing online user interactions requires understanding their psychologi-cal and social dynamics. Psychological research [18] shows that user interactions have temporal dependencies, where each interaction can influence subsequent content and tone. Sociological studies [1] also reveal that response rates are highly uneven, with certain highly influential comments propagating quickly while some are left untouched. Most traditional suicide risk prediction methods fail to capture these dynamics. Early work [15,13,24,27] typically models individ-ual posts or comments using indicative factors such as linguistic features [13], psychological indicators [15], and sentiment cues [24]. Such models, however, cannot effectively represent the sequential dependencies and dynamic emotional changes that occur across multiple interactions. Modeling user interactions as conversation trees [24] emerges as a promising solution to capture unevenly distributed sequential user interactions. As shown in Figure 1 (a), the conversation trees form hierarchical structures of user post-comments propagation, and exhibit scale-free characteristics, i.e., varying num-bers of replies attached to different threads. Existing work has used conversation trees to model the effectiveness of comments and assess suicide risks on social media For example, Kavuluru et al. [8] model the hierarchical conversation tree for automatic identification of helpful comments to assist moderators in provid-ing timely support. Sawhney et al. [24] explicitly modeled Reddit conversation trees to capture the scale-free dynamics and hierarchical branching patterns in-herent in these tree structures for suicide ideation detection. Other subsequent works [11,3] also use conversational trees for suicide ideation detection. 
+
+Fig. 1: (a) Example conversation tree from "r/SuicideWatch" in Reddit.(2) The limitations of current conversation tree-based methods MACR 3
+
+Despite these efforts, existing work on conversation tree-based suicide risk prediction methods suffers from significant limitations (cf. Figure 1 (b)): 1) They typically construct conversation trees based solely on explicitly logged interactions (e.g., mentions, quotes, or replies), capturing only a limited set of interactions [28]. However, user behavior is complex and influenced by various factors such as offline life events or personality traits, which are not reflected in logged interactions. By ignoring richer context, these methods provide an incom-plete view of user behavior, reducing the accuracy of suicide risk detection. (2) Their models assume the absence of unobserved factors [19], an assumption that rarely holds in real-world contexts. Ignoring such unobserved factors introduces confounding bias, as models incorrectly treat observed content in the conversa-tion tree as direct reflections of users’ true psychological states. For example, sociological research [18] has revealed the copycat suicide on social media, where exposure to suicidal content triggers imitative behaviors among vulnerable users. In such a phenomenon, an unobserved confounder like user conformity simulta-neously influences what users post or comment (observed interactions) and their suicide risk. As such, by lacking richer context and ignoring unobserved influ-ences, current models are limited in scalability and less robust at suicide ideation detection, especially in extreme or rapidly changing scenarios. 
+
+Proposed Solution. We propose to address incomplete contextual and unob-served influences on user suicidality within online conversations from a novel causal view. We propose Multi-Agent Causal Reasoning (MACR) that in-volves two major agents for collaboration: 1) a Reasoning Agent that scales the conversational tree by using four sub-agents to generate counterfactual user reactions to posts. 2) a Bias-aware Decision-Making Agent that controls the unobserved bias with a causal adjustment strategy using generated coun-terfactual user reactions from the Reasoning Agent. Our proposed Reasoning Agent employs four language model-based agents that collaboratively simulate user reactions to posts, generating counterfactual reasoning nodes to capture potential yet unlogged user interactions. The design of the four sub-agents and their workflow is inspired by the Paul-Elder critical thinking framework [5]. In addition, we innovatively integrate cognitive appraisal theory [12] to guide the system in analyzing user reactions through structured dimensions, including cognitive, emotional, and behavioral patterns. The Bias-aware Decision-Making Agent adopts a causal method—especially front-door adjusted models—to mit-igate the unobserved influence on user suicidality. Front-door adjustment [20] uses an observable proxy mediator as the indicator of unobserved confounders to capture the causal pathway between treatment and outcome. We construct the mediator variable as the conversation tree augmented with counterfactual reasoning nodes generated from our Reasoning Agent. As a result, the proposed MACR framework mitigates unobserved confounding bias via front-door adjust-ment, while the mediator introduces additional counterfactual knowledge to en-rich contextual information. Our main contributions are summarized as follows: 4 J. Li et al. 
+
+– To the best of our knowledge, this work is the first to theoretically uncover the impact of unobserved confounders on user suicidality within online social conversations. 
+
+– We innovatively integrate two complementary theoretical frameworks, the Paul-Elder critical thinking framework [5] and cognitive appraisal theory [12], to guide the multi-agent reasoning process. 
+
+– We propose a confounding bias mitigation strategy based on front-door ad-justment, which not only alleviates unobserved confounding bias but also enriches contextual information by incorporating counterfactual knowledge. 
+
+– Extensive experiments on real-world conversational datasets demonstrate the effectiveness and robustness of our framework in identifying suicide risk. U
+
+X YM
+
+U
+
+X Y      
+
+> U: hidden variables, e.g., user conformity; X: conversation tree variable;
+> M: mediator variable ; Y: suicide risk variable.
+> observed variables; unobserved variables; causal relation;
+
+(a) (b) 
+
+Fig. 2: (a) The causality of conversation tree variable X and suicide risk variable 
+
+Y is confounded by unobservable variable U . (b) The psychological inference generated by Reasoning Agent as a mediator variable M between conversation tree variable X and suicide risk variable Y .
+
+## 2 Related Works 
+
+2.1 Suicide Risk Detection on Social Media 
+
+Early research in suicide risk detection on social media adopted individual user modeling approaches, framing the problem as a binary or multi-class classifica-tion task at the user level. Initial efforts relied on feature engineering to extract meaningful patterns from user-generated content. Ji et al. [7] explored a com-prehensive set of hand-crafted features across Twitter and Reddit platforms, subsequently testing their effectiveness with traditional classifiers and recur-rent neural networks. Li et al. [16] developed a hybrid architecture integrating BERT’s contextual embeddings with bidirectional LSTM layers, enhancing the model through multi-task learning where emotion recognition served as an aux-iliary objective. Similarly, Sawhney et al. [25] introduced a temporal modeling framework that traces users’ evolving emotional states through their posting history to better identify warning signs of suicidal ideation. Subsequent research began incorporating social contextual information. These approaches recognized MACR 5
+
+that users’ mental health states are influenced by their online social environ-ments and peer interactions. Sawhney et al. [28] proposed combining individual emotional timelines with network-derived social signals. More recent work has turned to conversation tree structures as a richer representation of online dis-course [24,8]. Although these approaches successfully integrated social factors, their modeling of actual user interactions remained limited to platform-logged interactions such as explicit replies and mentions. 
+
+## 3 Preliminaries 
+
+Structural Causal Model A Structural Causal Model (SCM) [21] provides a framework for causal relationships between variables in complex systems. In SCM, we typically use a directed acyclic graph termed the causal graph to rep-resent the set of direct causal relationships between variables of interest. 
+
+Definition 1 (Causal Graph). A Causal Graph [2] is a directed acyclic graph (DAG) G = ( {V , Z }, E) represents causal relations among endogenous and ex-ogenous variables. V is a set of endogenous variables of interest, e.g., user com-ments. Z is a set of exogenous variables outside the model, e.g., user conformity. 
+
+E is edge set denoting causal relations among G.
+
+Definition 2 (Confounder). Given a treatment variable and an outcome vari-able, a variable is considered a confounder [21] if it causally affects both the treatment and the outcome. 
+
+Front-door Adjustment Front-door adjustment estimates the causal effect of a treatment (or cause) on an outcome even when unobserved confounders exist. It works by introducing a mediator variable — an observable factor that lies on the causal pathway between the treatment and the outcome. By modeling how the treatment influences the mediator and how the mediator affects the outcome, front-door adjustment indirectly accounts for hidden confounding and enables unbiased causal estimation. 
+
+## 4 Causal Analysis and Motivations 
+
+4.1 Causal Analysis 
+
+Following Definition 1, we construct a causal graph as shown in Figure 2 (a) that models the causal relationships between variables in predicting suicide risk in user conversation trees. We explain the rationality of this casual graph here: 
+
+– X → Y : User conversation tree features ( X) influence suicide risk ( Y ). Specifically, received comments such as expressions of hopelessness, negative emotional content, etc affect suicide risk. 6 J. Li et al. 
+
+– U → X: Unobserved confounders (U) influence user conversation tree fea-tures (X). These latent factors include underlying mental health conditions, personality traits, life circumstances, and socioeconomic status that shape how users express themselves and interact on social media platforms. 
+
+– U → Y : Unobserved confounders (U) directly influence suicide risk (Y). The same underlying factors that affect online conversation also contribute to the suicide risk. Following Definition 2, U is the confounder between X and Y . Due to the existence of confounder U , we cannot estimate the intervened distribution of 
+
+P (Y = y | do (X = x)) based on observed data distribution P (Y = y | X = x),i.e., P (Y = y | do (X = x)) ̸ = P (Y = y | X = x). Instead, we need to account for and measuring all confounders’ impact, i.e., P (Y = y | do( X = x)) = P 
+
+> u
+
+P (Y =
+
+y | X = x, U = u)P (U = u).The above equation is based on the assumption that the confounder vari-able is measurable. However, in social media context, there may exist vari-ous unobserved or unmeasurable confounding variables. To address this setting, front-door adjustment offers a feasible solution. Following the definition of front-door adjustment, we introduce a mediator M as shown in Figure 2 (b). Then, 
+
+P (Y |do (X)) can be formulated as: 
+
+P (Y |do (X)) = X
+
+> m
+
+P (m|do (X)) P (Y |do (m)) (1) The causal effect between X and Y is decomposed into two partially causal effects P (m|do (X)) and P (Y |do (m)) .To compute P (Y |do (X)) , we need to block the backdoor path X ← U →
+
+Y ← M . This path contains a collider structure U → Y ← M . Therefore, the backdoor path is already blocked [21], and we obtain: 
+
+P (m|do (X)) = P (m|X) (2) To compute P (Y |do (m)) , we must block confounding paths through U . The confounder U affects both Y (directly) and M (through X). By conditioning on 
+
+X, we intercept the confounding flow from U to M . This blocks the backdoor path M ← X ← U → Y , obtaining: 
+
+P (Y |do (m)) = X
+
+> x∈X
+
+P (x)P (Y |m, x ) (3) Finally, we obtain the 
+
+P (Y |do (X)) = X
+
+> m
+
+P (m|X) X
+
+> x
+
+P (x)P (Y |m, x ) (4) 
+
+4.2 Motivations Agent-based Decomposition of Front-door Adjustment Front-door ad-justment naturally divides into two components, each implemented by a special-ized agent. Intuitively, Equation (5) can be decomposed into two computational MACR 7
+
+parts, corresponding to the distinct roles of the two agents: 
+
+P (Y |do (X)) = X
+
+> m
+
+P (m|X)
+
+| {z }
+
+> Reasoning
+
+X
+
+> x
+
+P (x)P (Y |m, x )
+
+| {z }
+
+> Decision −making
+
+(5) We explain each computational part in the following. 
+
+– Reasoning Agent. This agent models the first part: P (m|X). It shows how the conversation tree X affects the mediator M . The agent generates counterfactual reasoning nodes using four sub-agents. These nodes simulate alternative user reactions to posts. By adding these counterfactual nodes to the original conversation tree, the agent creates an enriched mediator variable mi ∈ M . This mediator captures both observed interactions and potential unlogged behaviors. 
+
+– Bias-aware Decision-making Agent. This agent implements the decision-making component P 
+
+> x
+
+P (Y |m, x )P (x), predicting risk Y from mediator 
+
+mi ∈ M . The summation over x theoretically removes bias by averag-ing across all conversation variations. In practice, we approximate this in-tractable summation using an efficient sampling-based strategy. Details of this approximation are provided in Section 5.2. 
+
+## 5 Method Suicide                           
+
+> Risk
+> Psychological Analyst
+> Critical Thinker Empiricist
+> Synthesizer
+> Query ��times
+> �clusters
+> Reasoning nodes Conversation
+> Tree �
+> ...
+> Reasoning Agent
+> Decision-
+> making
+> Agent
+> 17
+> 28
+> 64
+> Reasoning
+> original post:
+> Reasoning
+> ��
+> ∗∈{�1
+> ∗,�2
+> ∗,…,��
+> ∗}
+> …
+> �
+> �,��[�]
+> Reasoning
+> �2
+> �1
+> �t
+> P�푑  �
+> ≈���,��[�]
+> P�푑  �
+> =���
+
+Fig. 3: Overview of Multi-Agent Causal Reasoning (MACR) framework. Inspired by causal analysis and motivated by the need to decompose the front-door adjustment into two computational components aligned with distinct agents, we introduce the implementation of the proposed Multi-Agent Causal Reasoning (MACR) framework for robust and scalable suicide risk prediction. The overall architecture is illustrated in Figure 3. 
+
+5.1 Reasoning Agent: Scalable Counterfactual Reaction Generator Overview. The Reasoning Agent generates counterfactual reasoning nodes to construct the mediator variable M . It consists of four collaborative sub-agents that simulate alternative user reactions. 8 J. Li et al. 
+
+Architecture. As shown in Figure 3, the agent processes input conversation tree X through four sub-agents with different roles: 1. Psychological Analyst : This expert conducts in-depth psychological analysis of the original poster (OP), focusing on: Evaluating potential psychological reactions after receiving comments by analyzing the OP’s psychological state, emotional patterns, and underlying motivations, coping styles and behavioral tendencies. 2. Critical Thinker : This expert identifies logical flaws and cognitive biases in the psychological analysis, including: Detecting cognitive biases (e.g., con-firmation bias, availability heuristic). (2) Challenging logical validity of rea-soning processes. (3) Identifying overlooked perspectives. 3. Empiricist : Grounding analysis in established psychological theories (e.g., Attachment Theory, Defense Mechanisms, Coping Strategies), this role func-tions as an "Evidence Police", focusing on empirical validation: (1) Identi-fying behavioral patterns based on textual evidence. (2) Rating evidence strength for each claim (Low/Medium/High). (3) Distinguishing between direct observations and speculative interpretations. 4. Synthesizer : The final reviewer who integrates all feedback and produces structured output: (1) Synthesizing insights from the Psychological Analyst, Critical Thinker, and Empiricist. (2) Filling analytical gaps and balancing depth with evidence constraints. (3) Generating comprehensive, balanced reasoning with clear evidence levels. 
+
+Workflow. The system achieves collaboration through a three-round debate process: the first round is conducted by Psychological Analyst for preliminary analysis, the second round is questioned in parallel by Critical Thinker and Empiricist, and the third round is conducted by Synthesizer to integrate all feedback and generate the final output. 
+
+Output. Given a conversation tree x, the Raasonging Agent are queried to gen-erates n distinct counterfactual psychological inferences M = {m1, m 2, . . . , m n},where each element mi represents a distinct counterfactual psychological infer-ence. This adjustment facilitates exploration of diverse reasoning trajectories. Since multiple generated inferences may express semantically similar psycholog-ical states with different wordings, we consolidate them into representative nodes through clustering. Specifically, we first encode each inference mi into a dense semantic representation using the E5-large-v2 encoder [31]: 
+
+¯mi = E5-Encoder (mi), ¯mi ∈ R1024 (6) We then apply K-means clustering to group the n embeddings { ¯m1, . . . , ¯mn}
+
+into K clusters C = {C1, . . . , C K } based on semantic similarity. For each cluster 
+
+Ci, we select the inference closest to the cluster centroid as the representative node m∗ 
+
+> i
+
+:
+
+m∗ 
+
+> i
+
+= arg min  
+
+> mj∈Ci
+
+| ¯mj − centroid (Ci)|2 (7) MACR 9
+
+The probability of each representative inference is then estimated based on cluster size: 
+
+P (m∗ 
+
+> i
+
+|do (x)) ≈ |Ci|
+
+n (8) where |Ci| denotes the number of inferences assigned to cluster Ci, and n is the total number of generated counterfactual inferences. 
+
+5.2 Bias-aware Decision-making Agent 
+
+Based on the K representative psychological impact assessments obtained through clustering in Section 5.1, we now estimate P (Y |do (m)) for each representative impact. For notational simplicity, we omit cluster indices in the following dis-cussion. 
+
+P (Y |do (m)) measures the causal effect between the inferred psychological impacts m and the subsequent suicide risk level Y . As established in Eq. (3): 
+
+P (Y |do (m)) = X
+
+> x∈X
+
+P (x)P (Y |m, x )= Ex[P (Y |m, x )] (9) where x ∈ X represents specific instances of post-comment trees in the input space, and m is the inferred psychological impact. 
+
+Approximating the Expectation. Since enumerating all possible post-comment trees x ∈ X is intractable, we employ a two-stage approximation strategy. First, following the normalized weighted geometric mean (NWGM) approxi-mation framework [4,29], under mild smoothness assumptions on the Decision-Making Agent (DA), the expectation over the input distribution can be approx-imated by: 
+
+Ex[P (Y |m, x )] ≈ P (Y |m, Ex[x]) (10) However, directly computing Ex[x] is infeasible for discrete structured data like post-comment trees. To address this challenge, we approximate the expec-tation by integrating two sources of information: (1) the input comment tree x
+
+used by the Reasoning Agent to generate psychological impacts M , where we augment x by attaching the inferred impacts mi ∈ M as additional nodes, and (2) the broader input distribution captured through stratified demonstrations to debias the prediction. We achieve this through in-context learning with stratified demonstrations .Specifically, the Decision-Making Agent receives the augmented instance (x, m i)
+
+along with stratified demonstrations D to approximate P (Y |m, Ex[x]) . The demon-strations provide contextual information about P (x) across different risk levels. For each input x, we construct Di by selecting one representative example from each of the four risk levels based on Cosine semantic similarity between them and x. This stratified sampling ensures distributional coverage across risk levels while retrieving contextually relevant examples. 10 J. Li et al. 
+
+Output. The Decision-Making Agent is implemented as a prompted large lan-guage model. Given the input x and m∗ 
+
+> i
+
+and matching demonstrations, it pre-dicts: 
+
+P (Y |do (m∗ 
+
+> i
+
+)) ≈ P (Y |m∗ 
+
+> i
+
+, Ex[x]) (11) 
+
+≈ DA (m∗ 
+
+> i
+
+, x, D i) (12) Here, Di plays a critical role in approximating Ex[x]: by exposing the agent to stratified examples from all risk levels, the demonstrations provide representa-tive instances that help approximate the expectation over X, thereby debiasing the prediction. For each m∗ 
+
+> i
+
+, we perform T independent predictions using the Decision-Making Agent and aggregate the predictions via majority voting: 
+
+P (Y |do (m∗ 
+
+> i
+
+)) ≈ 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+I[Y = yt], yt = DA t(m∗ 
+
+> i
+
+, x, D i) (13) where y t denotes the t-th prediction of the Decision-Making Agent, and I[·]
+
+is the indicator function. 
+
+Final Risk Prediction. Based on the above Eq. (8) and Eq. (13), we combine the estimates from Reasonging Agent and Decision-making Agent, the complete front-door adjustment becomes: 
+
+P (Y = y|do (X)) = X
+
+> m
+
+P (m|do (X)) P (Y |do (m)) =
+
+> K
+
+X
+
+> i=1
+
+|Ci|
+
+n · 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+I[Y = DA t(m∗ 
+
+> i
+
+, x, D i)] (14) 
+
+## 6 Experiments 
+
+6.1 Experimental Dataset 
+
+We conduct experiments on two datasets to evaluate our framework: (1) the Suicidal Comment Tree Dataset [17], and (2) Protective Factor-Aware Dataset with Comment Tree constructed by augmenting posts in Protective Factor-Aware dataset [14] with associated comment trees. 
+
+6.2 Baselines 
+
+We compare our method against four categories of baselines: 1) Suicide Risk Prediction Models : including DAFIL [15], TSAML [13], STATENet [26] and SISMO [27]; 2) Debiased Language Models : We implement back-door adjustment [4] on Qwen-3-4B-Instruct to mitigate reliance on psycholinguistic and affective shortcuts, result in PLM-LIWC that treats 18 LIWC psycho-logical categories [22] as confounders for causal debiasing; and PLM-Emotion 
+
+that uses Plutchik’s eight primary emotions [23] as confounders for demonstra-tion retrieval. 3) Large Language Models : We evaluate Llama-3-8B-Instruct, MACR 11 
+
+Table 1: Overall performance comparison on two datasets for suicide risk predic-tion. Best results are in bold , second best are underlined. All values are mean ±
+
+std over 5 folds. PFA: Protective Factor-Aware Dataset; SCT: Suicidal Comment Tree Dataset.                                                                                                                                                                                                                                                                 
+
+> Model PFA Dataset SCT Dataset W-Prec. W-Rec. W-F1 W-Prec. W-Rec. W-F1
+> Category 1: Suicide Risk Prediction Models
+> DAFIL 0.3487 ±0.0180 0.3519 ±0.0215 0.3433 ±0.0201 0.4197 ±0.0448 0.4151 ±0.0319 0.4103 ±0.0391 TSAML 0.2773 ±0.0386 0.3998 ±0.0279 0.3083 ±0.0354 0.2871 ±0.0932 0.3769 ±0.0337 0.2704 ±0.0704 STATENet 0.2346 ±0.0623 0.3046 ±0.0676 0.2250 ±0.0461 0.2308 ±0.0736 0.2939 ±0.0961 0.2238 ±0.0933 SISMO 0.3092 ±0.0269 0.3172 ±0.0141 0.3049 ±0.0159 0.2722 ±0.0829 0.3902 ±0.0317 0.3036 ±0.0695
+> Category 2: Debiased Language Models
+> PLM-LIWC 0.3739 ±0.0351 0.3744 ±0.0283 0.3262 ±0.0257 0.5368 ±0.0599 0.4764 ±0.0366 0.4345 ±0.0397 PLM-Emotion 0.3627 ±0.0796 0.3608 ±0.0301 0.3110 ±0.0357 0.5600 ±0.0325 0.4873 ±0.0412 0.4480 ±0.0424
+> Category 3: LLMs
+> Llama-3-8B-Instruct 0.3225 ±0.0110 0.3420 ±0.0092 0.3306 ±0.0090 0.4447 ±0.0866 0.3743 ±0.0256 0.3723 ±0.0321 DeepSeek-Chat 0.4237 ±0.0290 0.3535 ±0.0266 0.3431 ±0.0206 0.4312 ±0.0246 0.3669 ±0.0239 0.3438 ±0.0196 GPT-5 0.1748 ±0.0676 0.3738 ±0.0311 0.2130 ±0.0311 0.5445 ±0.0414 0.3042 ±0.0399 0.3316 ±0.0257
+> Category 4: Graph Neural Networks
+> HCN 0.3025 ±0.0522 0.2613 ±0.0457 0.2568 ±0.0440 0.4356 ±0.1263 0.3320 ±0.0930 0.3282 ±0.0877 GCN 0.3515 ±0.0515 0.3632 ±0.0355 0.3313 ±0.0329 0.4471 ±0.0667 0.4791 ±0.0587 0.4320 ±0.0691 GraphSAGE 0.3460 ±0.0538 0.3695 ±0.0296 0.3409 ±0.0423 0.4129 ±0.0535 0.4572 ±0.0378 0.3995 ±0.0401 GAT 0.3549 ±0.0465 0.3852 ±0.0422 0.3425 ±0.0442 0.4268 ±0.0690 0.4745 ±0.0529 0.4187 ±0.0574
+> Ours 0.4269 ±0.0467 0.3765 ±0.0365 0.3768 ±0.0373 0.5629 ±0.0554 0.5189 ±0.0268 0.5108 ±0.0345
+
+DeepSeek-Chat, and GPT-5 as strong foundation model baselines. 4) Graph Neural Network Models : We adapt classic GNN architectures including HCN [24], GCN [10], GraphSAGE [6], and GAT [30] to post-comment tree structures. 
+
+6.3 Experimental Setup 
+
+In our multi-agent framework, we employ Qwen 3-4B-Instruct for the three spe-cialized agents within the Reasoning Agent (Psychological Analyst, Empiricist, and Critical Thinker), while DeepSeek-Chat powers both the Synthesizer in the Reasoning Agent and the Decision-Making Agent. We set the number of reason-ing iterations to n = 10 , the number of clusters to K = 3 . For the Decision-Making Agent, we perform T = 3 independent predictions and aggregate them via Eq. (14) for final prediction. Following standard practice in multi-class clas-sification for suicide risk prediction, we evaluate our framework using Weighted-Precision, Weighted-Recall, and Weighted-F1 as our primary evaluation metrics. 
+
+6.4 Overall Comparison Results 
+
+Table 1 presents the overall performance comparison between our proposed framework and baseline methods across both datasets. Our method consistently achieves the best performance on the majority of metrics, demonstrating the effectiveness of causally-principled reasoning for suicide risk prediction. On the PFA dataset, our approach achieves a Weighted-F1 of 0.3768, outperforming the best baseline (DAFIL) by 8.9%. The improvement is even more pronounced on the SCT dataset, where our method achieves 0.5108 Weighted-F1, representing a 12.3% gain over the second-best model (PLM-Emotion). Notably, debiased lan-guage models (PLM-LIWC, PLM-Emotion) show competitive performance but 12 J. Li et al. 
+
+still fall short of our method, suggesting that lexical-level back-door adjustment alone is insufficient for capturing the complex psychological mechanisms in so-cial interactions. Similarly, while GNN-based models (HCN, GCN, GraphSAGE, GAT) effectively capture structural information from comment trees, they lack the explicit causal reasoning pathway necessary to model how social interactions mediate the relationship between user context and suicide risk. These results validate that our front-door adjustment framework, by explicitly decomposing causal effects through psychological impact mediators, provides a more princi-pled and effective approach to suicide risk prediction. Table 1 presents the overall performance comparison between our proposed front-door adjustment framework and baseline methods across both datasets. Our method demonstrates superior performance, achieving the best Weighted-F1 scores on both datasets while maintaining competitive precision and recall. On the PFA dataset, our approach achieves a Weighted-F1 of 0.3768, outper-forming the best baseline (DAFIL) by 8.9%. The improvement is even more pronounced on the SCT dataset, where our method achieves 0.5108 Weighted-F1, representing a 12.3% gain over the second-best model (PLM-Emotion). The superior performance of our framework can be attributed to two key ad-vantages. First, our method addresses unobserved confounding more effectively than back-door adjustment approaches. While debiased language models (PLM-LIWC, PLM-Emotion) attempt to mitigate bias through back-door adjustment by conditioning on predefined psycholinguistic features and emotions, this ap-proach has fundamental limitations: (1) it requires exhaustive measurement of all confounders, which is impractical in complex social contexts where factors like user conformity, copycat behavior, and offline life events remain unobserv-able; (2) it operates at the lexical level, capturing only surface-level linguistic patterns rather than the underlying psychological mechanisms that drive sui-cide risk. In contrast, our front-door adjustment circumvents the need to mea-sure unobserved confounders by introducing psychological impact assessments as mediators, explicitly modeling the causal pathway X → M → Y and thereby providing theoretically sound deconfounding even when U remains unmeasured. Second, our multi-agent reasoning framework enriches contextual information beyond what is available in logged interactions. Traditional methods, including both GNN-based models (HCN, GCN, GraphSAGE, GAT) and sequential mod-els (DAFIL, TSAML, STATENet, SISMO), are constrained to analyzing only explicitly logged interactions such as replies and mentions. While GNN mod-els effectively capture structural patterns in conversation trees and sequential models model temporal dependencies, both categories suffer from incomplete context. Our Reasoning Agent addresses this limitation by generating coun-terfactual reasoning nodes that simulate alternative user reactions grounded in cognitive appraisal theory. This augmentation captures a richer spectrum of pos-sible psychological responses, providing the Decision-Making Agent with more comprehensive contextual information for risk assessment. Third, our framework provides structured causal reasoning that outperforms generic LLM prompting. While large language models (Llama-3-8B-Instruct, MACR 13 
+
+DeepSeek-Chat, GPT-5) demonstrate strong general-purpose capabilities, they lack explicit causal mechanisms to handle confounding bias in suicide risk pre-diction. These models rely on pattern matching from their training data, making them susceptible to spurious correlations between conversation features and risk levels. Our multi-agent collaboration, guided by the Paul-Elder critical thinking framework and cognitive appraisal theory, systematically decomposes the pre-diction task into causally principled components: the Reasoning Agent gener-ates theory-grounded psychological mediators, while the Decision-Making Agent performs front-door adjustment to block confounding paths. This structured ap-proach ensures predictions are based on genuine causal mechanisms rather than superficial linguistic patterns, explaining why our method achieves substantial improvements over even the most advanced LLMs (e.g., 9.8% higher Weighted-F1 than DeepSeek-Chat on PFA dataset). 
+
+6.5 Ablation Study 
+
+To validate the contribution of each component in our Multi-Agent Causal Rea-soning (MACR) framework, we conduct comprehensive ablation experiments. Results are shown in Tables 2. 
+
+w/o Reasoning Agent : This variant removes the first causal component 
+
+P (M |do (X)) entirely. Instead of generating counterfactual reasoning nodes through multi-agent collaboration, we directly feed the original conversation tree X to the Decision-Making Agent for risk prediction: P (Y |do (X)) ≈ DA (X).
+
+w/o Decision-Making Agent : This variant removes the second causal component P (Y |do (M )) . We generate and cluster counterfactual reasoning nodes to obtain K representative nodes M = {m∗
+
+> 1
+
+, m ∗
+
+> 2
+
+, · · · , m ∗ 
+
+> K
+
+} with probabilities 
+
+P (m∗
+
+> k
+
+|X) = |Ck | 
+
+> n
+
+. For each m∗
+
+> k
+
+, we directly prompt the Qwen-3-4B-Instruct to predict risk: ˆyk = LLM (Y |m∗
+
+> k
+
+), and aggregate predictions through weighted ma-jority voting. 
+
+w/o Multi-Agent Collaboration : This variant uses only the Psychological Analyst to generate counterfactual reasoning nodes, removing the collaborative refinement from Critical Thinker, Empiricist, and Synthesizer. This examines whether multi-agent collaboration is essential for effective mediators. The ablation study results in Table 2 demonstrate the importance of each component in our MACR framework. Removing the Reasoning Agent leads to the most substantial performance degradation, with Weighted-F1 dropping by 32.7%, validating that counterfactual reasoning nodes are crucial for enriching contextual information and enabling effective causal deconfounding. The w/o Decision-Making Agent variant shows a 7.8% decline in Weighted-F1, indicat-ing that the front-door adjustment mechanism P(Y|do(M)) is essential for mit-igating confounding bias through proper causal conditioning. Notably, the w/o Multi-Agent Collaboration variant, which relies solely on the Psychological An-alyst without collaborative refinement, achieves only 3.2% lower performance than the full model. This relatively small gap suggests that while multi-agent collaboration provides marginal improvements, the primary benefits stem from 14 J. Li et al. 
+
+combining counterfactual augmentation with causal adjustment. Overall, these findings confirm that both the reasoning and decision-making components are essential for robust suicide risk prediction. Table 2: Ablation study on the SCT dataset. We systematically remove or modify key components to examine their contributions.                                            
+
+> Model Variant Weighted-Precision Weighted-Recall Weighted-F1 Full Model (Ours) 0.5629 ±0.0554 0.5189 ±0.0268 0.5108 ±0.0345
+> w/o Reasoning Agent 0.4312 ±0.0246 0.3669 ±0.0239 0.3438 ±0.0196 (−23.4%) (−29.3%) (−32.7%) w/o Decision-Making Agent 0.5492 ±0.0466 0.4884 ±0.0289 0.4708 ±0.0260 (−2.4%) (−5.9%) (−7.8%) w/o Multi-Agent Collaboration 0.5534 ±0.0650 0.5067 ±0.0322 0.4942 ±0.0390 (−1.7%) (−2.4%) (−3.2%)
+
+6.6 Analysis of Prompting Techniques 
+
+Comparison of our MACR framework against conventional prompting strategies on the PFA dataset. Table 3: Comparison with different prompting techniques. All methods use the same base model and comment tree information.           
+
+> Method Weighted-Precision Weighted-Recall Weighted-F1
+> In-Context Learning (ICL) 0.4064 0.3457 0.3247 Chain-of-Thought (CoT) 0.4077 0.3457 0.3201
+> Ours (Front-door) 0.4269 0.3765 0.3768
+
+To demonstrate the effectiveness of our front-door adjustment framework, we compare it against conventional prompting strategies on the PFA dataset, as shown in Table 3. All methods use the same base model and comment tree infor-mation to ensure fair comparison. Our front-door adjustment approach achieves the best performance across all metrics (Weighted-F1: 0.3768), outperforming both In-Context Learning (ICL) and Chain-of-Thought (CoT) prompting. While ICL provides demonstrations to guide the model, it lacks the explicit causal de-composition P (Y |do (X)) = P 
+
+> m
+
+P (m|X) P 
+
+> x
+
+P (x)P (Y |m, x ), resulting in 13.8% lower performance compared to our method. Similarly, although CoT generates intermediate reasoning steps, it does not explicitly model psychological impacts as mediators or perform proper causal adjustment by conditioning on both me-diators and conversation tree X, leading to a 15.0% performance gap. These results validate that our structured front-door adjustment provides a principled framework for handling confounding biases in suicide risk prediction, significantly outperforming generic prompting strategies. MACR 15 
+
+## 7 Ethics Statement 
+
+We take the following ethical precautions: (1) All data is anonymized with iden-tifying user’s information removed; (2) This system is designed as a screening tool to assist human experts, not for autonomous decision-making; (3) We ac-knowledge the potential for false negatives/positives and emphasize the need for professional clinical validation; (4) The system should not be deployed without human oversight and appropriate crisis intervention protocols. 
+
+## 8 Conclusion 
+
+In this paper, we propose the Multi-Agent Causal Reasoning (MACR) framework to address two critical limitations in existing suicide risk prediction methods: the narrow scope of logged interactions and unobserved confounders. Our framework consists of two key components. The Reasoning Agent enriches conversation trees with psychologically-grounded counterfactual user reactions. The Bias-aware Decision-Making Agent applies front-door adjustment to mitigate unobserved confounding bias. Extensive experiments on real-world datasets demonstrate that MACR achieves state-of-the-art performance through structured causal reasoning. Future work will extend this multi-agent causal paradigm to other mental health monitoring tasks and refine the cognitive appraisal process for finer-grained risk assessment. 
+
+## References 
+
+1. Avin, C., Lotker, Z., Peleg, D., Pignolet, Y.A., Turkel, I.: Elites in social networks: An axiomatic approach to power balance and price’s square root law. PloS one 
+
+13 (10), e0205820 (2018) 2. Bareinboim, E., Correa, J.D., Ibeling, D., Icard, T.: On pearl’s hierarchy and the foundations of causal inference. In: Probabilistic and causal inference: the works of judea pearl, pp. 507–556 (2022) 3. Boettcher, N.: Studies of depression and anxiety using reddit as a data source: scoping review. JMIR mental health 8(11), e29487 (2021) 4. Chen, Z., Hu, L., Li, W., Shao, Y., Nie, L.: Causal intervention and counterfactual reasoning for multi-modal fake news detection. In: Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers). pp. 627–638 (2023) 5. Elder, L., Paul, R.: Critical thinking: Tools for taking charge of your learning and your life. Rowman & Littlefield (2020) 6. Hamilton, W., Ying, Z., Leskovec, J.: Inductive representation learning on large graphs. Advances in neural information processing systems 30 (2017) 7. Ji, S., Yu, C.P., Fung, S.f., Pan, S., Long, G.: Supervised learning for suicidal ideation detection in online user content. Complexity 2018 (1), 6157249 (2018) 8. Kavuluru, R., Ramos-Morales, M., Holaday, T., Williams, A.G., Haye, L., Cerel, J.: Classification of helpful comments on online suicide watch forums. In: Proceedings of the 7th ACM international conference on bioinformatics, computational biology, and health informatics. pp. 32–40 (2016) 16 J. Li et al. 9. Kessler, R.C., Stein, M.B., Petukhova, M.V., Bliese, P., Bossarte, R.M., Bromet, E.J., Fullerton, C.S., Gilman, S.E., Ivany, C., Lewandowski-Romps, L., et al.: Pre-dicting suicides after outpatient mental health visits in the army study to assess risk and resilience in servicemembers (army starrs). Molecular psychiatry 22 (4), 544–551 (2017) 10. Kipf, T.: Semi-supervised classification with graph convolutional networks. arXiv preprint arXiv:1609.02907 (2016) 11. Kumar, M., Dredze, M., Coppersmith, G., De Choudhury, M.: Detecting changes in suicide content manifested in social media following celebrity suicides. In: Pro-ceedings of the 26th ACM conference on Hypertext & Social Media. pp. 85–94 (2015) 12. Lazarus, R.S.: Stress, appraisal, and coping, vol. 445. Springer (1984) 13. Lee, D., Son, S., Jeon, H., Kim, S., Han, J.: Towards suicide prevention from bipolar disorder with temporal symptom-aware multitask learning. In: Proceedings of the 29th ACM SIGKDD conference on knowledge discovery and data mining. pp. 4357–4369 (2023) 14. Li, J., Wang, X., Li, H., Yan, Y., Leong, H.V., Feng, L., Yu, N.X., Li, Q.: Protective factor-aware dynamic influence learning for suicide risk prediction on social media. arXiv preprint arXiv:2507.10008 (2025) 15. Li, J., Wang, X., Yan, Y., Li, H., Leong, H.V., Yu, N.X., Li, Q.: Dynaprotect: A dynamic factor influence learning framework for protective factor-aware suicide risk prediction. In: Companion Proceedings of the ACM on Web Conference 2025. pp. 1785–1791 (2025) 16. Li, J., Yan, Z., Lin, Z., Liu, X., Leong, H.V., Yu, N.X., Li, Q.: Suicide ideation detection on social media during covid-19 via adversarial and multi-task learning. In: Asia-Pacific Web (APWeb) and Web-Age Information Management (WAIM) Joint International Conference on Web and Big Data. pp. 140–145. Springer (2021) 17. Li, J., Zhao, Q.: Suicidal comment tree dataset: Enhancing risk assessment and prediction through contextual analysis. arXiv preprint arXiv:2510.14395 (2025) 18. Mesoudi, A.: The cultural dynamics of copycat suicide. PLoS One 4(9), e7252 (2009) 19. Pearl, J.: Causality: Models, reasoning, and inference/cambridge univ (2000) 20. Pearl, J.: Causality. Cambridge university press (2009) 21. Pearl, J., Glymour, M., Jewell, N.P.: Causal inference in statistics: A primer. John Wiley & Sons (2016) 22. Pennebaker, J.W., Boyd, R.L., Jordan, K., Blackburn, K.: The development and psychometric properties of liwc2015 (2015) 23. Plutchik, R.: A general psychoevolutionary theory of emotion. In: Theories of emo-tion, pp. 3–33. Elsevier (1980) 24. Sawhney, R., Agarwal, S., Neerkaje, A.T., Aletras, N., Nakov, P., Flek, L.: Towards suicide ideation detection through online conversational context. In: Proceedings of the 45th international ACM SIGIR conference on research and development in information retrieval. pp. 1716–1727 (2022) 25. Sawhney, R., Joshi, H., Flek, L., Shah, R.: Phase: Learning emotional phase-aware representations for suicide ideation detection on social media. In: Proceedings of the 16th conference of the European Chapter of the Association for Computational Linguistics: main volume. pp. 2415–2428 (2021) 26. Sawhney, R., Joshi, H., Gandhi, S., Shah, R.: A time-aware transformer based model for suicide ideation detection on social media. In: Proceedings of the 2020 conference on empirical methods in natural language processing (EMNLP). pp. 7685–7697 (2020) MACR 17 27. Sawhney, R., Joshi, H., Gandhi, S., Shah, R.R.: Towards ordinal suicide ideation detectionon social media. In: Proceedings of 14th ACM International Conference On Web Search And Data Mining. WSDM ’21, Association for Computing Ma-chinery, New York, NY, USA (Mar 2021) 28. Sawhney, R., Joshi, H., Shah, R., Flek, L.: Suicide ideation detection via social and temporal user representations using hyperbolic learning. In: Proceedings of the 2021 conference of the North American Chapter of the Association for Com-putational Linguistics: human language technologies. pp. 2176–2190 (2021) 29. Tian, B., Cao, Y., Zhang, Y., Xing, C.: Debiasing nlu models via causal intervention and counterfactual reasoning. In: Proceedings of the AAAI Conference on Artificial Intelligence. vol. 36, pp. 11376–11384 (2022) 30. Veličković, P., Cucurull, G., Casanova, A., Romero, A., Lio, P., Bengio, Y.: Graph attention networks. arXiv preprint arXiv:1710.10903 (2017) 31. Wang, L., Yang, N., Huang, X., Jiao, B., Yang, L., Jiang, D., Majumder, R., Wei, F.: Text embeddings by weakly-supervised contrastive pre-training. arXiv preprint arXiv:2212.03533 (2022)
