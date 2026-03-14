@@ -1,0 +1,628 @@
+Title: ProvAgent: Threat Detection Based on Identity-Behavior Binding and Multi-Agent Collaborative Attack Investigation
+
+URL Source: https://arxiv.org/pdf/2603.09358v1
+
+Published Time: Wed, 11 Mar 2026 00:46:21 GMT
+
+Number of Pages: 20
+
+Markdown Content:
+# ProvAgent: Threat Detection Based on Identity-Behavior Binding and Multi-Agent Collaborative Attack Investigation 
+
+# Wenhao Yan 1,2 , Ning An 1,2 , Linxu Li 1,2 , Bingsheng Bi 1,2 , Bo Jiang 1,2 
+
+# Zhigang Lu 1,2 , Baoxu Liu 1,2 , Junrong Liu 1,2 , Cong Dong 3
+
+> 1
+
+# Institute of Information Engineering, Chinese Academy of Sciences 
+
+> 2
+
+# University of Chinese Academy of Sciences 3Zhongguancun Laboratory 
+
+# Abstract 
+
+Advanced Persistent Threats (APTs) pose critical challenges to modern cybersecurity due to their multi-stage and stealthy nature. While provenance-based detection approaches show promise in capturing causal attack semantics, current threat provenance practices face two paradoxical issues: (1) ex-pert skepticism, where human analysts doubt the capability of traditional detection models to identify complex attacks; and (2) expert dependence, as analysts cannot manually pro-cess large-scale raw logs to detect threats without these mod-els. Consequently, collaboration between humans and tradi-tional models remains the prevailing paradigm. However, this renders investigation quality contingent upon human exper-tise and frequently results in alert fatigue. To address these challenges, we present ProvAgent, a framework that evolves the threat provenance paradigm from human-model collab-oration to a novel collaboration between multi-agent sys-tems and traditional models. ProvAgent leverages the speed and cost-efficiency of traditional models for initial anomaly screening over large-scale logs. By enforcing fine-grained identity-behavior consistency via graph contrastive learning, it profiles entities based on specific attributes to generate high-fidelity alerts. With these alerts serving as investiga-tion entry points, ProvAgent achieves in-depth autonomous investigation through a hypothesis-verification multi-agent framework. Evaluations with real-world datasets demonstrate that ProvAgent outperforms six state-of-the-art (SOTA) base-lines in anomaly detection. Through automated investigation, ProvAgent reconstructs near-complete attack processes at a minimum cost of $0.06 per day. 
+
+# 1 Introduction 
+
+Advanced Persistent Threats (APTs) have emerged as a paramount challenge in modern cybersecurity, posing severe risks to large-scale enterprises and governmental defense institutions [1 – 3]. The inherent complexity of these multi-stage campaigns, characterized by strategic evasion and so-phisticated tactics, frequently renders traditional detection methodologies ineffective. Consequently, current industrial and academic research has pivoted toward Provenance-based Endpoint Detection and Response (P-EDR) systems [4 –6]. In contrast to conventional EDR solutions that operate on isolated events, provenance-based approaches capture rich causal semantics by modeling dependencies among funda-mental system entities such as processes, files, and socket. By formalizing system activities as provenance graphs, P-EDR enables reasoning about long-term, multi-stage attack behav-iors. This graph-centric paradigm empowers defenders to reconstruct complete attack narratives and expose stealthy ad-versarial operations that appear benign in isolation but reveal malicious intent within their causal context. Existing provenance-graph-based approaches for APT de-tection can be classified into three categories: (1) Heuristic-based approaches [7 –12] rely on predefined expert rules or TTP mappings, yet exhibit inherent fragility when con-fronting zero-day exploits and polymorphic adversarial vari-ants. (2) Anomaly-based approaches [13 –28] leverage graph neural networks to characterize benign behavioral baselines. Yet, these methods frequently misinterpret legitimate oper-ational heterogeneity as anomalies and yield opaque alerts devoid of contextual explainability. This necessitates labor-intensive manual retrieval across voluminous audit logs to correlate disparate events for alert validation. (3) LLM-based approaches [29 –33] attempt to incorporate large language models into the provenance analysis pipeline, but most exist-ing frameworks employ LLMs primarily as direct classifiers. This practice incurs prohibitive computational overhead and detection latency while restricting contextual reasoning to localized subgraphs, thereby precluding the synthesis of a global attack narrative across massive audit data. Although these systems have demonstrated impressive ca-pabilities in threat detection, a significant cognitive gap re-mains in real-world scenarios. Security Operations Centers (SOCs) still rely heavily on human expertise to decipher com-plex alerts, as human analysts possess the multi-step retro-spective reasoning and causal inference skills that current models lack [34]. Nevertheless, alert fatigue continues to 1
+
+> arXiv:2603.09358v1 [cs.CR] 10 Mar 2026
+
+plague operational workflows, forcing analysts to manually validate disparate alerts and incurring prohibitive labor costs. While existing alert correlation techniques [35 –38] attempt to alleviate this burden, they generally lack the capacity for active threat investigation and deep reasoning. As a result, these methods fail to satisfy the complex requirements of automated attack provenance and reconstruction. To address these challenges, we present ProvAgent, a novel threat provenance paradigm that synergizes multi-agent sys-tems with traditional models. Designed to simulate the cogni-tive collaboration mechanisms within a Security Operations Center (SOC), ProvAgent aims to achieve effective threat de-tection and APT reconstruction. ProvAgent comprises two key components: the Entity-Profile-based Detection (EPD) module and the Multi-Agent Investigation (MAI) module. EPD performs rapid threat detection from audit logs, priori-tizing high-fidelity alerts with minimal false positives. Sub-sequently, MAI emulates the collaborative dynamics among human experts to conduct in-depth analysis and validation of the threats identified by EPD. Specifically, during the threat detection phase, EPD em-ploys graph contrastive learning to model the intrinsic rela-tionship between the identities of system entities and their be-haviors. It captures consistent behavior patterns exhibited by entities with specific identities, such as processes with partic-ular names, files at specific paths, or sockets bound to specific ports, across different time periods. EPD detects anomalies by contrasting observed behaviors against the learned identity profiles. During the attack investigation phase, MAI reduces reliance on human analysts with uncertain expertise by introducing large language models that possess robust reasoning capabili-ties and deep domain knowledge. By orchestrating a team of agents equipped with independent reasoning and collaborative investigation capabilities, MAI achieves iterative reasoning and evidentiary cross-validation. This process operates within a closed-loop "hypothesis-verification" framework, supported by a benign behavior reference system, to reconstruct com-plete attack steps. We conducted a comprehensive evaluation on the pub-lic datasets from DARPA E3 [39], E5 [40], and OpTC [41], demonstrating that ProvAgent’s anomaly detection capabil-ities surpass existing state-of-the-art (SOTA) methods. By leveraging alerts generated by EPD as investigative leads, ProvAgent precisely identifies false positives and expands upon established clues to uncover genuine attacks that were initially missed by EPD. In summary, this paper makes the following contributions: • We construct a synergistic framework that combines the efficiency and cost-effectiveness of traditional models in alert generation with the robust reasoning capabilities of a multi-agent architecture. • We propose Entity-Profile-based Detection (EPD), which leverages Graph Contrastive Learning to enforce fine-grained identity-behavior binding to generate high-fidelity alerts. • We propose a multi-agent framework (MAI) that leverages the powerful reasoning capabilities of LLMs to conduct in-depth APT analysis, eliminating false positives and un-covering missed detections. • We conducted a comprehensive evaluation using real-world datasets, demonstrating the effectiveness and cost-effectiveness of ProvAgent in detecting APTs. 
+
+# 2 Background 2.1 Excessive Alert Noise 
+
+Most existing approaches attempt to reconstruct complete APT attack chains solely through automated detection mod-els. However, achieving comprehensive and accurate APT detection without human-in-the-loop intervention remains nearly impossible with simple models alone [34]. To demon-strate effectiveness, these methods have become excessively focused on optimizing Recall and F1-score metrics, often in-corporating high-volume events such as port scanning during lateral movement as detection targets and characterizing them as APT attacks. While the sheer volume of port scanning events can inflate performance metrics and obscure the actual precision deficits in detecting genuine APT behaviors, this practice fundamentally deviates from the fundamental goals of APT detection. In reality, these are not the alerts we truly need. Every alert generated by EDR necessitates complex investigation and verification by a professional security analyst. In real-world SOC scenarios, analysts are overwhelmed by this massive volume of low-quality alerts. Therefore, we argue that the core task of EDR is to identify critical attack pivot points with minimal false positives, rather than attempting to uncover the entire attack surface. 
+
+The lack of Identity-Behavior consistency leads to high false positives. Methods such as ShadeWatcher [42], Kairos [23], and Orthrus [43] employ GNNs and causal analy-sis to learn the interaction patterns of system entities; however, they overlook the consistency between an entity’s behavior and its identity. These approaches primarily focus on captur-ing topological dependency structures, causing the models to target topological anomalies. Consequently, it becomes dif-ficult to distinguish benign administrative operations from malicious attacks that exhibit similar interaction patterns, re-sulting in numerous false positives. While prior works such as Threatrace [20], Flash [22], and OCR-APT [38] have noted the importance of Identity-Behavior consistency, they merely correlate behavior with coarse-grained identity information. Specifically, node types such as file , subject , and netflow . How-ever, even nodes within the same category may perform com-pletely disparate operations in reality. For instance, while both 
+
+cat and nginx processes belong to the subject category, cat 
+
+2typically involves file reading, whereas nginx involves net-work operations. While capable of detecting some anomalies, this coarse-grained binding inevitably generates excessive high-confidence false positives. 
+
+# 2.2 Superficial investigation 
+
+Even when the core pivot points of an APT attack are de-tected, this remains far from sufficient. Existing methods such as WATSON [36], ATLAS [35], Flash [22], Sentient [37], and Orthrus [43] attempt to use graph algorithms to correlate alerts and construct extensive alert graphs. However, these graphs suffer from significant false negatives and contain numerous false positives, implying that SOCs still rely on manual threat investigation and analysis. As previously mentioned, threat in-vestigation and analysis by human experts is an indispensable part of APT attribution due to the highly complex and stealthy nature of these attacks. Nevertheless, since APT attacks are extremely rare events, security analysts often spend prolonged periods repeatedly ruling out false positives, which can, to some extent, lead to alert fatigue and relaxed vigilance. Employing LLMs, which possess extensive cross-domain knowledge including security expertise [44 –46], to replace human security analysts in threat investigation and analysis appears to offer a solution to this challenge. While OCR-APT [38] attempts to leverage LLM capabilities to correlate alerts and generate human-readable reports, it restricts the model to the role of an expert advisor within a predefined workflow, where it lacks autonomous investigative authority and collaborative investigative capabilities. The efficacy of the reporting mechanism is inherently limited by the granularity of the ingested alerts. In this case, the system exhibited a bias toward noisy, low-level events like port scanning, while simultaneously overlooking the critical stages of the attack. As illustrated in Figure 1, We believe that LLMs possessing extensive background knowledge should not merely function as security advisors (judging anomaly probabilities based only on Isolated data). Instead, they should be integrated into the security investigation process as active security analysts, granted actual investigative authority and investigative capa-bilities. 
+
+# 2.3 Threat Model 
+
+We consider a sophisticated adversary that can exploit zero-day vulnerabilities and employ Living-off-the-Land (LotL) 
+
+tactics to evade detection. Such adversaries may mimic be-nign behavioral patterns to achieve semantic masking. Nev-ertheless, accomplishing malicious objectives still requires interacting with system resources, which leaves immutable causal dependencies in provenance telemetry. Following prior work [22, 23], we treat the OS kernel and its auditing frame-work as the Trusted Computing Base (TCB) and assume that once generated and collected, audit logs cannot be tampered Assume you are a security  
+
+> expert tasked with determining
+> whether anomalies exist based
+> on { information }.
+> I consider this
+> to be abnormal.
+> Response
+> Questions
+> LLM
+> Capabilities Advisor Analyst
+> Investigative
+> Authority
+> Investigative
+> Capabilities
+> Environment
+> Interact
+
+Figure 1: Comparison between the Security Advisor mode and the proposed Active Security Analyst framework. with, making the provenance data trustworthy throughout our pipeline. We also assume a short benign period to initialize behavioral profiles. Attacks targeting hardware, physical side channels, or the integrity of the TCB are out of scope. 
+
+# 3 The Entity-Profile-based Detection (EPD) 4 System Architecture 
+
+ProvAgent comprises two complementary modules that syner-gize to achieve both breadth and depth in threat investigation. As illustrated in Figure 2, the Entity-Profile-based Detection (EPD) module constructs a cost-effective and efficient P-EDR system that analyzes massive raw audit logs to generate high-quality alerts. As shown in Figure 3, the Multi-Agent Inves-tigation (MAI) module then conducts in-depth analysis by leveraging these alerts as initial leads, performing iterative reasoning with enriched contextual information to identify false positives and reveal missed attacks initially overlooked by the detection system. Ultimately enabling complete attack reconstruction. The Entity-Profile-based Detection (EPD) module first constructs provenance graphs from massive audit logs, then leverages GNNs to capture behavioral features and gener-ate node embeddings. During training on benign provenance graphs, EPD optimizes embeddings by pulling together nodes with similar identities while pushing apart dissimilar ones. These learned embeddings establish entity profiles that en-code identity-behavior patterns of benign entities, serving as baselines for anomaly detection. EPD detects anomalies by assessing identity-behavior consistency, where nodes exhibit-33. Detection       
+
+> Benign
+> logs
+> sh
+> nginx
+> sh
+> nginx
+> nginx
+> sh
+> 1. Graph Construction & Initialization 1v2v4v2v4v1v4v2. Similarity Structure Learning 2v
+> nginx sh 4v2v
+> Training
+> Detected
+> logs
+> Trained
+> GNN
+> GNN
+> Query 2u1u1v2vNearest
+> cluster
+> sh
+> nginx
+> sh
+> nginx
+> nginx
+> nginx
+> Graph DB 1u2u3v3v1v1v3v3v4v
+> Storage 4v
+
+Figure 2: Architecture of the Entity-Profile-based Detection (EPD) module. ing behaviors resembling entities with different identities in the benign repository signal potential threats. Notably, this ap-proach enables explainable attribution, as the matched benign identity provides interpretable explanations for the anomalous behavior. Beyond generating high-quality alerts, EPD main-tains a graph database containing node behavioral embeddings and raw provenance data. The alerts serve as investigation leads, while the graph database provides comprehensive foren-sic materials for subsequent security analysis. The Multi-Agent Investigation (MAI) module employs a collaborative multi-agent architecture that drives autonomous investigation through a "Hypothesis-Verification" closed-loop framework. This mechanism enables the system to transcend passive alert processing by proactively formulating strategic hypotheses regarding missing attack links or potential false positives. It subsequently directs agents to verify these hy-potheses through evidence retrieval to sustain an iterative reasoning process. To ensure rigorous validation, MAI fur-ther incorporates a validation mechanism grounded in benign behavioral references. By contrasting suspicious behaviors against a knowledge base of benign profiles, the module can distinguishes operational heterogeneity from genuine attacks. This collaborative and self-correcting approach, supported by a shared investigation repository, mitigates single-point hallucinations and ensures the generation of high-fidelity, analyst-oriented reports. 
+
+# 4.1 Graph Construction & Initialization 
+
+ProvAgent ingests raw audit logs from diverse monitoring frameworks such as Linux Audit [47], Event Tracing for Win-dows (ETW) [48], CamFlow [49], and eAudit [50], and con-structs provenance graphs G = ( V , E) that capture causal dependencies across system operations. Each node v ∈ V rep-resents a system entity (process, file, socket), while directed edges e = ( vi, v j) ∈ E encode causal interactions derived from system calls (e.g., READ , WRITE , EXECUTE ). To mitigate the dependency explosion problem [43] caused by high-frequency repetitive operations, we apply edge aggre-gation to merge redundant interactions. Specifically, multiple edges with identical source, destination, and operation type within a sliding temporal window are collapsed into a single weighted edge, preserving causal semantics while reducing graph complexity. Node initialization combines three complementary feature encodings to capture multi-faceted behavioral characteristics: semantic attributes, action distributions, and temporal patterns. This multi-modal representation forms the foundation for subsequent discriminative metric learning. 
+
+Semantic Encoding. We extract domain-specific semantic attributes from each node based on its entity type, includ-ing process name for processes, file paths for files, and IP-port tuples for sockets. To preserve local operational context, we construct structured summaries by concatenating each node’s intrinsic attributes with operation types from its 1-hop neighborhood in temporal order. A Word2Vec [51] skip-gram model trained on these summaries learns distributed represen-tations xsem  
+
+> i
+
+∈ Rds that jointly encode semantic attributes and behavioral context. 
+
+Action Frequency Encoding. We quantify behavioral charac-teristics through operation frequency distributions. For node 
+
+vi, we compute a histogram over predefined action categories (e.g., READ , WRITE , EXECUTE ). Let ci = [ c1, c2, . . . , ck] denote the raw count vector where c j represents the frequency of action type j associated with vi. To ensure scale invariance and prevent high-volume benign activities from dominating the feature space, we apply ℓ2 normalization: 
+
+xact  
+
+> i
+
+= ci
+
+∥ci∥2
+
+= [c1, c2, . . . , ck]
+
+q
+
+∑kj=1 c2
+
+> j
+
+. (1) 
+
+Temporal Statistics Encoding. We characterize temporal regularities through inter-event idle period analysis. For a chronologically ordered event sequence involving node vi
+
+4with timestamps {t1,t2, . . . , tm}, we derive the idle period se-quence Ii = {∆tk = tk+1 − tk | k = 1, . . . , m − 1}. To summa-rize the temporal distribution, we extract a statistical vec-tor si = [ min (Ii), max (Ii), mean (Ii)] , reflecting activity bursti-ness and regularity. We apply min-max normalization to project these statistics into the [0, 1] range: 
+
+xtmp  
+
+> i
+
+= si − min (si)
+
+max (si) − min (si) . (2) The final initial feature representation h(0) 
+
+> i
+
+for node vi is obtained by concatenating the semantic, behavioral, and tem-poral components: 
+
+h(0) 
+
+> i
+
+= xsem  
+
+> i
+
+∥ xact  
+
+> i
+
+∥ xtmp  
+
+> i
+
+, (3) where ∥ denotes the concatenation operation. 
+
+# 4.2 Similarity Structure Learning 
+
+We argue that entity identity governs behavioral patterns, such that entities with identical identities should demonstrate con-sistent or similar behaviors over time. In contrast to previ-ous approaches like ThreaTrace [20], Flash [22], and OCR-APT [38] that employ coarse-grained categories to define identity, we adopt a fine-grained redefinition based on key entity attributes. As shown in Table 1, ProvAgent defines distinct identity criteria for each fundamental entity type in provenance graphs, including subject, file, and netflow. However, the domain-knowledge-based entity identities result in a large number of distinct identity classes, making conventional node classification tasks inadequate for effec-tively binding identity with behavioral patterns. To address this challenge, ProvAgent introduces a representation learn-ing framework that integrates graph structural learning with a metric learning objective. To capture the complex dependencies within provenance graphs, ProvAgent employs a Graph Neural Network (GNN) backbone to extract structural semantic contexts. Specifically, we treat the provenance graph as a directed graph where each system entity acts as a node with initial attributes. The GNN updates node embeddings via an iterative message-passing mechanism. At the l-th layer, the representation of node vi is updated by aggregating information from its local neighbor-hood: 
+
+h(l+1) 
+
+> i
+
+= σ
+
+
+
+W(l) · AGG 
+
+n 
+
+h(l) 
+
+> j
+
+| v j ∈ N (i) ∪ { vi}
+
+o 
+
+, (4) where h(l) 
+
+> i
+
+denotes the latent state of node vi at layer l (with 
+
+h(0) 
+
+> i
+
+being the initial feature vector), N (i) represents the set of immediate neighbors, and AGG (·) is a permutation-invariant aggregation function (e.g., mean or sum pooling). W(l) is the learnable weight matrix, and σ(·) serves as the non-linear activation function. After L layers of propagation, the final embedding zi = h(L) 
+
+> i
+
+encodes both the intrinsic attributes and the multi-hop structural context of the entity. To encode the core behavioral patterns associated with spe-cific identities into the node embeddings, ProvAgent employs a contrastive metric learning strategy. The primary objective is to pull together nodes of the same identity while push-ing apart nodes of different identities in the latent space. We achieve this with an InfoNCE loss [52]. For each anchor node vi, we sample a positive node vp that shares the same identity (or behavioral semantics) and treat the remaining nodes in the mini-batch as negatives. The train-ing objective maximizes the similarity between the anchor and its positive relative to all negatives. Let φi j = s(zi, z j)/τ
+
+denote the temperature-scaled similarity, then: 
+
+## Lnce = − ∑
+
+> (vi,vp)∈P
+
+log exp (φip )
+
+exp (φip ) + ∑vn∈Ni exp (φin ) , (5) where P denotes the set of anchor-positive pairs, Ni is the set of negatives for vi within the mini-batch, s(·, ·) is the cosine similarity, and τ is the temperature parameter. By minimizing this loss, ProvAgent enforces a discriminative embedding space that tightly clusters identical identities while separating distinct ones, thereby binding identity semantics to behavior. 
+
+# 4.3 Detection 
+
+In contrast to prior approaches, ProvAgent performs anomaly detection grounded in the hypothesis that entities sharing the same identity exhibit similar behavioral patterns . It first creates a behavioral reference library by collecting extensive benign audit logs in controlled environments to capture legit-imate behaviors across diverse identities. During detection, ProvAgent infers the expected identity of a target node based on its observed behavior and compares it with the node’s declared identity attributes. Specifically, any inconsistency where observed actions contradict the declared identity indi-cates an anomaly. This method facilitates explainable detec-tion by revealing the specific behavioral evidence for each alert. For instance, if a declared nginx process behaves like the find utility, analysts can directly trace the anomaly to the mismatch between the observed file-searching behavior and the declared web server role. 
+
+Benign Behavioral Profiling. To enable zero-shot anomaly detection without prior knowledge of attack signatures, we first establish a comprehensive behavioral baseline by map-ping system entities from benign execution traces into the feature space using the pre-trained GNN encoder. This pro-cess generates a repository of latent embeddings zi ∈ Rd that encapsulate the legitimate operational patterns of diverse sys-tem identities. To support both high-efficiency retrieval and in-depth forensics, we construct a retrieval-augmented knowl-edge base that indexes these behavioral embeddings alongside their raw provenance metadata. 5Entity Type Key Attribute Example Description 
+
+subject Process name subject::nginx Identical process names indicate the same program logic netflow Service port net::80 Port numbers indicate similar network ser-vices or application protocols file File name file::nginx.conf Path patterns and filenames reflect similar functional roles Table 1: Identity criteria for different entity types in provenance graphs. ProvAgent distinguishes entity identities based on fine-grained key attributes rather than coarse-grained categorical labels. We formalize the expected behavioral boundary for each se-mantic identity c (as defined in Table 1) as a high-dimensional hypersphere. Let Zc = {zc
+
+> 1
+
+, . . . , zcNc } denote the set of refer-ence embeddings for a specific identity category in the benign dataset. We characterize the core behavioral pattern of c using a geometric centroid μc:
+
+μc = 1
+
+NcNc
+
+# ∑
+
+> i=1
+
+zci . (6) During the profiling stage, ProvAgent learns identity-specific behavioral deviation patterns from benign data and adopts the corresponding hypersphere radius as an explicit metric to quantify the magnitude of deviation tolerated by each identity class. Accordingly, we define the radius Rc as: 
+
+Rc = min 
+
+n
+
+r 1
+
+NcNc
+
+# ∑
+
+> i=1
+
+I ∥zci − μc∥2 ≤ r ≥ 1 − ε
+
+o
+
+, (7) where ε ∈ (0, 1) controls the fraction of benign nodes per-mitted to fall outside the behavioral boundary. Intuitively, 
+
+Rc corresponds to the smallest radius that encloses at least a 
+
+(1 − ε) portion of benign samples. 
+
+Identity-Consistency Violation Detection. During online monitoring, ProvAgent transforms threat detection into a ge-ometric containment problem. For an incoming test node v j
+
+with claimed identity ˆc, we first compute its behavioral em-bedding z j and identify the best-matching identity prototype: 
+
+c∗ = arg min  
+
+> c
+
+∥z j − μc∥2. (8) We detect identity-behavior consistency violations through two complementary criteria: (1) behavioral deviation, where the node’s embedding falls outside the benign hypersphere of its claimed identity ( ∥z j − μˆc∥2 > Rˆc), and (2) identity mismatch, where the best-matching behavioral prototype c∗
+
+diverges from the declared identity ˆc, indicating the entity ex-hibits behavioral patterns characteristic of a different identity class. Formally, we define the deviation distance d j = ∥z j − μˆc∥2
+
+as the Euclidean distance between the node’s embedding and GNN    
+
+> Reference Benign
+> Provenance Graph  PG with Structural
+> Encoding
+> To -be -Detected
+> Provenance Graph
+> Offline storage
+> Online Detection
+> GNN
+> PG with Structural
+> Encoding
+> Retrieve specific behavioral
+> information related to IOCs .
+> Retrieve
+> Graph DB
+> Investigator Analyst
+> Reporter Leader
+> Shared
+> Memory
+> Associated IOCs
+> Analysis
+> Key Difference
+> Analysis
+> Verificatio n of
+> the kill chain
+> Human -Friendly
+> Report
+> Clues
+> Alert
+> Clues
+
+Figure 3: Multi-Agent Investigation (MAI) as a closed-loop provenance-driven investigation pipeline. its claimed identity prototype. Entities satisfying both d j ≤ Rˆc
+
+and c∗ = ˆc are classified as benign operational variations. Con-versely, violation of either criterion signals behavioral anoma-lies fundamentally incompatible with the declared identity. 
+
+# 5 Multi-Agent Investigation (MAI) 
+
+To bridge the gap between automated investigation and expert-level reasoning, we propose a multi-agent investigation frame-work that elevates raw alerts into comprehensive attack nar-ratives. As illustrated in Figure 3, our architecture orches-trates four specialized agents, namely the Analyst , Investiga-tor , Leader , and Reporter , around a centralized investigation repository, which serves as a shared investigation state to keep all agents aligned on validated IOCs, reconstructed at-tack events, supporting evidence, and strategic hypotheses. In contrast to workflow-driven systems that follow rigid in-vestigation sequences (e.g., OCR-APT [38]), MAI adopts 6a hypothesis-driven closed-loop architecture that coordi-nates strategic reasoning with evidence-grounded validation through iterative feedback. This design addresses key chal-lenges in autonomous threat investigation along four aspects. 
+
+Iterative Hypothesis-Driven Investigation. Human analysts typically iterate between hypothesis and verification rather than drawing conclusions in a single pass. By separating strategic reasoning ( Leader ) from tactical validation ( Ana-lyst , Investigator ), MAI supports iterative refinement. The 
+
+Leader formulates falsifiable hypotheses about missing attack stages or suspicious IOCs, and the Analyst and Investigator 
+
+gather and assess evidence to validate or refute them. This closed-loop process mirrors expert workflows that revise in-terpretations as new evidence emerges. 
+
+Multi-Perspective Analytical Scrutiny. MAI implements complementary perspectives through role specialization. The 
+
+Investigator reconstructs atomic operations at the event level, while the Leader reasons at the campaign level to identify gaps and inconsistencies. The Analyst acts as a validation gatekeeper, preventing both tactical false positives and unsup-ported strategic speculation from entering the durable IOC set. This separation avoids conflating operational details with campaign-level inference and reduces local bias and globally inconsistent conclusions. 
+
+Collaborative Hallucination Mitigation. Single-agent LLM pipelines can suffer from error propagation, where early in-correct inferences bias later steps. MAI mitigates this through cross-agent verification. Hypotheses from the Leader and leads surfaced by the Investigator must pass Analyst scrutiny before IOC admission. The Leader also performs global con-sistency checks over accumulated IOCs and events, triggering re-examination when gaps or contradictions arise. A shared investigation repository keeps agents aligned on validated arti-facts and supporting evidence, preventing divergent reasoning trajectories. 
+
+Evidence-Driven Termination. MAI uses evidence-driven termination criteria to avoid premature conclusions and un-bounded loops. The investigation stops when either (1) the accumulated IOCs form a coherent kill-chain narrative with no remaining actionable gaps, or (2) all testable hypotheses are exhausted without producing new validated IOCs. By constraining hypotheses with domain rules so that they ref-erence existing IOC metadata and admit falsifiable checks, MAI naturally converges once no further evidence-consistent hypotheses remain. 
+
+# 5.1 Hypothesis–Verification Orchestration 
+
+MAI operates on typed artifacts and examines and validates IOCs from multiple perspectives, with a centralized investi-gation repository serving as a shared investigation state. This shared state stores not only validated IOCs but also their sup-porting provenance evidence and enrichment metadata, and is continuously updated as the investigation evolves. Starting from an alert, MAI proceeds through four stages: ① MAI validates whether the alert reflects a genuine anomaly; ②
+
+MAI expands from validated IOCs to uncover multi-stage behaviors and surface new leads; ③ MAI synthesizes and corrects the global narrative by pruning spurious IOCs and hypothesizing missing steps; and ④ MAI compiles the final analyst-facing report. 
+
+Stage 1: Preliminary IOC identification. To narrow the investigation scope, the Analyst first validates the high-confidence alerts generated by the EPD module. For each alerted entity, the Analyst considers both its identity attributes and observed behavioral characteristics, and retrieves corre-sponding benign behaviors and similar behavior chains from a benign reference repository. By comparing the target entity with benign counterparts, the Analyst determines whether the observed behavioral differences arise from normal operational heterogeneity or from genuine malicious activity, thereby fil-tering out incidental anomalies caused by legitimate behavior variations. Entities whose behaviors are validated as attack-related are preliminarily identified as IOCs and recorded in the shared repository. 
+
+Stage 2: Event-level investigation and controlled expan-sion. Based on the preliminarily identified IOCs, the Inves-tigator conducts event-level analysis over the provenance neighborhood to infer attack events and uncover attack leads, namely attack-related neighboring entities that are not directly revealed by the original alerts. Each lead must be validated by the Analyst before it can be admitted into the persistent IOC set. Once a lead is confirmed as an IOC, the Investigator is re-invoked to infer its associated attack events and to discover new leads. This expansion loop continues until all confirmed IOCs have been fully investigated, thereby improving cover-age of multi-step attack activities. All validated findings are ultimately stored in the shared repository to support collabo-rative analysis across agents. 
+
+Stage 3: Strategic reasoning and loop validation. Specifi-cally, the Leader performs a global analysis over all prelim-inarily identified attack behaviors by leveraging the shared repository, and attempts to organize these fragmented behav-iors into a coherent attack kill chain. During this process, the Leader reasons about attack steps from an attacker-oriented and strategic perspective, guided by the already inferred attack behaviors. Based on this strategic reasoning and the outcomes of preliminary investigations, the Leader generates explicit hypotheses. Typical hypotheses include that some preliminar-ily identified attack behaviors or IOCs may be false positives because they cannot be integrated into a plausible kill chain, or that discontinuities in the inferred attack chain indicate missing attack behaviors. The Leader then feeds these hypotheses back to the Investi-gator and the Analyst in the form of targeted leads, driving them to conduct focused validation. Hypotheses that are val-idated through this process are incorporated into the shared repository, while unsupported ones are discarded. To bound 7the hypothesis space, the Leader uses domain-specific infor-mation associated with IOCs to define the scope of hypothesis generation. When all leads are exhausted and the attack chain remains unexplained, the Leader terminates hypothesis gener-ation and treats the remaining attack determinations as false positives. Conversely, when a coherent attack chain can be es-tablished, the Leader also stops further hypothesis generation. 
+
+Stage 4: Analyst-facing report synthesis. Finally, the Re-porter transforms the consolidated shared repository into human-readable provenance reports for security analysts, pre-senting evidence-grounded attack narratives. 
+
+# 5.2 The Multi-Agents 
+
+Analyst Agent. The Analyst functions as an evidence-based gatekeeper within the investigation pipeline, tasked with vali-dating anomalies. Upon encountering an alert or suspicious lead, the Analyst conducts a fine-grained behavioral compar-ison by retrieving similar benign entities from a reference repository using a dual-mode matching strategy. This ap-proach combines attribute-based string matching to locate en-tities with comparable identity characteristics and embedding-based vector similarity search to identify behaviorally anal-ogous counterparts. By contrasting the provenance traces of the target against these benign baselines, the Analyst discrim-inates genuine malicious deviations from benign operational heterogeneity. Consequently, only entities exhibiting behav-ioral anomalies that cannot be reconciled with legitimate vari-ations are escalated to the investigation repository. This rigor-ous filtering process eliminates spurious alerts arising from normal system diversity and establishes a high-confidence set of threat indicators grounded in evidence from the benign knowledge base. 
+
+Investigator Agent. The Investigator conducts event-level forensic analysis to uncover the tactical execution details of confirmed IOCs. For each validated IOC, the Investiga-tor traverses its temporal event sequences and provenance neighborhood to reconstruct atomic attack operations, such as file exfiltration, privilege escalation, or lateral movement attempts. Beyond documenting attack mechanics, the Investi-gator identifies potentially related neighboring entities (e.g., spawned processes, accessed files, contacted sockets) as new investigative leads. These leads are routed back to the Ana-lyst for validation, establishing a controlled expansion loop that progressively uncovers multi-stage attack activities while preventing unbounded false-positive propagation. The Investi-gator also annotates each IOC with kill chain stage mappings and detailed event descriptions, enriching the contextual un-derstanding for downstream strategic reasoning. 
+
+Leader Agent. The Leader performs strategic-level coordi-nation and global coherence validation. Operating on the collective set of validated IOCs and their enriched metadata, the Leader attempts to synthesize a complete attack narra-tive by mapping fragmented behaviors onto a structured kill chain framework (e.g., reconnaissance, initial access, execu-tion, persistence, lateral movement, exfiltration). When gaps or inconsistencies emerge in the inferred attack sequence, the Leader generates strategic hypotheses from an adversarial per-spective: missing intermediate steps that should logically exist (e.g., if lateral movement is detected but no credential harvest-ing is observed, the Leader hypothesizes potential credential theft activities), or potentially spurious IOCs that cannot be coherently integrated into the narrative (indicating possible false positives). These hypotheses are formulated as directed investigative tasks and dispatched to the Investigator and Ana-lyst for targeted verification, forming a closed-loop refinement cycle. The Leader terminates hypothesis generation when ei-ther a coherent end-to-end attack chain is established or all plausible hypotheses have been exhausted, thereby preventing infinite investigative loops. 
+
+Reporter Agent. The Reporter transforms the investigation repository into analyst-ready reports by organizing validated IOCs into a coherent attack narrative, constructing a prove-nance graph grounded in event evidence, and summarizing actionable remediation guidance.                                                                                                                      
+
+> Dataset System TP FP TN FN
+> DARPA E3 CADETS ProvAgent 19 1,941 266,144 53 Threatrace 61 252,117 15,968 7Kairos 09268,076 68 Flash 13 2,381 265,704 55 MAGIC 63 79,766 188,319 5Orthrus 10 0268,085 58 OCR-APT 53 83,779 184,306 15 DARPA E3 THEIA ProvAgent 71 6,574 692,603 47 Threatrace 88 671,883 27,294 30 Kairos 40699,177 114 Flash 22 32,082 667,095 96 MAGIC 115 394,906 304,271 3Orthrus 80699,177 110 OCR-APT 39 121,339 577,838 79 DARPA E5 CADETS ProvAgent 39 10,272 3,100,983 84 Threatrace 91 3,104,018 7,237 32 Kairos 063,111,249 123 Flash 45 33,941 3,077,314 78 MAGIC 123 3,110,714 541 0Orthrus 153,111,250 122 OCR-APT 101 3,109,967 1,288 22 DARPA E5 THEIA ProvAgent 20 3,131 744,252 49 Threatrace 66 739,322 8,061 3Kairos 02747,381 69 Flash 43 295,729 451,654 26 MAGIC 1296,554 450,829 68 Orthrus 20747,383 67 OCR-APT 57 127,948 619,435 12
+
+Table 2: Detection performance comparison between the EPD module of ProvAgent and sota methods on E3 and E5 datasets. 86 Evaluation 
+
+In this section, experiments are performed to validate ProvAgent’s advantage and answer the following key research questions: • RQ1: How effective is ProvAgent at anomaly detection? • RQ2: How do hyperparameters affect detection perfor-mance? • RQ3: How effective is ProvAgent at attack investigation and reconstruction? • RQ4: How do different components of ProvAgent con-tribute to its detection performance? • RQ5: What is the operational overhead of ProvAgent under realistic workloads? • RQ6: How robust is ProvAgent against mimicry attacks? 
+
+# 6.1 Experimental Setups 
+
+Datasets. We evaluate on three widely used enterprise-scale provenance benchmarks, DARPA Transparent Computing En-gagement 3 (E3), Engagement 5 (E5) 1, and Operationally Transparent Cyber (OPTC). E3 and E5 were collected during DARPA Transparent Computing red team engagement exer-cises and record multi-host, whole-system activity in which multi-stage APT campaigns are embedded within substantial benign background workloads. E5 is generally more challeng-ing than E3 due to its larger scale and more complex, stealthier attack execution. OPTC further increases operational realism and data volume by capturing long-running enterprise activ-ity with severe class imbalance, while red team malicious behaviors are injected into continuous benign telemetry. For evaluation, we adopt the same labeling schemes as Orthrus. 
+
+Baseline Methods. We compare against seven state-of-the-art provenance based threat detection systems, including Kairos [23], ThreaTrace [20], Flash [22], MAGIC [24], Or-thrus [43] and OCR-APT [38]. We exclude methods that do not support node-level detection, such as Unicorn and StreamSpot, because they cannot be evaluated at the same granularity as our approach. We exclude supervised methods that require labeled attack samples (e.g., Slot and ATLAS) because the datasets are extremely imbalanced, with only a small fraction of attack-related nodes, making supervised learning unreliable. We also omit heuristic systems driven mainly by threat intelligence or expert rules (e.g., Holmes and Connan), since their manually crafted knowledge hinders fair and reproducible comparison. 
+
+Implementation. All training and evaluation were conducted on a server running Ubuntu 24.04, equipped with a dual In-tel Xeon Platinum 8558 CPU, 1024 GB of memory, and an NVIDIA H200 GPU with 141GB of memory.                                                                                          
+
+> 1The CLEARSCOPE dataset in the DARPA corpus collects logs from the Android framework. We compared the labels provided by Orthrus with the official DARPA documentation and identified multiple inconsistencies. We therefore exclude the CLEARSCOPE dataset from our evaluation.
+> Dataset System TP FP TN FN
+> OPTC H051 ProvAgent 49 8,902 1,461,608 65 Threatrace 91 1,392,711 77,799 23 Kairos 121,470,508 113 Flash 12 10,031 1,460,479 102 MAGIC 90 241,724 1,228,786 24 Orthrus 001,470,506 114 OCR-APT 56 788,239 682,271 58 OPTC H201 ProvAgent 102 6,988 1,428,041 2,803 Threatrace 2,905 1,435,029 00Kairos 101,435,029 2,904 Flash 1,473 240,117 1,194,912 1,432 MAGIC 1,013 1,222,313 212,716 1,892 Orthrus 141,435,025 2,904 OCR-APT 1,373 79,144 1,355,885 1,532 OPTC H501 ProvAgent 89 9,876 1,425,153 660 Threatrace 242 1,434,987 747 Kairos 121,435,027 748 Flash 221 215,131 1,219,898 528 MAGIC 177 253,984 1,181,045 572 Orthrus 141,435,025 748 OCR-APT 89 9,876 1,425,153 660
+
+Table 3: Detection performance comparison between the EPD module of ProvAgent and sota methods on OPTC datasets. 
+
+# 6.2 Attack Detection Performance (RQ1) 
+
+In the first stage, ProvAgent leverages the EPD module to perform anomaly detection and generate high-quality alerts. As shown in Tables 2 and 3, the overly strict detection strate-gies adopted by Orthrus lead to extremely low detection rates for real attacks, and in some scenarios even result in zero true positives. Consequently, these systems fail to provide any actionable investigative leads for security analysts. In contrast, while ThreatTrace, Flash, MAGIC, and OCR-APT are able to detect certain anomalous behaviors, they also pro-duce an overwhelming number of false positives, imposing a substantial burden on downstream security analysis. By comparison, ProvAgent successfully captures critical attack-related information with a significantly lower false-positive cost. This advantage stems from abandoning conventional edge-reconstruction and node-reconstruction paradigms in favor of a fine-grained identity–behavior binding framework, which performs anomaly detection through identity profiling and thereby mitigates misinterpretations of identity semantics and stereotypical assumptions about behavior. We further analyze the false positives generated by ProvAgent and observe that most of them arise from behav-iorally similar processes being misidentified due to shared low-level system calls. For example, the mv and sleep pro-cesses exhibit nearly identical invocation patterns at the syscall level, which can lead to identity confusion under behavior-based recognition. A more detailed analysis of these 916 32 64 128                             
+
+> 0
+> 10
+> 20
+> 30
+> # of instances
+> 12345e-6 1e-5 5e-5 00.02 0.04 0.08 16 32 64 128
+> 16 32 64 128
+> GNN emb size (z)
+> 0
+> 1
+> 2
+> 3
+> 4
+> GB (left) / Time (right)
+> 1234
+> GNN layers
+> 5e-6 1e-5 5e-5
+> Learning rate
+> 00.02 0.04 0.08
+> Tolerance ratio ( )
+> 16 32 64 128
+> Word2vec emb size (x)
+> 0
+> 2
+> 4
+> 6
+
+Figure 4: Hyperparameter study of ProvAgent on CADETS-E3. We show TP, FP (k), memory consumption (GB), and inference time (s). cases is provided in the appendix D. 
+
+# 6.3 Hyperparameters Study (RQ2) 
+
+We conduct a systematic ablation study to examine how key hyperparameters affect the detection effectiveness and opera-tional cost of P ROV AGENT . We vary one hyperparameter at a time while holding all others fixed, and measure its impact on true positives (TP), false positives (FP), memory footprint, and inference latency. The results are summarized in Figure 4. 
+
+GNN Embedding Dimension ( z). The embedding dimen-sion determines the representational capacity of the graph neural network and its computational overhead. We evaluate 
+
+z ∈ { 16 , 32 , 64 , 128 } and find that z = 32 achieves the best balance between detection accuracy and resource consump-tion. Smaller dimensions fail to capture complex multi-stage attack patterns, while larger dimensions introduce unneces-sary overhead and show early signs of overfitting without accuracy gains. 
+
+Number of GNN Layers. The number of GNN layers con-trols the receptive field over the provenance graph. Shallow models fail to capture long-range dependencies across causal chains, while increasing depth beyond a moderate level leads to over-smoothing and optimization instability. A two-layer configuration achieves the most robust performance. 
+
+Learning Rate. We find that 1 × 10 −5 achieves the best trade-off between convergence speed and detection performance. In contrast, smaller learning rates converge slowly, while larger ones cause loss oscillation and degrade generalization. 
+
+Tolerance Ratio ( ε). The tolerance ratio ε controls the sys-tem’s sensitivity to deviations from benign behavior. Across 
+
+ε ∈ 0, 0.02 , 0.04 , 0.08 , we find that ε = 0.02 yields the best overall performance. Smaller tolerance values lead to in-creased false positives, as a more permissive policy is adopted when constructing identity profiles. In contrast, overly large tolerance values may cause subtle attack behaviors to be missed. 
+
+Word2Vec Embedding Dimension ( x). The Word2Vec em-bedding dimension determines the semantic expressiveness of node attributes, such as process names and file paths. Across x ∈ 16 , 32 , 64 , 128 , we observe that a dimension of 32 achieves the best detection performance. Increasing the em-bedding dimension beyond this point does not yield further im-provements. This is because ProvAgent performs anomaly de-tection under an identity–behavior binding framework: overly rich initial embeddings may allow the model to directly in-fer entity identities from attribute information, reducing its reliance on behavioral patterns. Conversely, when the embed-ding dimension is too small, insufficient attribute information limits the model’s ability to distinguish behavior modules that differ only in attributes, leading to less accurate behavior-based identity recognition. We provide a more detailed analy-sis of this phenomenon in the appendix D. These results indicate that ProvAgent is robust to hyperpa-rameter variations and remains effective at identifying attacks across a wide range of configurations. 
+
+# 6.4 Attack Investigation Performance (RQ3) 
+
+To ensure a fair comparison, we re-executed OCR-APT 2
+
+using its publicly available code [53], replacing only the un-derlying base LLM models to match our evaluation setup. We then compare the attack reports generated by ProvAgent and OCR-APT against the ground-truth reports provided by 
+
+> 2OCR-APT only verifies a subset of attacks in each dataset. Although we attempted to reproduce it on other scenarios, the reports did not reveal any genuine attacks. We attribute this to our lack of expertise and thus omit these results from Table 4.
+
+10 Base Model Dataset System Attack Date Description IOCs Detected APT Stages                                         
+
+> DeepSeek-V3.2 CADETS E3
+> ProvAgent (ours)
+> 2018-04-06 Nginx Backdoor 2/4/8 IC, C&C, PE, MP 2018-04-12 3/7/7 IR, C&C, PE, LM, MP 2018-04-13 2/5/7 IR, C&C, PE, MP OCR-APT [38] 2018-04-12 Nginx Backdoor 4/1/7 IR, C&C, PE, LM, MP THEIA E3
+> ProvAgent (ours) 2018-04-10 Firefox Backdoor 3/8/10 IC, C&C, PE, MP 2018-04-12 Browser extension 4/9/17 IC, IR, C&C, PE, MP, CT OCR-APT [38] 2018-04-12 Browser extension 9/3/17 IC, IR, C&C, PE, MP, CT gpt-5.2 CADETS E3
+> ProvAgent (ours)
+> 2018-04-06 Nginx Backdoor 2/5/8 IC, C&C, PE, MP 2018-04-12 3/7/7 IR, C&C, PE, LM, MP 2018-04-13 2/4/7 IR, C&C, PE, MP OCR-APT [38] 2018-04-12 Nginx Backdoor 4/2/7 IR, C&C, PE, LM, MP THEIA E3
+> ProvAgent (ours) 2018-04-10 Firefox Backdoor 3/8/10 IC, C&C, PE, MP 2018-04-12 Browser extension 4/16/17 IC, IR, C&C, PE, MP, CT OCR-APT [38] 2018-04-12 Browser extension 9/4/17 IC, IR, C&C, PE, MP, CT
+
+Table 4: Comparison of IoC and APT stage investigation performance across different base LLMs (including DeepSeek-V3.2 and gpt-5.2) on DARPA E3. The table shows the number of detected IOCs and APT attack stages, with total counts in parentheses. Detected stages are highlighted in green, while missed stages are shown in red. In the IOCs column, the three values denote the number of detected IOCs from initial detection, the number of detected IOCs after investigation, and the ground-truth IOC count, respectively. DARPA [54]. To enable a fairer comparison, we treat du-plicated information as a single IOC, as illustrated by the port-scanning activity performed by the test process on the CADETS-E3 dataset shown in Figure 7. We evaluate the investigation capability on the CADETS E3 and THEIA E3 datasets using DeepSeek-V3.2 and GPT-5.2 as the base LLMs. Our evaluation examines investigation performance with respect to detected indicators of compro-mise (IOCs) and detected advanced persistent threat (APT) stages. The APT stages include Initial Compromise (IC), In-ternal Reconnaissance (IR), Command and Control (C&C), Privilege Escalation (PE), Lateral Movement (LM), Main-tain Persistence (MP), Data Exfiltration (DE), and Cover-ing Tracks (CT). Across multiple attacks in both datasets, ProvAgent is able to recover an almost complete narrative of each attack and cover the majority of APT stages (high-lighted in green). Moreover, ProvAgent produces concise, analyst-oriented reports 3, including compact attack graphs provided in Appendix C, which are automatically generated by ProvAgent without any human intervention. As shown in Table 4, OCR-APT exhibits a declining IOC count after investigation. This behavior is largely due to its lenient detection policy combined with a static, purely re-ductive filtering mechanism. Without proactive exploration, OCR-APT mainly prunes the initial alerts, and therefore the final IOC count remains strictly below its detection output. In contrast, ProvAgent provides a dual benefit. It not only  
+
+> 3Full versions of the reports are available at https://github.com/Win 7ery/ProvAgent
+
+removes false positives to streamline the report, but also treats validated alerts as anchors for expanded investigation and uncovers substantial missed detections. Starting from the ini-tially flagged anomalous nodes, ProvAgent increases the num-ber of detected IOCs by 160.7% after investigation, whereas OCR-APT achieves only -61.5%.                  
+
+> Attack Date IOCs Detected APT Stages
+> 2018–04–06 w/o SBR 8(5) IC, C&C, PE, MP w/o SIR 8(4) IC, C&C, PE, MP 2018–04–12 w/o SBR 7(7) IR, C&C, PE, LM, MP w/o SIR 7(6) IR, C&C, PE, LM, MP 2018–04–13 w/o SBR 7(6) IR, C&C, PE, MP w/o SIR 7(5) IR, C&C, PE, MP
+
+Table 5: Ablation results on CADETS-E3 when disabling similar-behavior retrieval (w/o SBR) or same-identity retrieval (w/o SIR) in MAI, using DeepSeek-V3.2 as the base model. 
+
+# 6.5 Ablation Study (RQ4) 
+
+In ProvAgent, the EPD module serves as the retrieval backend for the MAI module, supporting both same-identity retrieval and similar-behavior retrieval. To validate the effectiveness of the collaboration between the two core modules in ProvAgent, we conduct an ablation study by selectively removing the 
+
+similar-behavior retrieval and the same-identity retrieval com-11 Dataset Model Input/Output Price Time               
+
+> CADETS-E3 DeepSeek-V3.2 0.662M/0.113M $0.24 0.73 h gpt-5.2 1.122M/0.278M $5.85 1.46 h THEIA-E3 DeepSeek-V3.2 1.761M/0.228M $1.21 0.6 h gpt-5.2 2.128M/0.404M $9.38 0.78 h
+
+Table 6: Token usage, cost, and runtime across datasets and models. ponents from the MAI module. Using DeepSeek-V3.2 as the base LLM, we evaluate the resulting variants on CADETS-E3, as summarized in Table 5. We observe that removing either similar-behavior retrieval or same-identity retrieval negatively impacts the MAI investi-gation process. Specifically, similar-behavior retrieval facil-itates the identification of legitimate behavioral heterogene-ity by providing broad cross-entity references, while same-identity retrieval establishes entity-specific baselines that pre-vent the Analyst from overlooking identity-specific malicious deviations due to an over-reliance on generic benign patterns. To further assess the critical role of these retrieval mech-anisms, we simultaneously removed both components from the Analyst. Under this setting, MAI fails to converge during the alert-driven investigation, entering a degenerate expan-sion loop that eventually exhausts computational resources. An analysis of the question–answer traces reveals that, in the absence of external knowledge, the Analyst tends to overin-terpret alerts as anomalous, given that real-world audit logs inherently contain irregular operations. Consequently, the An-alyst repeatedly validates abnormal entities surfaced by the Investigator as true attacks, thereby continuously driving fur-ther expansion. This behavior causes the investigation to stall in the second stage, where recursive expansion dominates, effectively impeding the Leader from performing necessary interventions and corrections. 
+
+# 6.6 System Overhead (RQ5) 
+
+We analyze the overhead of ProvAgent from two complemen-tary dimensions: the system resource consumption of EPD module and the cost of MAI module. 
+
+EPD module Overhead. The EPD module in ProvAgent adopts a GNN–based detection scheme. As a result, the effi-ciency overhead during detection primarily depends on the depth of the GNN and the embedding dimensionality. As il-lustrated in Figure 4, we evaluate the runtime efficiency and memory footprint of the EPD module under varying model configurations. 
+
+MAI module Overhead. We evaluate the overhead of MAI using four days of logs from CADETS-E3 and three days of logs from THEIA-E3, with results summarized in Table 6. Across both datasets, ProvAgent completes in-depth investi-gations at a minimum cost of $0.06 per day and finishes the 0 1000 2000 3000 4000 5000 
+
+> Edges added
+> 0
+> 10
+> 20
+> 30
+> 40
+> TP and FP (k)  TP
+> FP
+
+Figure 5: Resilience against adversarial attacks. daily reasoning workload within an average of 0.252 hours. This efficiency is enabled by our design, which bounds inves-tigation growth by limiting evidence retrieval and enforcing per-lead re-validation. As a result, uncontrolled hypothesis chaining is avoided and token usage remains linear in the number of validated IOCs. 
+
+# 6.7 Robustness Against Mimicry Attacks (RQ6) 
+
+For provenance-graph-based APT detection systems, mimicry attacks typically evade detection by tampering with raw audit data or injecting benign structures, thereby making malicious activity resemble normal behavior. To evaluate the robustness of ProvAgent under adversarial settings, we adopt the mimicry attack techniques proposed by Goyal et al. [55]. These attacks insert benign substructures into attack graphs to deliberately distort local neighborhood distributions, creating deceptive similarity between malicious nodes and benign provenance graphs. Prior work has shown that several PIDS, including StreamSpot, Unicorn, and ProvDetector, are highly vulnerable under such attacks. We apply Goyal et al. [55] publicly released implemen-tation to manipulate the E3-CADETS dataset and evaluate the impact of mimicry attacks on ProvAgent’s detection performance. The results, shown in Figure 5, indicate that ProvAgent maintains stable detection performance under ad-versarial manipulation, demonstrating strong robustness. This robustness stems from identity–behavior binding. Un-like reconstruction-based detectors that judge anomalies via latent-space similarity, ProvAgent learns identity-specific be-havioral semantics and permissible variation ranges through contrastive learning. Consequently, benign injections that in-troduce identity-inconsistent behaviors amplify rather than suppress detection confidence. 
+
+# 7 Discussion and Limitations 
+
+Benign Baseline Dependency. ProvAgent assumes a clean benign period to learn identity-specific behavioral profiles, as is common in anomaly-based systems. This can be chal-lenging when historical telemetry is limited or compromise is suspected. Mitigations include generating benign traces in 12 controlled sandboxes and using transfer learning to reuse pro-files across similar environments. Future work could explore federated learning to build shared behavioral baselines across trusted deployments while preserving privacy. 
+
+Campaign Segmentation Across Time Windows. 
+
+ProvAgent currently assumes that each day’s alerts belong to a single campaign and are investigated within an independent daily window. While this simplifies reasoning, real-world APT activity often violates this assumption. Multiple unrelated campaigns may occur within the same day, causing the Leader to conflate distinct IOCs into an incorrect narrative. Conversely, a single long-running campaign may span multiple days, leading to fragmented kill-chain reconstruction when days are analyzed in isolation. Future work could incorporate cross-day correlation to link related IOCs across windows and apply clustering or attribution methods to separate concurrent campaigns within the same period. 
+
+Kill Chain Rigidity. The Leader maps behaviors to prede-fined kill-chain taxonomies (e.g., MITRE ATT&CK), which improves interpretability and narrative synthesis but can be brittle for novel attacks that deviate from established stage progressions. This limitation is more pronounced for emerg-ing techniques or campaigns that reorder or blur stages (e.g., persistence-first intrusions). 
+
+# 8 Related Work 
+
+Anomaly Detection. Provenance-based intrusion detection has evolved through three major paradigms. Heuristic-based methods , such as Sleuth [7] and Holmes [8], construct attack patterns using predefined expert rules or by mapping system activities to known TTPs in knowledge bases such as MITRE ATT&CK [56]. Tactical [9] and CONAN [10] further encode domain knowledge into handcrafted scoring rules to iden-tify suspicious behaviors. CAPTAIN [12] extends this line of work by incorporating gradient-based optimization to au-tomatically derive adaptive matching rules. Anomaly-based methods detect intrusions by modeling benign behavioral baselines from provenance graphs and flagging deviations from normal patterns. ThreatTrace [20] learns node-level rep-resentations with heterogeneous GraphSAGE [57]. Flash [22] utilizes a GNN model with positional encoding [58] to de-tect anomalous nodes based on type prediction. Kairos [23] leverages temporal GNNs [59] to capture evolving behaviors. SLOT [27] further formulates provenance analysis as a graph reinforcement learning problem [60]. LLM-based methods 
+
+seek to exploit the cross-domain reasoning capabilities of large language models for threat detection. PROVSEEK [30] adopts a multi-agent design that combines LLM-driven inves-tigation with external threat intelligence to analyze raw audit logs. OMNISEC [31] uses retrieval-augmented generation (RAG) over external intelligence and benign knowledge bases to improve anomaly judgment. SmartGuard [32] summarizes provenance subgraphs with GNNs and fine-tunes LLMs to better interpret these summaries for detection. Zuo et al. [33] generate natural-language explanations for system events to enrich behavioral signals. 
+
+Attack Investigation. Beyond initial threat detection, practi-cal security operations demand comprehensive attack recon-struction and forensic analysis capabilities. WATSON [36] and Sentient [37] correlate low-level alerts into higher-level scenarios via graph traversal and clustering. UIScope [61] aug-ments provenance with GUI events to recover user-interface-driven attacks, while OmegaLog [62] and ALchemist [63] fuse system provenance with application logs for richer se-mantics. ProTracker [64], NoDoze [65], Swift [66], DEPIM-PACT [67], and ORTHRUS [43] score events using causal context and aggregate scores over neighboring edges to re-construct attack graphs. OCR-APT [38] is an early attempt to use LLMs for investigation, but limits the model to a non-authoritative advisory role in a rigid workflow, constraining autonomous inquiry and collaborative reasoning. 
+
+LLMs in Cybersecurity. Large language models (LLMs) have demonstrated significant potential in cybersecurity appli-cations [68 –73]. They have been widely adopted across down-stream tasks such as threat intelligence analysis, vulnerability management, malware detection, and automated code repair. For example, PropertyGPT [69] generates property specifica-tions for smart-contract formal verification. Polar [70] uses LLMs to prioritize threats by converting unstructured intel-ligence into structured severity assessments and actionable defenses. MalGuard [73] semantically refines graph-extracted sensitive APIs to enable interpretable detection of malicious PyPI packages. 
+
+# 9 Conclusion 
+
+Advanced Persistent Threats (APTs) continue to pose severe challenges to modern cybersecurity, calling for systems that balance efficiency, accuracy, and investigative depth. This paper presents ProvAgent, a threat investigation framework that moves beyond traditional human–model collaboration by integrating detection models with a multi-agent investigation pipeline. ProvAgent enforces fine-grained identity–behavior consistency via graph contrastive learning to perform cost-effective anomaly screening and generate high-fidelity alerts with few false positives. Building on these alerts, the MAI module conducts autonomous, hypothesis–verification–driven investigation to validate and expand initial leads while re-constructing near-complete attack narratives. Comprehen-sive evaluations on DARPA E3, E5, and OpTC show that ProvAgent outperforms six SOTA baselines in anomaly detec-tion and remains robust against mimicry attacks. It supports automated, low-cost investigation with a minimum daily cost of $0.06 and, on DARPA E3, expands the detected IOC set by 160.7% over initial alerts while producing concise, analyst-oriented reports covering key APT stages and IOCs. 13 Ethical Considerations 
+
+To the best of our knowledge this work does not raise any ethical issues. All experiments have been performed on pub-licly available datasets that have been acquired in an ethical manners and not contain any sensitive information. 
+
+# Open Science 
+
+Datasets Availability. The DARPA datasets are publicly avail-able [39 –41] and come with textual description of the attacks. 
+
+Code Availability. The code of ProvAgent is publicly avail-able at https://github.com/Win7ery/ProvAgent .
+
+# References 
+
+[1] Adel Alshamrani, Sowmya Myneni, Ankur Chowdhary, and Dijiang Huang. A survey on advanced persistent threats: Techniques, solutions, challenges, and research opportunities. IEEE Communications Surveys & Tutori-als , 21(2):1851–1877, 2019. [2] Zhenyuan Li, Qi Alfred Chen, Runqing Yang, Yan Chen, and Wei Ruan. Threat detection and investigation with system-level provenance graphs: A survey. Computers & Security , 106:102282, 2021. [3] Michael Zipperle, Florian Gottwalt, Elizabeth Chang, and Tharam Dillon. Provenance-based intrusion de-tection systems: A survey. ACM Computing Surveys ,55(7):1–36, 2022. [4] Feng Dong, Shaofei Li, Peng Jiang, Ding Li, Haoyu Wang, Liangyi Huang, Xusheng Xiao, Jiedong Chen, Xiapu Luo, Yao Guo, et al. Are we there yet? an indus-trial viewpoint on provenance-based endpoint detection and response tools. In Proceedings of the 2023 ACM SIGSAC Conference on Computer and Communications Security , pages 2396–2410, 2023. [5] Muhammad Adil Inam, Yinfang Chen, Akul Goyal, Ja-son Liu, Jaron Mink, Noor Michael, Sneha Gaur, Adam Bates, and Wajih Ul Hassan. Sok: History is a vast early warning system: Auditing the provenance of system in-trusions. In 2023 IEEE Symposium on Security and Privacy (SP) , pages 2620–2638. IEEE, 2023. [6] Zhiwei Xu, Yujuan Wu, Shiheng Wang, Jiabao Gao, Tian Qiu, Ziqi Wang, Hai Wan, and Xibin Zhao. Deep learning-based intrusion detection systems: A survey. 
+
+arXiv preprint arXiv:2504.07839 , 2025. [7] Md Nahid Hossain, Sadegh M Milajerdi, Junao Wang, Birhanu Eshete, Rigel Gjomemo, R Sekar, Scott Stoller, and VN Venkatakrishnan. {SLEUTH }: Real-time attack scenario reconstruction from {COTS } audit data. In 
+
+26th USENIX Security Symposium (USENIX Security 17) , pages 487–504, 2017. [8] Sadegh M Milajerdi, Rigel Gjomemo, Birhanu Es-hete, Ramachandran Sekar, and VN Venkatakrishnan. Holmes: real-time apt detection through correlation of suspicious information flows. In 2019 IEEE Symposium on Security and Privacy (SP) , pages 1137–1152. IEEE, 2019. [9] Wajih Ul Hassan, Adam Bates, and Daniel Marino. Tac-tical provenance analysis for endpoint detection and re-sponse systems. In 2020 IEEE Symposium on Security and Privacy (SP) , pages 1172–1189. IEEE, 2020. [10] Chunlin Xiong, Tiantian Zhu, Weihao Dong, Linqi Ruan, Runqing Yang, Yueqiang Cheng, Yan Chen, Shuai Cheng, and Xutong Chen. Conan: A practical real-time apt detection system with high accuracy and efficiency. 
+
+IEEE Transactions on Dependable and Secure Comput-ing , 19(1):551–565, 2020. [11] Md Nahid Hossain, Sanaz Sheikhi, and R Sekar. Com-bating dependence explosion in forensic analysis using alternative tag propagation semantics. In 2020 IEEE Symposium on Security and Privacy (SP) , pages 1139– 1155. IEEE, 2020. [12] Lingzhi Wang, Xiangmin Shen, Weijian Li, Zhenyuan Li, R Sekar, Han Liu, and Yan Chen. Incorporating gradi-ents to rules: Towards lightweight, adaptive provenance-based intrusion detection. In NDSS , 2025. [13] Khandakar Ashrafi Akbar, Yigong Wang, Gbadebo Ayoade, Yang Gao, Anoop Singhal, Latifur Khan, Bha-vani Thuraisingham, and Kangkook Jee. Advanced per-sistent threat detection using data provenance and metric learning. IEEE Transactions on Dependable and Secure Computing , 20(5):3957–3969, 2022. [14] Maya Kapoor, Joshua Melton, Michael Ridenhour, Sid-dharth Krishnan, and Thomas Moyer. Prov-gem: Au-tomated provenance analysis framework using graph embeddings. In 2021 20th IEEE International Confer-ence on Machine Learning and Applications (ICMLA) ,pages 1720–1727. IEEE, 2021. [15] Fucheng Liu, Yu Wen, Dongxue Zhang, Xihe Jiang, Xinyu Xing, and Dan Meng. Log2vec: A heterogeneous graph embedding based approach for detecting cyber threats within enterprise. In Proceedings of the 2019 ACM SIGSAC Conference on Computer and Communi-cations Security , CCS ’19, page 1777–1794, New York, NY, USA, 2019. Association for Computing Machinery. [16] Min Du, Feifei Li, Guineng Zheng, and Vivek Srikumar. Deeplog: Anomaly detection and diagnosis from system 14 logs through deep learning. In Proceedings of the 2017 ACM SIGSAC Conference on Computer and Communi-cations Security , CCS ’17, page 1285–1298, New York, NY, USA, 2017. Association for Computing Machinery. [17] Hailun Ding, Juan Zhai, Yuhong Nan, and Shiqing Ma. 
+
+{AIRTAG }: Towards automated attack investigation by unsupervised learning with log texts. In 32nd USENIX Security Symposium (USENIX Security 23) , pages 373– 390, 2023. [18] Emaad Manzoor, Sadegh M Milajerdi, and Leman Akoglu. Fast memory-efficient anomaly detection in streaming heterogeneous graphs. In Proceedings of the 22nd ACM SIGKDD international conference on knowl-edge discovery and data mining , pages 1035–1044, 2016. [19] Xueyuan Han, Thomas Pasquier, Adam Bates, James Mickens, and Margo Seltzer. Unicorn: Runtime provenance-based detector for advanced persistent threats. In Network and Distributed System Security Symposium , 2020. [20] Su Wang, Zhiliang Wang, Tao Zhou, Hongbin Sun, Xia Yin, Dongqi Han, Han Zhang, Xingang Shi, and Jiahai Yang. Threatrace: Detecting and tracing host-based threats in node level through provenance graph learn-ing. IEEE Transactions on Information Forensics and Security , 17:3972–3987, 2022. [21] Fan Yang, Jiacen Xu, Chunlin Xiong, Zhou Li, and Ke-huan Zhang. {PROGRAPHER }: An anomaly detection system based on provenance graph embedding. In 32nd USENIX Security Symposium (USENIX Security 23) ,pages 4355–4372, 2023. [22] Mati Ur Rehman, Hadi Ahmadi, and Wajih Ul Hassan. Flash: A comprehensive approach to intrusion detection via provenance graph representation learning. In 2024 IEEE Symposium on Security and Privacy (SP) , pages 139–139. IEEE Computer Society, 2024. [23] Zijun Cheng, Qiujian Lv, Jinyuan Liang, Yan Wang, De-gang Sun, Thomas Pasquier, and Xueyuan Han. Kairos: Practical intrusion detection and investigation using whole-system provenance. In 2024 IEEE Symposium on Security and Privacy (SP) , pages 3533–3551. IEEE, 2024. [24] Zian Jia, Yun Xiong, Yuhong Nan, Yao Zhang, Jinjing Zhao, and Mi Wen. {MAGIC }: Detecting advanced per-sistent threats via masked graph representation learning. In 33rd USENIX Security Symposium (USENIX Security 24) , pages 5197–5214, 2024. [25] Akul Goyal, Gang Wang, and Adam Bates. R-caid: Em-bedding root cause analysis within provenance-based intrusion detection. In 2024 IEEE Symposium on Secu-rity and Privacy (SP) , pages 3515–3532. IEEE, 2024. [26] Weiheng Wu, Wei Qiao, Wenhao Yan, Bo Jiang, Yuling Liu, Baoxu Liu, Zhigang Lu, and Junrong Liu. Brewing vodka: Distilling pure knowledge for lightweight threat detection in audit logs. In Proceedings of the ACM on Web Conference 2025 , pages 2172–2182, 2025. [27] Wei Qiao, Yebo Feng, Teng Li, Zhuo Ma, Yulong Shen, JianFeng Ma, and Yang Liu. Slot: Provenance-driven apt detection through graph reinforcement learning. In 
+
+Proceedings of the 2025 on ACM SIGSAC Conference on Computer and Communications Security , 2025. [28] Tristan Bilot, Baoxiang Jiang, Zefeng Li, Nour El Mad-houn, Khaldoun Al Agha, Anis Zouaoui, and Thomas Pasquier. Sometimes simpler is better: A comprehen-sive analysis of {State-of-the-Art }{ Provenance-Based }
+
+intrusion detection systems. In 34th USENIX Security Symposium (USENIX Security 25) , pages 7193–7212, 2025. [29] Chengyu Song, Linru Ma, Jianming Zheng, Jinzhi Liao, Hongyu Kuang, and Lin Yang. Audit-llm: Multi-agent collaboration for log-based insider threat detection. 
+
+arXiv preprint arXiv:2408.08902 , 2024. [30] Kunal Mukherjee and Murat Kantarcioglu. Llm-driven provenance forensics for threat investigation and detec-tion. arXiv preprint arXiv:2508.21323 , 2025. [31] Wenrui Cheng, Tiantian Zhu, Shunan Jing, Jian-Ping Mei, Mingjun Ma, Jiaobo Jin, and Zhengqiu Weng. Om-nisec: Llm-driven provenance-based intrusion detection via retrieval-augmented behavior prompting. Available at SSRN 5397852 , 2025. [32] Hao Zhang, Shuo Shao, Song Li, Zhenyu Zhong, Yan Liu, Zhan Qin, and Kui Ren. Smartguard: Leverag-ing large language models for network attack detection through audit log analysis and summarization. arXiv preprint arXiv:2506.16981 , 2025. [33] F Zuo, J Rhee, and YR Choe. Knowledge transfer from llms to provenance analysis: A semantic-augmented method for apt detection. arxiv 2025. arXiv preprint arXiv:2503.18316 , 2025. [34] Bushra A Alahmadi, Louise Axon, and Ivan Martinovic. 99% false positives: A qualitative study of {SOC } ana-lysts’ perspectives on security alarms. In 31st USENIX Security Symposium (USENIX Security 22) , pages 2783– 2800, 2022. 15 [35] Abdulellah Alsaheel, Yuhong Nan, Shiqing Ma, Le Yu, Gregory Walkup, Z Berkay Celik, Xiangyu Zhang, and Dongyan Xu. {ATLAS }: A sequence-based learning approach for attack investigation. In 30th USENIX secu-rity symposium (USENIX security 21) , pages 3005–3022, 2021. [36] Jun Zeng, Zheng Leong Chua, Yinfang Chen, Kaihang Ji, Zhenkai Liang, and Jian Mao. Watson: Abstracting behaviors from audit logs via aggregation of contextual semantics. In NDSS , 2021. [37] Wenhao Yan, Ning An, Wei Qiao, Weiheng Wu, Bo Jiang, Zhigang Lu, and Junrong Liu. Sentient: De-tecting apts via capturing indirect dependencies and be-havioral logic. In Proceedings of the AAAI conference on artificial intelligence , 2026. [38] Ahmed Aly, Essam Mansour, and Amr Youssef. Ocr-apt: Reconstructing apt stories from audit logs using subgraph anomaly detection and llms. In Proceedings of the 2025 ACM SIGSAC Conference on Computer and Communications Security , pages 261–275, 2025. [39] A. D. Keromytis. Transparent computing engagement 3 data release, 2018. Accessed 24th December 2025. 
+
+https://github.com/darpa-i2o/Transparent-C omputing/blob/master/README-E3.md .[40] J. Torrey. Transparent computing engagement 5 data release, 2018. Accessed 24th December 2025. https: //github.com/darpa-i2o/Transparent-Computi ng .[41] Mike van Opstal and William Arbaugh. Operationally transparent cyber (optc) data release, 2019. Accessed 24th December 2025. https://github.com/FiveDir ections/OpTC-data .[42] Jun Zengy, Xiang Wang, Jiahao Liu, Yinfang Chen, Zhenkai Liang, Tat-Seng Chua, and Zheng Leong Chua. Shadewatcher: Recommendation-guided cyber threat analysis using system audit records. In 2022 IEEE Sym-posium on Security and Privacy (SP) , pages 489–506. IEEE, 2022. [43] Baoxiang Jiang, Tristan Bilot, Nour El Madhoun, Khal-doun Al Agha, Anis Zouaoui, Shahrear Iqbal, Xueyuan Han, and Thomas Pasquier. Orthrus: Achieving high quality of attribution in provenance-based intrusion de-tection systems. In Security Symposium (USENIX Sec’25). USENIX , 2025. [44] Saad Ullah, Mingji Han, Saurabh Pujar, Hammond Pearce, Ayse Coskun, and Gianluca Stringhini. Llms cannot reliably identify and reason about security vulner-abilities (yet?): A comprehensive evaluation, framework, and benchmarks. In 2024 IEEE symposium on security and privacy (SP) , pages 862–880. IEEE, 2024. [45] Arastoo Zibaeirad and Marco Vieira. Reasoning with llms for zero-shot vulnerability detection. arXiv preprint arXiv:2503.17885 , 2025. [46] Ali Habibzadeh, Farid Feyzi, and Reza Ebrahimi Atani. Large language models for security opera-tions centers: A comprehensive survey. arXiv preprint arXiv:2509.10858 , 2025. [47] Linux Documentation. The linux audit daemon. Ac-cessed 24th December 2025. https://man7.org/lin ux/man-pages/man8/auditd.8.html .[48] Microsoft. Event tracing. Accessed 24th December 2025. https://learn.microsoft.com/en-us/wind ows-hardware/drivers/devtest/about-event-t racing-for-drivers .[49] Thomas Pasquier, Xueyuan Han, Mark Goldstein, Thomas Moyer, David Eyers, Margo Seltzer, and Jean Bacon. Practical whole-system provenance capture. In 
+
+Proceedings of the 2017 Symposium on Cloud Comput-ing , pages 405–418, 2017. [50] R Sekar, Hanke Kimm, and Rohit Aich. eaudit: A fast, scalable and deployable audit data collection system. In 
+
+2024 IEEE Symposium on Security and Privacy (SP) ,pages 3571–3589. IEEE, 2024. [51] Tomas Mikolov. Efficient estimation of word represen-tations in vector space. arXiv preprint arXiv:1301.3781 ,2013. [52] Wei Ju, Yifan Wang, Yifang Qin, Zhengyang Mao, Zhip-ing Xiao, Junyu Luo, Junwei Yang, Yiyang Gu, Dongjie Wang, Qingqing Long, et al. Towards graph con-trastive learning: A survey and beyond. arXiv preprint arXiv:2405.11868 , 2024. [53] Ocr-apt code. Accessed: 24th December 2025. https: //github.com/CoDS-GCS/OCR-APT .[54] DARPA. TC3 Ground Truth Report, 2018. Accessed: 24th December 2025. https://drive.google.com/f ile/d/1mrs4LWkGk-3zA7t7v8zrhm0yEDHe57QU/vi ew .[55] Akul Goyal, Xueyuan Han, Gang Wang, and Adam Bates. Sometimes, you aren’t what you do: Mimicry attacks against provenance graph host intrusion detec-tion systems. In 30th Network and Distributed System Security Symposium , 2023. [56] MITRE ATT&CK. https://attack.mitre.org ,2019. 16 [57] Will Hamilton, Zhitao Ying, and Jure Leskovec. Induc-tive representation learning on large graphs. Advances in neural information processing systems , 30, 2017. [58] A Vaswani. Attention is all you need. Advances in Neural Information Processing Systems , 2017. [59] Emanuele Rossi, Ben Chamberlain, Fabrizio Frasca, Da-vide Eynard, Federico Monti, and Michael Bronstein. Temporal graph networks for deep learning on dynamic graphs. In International Conference on Machine Learn-ing (ICML’20) , 2020. [60] Victor-Alexandru Darvariu, Stephen Hailes, and Mirco Musolesi. Graph reinforcement learning for combina-torial optimization: A survey and unifying perspective. 
+
+arXiv preprint arXiv:2404.06492 , 2024. [61] Runqing Yang, Shiqing Ma, Haitao Xu, Xiangyu Zhang, and Yan Chen. Uiscope: Accurate, instrumentation-free, and visible attack investigation for gui applications. In 
+
+NDSS , volume 24, page 141, 2020. [62] Wajih Ul Hassan, Mohammad Ali Noureddine, Pubali Datta, and Adam Bates. Omegalog: High-fidelity attack investigation via transparent multi-layer log analysis. In Network and distributed system security symposium ,2020. [63] Le Yu, Shiqing Ma, Zhuo Zhang, Guanhong Tao, Xi-angyu Zhang, Dongyan Xu, Vincent E Urias, Han Wei Lin, Gabriela F Ciocarlie, Vinod Yegneswaran, et al. Al-chemist: Fusing application and audit logs for precise attack provenance without instrumentation. In NDSS ,2021. [64] Yushan Liu, Mu Zhang, Ding Li, Kangkook Jee, Zhichun Li, Zhenyu Wu, Junghwan Rhee, and Prateek Mittal. To-wards a timely causality analysis for enterprise security. In NDSS , 2018. [65] Wajih Ul Hassan, Shengjian Guo, Ding Li, Zhengzhang Chen, Kangkook Jee, Zhichun Li, and Adam Bates. Nodoze: Combatting threat alert fatigue with automated provenance triage. In network and distributed systems security symposium , 2019. [66] Wajih Ul Hassan, Ding Li, Kangkook Jee, Xiao Yu, Kex-uan Zou, Dawei Wang, Zhengzhang Chen, Zhichun Li, Junghwan Rhee, Jiaping Gui, et al. This is why we can’t cache nice things: Lightning-fast threat hunting using suspicion-based hierarchical storage. In Proceed-ings of the 36th Annual Computer Security Applications Conference , pages 165–178, 2020. [67] Pengcheng Fang, Peng Gao, Changlin Liu, Erman Ay-day, Kangkook Jee, Ting Wang, Yanfang Fanny Ye, Zhuotao Liu, and Xusheng Xiao. {Back-Propagating }
+
+system dependency impact for attack investigation. In 
+
+31st USENIX security symposium (USENIX Security 22) , pages 2461–2478, 2022. [68] Jie Zhang, Haoyu Bu, Hui Wen, Yongji Liu, Haiqiang Fei, Rongrong Xi, Lun Li, Yun Yang, Hongsong Zhu, and Dan Meng. When llms meet cybersecurity: A sys-tematic literature review. Cybersecurity , 8(1):55, 2025. [69] Ye Liu, Yue Xue, Daoyuan Wu, Yuqiang Sun, Yi Li, Miaolei Shi, and Yang Liu. Propertygpt: Llm-driven formal verification of smart contracts through retrieval-augmented property generation. In NDSS , 2025. [70] Luoxi Tang, Yuqiao Meng, Ankita Patra, Weicheng Ma, Muchao Ye, and Zhaohan Xi. Polar: Automating cyber threat prioritization through llm-powered assessment. 
+
+arXiv preprint arXiv:2510.01552 , 2025. [71] Yongheng Zhang, Tingwen Du, Yunshan Ma, Xiang Wang, Yi Xie, Guozheng Yang, Yuliang Lu, and Ee-Chien Chang. Attackg+: Boosting attack graph con-struction with large language models. Computers & Security , 150:104220, 2025. [72] Xin-Cheng Wen, Zirui Lin, Yijun Yang, Cuiyun Gao, and Deheng Ye. Vul-r2: A reasoning llm for auto-mated vulnerability repair. In Proceedings of the 40th IEEE/ACM International Conference on Automated Soft-ware Engineering (ASE) , 2025. [73] Xingan Gao, Xiaobing Sun, Sicong Cao, Kaifeng Huang, Di Wu, Xiaolei Liu, Xingwei Lin, and Yang Xiang. Mal-guard: Towards real-time, accurate, and actionable de-tection of malicious packages in pypi ecosystem. In 
+
+Proceedings of the 34th USENIX Security Symposium (USENIX Security 25) , 2025. 
+
+# A Identity–Behavior Binding Performance 
+
+To validate that ProvAgent’s EPD module successfully binds entity identity with behavioral patterns in the learned em-bedding space, we visualize the latent representations us-ing t-SNE on the DARPA-E3 dataset. Figure 6 shows the two-dimensional projection of entity embeddings, where each point represents a system entity and is colored according to its fine-grained identity (as defined in Table 1). The visualization demonstrates clear clustering by iden-tity, with entities sharing the same identity forming tight, well-separated clusters in the embedding space. For instance, processes with identities sleep , vmstat , top , date , lsof ,and head each occupy distinct regions, indicating that the contrastive learning framework effectively enforces identity-specific behavioral consistency. The clear boundaries between different identity clusters validate our hypothesis that entities with identical identities exhibit similar behavioral patterns, 17 Figure 6: T-SNE visualization of entity embeddings on DARPA-E3. Each node is a system entity and is colored by identity. The legend shows the six most frequent process iden-tities, including sleep , vmstat , top , date , lsof , and head .and that these patterns can be reliably captured through graph neural network encoding combined with metric learning. This clustering property enables ProvAgent’s identity-consistency violation detection mechanism: anomalous en-tities whose behaviors deviate from their claimed identity will be projected into regions inconsistent with their declared identity cluster, thereby facilitating interpretable anomaly de-tection. 
+
+# B LLM Prompts 
+
+This section presents the system prompts designed for the four specialized agents in the MAI module to define their roles and operational guidelines. Due to space constraints, we provide only the core system instructions herein while the complete prompt templates are available in our online repository 4.
+
+# B.1 Leader Agent Prompt 
+
+The Leader agent performs strategic-level coordination and global coherence validation. It synthesizes fragmented behav-iors into coherent attack narratives by mapping them onto structured kill chain frameworks, generates strategic hypothe-ses when gaps or inconsistencies emerge, and determines in-vestigation termination criteria based on narrative coherence and hypothesis exhaustion. 
+
+> 4https://github.com/Win7ery/ProvAgent
+
+Leader Agent System Prompt: You are the Leader of the Se-curity Operations Center. You read the IOC table for a single graph, align each IOC with the cyber kill chain, and direct further investigation when gaps exist. Responsibilities: 1. Connect the dots across IOCs to form a cohesive attack story. 2. Use each IOC’s event description plus related_ioc_* 
+
+3. fields to explain relationships. 4. Mark which kill-chain phases are satisfied (with evidence) and which remain missing. 5. Request additional investigations by referencing concrete 
+
+node_uuid targets. 6. Flag false positives so they can be removed from the IOC store. 7. Always output structured JSON exactly as requested. 
+
+# B.2 Analyst Agent Prompt 
+
+The Analyst agent validates whether alerts or suspicious leads represent genuine anomalies by comparing target en-tities against benign behavioral baselines retrieved from the knowledge repository. It conducts fine-grained behavioral comparison using both attribute-based string matching and embedding-based vector similarity to discriminate genuine malicious deviations from benign operational heterogeneity. 
+
+Analyst Agent System Prompt: You are the Analyst. Every input (alert or clue) is a single node that might be malicious. Compare it against trustworthy context to decide whether it is ANOMALY or BENIGN. Guidance: 1. Run two comparisons: FAISS most-similar node and label-matched benign peers. Inconsistency between the target node’s behavior and its similar node does NOT automatically indicate anomaly. Only flag as anomalous when the inconsistent behavior itself exhibits anomalous characteristics. 2. Treat investigator_reason as a hint only; stay objective. 3. Cite concrete neighbor edges, operations, or temporal behav-iors. 4. Output confidence between 0 and 1 even when BENIGN. 
+
+# B.3 Investigator Agent Prompt 
+
+The Investigator agent conducts event-level forensic analy-sis to reconstruct atomic attack operations from confirmed IOCs. It traverses temporal event sequences and provenance neighborhoods, identifies related neighboring entities as new investigative leads, and annotates each IOC with kill chain stage mappings and detailed event descriptions. 
+
+Investigator Agent System Prompt: You are the Investigator. Each task focuses on a confirmed IOC. Validate the node’s mali-cious behavior, assign the correct kill-chain phase (reason), narrate the attack, and propose new clues for the Analyst. Produce an 
+
+event summary that captures the concrete malicious action. Ev-ery clue you output must include graph_name , node_uuid , and 
+
+reason so the Analyst queries the correct graph. Just describe why they look risky. 
+
+18 Figure 7: Attack graph automatically generated by ProvAgent for the April 6 attack on CADETS-E3. 
+
+# B.4 Reporter Agent Prompt 
+
+The Reporter agent transforms the investigation repository into analyst-ready reports. It organizes validated IOCs into coherent attack narratives, constructs provenance graphs grounded in event evidence, and summarizes actionable re-mediation guidance for security analysts.  
+
+> Reporter Agent System Prompt: You are the Reporter. Use structured attack data to produce a high-quality Markdown report for human security analysts. Highlight the campaign flow, major IOCs, and rationale for each IOC’s malicious verdict.
+
+# C Attack Reconstruction 
+
+This section presents the attack provenance graphs automat-ically reconstructed by ProvAgent for five APT campaigns in the DARPA E3 dataset. These visualizations demonstrate ProvAgent’s capability to produce compact, analyst-oriented attack narratives without human intervention. Each graph is generated by the Reporter agent based on the validated IOCs and enriched metadata accumulated during the multi-agent investigation process. Figures 7, 8, and 9 show the reconstructed attack graphs for the nginx backdoor campaigns on April 6, April 12, and April 13 in the CADETS-E3 dataset. These attacks involve web server compromise, command-and-control communica-tion, privilege escalation, and data manipulation. Figures 10 and 11 present the reconstructed graphs for the Firefox back-door and browser extension attacks on April 10 and April 12 in the THEIA-E3 dataset, which involve initial compro-mise through browser exploitation, internal reconnaissance, persistence mechanisms, and credential theft. 
+
+Figure 8: Attack graph automatically generated by ProvAgent for the April 12 attack on CADETS-E3. 
+
+Figure 9: Attack graph automatically generated by ProvAgent for the April 13 attack on CADETS-E3. 
+
+Figure 10: Attack graph automatically generated by ProvAgent for the April 10 attack on THEIA-E3. 19 Figure 11: Attack graph automatically generated by ProvAgent for the April 12 attack on THEIA-E3. 
+
+# D Analysis of Similar Nodes 
+
+Although ProvAgent substantially reduces the false-positive rate compared to prior baselines, our analysis shows that most remaining false positives stem from behavioral similarity be-tween processes with different identities. While the EPD mod-ule enforces identity–behavior consistency via contrastive learning, some system entities serve distinct functional roles yet exhibit highly similar syscall-level patterns. Figure 12 illustrates two representative process pairs that frequently cause identity confusion in ProvAgent. The first pair, sleep and mv , consists of short-lived utility pro-cesses that perform only a few file-descriptor operations and share nearly identical syscall sequences. The second pair, 
+
+cleanup and trivial-rewrite , both interact heavily with 
+
+none files and access /usr/local/libexec/postfix/* . In both cases, the behavioral patterns captured by the GNN are not sufficiently discriminative, causing EPD to align entities with the wrong identity prototypes in the embedding space. This limitation is mainly due to the coarse granularity of syscall-level observations. Although ProvAgent’s Word2Vec encoding captures semantic cues from process names and file paths, frequency and temporal signals are largely dominated by low-level syscall patterns and may fail to reflect higher-level functional semantics. As a result, processes with similar syscall sequences, regardless of their functional intent, tend to cluster closely in the learned embedding space, leading to potential identity mismatches during anomaly detection. 
+
+> (a) The behavior graph of the sleep process.
+> (b) The behavior graph of the mv process.
+> (c) The behavior graph of the cleanup process.
+> (d) The behavior graph of the trivial-rewrite process.
+
+Figure 12: Examples of similar node pairs causing false posi-tives in ProvAgent. The first pair includes (a) sleep and (b) 
+
+mv process, while the second pair consists of (c) cleanup and (d) trivial-rewrite process. Each subfigure shows the be-havioral sequences of the process. 20

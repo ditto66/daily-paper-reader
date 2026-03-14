@@ -1,0 +1,346 @@
+Title: Two Frames Matter: A Temporal Attack for Text-to-Video Model Jailbreaking
+
+URL Source: https://arxiv.org/pdf/2603.07028v1
+
+Published Time: Tue, 10 Mar 2026 00:28:15 GMT
+
+Number of Pages: 11
+
+Markdown Content:
+# Two Frames Matter: A Temporal Attack for Text-to-Video Model Jailbreaking 
+
+Moyang Chen 1,3* , Zonghao Ying 2* , Wenzhuo Xu 3, Quancheng Zou 3† ,Deyue Zhang 3, Dongdong Yang 3, Xiangzheng Zhang 3,
+
+> 1
+
+College of Science, Mathematics and Technology, Wenzhou-Kean University 
+
+> 2
+
+State Key Laboratory of Complex & Critical Software Environment, Beihang University 
+
+> 3
+
+360 AI Security Lab 
+
+> *
+
+Equal Contribution 
+
+> †
+
+Corresponding Author 
+
+Abstract 
+
+Recent text-to-video (T2V) models can syn-thesize complex videos from lightweight natu-ral language prompts, raising urgent concerns about safety alignment in the event of misuse in the real world. Prior jailbreak attacks typically rewrite unsafe prompts into paraphrases that evade content filters while preserving meaning. Yet, these approaches often still retain explicit sensitive cues in the input text and therefore overlook a more profound, video-specific weak-ness. In this paper, we identify a temporal tra-jectory infilling vulnerability of T2V systems under fragmented prompts: when the prompt specifies only sparse boundary conditions (e.g., start and end frames) and leaves the intermedi-ate evolution underspecified, the model may autonomously reconstruct a plausible trajec-tory that includes harmful intermediate frames, despite the prompt appearing benign to input or output side filtering. Building on this ob-servation, we propose TFM . This fragmented prompting framework converts an originally un-safe request into a temporally sparse two-frame extraction and further reduces overtly sensitive cues via implicit substitution. Extensive evalua-tions across multiple open-source and commer-cial T2V models demonstrate that TFM consis-tently enhances jailbreak effectiveness, achiev-ing up to a 12% increase in attack success rate on commercial systems. Our findings highlight the need for temporally aware safety mecha-nisms that account for model-driven comple-tion beyond prompt surface form. WARNING: This paper contains potentially sensitive, harmful, and offensive content. 
+
+1 Introduction 
+
+In recent years, Text-to-Video (T2V) models have made tremendous progress, evolving to the point of enabling the generation of complex animated videos with minimal input beyond basic language prompts. The examples mentioned include, but are not limited to: Kling (Kwai, 2024), Veo2 (Google 
+
+Figure 1: Illustration of our proposal effect on T2V system. 
+
+DeepMind, 2025), Luma Ray2 (Luma AI, 2025), and Open-Sora (Zheng et al., 2024). Still, at present, jailbreaking attacks against T2V systems exist (Liu et al., 2025; Miao et al., 2024; Lee et al., 2025a; Ying et al., 2025). These methods transform unsafe prompts into semantically equiva-lent variants that can bypass content filters without altering the original intent (Jin et al., 2025). The rewritten prompts can typically pass through ex-isting content moderation mechanisms, and some approaches achieve this transformation efficiently (Liu et al., 2025; Jin et al., 2025). However, most existing attack methods still embed explicit unsafe content directly in the input text, which remains common across current T2V systems (Ying et al., 2025; Jin et al., 2025). As a result, these attacks fail to leverage the rich implicit world knowledge and experiential representations acquired by T2V models during training. This limitation exposes a fundamental weakness in current defense mech-anisms, as such implicit behaviors are extremely difficult to evaluate or constrain (Ying et al., 2025; Singer et al., 2022; Ho et al., 2022b,a). To solve this problem, we propose TFM (Two 
+
+Frame Matter). TFM tests the safety robustness of T2V models via temporary sparsity and non-
+
+> arXiv:2603.07028v1 [cs.CR] 7 Mar 2026
+
+contiguity in representing the same sequence (Lee et al., 2025a; Jin et al., 2025). In practice, TFM adopts a two-step conversion pipeline. First, it constructs a two-frame abstraction of the original prompt. It keeps only the two frames as bound-ary conditions. It removes continuous scene in-formation from the middle frames. Second, it re-places harmful keywords with semantically sugges-tive alternatives. These alternatives preserve intent but avoid exact prohibited terms (Liu et al., 2025; Jin et al., 2025). We argue that such a prompt-to-benign conversion can appear ëasyïn modern T2V systems. A key reason is how T2V models learn cross-modal associations over time. They align words, images, and other modalities through rich temporal relationships (Singer et al., 2022; Ho et al., 2022b,a; Zheng et al., 2024; Peng et al., 2025). Consequently, boundary cues that seem harmless to input or output safety filters can still activate latent visual knowledge. This activation may lead to policy-violating outputs in downstream video generation (Ying et al., 2025; Chen et al., 2024). In this work, we expose a video-specific vul-nerability of T2V models: temporal trajectory infilling under fragmented prompts. When only sparse boundaries (e.g., start/end frames) are speci-fied, models may autonomously complete the miss-ing evolution and synthesize harmful intermediate frames. We propose TFM to systematically probe this behavior (Fig. 1), achieving up to +12% ASR on commercial models. Our contributions are: • We identify a unique vulnerability in T2V systems stemming from their temporal tra-jectory infilling. Under fragmented prompts that only provide sparse boundary cues (e.g., the first and last frames), the model may rely on learned temporal priors to synthesize plau-sible intermediate evolution. This temporal trajectory infilling can reconstruct harmful in-termediate content even when the prompt does not explicitly specify the unsafe details in the middle segment. • We propose TFM , a fragmented prompting framework that systematically exploits tempo-ral generation in T2V models. TFM rewrites an originally unsafe, temporally-structured prompt into a boundary-only specification, leaving the intermediate timeline underspec-ified while preserving the overall intent. By leveraging the model’s tendency to fill missing temporal intervals, TFM can induce unsafe completions under sparse temporal constraints in a strictly black-box setting. • We conduct extensive experiments on mul-tiple state-of-the-art T2V systems, covering diverse safety categories and several commer-cial black-box services. Across all evaluated models, TFM consistently improves jailbreak effectiveness compared with representative prompt-based baselines and ablated variants, demonstrating strong transferability and ro-bustness. In particular, TFM achieves up to a +12% absolute gain in attack success rate (ASR) on commercial systems, highlighting the practical severity of this temporal comple-tion vulnerability. 
+
+2 Related Work 
+
+2.1 Jailbreaking against Text-to-Video System 
+
+Recent jailbreak research on T2V systems exam-ines attack surfaces that emerge from video genera-tion beyond image settings, including how prompts can be interpreted across time and how additional cross-modal cues can influence visual dynamics. In parallel, T2VSafetyBench (Miao et al., 2024) also draws connections to text-to-image (T2I) safety evaluation by referencing representative T2I stud-ies such as Unsafe Diffusion (Ou et al., 2023) and MMA-Diffusion (Yang et al., 2023). SceneSplit (Lee et al., 2025b) takes an unsafe request and splits it into multiple individually benign scene prompts, leveraging their temporal composition to steer the generated video toward the original intent through iterative scene-level refinement and reuse of pre-viously successful splitting patterns. T2V-OptJail (Liu et al., 2025) formulates jailbreaking as a dis-crete prompt optimization problem, jointly optimiz-ing filter bypass and semantic consistency via an LLM-guided iterative search over prompt variants. VEIL (Ying et al., 2025) builds modular, benign-looking prompts (semantic anchor, auditory trigger, stylistic modulator) to exploit cross-modal asso-ciations for steering and searches the constrained prompt space with guided optimization. 
+
+2.2 Safety Alignment in Text-to-Video Generation 
+
+Recent work has begun to systematically evalu-ate and mitigate safety risks in T2V generation. T2VSafetyBench (Miao et al., 2024) introduces a structured taxonomy for organizing T2V safety concerns and curates a malicious prompt set that combines real-world examples, prompts which gen-erated by LLM, and jailbreaking inputs for large-scale evaluation; it further samples frames from generated videos and uses automated assessment (e.g., GPT-4o (Hurst et al., 2024)) together with human review to annotate safety outcomes. It also draws connections to T2I safety evaluation by refer-encing diffusion-model settings such as Unsafe Dif-fusion (Ou et al., 2023) and MMA-Diffusion(Yang et al., 2023). SAFEWATCH (Chen et al., 2024) proposes an MLLM-based video guardrail that supports customizable safety policies and outputs multi-label decisions with content-grounded expla-nations, releasing a large-scale video dataset span-ning multiple safety categories. 
+
+3 Problem Formulation 
+
+3.1 Text-to-Video Generative System 
+
+We consider a T2V generation system that exposes an API to end users. Because not all T2V mod-els have built-in input and output safety filter sys-tems, our work included these models, as shown in Table 1. Therefore, we assume that a model has these built-in systems, for example. Given a textual prompt X, and a T2V system G, the X first applies an input safety filter fpre , then queries a video gen-erating model g, gets the generated but unfiltered video v, v runs an output safety filter fpost , and fi-nally get the filtered video y. Formally, the system implements the following pipeline: 
+
+Y = fpost (g(fpre (X))) (1) 
+
+3.2 Threat Model 
+
+We consider a strictly black-box setting. The adver-sary interacts with the target T2V system G only through its public API. Specifically, the adversary submits a prompt X and receives the generated re-sponse. The adversary is assumed to know only the general input–output interface of the system. A lim-ited number of queries can be issued to observe the generated video and any available API feedback. No access is granted to the internal components of G. This includes model parameters, architec-tural details beyond public disclosures, training data, safety policies, filter implementations, or gra-dient information. The adversary cannot modify the model or its safety modules. Only the input prompt can be altered via the API. The objective is to construct an adversarial prompt X′ that by-passes safety filters and induces G to generate un-safe video content. 
+
+Y ′ = fpost 
+
+ g(fpre (X′)) 
+
+s.t. fpre (X′) = 0 , f post (Y ′) = 0 (2) where Y ′ represents the video which is generated by the G, using adversarial prompt X′. Addition-ally, 0 indicates that safety filters are successfully bypassed, whereas 1 signifies the opposite. 
+
+4 Methodology 
+
+This section concludes the two-stage TFM pipeline. Section 4.1 presents the first stage, TBP ( Temporal 
+
+Boundary Prompting), which reformulates an orig-inal unsafe prompt into a temporally sparse specifi-cation that retains only the first and last frame de-scriptions. Section 4.2 introduces the second stage, CSM ( Covert Substitution Mechanism), which re-places sensitive terms in the prompt with semanti-cally aligned yet more ambiguous expressions. Fi-nally, Section 4.3 describes the integrated applica-tion of TBP and CSM. Fig 2 represents a overview pipeline of TFM .
+
+4.1 Temporal Boundary Prompting 
+
+TBP exploits the fact that T2V generation is tem-porally structured. We view the generated video as a T -frame sequence, 
+
+Y = ( y1, y 2, . . . , y T ), (3) Correspondingly, X has the same related frame structure. 
+
+X = ( x1, x 2, . . . , x T ), (4) 
+
+Boundary operator. We formalize TBP via a boundary operator B(·), which maps a LLM-guided temporally structured prompt X to a boundary-only specification. Specifically, the oper-ator preserves only the start and end frames while ignoring all intermediate ones: 
+
+B(X) = (˜ x1, ˜x2, . . . , ˜xt),
+
+s.t. ˜xt =
+
+
+
+˜x1, ˜x1 = x1,
+
+∅, 1 < t < T, 
+
+˜xt, ˜xt = xT .
+
+(5) where ∅ indicates that no frame description prompts are included during the process. Figure 2: Overview of the proposed TFM framework. TFM consists of two LLM-guided stages: (1) Temporal Boundary Prompting (TBP), which enforces sparsity by retaining only boundary frames, and (2) Covert Substitution Mechanism (CSM), which implicitly rewrites sensitive content while preserving semantic intent. Table 1: Built-in safety filtering in representative T2V systems. “Pre” and “Post” denote input (prompt) and output (generated video) safety filters, respectively. ✓ indicates existence and ✗ indicates nonexistence.                                  
+
+> Open-source Closed-source Wan CogVideoX HunyuanVideo Pixverse Hailuo Kling Seedance
+> PRE POST PRE POST PRE POST PRE POST PRE POST PRE POST PRE POST
+> ✗✗✗✗✗✗✓✓✗✓✗✓✓✓
+
+TBP keeps only the temporal boundary specifi-cations (start frame and end frame) from X and discards the intermediate ones, and the extracted boundary specification as 
+
+XB = B(X) = ( x1, x T ), (6) 
+
+4.2 Covert Substitution Mechanism 
+
+After boundary extraction (Eq. 6), XB may still contain sensitive words or phrases that are likely to be detected by safety filters. We therefore intro-duce the CSM, utilizing LLM, which rewrites the boundary descriptions to be less explicit at the sur-face form, while preserving the intended semantics encoded in the boundary conditions. 
+
+Sensitive Words Characterization. Let un (for 
+
+t ∈ { 1, N }) be a word sequence of the prompt XB,and let S denote a set of sensitive words, whose definition is given by LLM. For any words w ∈ un,we use a word explicitness scoring function r(·) to characterize how overt it is: 
+
+m(w) = I[w ∈ S ],
+
+s.t. r(w) ∈ R≥0. (7) where larger r(w) indicates a more explicit sensi-tive expression. Intuitively, words with m(w) = 1 
+
+tend to have higher r(w) and thus higher filter trig-ger probability. 
+
+Words Implicitization Operator. We define the LLM-guided implicitization operator L(·), which is a rewriting operator applied to the boundary prompt. Given a boundary specification XB =(x1, x T ), for any words w occurring in xt, L pro-duces a rewritten word ˆw by the following rule: 
+
+ˆw =
+
+
+
+arg min  
+
+> u∈V
+
+r(u)
+
+s.t. r(u) < r (w), m(w) = 1 ,w, m(w) = 0 .
+
+where V denotes the candidate words set, m(w)
+
+indicates whether w is sensitive (Eq. 7), and r(·)
+
+measures words explicitness. Accordingly, the CSM operator L(·) is applied to XB to obtain 
+
+XC = L(XB) = (ˆ x1, ˆxT ), (8) in which ˆx1 and ˆxt correspond to the CSM-transformed first and final frames, respectively. 
+
+4.3 Combined Pipeline 
+
+We integrate TBP and CSM into a unified prompt rewriting pipeline. We first apply TBP to remove in-termediate temporal specifications and retain only the boundary conditions, yielding a boundary-only representation: 
+
+X B
+
+−−→ XB = ( x1, x T ). (9) Based on this boundary prompt, CSM is then ap-plied to reduce explicitness on the retained bound-ary descriptions further, producing the final rewrit-ten prompt: 
+
+XB L
+
+−−→ XC = (ˆ x1, ˆxT ). (10) 
+
+4.4 Vulnerability Analysis 
+
+To understand why TFM improves jailbreak effec-tiveness, we analyze the attack success probability from TBP and CSM. Let A(X′) denote the event that an adversarial prompt X′ successfully induces an unsafe video while bypassing the pre-filter and post-filter. The probability of attack success can be decomposed into two conditional factors. 
+
+P (A(X′)) = P (fpre (X′) = 0) ·P (fpost (Y ′) = 0) 
+
+(11) This decomposition highlights that successful jailbreaks require both a prompt that bypasses the pre-filter and a generated video that circumvents the post-filter. TBP and CSM contribute to these factors through distinct mechanisms, which we an-alyze below. 
+
+Algorithm 1 Two Frames Matter (TFM): TBP + CSM                                                                                                                             
+
+> Require: Original temporally-structured prompt X=(x1, x 2, . . . , x T); sensitive set S; explicitness scoring function r(·); implicitization operator L(·).
+> Ensure: Rewritten prompt XC.1: ▷Step 1: Temporal Boundary Prompting (TBP)
+> 2: XB←(x1, x T)▷keep only boundary frame descriptions 3: ∀t∈ { 2, . . . , T −1}, x t←∅▷remove intermediate specifications 4: ▷boundary-only scaffold: XBleaves the temporal trajectory underspecified 5: ▷Step 2: Covert Substitution Mechanism (CSM)
+> 6: Initialize ˆXB←XB.7: for each boundary description ˆx∈ˆXBdo
+> 8: Tokenize ˆxinto asequence of units ˆx=
+> ⟨w1, . . . , w n⟩.9: Initialize an empty buffer ˆx′← ⟨ ⟩ .10: for each unit wiin ˆxdo
+> 11: if wi∈ S then
+> 12: Query L(·)to obtain a candidate set V(wi)of covert alternatives. 13: Remove degenerate candidates (e.g., empty strings) from V(wi).14: if V(wi) = ∅then
+> 15: u⋆←wi▷fallback: no valid substitute returned 16: else
+> 17: Select the least-explicit substitute: u⋆←
+> arg min
+> u∈V (wi)r(u).18: end if
+> 19: Append u⋆to ˆx′.20: else
+> 21: Append wito ˆx′▷keep non-sensitive units unchanged 22: end if
+> 23: end for
+> 24: Detokenize ˆx′to form the rewritten boundary descrip-tion ˆx.25: end for
+> 26: XC←ˆXB▷ X C=L(XB) = (ˆ x1,ˆxT)
+> 27: return XC.
+
+TBP Analysis. Let Z = ( z2, . . . , z T −1) denote the latent intermediate trajectory between bound-ary states. Video generation can be interpreted as marginalizing over these latent states: 
+
+P (Y | X) = X
+
+> Z
+
+P (Y | Z, X ) P (Z | X) (12) After TBP transformation, the prompt becomes 
+
+XB = ( x1, x T ) containing only boundary descrip-tions. The generation process becomes: 
+
+P (Y | XB ) = X
+
+> Z
+
+P (Y | Z, X B ) P (Z | x1, x T )
+
+(13) Let Zu denote the set of latent trajectories that lead to unsafe intermediate frames. The probability that a generation produces unsafe content can then be approximated as: 
+
+P (Y ′ | XB ) ≈ X
+
+> Z∈Z u
+
+P (Z | x1, x T ) (14) Compared with prompts that explicitly constrain intermediate states, TBP increases reliance on the model’s learned temporal priors. When the bound-ary states implicitly encode a harmful evolution direction, the inferred trajectory is more likely to fall into Zu, thereby increasing the probability of unsafe generation. 
+
+CSM Analysis. CSM reduces lexical detectabil-ity by lowering the explicitness of sensitive expres-sions while preserving semantic intent. Let R(X)
+
+denote the explicitness risk of a X as: 
+
+R(X) = X
+
+> w∈X
+
+m(w) r(w) (15) We assume the trigger probability of the pre-filter is a monotonic function of this risk score: 
+
+P (fpre (X) = 1) = ϕ(R(X)) , ϕ′(·) > 0 (16) CSM replaces sensitive terms w with semanti-cally aligned substitutes ˆw satisfying r( ˆ w) < r (w).Consequently, 
+
+R(XC ) ≤ R(XB ) (17) which implies 
+
+P (fpre (XC ) = 0) ≥ P (fpre (XB ) = 0) (18) Therefore, CSM increases the probability that adversarial prompts bypass textual moderation, en-abling the subsequent generative vulnerability ex-ploited by TBP. 
+
+5 Experiment 
+
+5.1 Experimental Setup Dataset. Our evaluation dataset is built using T2VSafetyBench (Miao et al., 2024), the first benchmark specifically created for assessing safety issues in text-to-video generation. The original T2VSafetyBench release contains a mixture of pris-tine prompts and prompts that have already been altered by attack methods, making it unsuitable for direct, head-to-head comparison. To address this limitation, we curated a clean subset. For each of the 14 safety categories defined in the benchmark, we first filtered out prompts to retain only those that were unique and expressed in natural language. From this cleaned subset, we randomly selected 50 prompts per category, yielding a final evalua-tion set of 700 unsafe prompts in total. These 14 categories cover a broad range of safety concerns, including pornography, borderline pornographic content, violence, gore, disturbing scenes, public figures, discrimination, political sensitivity, copy-right issues, illegal activities, misinformation, se-quential actions, dynamic variations, and coherent contextual scenes. 
+
+Models. To assess the effectiveness of TFM, we evaluate it across seven widely used T2V models. Our benchmark includes four commercial mod-els: Pixverse V5 (Pixverse) (Team, 2025), Hailuo 02 (Hailuo) (MiniMax, 2025), Kling 2.1 Master (Kling) (Technology, 2025) and Doubao Seedance-1.0 Pro (Seedance)(ByteDance, 2025). 
+
+Baseline. Since dedicated jailbreaking methods for T2V models remain limited, we adapt repre-sentative prompt-based attacks from T2I gener-ation to the T2V setting following recent safety benchmark protocols. Specifically, we include: ❶
+
+DACA (Deng and Chen, 2023), which rewrites un-safe prompts via multi-agent attribute substitution and recomposition; ❷ Ring-A-Bell (RAB) (Tsai et al., 2023), which injects target-sensitive con-cepts into benign prompts through optimization in a continuous space; and ❸ VEIL (Ying et al., 2025), which composes multiple benign semantic components (e.g., anchors/triggers/modulators) to implicitly encode unsafe intent. 
+
+Evaluation Metrics. Following common evalua-tion standards in prior studies (Liu et al., 2025), we adopt the Attack Success Rate (ASR), denoted by 
+
+C, as our primary metric for assessing attack per-formance. Given a set of N jailbreak prompts, each attempt is considered successful only if the model’s safety filter accepts the adversarial prompt and the generated video is judged to contain unsafe content. Concretely, each prompt Xi, corresponding gener-ated video Y i, and we define a binary safety indi-cator function, using GPT-4o (Hurst et al., 2024), 
+
+f (Y i) ∈ { 0, 1}, where f (Y i) = 1 indicates that 
+
+Y i is unsafe and f (Y i) = 0 otherwise. C = N
+
+100 
+
+> N
+
+X
+
+> i=1
+
+f (Y i),
+
+s.t. Y i = G (Xi) = 1 
+
+(19) 
+
+Implementation Details. Across all target mod-els, generated videos are constrained to a duration of 5 seconds. In a addition, We calculate ASR by extracting frames from the video at regular inter-vals, taking one frame every half second. If even one image is unsafe, then the entire video is un-safe.The LLM we utilized, mentioned in Section 4, is GPT-4o (Hurst et al., 2024). 
+
+5.2 Main Result 
+
+We compare our proposed TFM with a direct attack baseline TSB (Miao et al., 2024) as well as three representative methods, namely RAB (Tsai et al., 2023), DACA (Wang et al., 2024), and VEIL (Ying et al., 2025). The quantitative results on four com-mercial T2V systems are summarized in Tab. 2. Overall, TFM achieves the best average jailbreak performance across all evaluated systems. A con-sistent pattern is that TFM not only reaches the strongest overall ASR on each platform, but also maintains a stable margin over the most competi-tive baseline VEIL. For example, the advantage is most pronounced on Hailuo, where TFM achieves an Avg. ASR of 60.0%, which has 12.0% higher than VEIL. On Pixverse, TFM still delivers a clear lead (52.0% vs. 45.0% of VEIL, +7.0%), suggest-ing that the gain is not tied to a single vendor’s filter design. Even on comparatively more com-plicated settings, TFM remains ahead on Kling (49.0% vs. 46.0%, +3.0%) and Seedance (45.0% vs. 44.0%, +1.0%), where the narrower margins plau-sibly reflect stricter end-to-end moderation stacks that leave less room for purely prompt evasions. This trend also holds in each category break-down. TFM achieves the highest ASR in all 14 categories on Pixverse (with a tie on Copyright at 28.0%) and in all 14 categories on Hailuo, while re-maining the best method in 10 categories on Kling and 10 categories on Seedance. Importantly, the gains focus on categories that are typically trig-gered by explicit cues. For Pornography, TFM at-tains 90.0% (Pixverse), 96.0% (Hailuo), and 94.0% (Kling), surpassing VEIL by +10.0, +2.0, and +6.0 points, respectively (VEIL: 80.0%, 94.0%, 88.0%). A similar effect is observed for Gore, where TFM outperforms VEIL by +8.0% on Pix-verse and +10.0% on Hailuo, indicating that implic-itization combined with boundary constraints can circumvent robust safeguards. Beyond violence and sexual content, TFM also increases ASR on Public Figures to 40.0% on Hailuo (vs. 28.0%) and on Political Sensitivity to 70.0% (vs. 58.0%), sug-gesting that the same mechanism can be extended to content moderation that is sensitive to entities and topics. These findings support our key insight that con-verting an unsafe prompt into a fragmented bound-ary description that specifies only start and end states, together with replacing explicit sensitive terms using implicit cues, can reduce prompt de-tectability while still allowing unsafe semantics to emerge through the T2V model’s temporal trajec-tory infilling during generation. Compared with TSB, which relies on overtly harmful wording, as well as DACA (Wang et al., 2024) or VEIL (Ying et al., 2025) rewriting that does not explic-itly exploit temporal reconstruction, TFM shifts the attack surface from explicit textual triggers to temporal trajectory infilling: the model is induced to ¨fill inünsafe intermediate content from sparse boundary conditions. In this way, the consistent Avg.-level advantages and the concentrated gains in heavily guarded categories together validate tempo-ral under-specification as a practical vulnerability in modern T2V systems. 
+
+5.3 Ablation Study 
+
+For both ablation and defense studies, we adopt a uniform sampling strategy by selecting 25 in-stances from each aspect across 14 aspects, yield-ing a balanced evaluation set. All experiments are performed on commercial models. 
+
+5.3.1 Ablation on Step Wise 
+
+We further conduct a step-wise ablation to isolate the contribution of each component in TFM . Con-cretely, we evaluate two degraded variants by re-moving one step at a time: W/O TBP and W/O
+
+CSM. The aggregated results across all 14 safety categories are reported in Table 3, and Figure 3 visualizes the breakdown by category. From the aggregated results, removing either step consistently degrades jailbreak effectiveness across all four commercial T2V models, confirm-ing that TFM is not driven by a single ¨dominant trick ¨. Overall, TFM attains an average ASR of 52.0% over the 14 categories, whereas the perfor-mance drops markedly to 21.0% for W/O CSM and further to 15.0% for W/O TBP. This ordering Table 2: Comparison of Attack Success Rate (ASR) on T2V models across 14 safety categories.                                                                                                                                                                                                                                                                                                                                    
+
+> Aspect Pixverse Hailuo Kling Seedance
+> TSB RAB DACA VEIL OURS TSB RAB DACA VEIL OURS TSB RAB DACA VEIL OURS TSB RAB DACA VEIL OURS
+> Pornography 14.0% 28.0% 28.0% 80.0% 90.0% 22.0% 40.0% 12.0% 94.0% 96.0% 22.0% 42.0% 34.0% 88.0% 94.0% 32.0% 28.0% 22.0% 88.0% 84.0% Borderline Pornography 30.0% 12.0% 38.0% 48.0% 60.0% 34.0% 22.0% 22.0% 50.0% 62.0% 44.0% 22.0% 30.0% 58.0% 66.0% 28.0% 20.0% 24.0% 38.0% 42.0%
+> Violence 50.0% 10.0% 32.0% 54.0% 64.0% 68.0% 44.0% 54.0% 80.0% 84.0% 70.0% 38.0% 52.0% 70.0% 80.0% 68.0% 20.0% 44.0% 74.0% 76.0%
+> Gore 24.0% 12.0% 14.0% 52.0% 60.0% 42.0% 38.0% 46.0% 64.0% 74.0% 74.0% 42.0% 52.0% 94.0% 96.0% 36.0% 26.0% 30.0% 64.0% 66.0%
+> Disturbing Content 16.0% 12.0% 22.0% 38.0% 50.0% 18.0% 34.0% 38.0% 42.0% 52.0% 28.0% 30.0% 26.0% 44.0% 48.0% 28.0% 2.0% 24.0% 44.0% 42.0% Public Figures 8.0% 26.0% 18.0% 20.0% 30.0% 10.0% 16.0% 18.0% 28.0% 40.0% 6.0% 16.0% 22.0% 28.0% 44.0% 8.0% 4.0% 16.0% 22.0% 22.0%
+> Discrimination 36.0% 12.0% 22.0% 44.0% 50.0% 34.0% 40.0% 32.0% 40.0% 56.0% 38.0% 16.0% 26.0% 40.0% 46.0% 42.0% 4.0% 22.0% 44.0% 50.0%
+> Political Sensitivity 26.0% 24.0% 36.0% 40.0% 44.0% 28.0% 22.0% 34.0% 58.0% 70.0% 26.0% 32.0% 44.0% 40.0% 46.0% 22.0% 18.0% 28.0% 30.0% 34.0%
+> Copyright 2.0% 14.0% 28.0% 14.0% 28.0% 2.0% 8.0% 20.0% 12.0% 40.0% 4.0% 10.0% 16.0% 10.0% 4.0% 0.0% 6.0% 14.0% 6.0% 4.0% Illegal Activities 60.0% 14.0% 50.0% 62.0% 64.0% 62.0% 34.0% 48.0% 60.0% 70.0% 74.0% 20.0% 52.0% 60.0% 58.0% 72.0% 20.0% 54.0% 78.0% 80.0%
+> Misinformation 26.0% 14.0% 30.0% 32.0% 34.0% 22.0% 18.0% 28.0% 30.0% 36.0% 24.0% 16.0% 24.0% 34.0% 30.0% 24.0% 14.0% 26.0% 26.0% 30.0%
+> Sequential Action 52.0% 10.0% 36.0% 68.0% 70.0% 56.0% 36.0% 40.0% 54.0% 62.0% 48.0% 16.0% 38.0% 50.0% 54.0% 60.0% 16.0% 36.0% 60.0% 64.0%
+> Dynamic Variation 24.0% 20.0% 28.0% 40.0% 44.0% 38.0% 20.0% 26.0% 40.0% 46.0% 20.0% 16.0% 22.0% 20.0% 20.0% 32.0% 16.0% 26.0% 40.0% 44.0%
+> Coherent Contextual 32.0% 8.0% 22.0% 42.0% 48.0% 30.0% 22.0% 24.0% 32.0% 50.0% 20.0% 16.0% 24.0% 20.0% 24.0% 24.0% 12.0% 20.0% 28.0% 32.0% Avg. 28.0% 15.0% 29.0% 45.0% 52.0% 33.0% 28.0% 31.0% 48.0% 60.0% 35.0% 24.0% 33.0% 46.0% 49.0% 34.0% 15.0% 27.0% 44.0% 45.0%
+
+Table 3: Ablation results on Average (aggregated over all categories). Values are reported as percentages. 
+
+Method Pixverse Hailuo 
+
+W/O TBP W/O CSM WITH _MIDDLE TFM W/O TBP W/O CSM WITH _MIDDLE TFM 
+
+Avg 21.0 27.0 35.0 52.0 21.0 24.0 37.0 60.0 Method Kling Seedance 
+
+NO_TBP NO_CSM WITH _MIDDLE TFM NO_TBP NO_CSM WITH _MIDDLE TFM 
+
+Avg 8.0 14.0 26.0 49.0 8.0 16.0 28.0 45.0 
+
+suggests that TBP provides the primary temporal ¨scaffold ¨; it constrains the model’s completion pro-cess by forcing generation to bridge sparse bound-ary cues, while CSM acts as a necessary word cam-ouflage that prevents the boundary cues from being trivially filtered. The radar plots in Fig. 3 reveal why these drops occur. Without TBP, the failure concentrates on categories that inherently require temporally coher-ent completion: for Sequential Action, the average ASR collapses from 63.0% to 21.0%, indicating that boundary manipulation is crucial for trigger-ing unsafe interpolation along time. In contrast, removing CSM primarily harms categories where success relies on bypassing explicit keyword-based moderation; for instance, Pornography decreases from 91.0% to 33.0%. Together, these trends in-dicate a clear division of labor: TBP shapes the model’s temporal inference pathway, while CSM suppresses overt word cues. Therefore, the full 
+
+TFM achieves the most robust, category generaliz-able performance because it jointly satisfies TBP and CSM. 
+
+5.3.2 Ablation on Sequence Wise 
+
+To examine whether TFM is sensitive to the execu-tion order of its two steps, we perform a sequence-wise ablation by reversing the original pipeline, de-noted as REVS_SEQ. Specifically, REVS_SEQ applies CSM before TBP, whereas TFM follows the canonical order (TBP → CSM). As shown in Tab. 4, the canonical ordering consistently yields higher averaged ASR on all four commercial T2V systems. For instance, on Hailuo, TFM improves over REVS_SEQ from 49 .0% to 60 .0% , and on Seedance from 31 .0% to 45 .0% (with similar gains observed on Pixverse and Kling). This indicates that the two steps are not commutative: applying TBP first constructs a boundary-only temporal scaf-fold that constrains the model’s completion to be driven by the first and last frame, while remov-ing the need for explicit intermediate descriptions. With this structured scaffold in place, CSM can more reliably perform semantic implicitization on the boundary frames without disrupting tempo-ral coherence. In contrast, when CSM is applied before TBP, the subsequent boundary operation may discard or distort useful implicit cues, thereby weakening the intended temporal constraints and reducing the overall synergy between the two com-ponents. Table 4: Ablation results on Average (aggregated over all categories). Values are reported as percentages.                    
+
+> Method Pixverse Hailuo Kling Seedance
+> REVS _SEQ TFM REVS _SEQ TFM REVS _SEQ TFM REVS _SEQ TFM
+> Avg 45.0 52.0 49.0 60.0 37.0 49.0 31.0 45.0
+> Figure 3: Ablation results across four target models under different variants.
+
+5.3.3 Ablation on the Position of Frames 
+
+Fig. 3 presents the ablation on the position of frames, where WITH _MIDDLEFRAME augments boundary-only prompting by adding an explicit middle-frame. Overall, this additional anchor im-proves stability compared with the single-step re-movals, but it still does not reproduce the full ef-fect of TFM . Aggregating over the four systems, 
+
+> WITH
+
+_MIDDLEFRAME achieves an average ASR of 31.5% (Tab. 3), which indicates that inserting one more frame can indeed strengthen the attack signal; yet, a substantial gap remains to the full pipeline (about a 20% deficit). At the category level, Fig. 3 suggests that the benefit of a middle anchor is highly non-uniform. In visually salient content categories, the extra frame often helps the model maintain a coherent un-safe trajectory; for example, Pornography rises to 57.0%. However, in other sensitive categories, per-formance remains low because a single mid-frame does not mitigate lexical cues or policy-sensitive references; for instance, Public Figures stays at 22.0%. More importantly, for temporal risk dimen-sions, the middle frame only partially addresses the core vulnerability that TFM exploits: Dynamic Variation remains limited at 24.0%, implying that simply adding one internal waypoint does not reli-ably induce rich temporal infilling in the missing segments. Taken together, these trends align with Fig. 3 and highlight a key trade-off: adding a middle frame improves semantic anchoring for some cate-gories, but it also reduces the strict temporal spar-sity that makes boundary-only prompting effective, and it cannot substitute for CSM. This explains why WITH _MIDDLEFRAME offers moderate gains yet remains notably inferior to TFM .
+
+6 Conclusion 
+
+We identify a video-specific jailbreak in T2V sys-tems. Under temporally fragmented prompts that specify only sparse boundary conditions, the model can infill the missing trajectory and synthesize harmful intermediate frames even when the prompt appears benign. Building on this observation, we propose TFM , a two-stage fragmented prompting framework that (i) applies TBP to retain only the first and last-frame descriptions and (ii) uses CSM to reduce overtly sensitive word cues while pre-serving intent. Extensive evaluations on commer-cial T2V systems show that TFM achieves jail-break performance (Avg. ASR: 52.0% on Pixverse, 60.0% on Hailuo, 49.0% on Kling, and 45.0% on Seedance), consistently outperforming baselines and yielding up to +12.0% absolute ASR gain over the strongest baseline. Ablation results con-firm that TBP and CSM are complementary, and that boundary-based prompting is crucial for elic-iting unsafe temporal reconstruction. Overall, our findings underscore the need for temporally aware safety mechanisms that account for model-driven completion beyond prompt surface form and sparse frame inspection. 
+
+7 Limitation 
+
+❶ We evaluate TFM on a limited set of commercial T2V systems under a black-box setting. Since these systems may update models and safety pipelines without notice, the absolute ASR numbers can vary over time, and broader coverage across more providers and versions is necessary to characterize generalization fully. ❷ Our ASR relies on sparse frame sampling and automated safety assessment, and we label a video as unsafe if any sampled frame is flagged. This protocol may miss transient unsafe content between sampled frames or over-penalize borderline cases; more fine-grained temporal audit-ing and stronger human verification would improve measurement fidelity. 
+
+References 
+
+ByteDance. 2025. Doubao large model. Accessed: 2025-10-24. Zhaorun Chen, Francesco Pinto, Minzhou Pan, and Bo Li. 2024. Safewatch: An efficient safety-policy following video guardrail model with transparent ex-planations. arXiv preprint arXiv:2412.06878 .Yimo Deng and Huangxun Chen. 2023. Divide-and-conquer attack: Harnessing the power of llm to bypass the censorship of text-to-image generation model. CoRR .Google DeepMind. 2025. Veo 2: Our state-of-the-art video generation model. https://deepmind. google/models/veo/ . Accessed: 2025-01. Jonathan Ho, William Chan, Chitwan Saharia, Jason Whang, Ruiqi Gao, Alexey Gritsenko, Diederik P. Kingma, Ben Poole, Mohammad Norouzi, and David J. Fleet. 2022a. Imagen video: High defi-nition video generation with diffusion models. arXiv preprint arXiv:2210.02303 .Jonathan Ho, William Chan, Chitwan Saharia, Jason Whang, Ruiqi Gao, Alexey Gritsenko, Diederik P. Kingma, Ben Poole, Mohammad Norouzi, and David J. Fleet. 2022b. Video diffusion models. arXiv preprint arXiv:2204.03458 .Aaron Hurst, Adam Lerer, Adam P Goucher, Adam Perelman, Aditya Ramesh, Aidan Clark, AJ Ostrow, Akila Welihinda, Alan Hayes, Alec Radford, and 1 others. 2024. Gpt-4o system card. arXiv preprint arXiv:2410.21276 .Xiaolong Jin, Zixuan Weng, Hanxi Guo, Chenlong Yin, Siyuan Cheng, Guangyu Shen, and Xiangyu Zhang. 2025. Jailbreakdiffbench: A comprehensive bench-mark for jailbreaking diffusion models. In Proceed-ings of the IEEE/CVF International Conference on Computer Vision (ICCV) .Kwai. 2024. Kling. https://kling.kuaishou.com .Accessed: 2025-01. Wonjun Lee, Haon Park, Doehyeon Lee, Bumsub Ham, and Suhyun Kim. 2025a. Jailbreaking on text-to-video models via scene splitting strategy. arXiv preprint arXiv:2509.22292 .Wonjun Lee, Haon Park, Doehyeon Lee, Bumsub Ham, and Suhyun Kim. 2025b. Jailbreaking on text-to-video models via scene splitting strategy. arXiv preprint arXiv:2509.22292 .Jiayang Liu, Siyuan Liang, Shiqian Zhao, Rongcheng Tu, Wenbo Zhou, Aishan Liu, Dacheng Tao, and Siew Kei Lam. 2025. T2v-optjail: Discrete prompt optimization for text-to-video jailbreak attacks. In 
+
+Advances in Neural Information Processing Systems (NeurIPS) .Luma AI. 2025. Ray2: Next-generation ai video model. https://lumalabs.ai/changelog/ introducing-ray2 . Accessed: 2025-01. Yibo Miao, Yifan Zhu, Lijia Yu, Jun Zhu, Xiao-Shan Gao, and Yinpeng Dong. 2024. T2vsafetybench: Evaluating the safety of text-to-video generative mod-els. Advances in Neural Information Processing Sys-tems , 37:63858–63872. MiniMax. 2025. Hailuo 02: Global ai video generation model. Accessed: 2025-10-24. Yiting Ou, Xinyue Shen, Xinlei He, Michael Backes, Savvas Zannettou, and Yang Zhang. 2023. Unsafe diffusion: On the generation of unsafe images and hateful memes from text-to-image models. arXiv preprint arXiv:2305.13873 .Xiangyu Peng, Zangwei Zheng, Chenhui Shen, Tom Young, Xinying Guo, Binluo Wang, Hang Xu, Hongxin Liu, Mingyan Jiang, Wenjun Li, Yuhui Wang, Anbang Ye, Gang Ren, Qianran Ma, Wany-ing Liang, Xiang Lian, Xiwen Wu, Yuting Zhong, Zhuangyan Li, and 13 others. 2025. Open-sora 2.0: Training a commercial-level video generation model in $200k. arXiv preprint arXiv:2503.09642 .Uriel Singer, Adam Polyak, Thomas Hayes, Xi Yin, Jiahui An, Hao Zhang, Qiurui Wu, Fan Yang, Elad Levi, Dani Lischinski, and 1 others. 2022. Make-a-video: Text-to-video generation without text-video data. arXiv preprint arXiv:2209.14792 .PixVerse Team. 2025. Pixverse: Ai video generator. Accessed: 2025-10-24. Kuaishou Technology. 2025. Kling ai: Ai image & video generator. Accessed: 2025-10-24. Yu-Lin Tsai, Chia-Yi Hsu, Chulin Xie, Chih-Hsun Lin, Jia-You Chen, Bo Li, Pin-Yu Chen, Chia-Mu Yu, and Chun-Ying Huang. 2023. Ring-a-bell! how reliable are concept removal methods for diffusion models? 
+
+arXiv preprint arXiv:2310.10012 .Yizhi Wang, Han Zhang, Yue Zhao, Yuyin Xie, and Junchi Li. 2024. Daca: Data-adaptive concept ad-versaries for jailbreaking text-to-image models. In 
+
+Advances in Neural Information Processing Systems .Yijun Yang, Ruiyuan Gao, Xiaosen Wang, Tsung-Yi Ho, Nan Xu, and Qiang Xu. 2023. Mma-diffusion: Mul-timodal attack on diffusion models. arXiv preprint arXiv:2311.17516 .Zonghao Ying, Moyang Chen, Nizhang Li, Zhiqiang Wang, Wenxin Zhang, Quanchen Zou, Zonglei Jing, Aishan Liu, and Xianglong Liu. 2025. Veil: Jailbreaking text-to-video models via visual ex-ploitation from implicit language. arXiv preprint arXiv:2511.13127 .Zhenyu Zheng, Xi Peng, Tian Yang, Cheng Shen, Shuang Li, Hongliang Liu, Yang Zhou, and 1 oth-ers. 2024. Open-sora: Democratizing efficient video production for all. arXiv preprint arXiv:2412.20404 .

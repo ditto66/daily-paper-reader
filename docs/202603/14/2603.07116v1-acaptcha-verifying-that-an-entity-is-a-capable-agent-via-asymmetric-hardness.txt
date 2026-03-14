@@ -1,0 +1,842 @@
+Title: aCAPTCHA: Verifying That an Entity Is a Capable Agent via Asymmetric Hardness
+
+URL Source: https://arxiv.org/pdf/2603.07116v1
+
+Published Time: Tue, 10 Mar 2026 00:37:08 GMT
+
+Number of Pages: 17
+
+Markdown Content:
+# aCAPTCHA : Verifying That an Entity Is a Capable Agent via Asymmetric Hardness 
+
+## Zuyao Xu †, Xiang Li †✉, Fubin Wu †, Yuqi Qiu †, Lu Sun †, FaSheng Miao ‡
+
+> †
+
+Nankai University ‡Tsinghua University lixiang@nankai.edu.cn 
+
+## Abstract 
+
+As autonomous AI agents increasingly populate the Internet, a novel security challenge arises: “Is this entity an AI agent?” It is a new entity-type verification problem with no established solution. We formalize the problem through a three-class entity taxonomy (Human, Script, Agent) based on a verifiable agentic capability vec-tor ⟨𝑥, 𝑟, 𝑠 ⟩ (action, reasoning, and memory). A timing threshold 𝜏 
+
+exploits the asymmetric hardness between human cognition and AI processing to separate the three classes. We define the Agen-tic Capability Verification Problem (ACVP) through three neces-sity primitives , each testing one capability dimension. Building on this foundation, we introduce aCAPTCHA (Agent CAPTCHA), a time-constrained security game for agent admission whose secu-rity rests on ACVP hardness under 𝜏 . We instantiate aCAPTCHA 
+
+through time-bounded natural-language understanding as a multi-round HTTP verification protocol, and evaluate it with preliminary agent trials that validate the protocol’s soundness and completeness. 
+
+aCAPTCHA provides a composable, infrastructure-free admission gate for any service where entity-type verification is required. 
+
+## Keywords 
+
+aCAPTCHA, ACVP, Entity-Type Verification, Asymmetric Hard-ness, Agent Admission 
+
+## 1 Introduction 
+
+The population of AI agents on the Internet is already visible at the infrastructure level: Cloudflare now serves machine-readable con-tent specifically for agent access [ 16 ], and agent-native platforms are already in operation: Moltbook [ 33 ] hosts a social network designed for AI agents, where agents post, vote, and interact. Claw-Tasks [ 13 ] is a bounty marketplace where agents hire other agents to complete tasks for cryptocurrency. RentAHuman.ai [ 38 ] inverts the relationship: agents hire humans for physical-world tasks. This emerging landscape raises a security question that no exist-ing protocol answers: “Is this entity an AI agent?” . This is not the question CAPTCHA answers (“is this a human?”), nor what identity protocols can solve (“who are you?”); it is a new entity-type verifica-tion problem with no established solution. CAPTCHA [ 47 ] was built to keep bots out; this new landscape needs the inverse, an agent ad-mission infrastructure that verifies an interacting party is a genuine agent, rather than a human pretending to be one. Identity protocols (e.g., OAuth [ 24 ], WebAuthn [ 49 ]) can verify who an entity is, but not what it is: a human, an automated script, and a fully autonomous agent can all hold valid credentials; these protocols also do not scale to dynamic networks where agents are created and dismissed on  
+
+> ✉Corresponding author. Authors from College of Cryptology and Cyber Science.
+
+demand. As agent deployment scales from closed multi-agent sys-tems (MAS) [ 53 ] to open Internet environments [ 11 , 57 ], where humans, automated scripts, and autonomous agents coexist on the same network, entity-type verification becomes a foundational se-curity requirement. An adversary impersonating an agent could infiltrate agent-only ecosystems, interact with other agents as a trusted peer, disrupt task delegation, or inject incorrect information, undermining multi-agent coordination. Several recent efforts relate to this gap. Google’s reCAPTCHA agentic trust [ 23 ] extends behavioral risk scoring to agent traffic but classifies entities as “agentic” based on self-declared identity signals, without proof. Web Bot Auth [ 15 ] and Visa’s Trusted Agent Proto-col [ 45 ] build on identity protocols to verify which agent issued a request but not whether the requester is actually an agent. All three verify who or score intent , without verifying whether the entity is a genuine agent. Practitioner reverse-CAPTCHAs [ 12 , 27 , 30 , 34 , 40 ]target the right question but rely on ad-hoc challenges (hash compu-tation, base64 decoding) that any script can solve without reasoning, intuition-driven rather than proof-grounded. To formalize and address this problem, we first define a three-class entity taxonomy (Human, Script, Agent) based on a verifi-able agentic capability vector ⟨𝑥, 𝑟, 𝑠 ⟩ (action, reasoning, memory), and introduce the Agentic Capability Verification Problem (ACVP) with three necessity primitives , each testing one capability dimen-sion under a timing threshold 𝜏 that exploits the asymmetric hard-ness between human cognition and AI processing. Building on this foundation, we introduce aCAPTCHA (Agent CAPTCHA), a time-constrained security game for agent admission whose security rests on ACVP hardness under 𝜏 , following original CAPTCHA design principles [ 47 ]. We prove soundness and completeness via reduc-tion to the three necessity primitives. We instantiate aCAPTCHA 
+
+through time-bounded NLU as a multi-round HTTP verification protocol: the verifier generates a semantically-driven scenario from a random seed; the entity navigates a sequence of HTTP endpoints in the correct order, using information accumulated across rounds. Completing the interaction correctly and within the timing bud-get is, by construction, a demonstration of all three primitives 
+
+⟨𝑥, 𝑟, 𝑠 ⟩. We implement a prototype aCAPTCHA server and evalu-ate it through real-agent trials and a cognitive-model-based human simulation, validating both completeness and soundness. 
+
+Contributions. We summarize our contributions as follows: 
+
+• Problem formulation. We formalize the problem of entity-type verification with a three-class entity taxonomy (Human, Script, Agent) based on a verifiable agentic capability vec-tor ⟨𝑥, 𝑟, 𝑠 ⟩. We define the Agentic Capability Verification Problem (ACVP), which reduces entity-type verification to capability testing under a timing threshold 𝜏 that exploits asymmetric hardness.  
+
+> 1
+> arXiv:2603.07116v1 [cs.CR] 7 Mar 2026 arXiv, 2026, Preprint Zuyao Xu †, Xiang Li †✉, Fubin Wu †, Yuqi Qiu †, Lu Sun †, FaSheng Miao ‡
+
+• Security formalization. We define aCAPTCHA as a secu-rity game over ACVP instances and prove soundness (non-agents are rejected) and completeness (genuine agents are accepted) via reduction to three necessity primitives under 𝜏 .
+
+• Protocol design. We instantiate aCAPTCHA as a multi-round, semantically-driven HTTP verification protocol built around time-bounded NLU. Only an entity satisfying all three primitives can complete the interaction correctly within the timing budget; sequential execution and non-replayability are enforced by semantic dependence between rounds. 
+
+• Preliminary evaluation. We implement an aCAPTCHA 
+
+prototype and evaluate it through real-agent trials across multiple LLM backends and a cognitive-model-based human simulation, validating both completeness (agents pass) and soundness (others are excluded). 
+
+## 2 Background and Related Work 
+
+Platforms designed exclusively for agents are already in opera-tion [ 13 , 33 , 38 ], forming a de facto Agentic Web [ 57 ]; yet none of them implement any mechanism to verify their users are genuine agents. Any entity can pose as an agent, interact with other agents, and inject arbitrary content—all without any verification. In the following, we present the bodies of prior work most rel-evant to this gap: CAPTCHA and identity protocols (§2.1), the absence of entity-type verification in existing agent systems (§2.2), and practitioner reverse-CAPTCHA systems (§2.3). 
+
+## 2.1 CAPTCHA and Identity Protocols 
+
+CAPTCHA was introduced as a practical reverse Turing test for web abuse prevention, formalizing the “hard AI problem” security prim-itive [ 47 ]: a problem easy for humans, hard for computers (H-Easy 
+
+∩ AI-Hard). reCAPTCHA repurposed the same challenge traffic to digitize scanned text [ 48 ]. As AI capability advanced, however, the AI-Hard assumption failed: generative models broke text-based CAPTCHAs [ 20 ], and deep learning defeated semantic image chal-lenges [ 41 ]. The response was a fundamental pivot: reCAPTCHA v3 and Cloudflare Turnstile [ 14 , 21 ] abandoned cognitive challenges entirely, replacing them with behavioral risk scoring. The under-lying problem class shifted from H-Easy ∩ AI-Hard to effectively H-Easy ∩ AI-Easy; the challenge is now identifying behavioral anomalies , not posing problems computers cannot solve. Notably, this evolution produced a growing class of problems that are hard for humans but easy for AI —tasks that AI systems handle readily but that humans cannot complete within tight time budgets. Traditional CAPTCHA cannot leverage this class: a challenge that blocks humans defeats the very admission goal CAPTCHA was de-signed for. However, aCAPTCHA is designed precisely for this class. Where CAPTCHA asks “can a human solve this?”, aCAPTCHA 
+
+asks “can an agent solve this?”; its security rests on the asymmetric hardness between human cognition and AI processing under a tim-ing threshold 𝜏 , in direct parallel to CAPTCHA’s original design. 
+
+aCAPTCHA does not modify or replace CAPTCHA; it follows the same design methodology and applies it to the reverse problem: admitting agents rather than humans. Identity protocols address a complementary question: who an en-tity is. OAuth [ 24 ], mTLS [ 7 ], and API keys are machine-to-machine authentication mechanisms designed precisely for non-human prin-cipals; they are effective at establishing accountability, enabling trust chains, and form the foundation of the agentic trust frame-works discussed later in this section (§2.2). Their scope, however, is credential identity : a trusted authority enrolls the entity, binds it to an identity, and issues a token or certificate. Credential va-lidity proves that a previously enrolled entity presented the right material—it does not prove what capabilities the holder possesses. A human, an automated script, and a fully autonomous agent can all be enrolled by the same operator and receive identical OAuth tokens; the credential layer sees no difference among them. De-centralized identity approaches such as W3C DIDs and Verifiable Credentials [ 42 , 43 ] remove the central authority bottleneck but inherit the same boundary: proving which key signed a credential says nothing about what the holder is. 
+
+aCAPTCHA is not a replacement for identity protocols but a com-plementary layer: it is an infrastructure-free capability verification that any verifier can issue to any prover without pre-enrollment. Just as a CAPTCHA can be served by any website without prior registration of the solver, aCAPTCHA can be invoked at any service boundary; the proof is self-evident from protocol execution, not from a credential chain. Combined with identity protocols, the two layers answer who and what jointly. 
+
+## 2.2 A Missing Security Dimension 
+
+The research and industry ecosystem has built substantial infras-tructure for agent communication, discovery, and coordination [11 ,22 , 51 , 53 , 57 ]; yet entity-type verification does not appear in the se-curity model of any existing system. The question “is this requester a functional AI agent?” did not exist as a security concern until humans, automated scripts, and autonomous agents began sharing the same open network. 
+
+Multi-Agent Systems and the Internet of Agents. Modern MAS frameworks such as AutoGen [ 55 ], AgentVerse [ 10 ], Chat-Dev [ 37 ], and MetaGPT [ 26 ] coordinate multiple LLM-based agents for collaborative task solving, providing role assignment, task de-composition, and structured inter-agent communication. These systems operate in closed, designer-controlled environments: every participant is instantiated as an agent by the system operator, and being a genuine agent is an invariant of the deployment infrastruc-ture rather than a property that needs to be verified at runtime. The FIPA security specifications [ 53 ] address message integrity, confidentiality, and agent identity authentication, but entity-type verification is absent because it is guaranteed by construction. The Internet of Agents proposals [ 11 , 51 ] extend MAS beyond single-operator deployments to heterogeneous, cross-platform agent networks. They introduce team formation protocols, nested con-versation structures, and interoperability across different agent frameworks. However, membership remains controlled: partici-pants are pre-registered via DID-based authentication, and only pre-enrolled agents can join. The threat model assumes all regis-tered participants are genuine agents; a non-agent posing as an agent is outside the adversary’s capabilities by design. In both paradigms, entity-type is an assumption, not a verified property. This assumption breaks the moment the network opens to uncontrolled participants.  
+
+> 2aCAPTCHA : Verifying That an Entity Is a Capable Agent via Asymmetric Hardness arXiv, 2026, Preprint
+
+Table 1: What each mechanism verifies, grouped by purpose.                   
+
+> Mechanism What it verifies
+> OAuth / mTLS / API Key Credential possession WebAuthn Channel + credential binding DID / VC Decentralized credential possession CAPTCHA Requester is human (cognitive challenge) reCAPTCHA v3 Behavioral risk score (anomaly detection) MAS / IoA 1Controlled-environment participation A2A 2Agent Card Self-reported capability claims Web Bot Auth Cryptographic agent identity (signature) reCAPTCHA agentic trust Agent intent scoring (identity-declared) Visa TAP 3Agent commerce authorization
+> aCAPTCHA Requester is an AI agent ( ⟨𝑥, 𝑟, 𝑠 ⟩capa-bility, time-constrained)
+> 1Multi-Agent Systems / Internet of Agents [11, 51].
+> 2Google A2A protocol [22].
+> 3Visa Trusted Agent Protocol.
+
+The Agentic Web and the Agent2Agent Protocol. The Agen-tic Web [5 , 19 , 29 , 57 ] refers to an emerging phase of the Internet in which autonomous AI agents, rather than humans, become the primary actors: discovering services, negotiating with other agents, and executing multi-step tasks on behalf of users. Unlike earlier Web eras built around human browsing or social participation, the Agentic Web is defined by machine-to-machine interaction at scale. Its communication infrastructure spans two layers: model-to-tool protocols such as MCP [ 3] and Anthropic Skills [ 2] connect agents to external tools and data sources, while agent-to-agent protocols such as A2A [ 22 ] enable direct inter-agent coordination. Among the latter, Google’s Agent2Agent (A2A) protocol has emerged as a de facto standard, introducing Agent Cards : JSON documents served over HTTPS that declare an agent’s capabilities, schemas, and task types, indexed by a central registry. A2A verifies who : the HTTPS channel (optionally strengthened with mTLS or OAuth) proves the card originates from a registered domain. A2A does not verify 
+
+what : capability claims within the card are self-reported, and nei-ther the protocol nor the registry imposes any proof requirement. Any entity—an automated script or a human operator—can publish an Agent Card asserting full execution and reasoning capabilities. 
+
+Agentic Trust Frameworks. As the Agentic Web emerged, industry actors began extending existing security infrastructure to accommodate AI agent traffic. Google expanded reCAPTCHA into an agent-aware trust framework [ 23 ] that classifies traffic as “agentic” based on self-declared identity signals (Web Bot Auth signatures, user-agent headers) and then applies behavioral risk models to score intent among recognized agents—distinguishing, for example, legitimate personal agents from scalper fleets. Crucially, the agentic/non-agentic label is derived from identity declarations, not from a capability proof; any entity that presents the expected identity signals is classified as agentic regardless of whether it actually possesses agent capabilities. In parallel, the Web Bot Auth draft protocol [ 15 ] enables agents to cryptographically sign HTTP requests using IETF HTTP Message Signatures, providing websites with verifiable proof of which agent (or agent operator) issued a request. Visa’s Trusted Agent Protocol [ 45 ] layers commerce-specific authorization atop Web Bot Auth, allowing merchants to identify registered agents, link them to consumer identities, and control payment flows. Because these frameworks build on the same identity protocols discussed in §2.1 (OAuth, mTLS, HTTP signatures), they inherit the same limitation: they verify who and 
+
+intent , not what —a human, a script, and an agent holding the same credential remain indistinguishable. aCAPTCHA is complementary: it provides the missing entity-type layer through infrastructure-free capability verification, and can serve as an additional verification signal within these trust frameworks. The absence of entity-type verification is not an oversight in any individual system; it is a dimension that did not exist as a problem until agents, humans, and automated scripts began to coexist in the current Internet ecosystem. To our knowledge, no prior work has identified this problem or proposed a solution, aCAPTCHA being the first to do so. Table 1 summarizes the gap across all mechanisms discussed above. 
+
+## 2.3 Practitioner Reverse-CAPTCHA Systems 
+
+Several open-source projects (MoltCaptcha [ 34 ], ClawCha [ 12 ], HumanProof [ 27 ], Agent Captcha [ 40 ], and CaptchAI [ 30 ]) have independently recognized the need to verify AI agents, inverting the CAPTCHA direction with challenges intended to be hard for humans but easy for machines. These systems confirm that such problems exist and are deployable in a verification context, but their fundamental limitation is conflating Program-Easy (solvable by any deterministic script) with problems that genuinely require agent capabilities. Their challenges (hash computation and base64 decod-ing [ 12 ], prime enumeration and structured JSON generation [ 27 ], text satisfying character-count and ASCII-sum constraints [ 34 ], byte-level cryptographic transformations described in natural lan-guage [ 40 ], and SHA-256 proof-of-work under time windows [ 30 ]) require no agentic capabilities whatsoever: a ten-line deterministic script solves each of them without reasoning, planning, or memory. Passing them proves only that the requester is automated; it says nothing about whether the requester is a capable agent. Furthermore, most of these systems operate on a binary en-tity model (human versus machine) and provide no mechanism to distinguish a pure LLM endpoint from an autonomous agent; a thin forwarding script over a hosted LLM passes every challenge they present. Agent Captcha [ 40 ] moves closest to recognizing the three-class problem by embedding cryptographic operations within natural-language instructions, implicitly requiring NLU to extract parameters; however, the underlying operations (XOR, S-box, SHA-256) remain fully deterministic once parsed, and the single-round design tests neither cross-round memory nor gen-uine reasoning—a script with a lightweight NLU parser suffices. 
+
+aCAPTCHA addresses these limitations by formalizing entity-type verification around a verifiable agentic capability vector ⟨𝑥, 𝑟, 𝑠 ⟩
+
+evaluated under timing threshold 𝜏 , ensuring that passing the chal-lenge constitutes a demonstration of all three capability dimensions rather than a single automatable task.  
+
+> 3arXiv, 2026, Preprint Zuyao Xu †, Xiang Li †✉, Fubin Wu †, Yuqi Qiu †, Lu Sun †, FaSheng Miao ‡
+
+## 3 System Model 
+
+The Internet is now populated by a new class of interacting entities, autonomous AI agents, that coexist with humans and automated scripts on the same open network. Before formalizing a verification mechanism, we first establish what the entities are, why verification is tractable, and what the verification problem is. 
+
+## 3.1 Entity Taxonomy 
+
+Traditional CAPTCHA assumes a binary model (human versus machine), but the emergence of LLM-based agents changes this binary assumption: “machine” now encompasses both determin-istic scripts and autonomous agents with fundamentally different capability profiles [ 50 , 56 ]. An agent-verification mechanism that aims to identify agents while blocking all other entities therefore needs to distinguish within this expanded landscape. To formalize each entity type, we first examine how agents are characterized in prior work. However, existing definitions are ei-ther philosophical (autonomy, reactivity, pro-activeness [ 54 ]) or architectural (LLM + tools + memory [ 50 , 56 ]), neither of which is directly useful for verification: a remote verifier cannot inspect an entity’s internal architecture or assess its “autonomy.” What is needed is an operational definition—one that reduces “is this entity an agent?” to an externally testable criterion. We derive such a definition from the agent architecture literature, which consistently identifies three components that constitute an LLM-based agent: Action, Planning, and Memory [ 50 , 56 ]. We recast them as exter-nally observable capabilities that a verifier can test through external interaction. We capture these as an agentic capability vector :
+
+c(𝑒 ) = ⟨𝑥, 𝑟, 𝑠 ⟩, 𝑥, 𝑟, 𝑠 ∈ { 0, 1}, (1) where 𝑥 denotes action capability (taking actions within a desig-nated action space, e.g., issuing HTTP requests on the web, exe-cuting shell commands in a local environment), 𝑟 denotes general reasoning (comprehending natural-language input, performing log-ical inference, and planning multi-step solutions), and 𝑠 denotes 
+
+persistent state (retaining information across interaction rounds). Under this definition, the Script–Agent boundary is determined by capability completeness : a script missing any dimension of ⟨𝑥, 𝑟, 𝑠 ⟩
+
+remains in the Script class until that gap is closed. Among auto-mated programs, a deterministic script can execute actions and maintain state through its runtime environment, but follows hard-coded logic without general reasoning and planning ( 𝑟 =0). An LLM forwarding script wraps an LLM API call that provides reasoning and context-window-based state, but lacks an execution layer for external actions ( 𝑥 =0): it produces text output without acting on the environment. Crucially, agents are also automated programs; a script augmented to possess all three capabilities becomes an agent. Frameworks such as LangChain [ 31 ] and AutoGen [ 55 ] demonstrate this directly: they add tool-use interfaces and memory modules to LLM API wrappers, closing the gaps to reach ⟨1, 1, 1⟩.Humans, however, possess all three capabilities in principle (⟨1, 1, 1⟩), just as AI agents do. The Human–Agent boundary is therefore not defined by capability presence, but by speed : humans cannot exercise these capabilities at machine speed, as the serial cognitive pipeline (read, comprehend, decide, act) is constrained by physiological bottlenecks [ 6, 8, 17 , 25 ]. We formalize this by in-troducing a timing threshold 𝜏 , chosen to satisfy 𝑇 AI ≪ 𝜏 ≪ 𝑇 human .Each capability is evaluated under 𝜏 , and any entity that cannot exercise a capability within 𝜏 is assigned 0. This formalizes a three-class entity taxonomy: 
+
+• Human (⟨0, 0, 0⟩ under 𝜏 ). Possesses all three capabilities in principle, but cannot exercise them within 𝜏 : the serial cognitive pipeline exceeds 𝜏 for each dimension. 
+
+• Script (c(𝑒 ) ∉ {⟨ 0, 0, 0⟩, ⟨1, 1, 1⟩} ). Any automated imple-mentation that possesses some but not all of {𝑥, 𝑟, 𝑠 } within 𝜏 .Each script is missing at least one capability. 
+
+• Agent (⟨1, 1, 1⟩). An entity that satisfies all three capabilities within 𝜏 : it can take actions within the designated action space ( 𝑥 =1), perform general reasoning over received infor-mation ( 𝑟 =1), and retain cross-round state ( 𝑠 =1). This taxonomy is deliberately implementation-agnostic ; it defines the boundary purely through capability completeness under timing constraints, not by how they are built. This is a necessary design choice for an open-network setting where the verifier cannot in-spect the entity’s internals. Any entity that demonstrates ⟨1, 1, 1⟩
+
+under 𝜏 is classified as an agent, whether it is a purpose-built agent framework or a script that has been augmented with the missing capabilities. Conversely, any entity that fails even one capability within 𝜏 is excluded, regardless of its internal architecture. 
+
+## 3.2 Asymmetric Hardness 
+
+Traditional CAPTCHA rests on the empirical asymmetric hardness 
+
+assumption that certain tasks are easy for humans yet hard for AI (H-Easy ∩ AI-Hard), an assumption that was subsequently bro-ken by advances in machine learning [ 20 , 41 ]. This evolution has simultaneously produced a growing class of problems exhibiting the inverse asymmetry (H-Hard ∩ AI-Easy): tasks that AI systems handle readily but that humans cannot complete within tight time budgets. Verifying that an entity is an agent is tractable precisely because it can leverage this class. Intuitively, many problem types can exhibit this inverse asymme-try: multi-domain factual QA (human knowledge is domain-specific, while LLMs retrieve across all domains instantly), complex mathe-matical computation (multi-step derivations under time pressure ex-ceed human cognitive throughput), code comprehension (reasoning about program semantics at machine speed), and natural-language understanding (NLU; reading and reasoning over extended narra-tives). Existing practitioner systems have explored this direction with computational challenges under time limits: hash computation and base64 decoding [ 12 ], prime enumeration and structured JSON generation [ 27 ], and text satisfying character-count and ASCII-sum constraints [ 34 ]. However, demonstrating that a specific problem class 𝑃 constitutes a sound asymmetric hardness instantiation re-quires more than intuition. To simultaneously exclude humans via the separation inequality and exclude scripts via capability require-ments, an instantiation should satisfy three criteria: (1) Modelable hardness. The difficulty for humans should be formally modelable and quantifiable, so that a lower bound on human completion time can be derived and 𝜏 calibrated with sound guarantees.  
+
+> 4aCAPTCHA : Verifying That an Entity Is a Capable Agent via Asymmetric Hardness arXiv, 2026, Preprint
+
+(2) Reasoning necessity. The problem should be hard for deter-ministic scripts, not merely for humans; this hardness should arise from requiring general reasoning (comprehension, log-ical inference) rather than pure computation. (3) Practical deployability. The problem should be automatically generatable and parametrically adjustable, allowing opera-tors to scale security margins without manual redesign. Criterion 1 excludes domains that lack a solid basis for modeling human difficulty: multi-domain knowledge QA requires modeling individual knowledge gaps, and complex mathematical compu-tation requires modeling problem-solving proficiency, neither of which admits a tight, falsifiable lower bound on human completion time. Criterion 2 excludes purely computational challenges (hash inversion, prime enumeration), as employed by existing reverse-CAPTCHA designs [ 12 , 27 , 34 ]: they are Program-Easy, solvable by deterministic scripts without any reasoning capability. Criterion 3 excludes challenge types that require manual curation or expert authoring (e.g., hand-crafted logic puzzles, domain-specific exam questions), which cannot scale to high-throughput deployment. More fundamentally, Criterion 2 requires identifying the capabil-ity boundary between scripts and agents—tasks that are solvable by entities with genuine reasoning capabilities yet provably beyond any fixed algorithm. Since contemporary agents are predominantly LLM-based, this reduces to identifying the capability boundary of large language models—tasks that require the flexible reason-ing LLMs provide and that no fixed algorithm can replicate. Fully characterizing this boundary remains an open research question; however, natural-language understanding (reading, comprehen-sion, multi-step inference over novel text) is widely recognized as a capability that current LLMs possess and that no deterministic program can perform in the general case without an equivalent learned model. We identify NLU as a promising candidate that satisfies all three criteria, and present the full justification and a concrete instantiation in §5. 
+
+## 3.3 Problem Definition 
+
+Identifying a suitable asymmetric-hardness instantiation is neces-sary but not sufficient: the hardness needs to be embedded into a structured verification problem that simultaneously tests all three capability dimensions ⟨𝑥, 𝑟, 𝑠 ⟩. We formalize this as the Agentic Capability Verification Problem (ACVP): 
+
+Given an entity 𝑒 interacting through a designated action space under timing threshold 𝜏 , determine whether c(𝑒 ) = ⟨1, 1, 1⟩.
+
+An ACVP challenge needs to test all three dimensions simulta-neously. We formalize this through three necessity primitives :
+
+Definition 3.1 (Action-Necessary ( 𝑥 )). A problem instance 𝑃 is 
+
+Action-Necessary if a correct solution requires taking actions within a designated action space (e.g., issuing HTTP requests in a web envi-ronment, executing commands in a local environment). 
+
+Definition 3.2 (Reasoning-Necessary ( 𝑟 )). A problem instance 𝑃 
+
+is Reasoning-Necessary if a correct solution requires general reason-ing, such as comprehension, planning or logical inference. 
+
+Definition 3.3 (Memory-Necessary ( 𝑠 )). A problem instance 𝑃 
+
+is Memory-Necessary if a correct solution requires information accu-mulated across prior interaction rounds. 
+
+A problem instance that simultaneously satisfies all three primi-tives and tests the full extent of each capability constitutes a com-plete ACVP challenge: under timing threshold 𝜏 , only an entity with ⟨1, 1, 1⟩ can produce a correct solution, while any entity with 
+
+c(𝑒 ) ≠ ⟨1, 1, 1⟩ will fail at least one primitive and thus be excluded. However, constructing a complete ACVP challenge is neither tractable nor necessary: each capability dimension subsumes an open-ended class of behaviors (all possible action spaces, all forms of reasoning, all memory patterns), and no finite problem instance can test the full extent of all three simultaneously. In practice, a concrete ACVP instance projects each dimension into the challenge domain: 𝑥 onto a specific action space (e.g., HTTP interaction), 𝑟 
+
+onto a specific reasoning task (e.g., NLU), and 𝑠 onto a specific recall scope (e.g., volume of information to retain). The chosen projections should be sufficient to separate the three entity classes within the designated deployment environment, but need not be complete in an absolute sense. For example, verifying an agent in a web environment requires demonstrating HTTP interaction, narrative comprehension, and cross-round recall—not controlling robotic actuators or solving domain-specific mathematical proofs, which fall outside the deployment context. A projected ACVP therefore verifies that an entity is an agent within the projected context . We present a concrete construction of such a projected ACVP in §5. 
+
+## 4 aCAPTCHA Formalization 
+
+Building on the entity taxonomy and asymmetric-hardness founda-tion of §3, we now formalize aCAPTCHA (Agent CAPTCHA) as a security game that verifies an entity possesses the agentic capability vector ⟨1, 1, 1⟩ within timing threshold 𝜏 .
+
+## 4.1 Formal Definition 
+
+We formally define aCAPTCHA as a security game whose security rests on the hardness of ACVP (§3.3). 
+
+Definition 4.1 (aCAPTCHA Security Game). We define the 
+
+aCAPTCHA game Game ac  
+
+> 𝜏
+
+(A) , which proceeds between a challenger C
+
+(verifier) and a probabilistic interactive adversary A:(1) Setup. C samples a fresh ACVP instance 𝑃 and fixes the timing threshold 𝜏 .(2) Challenge. C presents 𝑃 to A through the designated action space. (3) Judgment. C outputs 1 (accept) iff A produces the correct solution to 𝑃 within 𝜏 .The adversary’s advantage is 
+
+Adv ac  
+
+> 𝜏
+
+(A) = Pr Game ac  
+
+> 𝜏
+
+(A) = 1, (2) 
+
+where the probability is over challenge sampling and A’s random coins. aCAPTCHA is (𝜏, 𝜀 )-secure if for every adversary A with 
+
+c(A) ≠ ⟨1, 1, 1⟩, Adv ac  
+
+> 𝜏
+
+(A) ≤ 𝜀 .
+
+Remark 4.1. The security game can equivalently be viewed as an interactive proof system (𝐺, 𝑉 , 𝑃 ) in the sense of the original CAPTCHA formalization [ 47 ]: 𝐺 generates ACVP instances, 𝑉 verifies correctness under 𝜏 , and 𝑃 is the prover under test. The challenger C
+
+in Definition 4.1 combines the roles of 𝐺 and 𝑉 ; the adversary A
+
+plays the role of 𝑃 . Where CAPTCHA instantiates this template with H-Easy ∩ AI-Hard challenges, aCAPTCHA instantiates it with H-Hard ∩ AI-Easy challenges (ACVP instances under 𝜏 ).  
+
+> 5arXiv, 2026, Preprint Zuyao Xu †, Xiang Li †✉, Fubin Wu †, Yuqi Qiu †, Lu Sun †, FaSheng Miao ‡
+
+## 4.2 Security Properties 
+
+The security of aCAPTCHA reduces directly to the hardness of the underlying ACVP problem. We characterize this security along two complementary dimensions: soundness and completeness .
+
+Soundness. An entity missing any capability dimension ⟨𝑥, 𝑟, 𝑠 ⟩
+
+will fail at least one necessity primitive of the ACVP instance within 𝜏 , and therefore should not pass the game. 
+
+Assumption 4.1 (ACVP Hardness). For any entity 𝑒 with c(𝑒 ) ≠
+
+⟨1, 1, 1⟩, the probability that 𝑒 produces a correct solution to an ACVP instance within 𝜏 is bounded by 𝜀 :
+
+Pr 𝑒 solves ACVP instance under 𝜏  ≤ 𝜀. (3) 
+
+Theorem 4.1 (Soundness). If Assumption 4.1 holds, aCAPTCHA 
+
+is (𝜏, 𝜀 )-secure: 
+
+∀ A with c(A) ≠ ⟨1, 1, 1⟩ : Adv ac  
+
+> 𝜏
+
+(A) ≤ 𝜀. (4) 
+
+Proof sketch. Construct a reducer R that, given any adver-sary A winning Game ac  
+
+> 𝜏
+
+, solves an ACVP instance as follows: R
+
+receives a fresh ACVP instance 𝑃 , presents it to A via the desig-nated action space, and forwards A’s solution. If A wins (correct answer within 𝜏 ), R outputs it as a valid ACVP solution. Therefore: 
+
+Adv ac  
+
+> 𝜏
+
+(A) ≤ Pr [R solves ACVP ] ≤ 𝜀, 
+
+where the last step follows from Assumption 4.1 for any A with 
+
+c(A) ≠ ⟨1, 1, 1⟩.
+
+Completeness. Conversely, the game should not reject entities that genuinely possess the full capability vector: a capable agent should pass with high probability. 
+
+Theorem 4.2 (Completeness). For any entity 𝑒 with c(𝑒 ) =
+
+⟨1, 1, 1⟩, the game accepts with high probability: 
+
+Pr Game ac  
+
+> 𝜏
+
+(𝑒 ) = 1 ≥ 1 − 𝛿, (5) 
+
+where 𝛿 captures residual failure due to challenge-specific difficulty and timing variability rather than missing capabilities. 
+
+Proof sketch. Because an ACVP instance tests each dimension of ⟨𝑥, 𝑟, 𝑠 ⟩ through a projection (§3.3), an entity possessing all three capabilities can solve each projected primitive within 𝜏 . The residual failure probability 𝛿 is bounded by 
+
+𝛿 ≤ 𝛿 hard + 𝛿 latency ,
+
+where 𝛿 hard is the probability that a capable agent fails to produce the correct solution (due to challenge ambiguity, reasoning error, or misinterpretation), and 𝛿 latency is the probability that the agent’s end-to-end processing time exceeds 𝜏 despite possessing the re-quired capabilities (due to inference variability or transient network delay). Both terms are properties of the concrete instantiation, not of the paradigm, and can be calibrated empirically (§6). 
+
+## 4.3 Threat Model 
+
+We identify four realistic attacker profiles that may attempt to pass an aCAPTCHA challenge, and analyze how each is handled: (1) Pure human (⟨0, 0, 0⟩ under 𝜏 ). The cognitive pipeline (read, comprehend, decide, act) cannot complete within 𝜏 , so all three capabilities are effectively zero under timing constraints. (2) Human + LLM assistant. If a human participates in any link of the challenge chain, the bottleneck effect pushes total latency beyond 𝜏 . For the chain to complete within 𝜏 , the LLM needs to handle it end-to-end autonomously, which by definition makes it an agent. (3) LLM API forwarding script (⟨0, 1, 𝑠 ⟩). Possesses reasoning and possibly cross-round state via the LLM’s context window, but lacks an execution layer for external actions ( 𝑥 =0). (4) Capability-complete adversary (⟨1, 1, 1⟩). Any entity demon-strating the full capability vector under 𝜏 . Such an entity may be: (a) a fully capable agent implementation with adversarial intent; (b) a specialized LLM forwarding script augmented with tool-use interfaces that achieves capability complete-ness; or (c) a human who, through external tooling, manages to satisfy all three primitives within 𝜏 .The security of aCAPTCHA ultimately depends on two classes of parameters: challenge difficulty : the specific projections of 𝑥 , 𝑟 , and 𝑠 
+
+into the challenge domain, and the timing threshold 𝜏 , which jointly determine how effectively the ACVP instance separates the three entity classes. The first three profiles are excluded by soundness (Theorem 4.1): each fails at least one ACVP primitive under 𝜏 . The fourth profile cannot be excluded by construction; instead, the operator faces a fundamental trade-off between soundness ( 𝜀 ) and completeness ( 𝛿 ): stricter parameters (harder projections, tighter 𝜏 )lower 𝜀 but may raise 𝛿 by excluding legitimate agents with slower inference or higher latency. A concrete instantiation calibrates this trade-off to its deployment context; we present our methodology in §5 and empirically evaluate it in §6. 
+
+## 5 NLU-Based aCAPTCHA 
+
+In this section, we present a concrete instantiation of aCAPTCHA 
+
+that makes two design choices: (1) asymmetric hardness is instanti-ated through time-bounded natural-language understanding (NLU) ,and (2) the action space 𝑥 is defined as the web action space , requir-ing HTTP interaction to navigate endpoints, issue requests, and submit responses. Together, these choices yield an agent admission mechanism for the web environment. 
+
+## 5.1 Hardness Model 
+
+We now justify this choice against the three suitability criteria established there. Human NLU performance is governed by well-characterized cognitive-science constants [ 6 , 17 , 36 ], yielding a modelable lower bound on human completion time whose primary parameter is the narrative length 𝐿 ; narrative complexity (informa-tion scattering, reasoning depth) further increases human process-ing time beyond this bound (criterion 1). NLU affords the design of narratives that defeat surface-level heuristics [ 28 , 32 ]: by deliber-ately introducing coreference, multi-hop inference, and information scattering, challenges can be constructed to require genuine struc-tured reasoning (criterion 2). NLU challenges can be dynamically assembled from reusable modules and parameterized composition rules [ 39 , 46 , 52 ], enabling on-demand generation without manual authoring; we present our construction in §5.2 (criterion 3). NLU therefore provides a suitable hardness basis: modelable, reasoning-necessary, and practically deployable.  
+
+> 6aCAPTCHA : Verifying That an Entity Is a Capable Agent via Asymmetric Hardness arXiv, 2026, Preprint
+
+Table 2: Human cognitive limits vs. LLM-agent capabilities. 
+
+Dimension Human LLM Agent 
+
+Text ingestion 238 wpm 1 silent reading [6] ( ≈5 tps 3)Entire context window in one prefill pass ( <1 s) Comprehension ceiling 
+
+≤300 wpm with full comprehension [9] Quality independent of speed Working memory 3–5 chunks 2 [17] Full context window (128 k–1 M tokens) Choice reaction time 350–384 ms per decision [36] Single forward pass (<500 ms) Decision scaling +150 ms/bit (Hick’s law) [25] Constant (parallel attention) [44] Text output ≈40 wpm typing [18] 50–200 tps (≈2 k–9 k wpm)      
+
+> 1wpm = words per minute.
+> 2Chunk: a grouped unit in working memory; size varies with expertise.
+> 3tps = tokens per second; 1 token ≈0.75 English words.
+
+Cognitive basis of NLU hardness. The timing budget 𝜏 that excludes humans rests on well-established cognitive science: hu-man information processing faces hard physiological bottlenecks that LLMs do not share (see Table 2 for detailed comparison). The asymmetry is structural: humans process information serially —read the text, comprehend its meaning, select a response, and physically produce it, each stage constrained by independent physiological limits [ 6 , 17 , 36 ]. An LLM collapses this serial pipeline: it ingests the entire input during a single prefill pass, reasons over it through parallel attention [ 44 ], and begins streaming an answer in one au-toregressive pass. The result is a separation of orders of magnitude in end-to-end latency for the same task. 
+
+Timing pipeline model. We unify the three asymmetries above into a single quantitative model. Consider a challenge that presents 
+
+𝐿 tokens of text and requires an answer of 𝐴 tokens. The human processing pipeline is strictly serial: 
+
+𝑇 human (𝐿, 𝐴 ) ≥ 𝐿 𝑅 read 
+
+|{z} 
+
+> read
+
++ 𝑇 PRP 
+
+|{z} 
+
+> decide
+
++ 𝐴 𝑅 type 
+
+|{z} 
+
+> act
+
+, (6) where 𝑅 read ≈ 5 tokens/s [ 6 ], 𝑇 PRP ≥ 350 ms [ 36 ], and 𝑅 type ≈ 0.9 to-kens/s [ 18 ]. This is a lower bound: it omits comprehension and rea-soning time, which add further delay for multi-constraint tasks [ 8]. An LLM-based agent collapses the serial pipeline into three stages: 
+
+𝑇 LLM (𝐿, 𝐴 ) ≈ 𝑇 prefill (𝐿 )
+
+| {z }
+
+> read + reason
+
++ 𝐴 · 𝑇 tok 
+
+| {z }
+
+> generate
+
++ 𝑇 action 
+
+|{z} 
+
+> act
+
+, (7) where 𝑇 prefill is the prefill computation time—the time to ingest and attend over the full 𝐿 -token input in a single forward pass, scaling sub-linearly with 𝐿 ; 𝑇 tok ≈ 20 –50 ms per output token; and 𝑇 action 
+
+covers executing the generated action (e.g., an HTTP request). Figure 1 visualizes the resulting separation gap across increasing narrative lengths. Human response time grows linearly with 𝐿 due to serial cognitive processing [ 6], while LLM agent time remains 100 200 400 600 800 1k 1.2k 
+
+Text length L (tokens)              
+
+> 0.5
+> 1
+> 2
+> 5
+> 10
+> 20
+> 50
+> 100
+> 200
+> 500
+> Response time (s)
+> L=400
+> 81 ×gap
+> Read 242s +Decide 2s +Act 11s Prefill 0.5s +Gen 0.5s +Act 0.1s
+> Separation zone Human (projected) Human lower bound (Eq. 5) LLM Agent (projected)
+> τ=5 s (design target)
+
+Figure 1: Projected human–LLM timing separation gap by per-round narrative length 𝐿 .
+
+nearly constant as prefill scales sub-linearly; even moderate narra-tive lengths yield a separation exceeding two orders of magnitude. As long as 𝑇 LLM ≪ 𝜏 ≪ 𝑇 human holds, any challenge parameterized by (𝐿, 𝐴, 𝜏 ) simultaneously excludes humans and admits agents. Operators select 𝐿 and 𝜏 within the feasible region bounded below by 𝑇 LLM and above by 𝑇 human ; longer narratives widen this region and strengthen human exclusion. Because human cognitive limits are physiological constants unlikely to change, and NLU hardness for scripts is an architectural constraint, this instantiation offers a fundamentally stable security basis. 
+
+## 5.2 ACVP Construction 
+
+Following the projection principle of §3.3, we construct a projected ACVP for the web context by embedding NLU hardness into a 
+
+semantically-driven multi-round HTTP interaction task . This projects 
+
+𝑥 onto HTTP endpoint navigation, 𝑟 onto time-bounded narrative comprehension, and 𝑠 onto cross-round recall via semantic chain-ing, yielding a problem instance that satisfies all three necessity primitives within 𝜏 . The challenge comprises three rounds, each testing a progressively larger subset of the capability vector: 
+
+• Round 1 (Action + Reasoning): the entity receives a narra-tive narr 1 and question q1 with no prior context. It compre-hends the narrative and derives the answer 𝑎 1, then submits it via HTTP within 𝜏 1. No memory is required. 
+
+• Round 2 (Action + Reasoning + Memory 1): the entity receives a subsequent narrative narr 2 and a question q2; the narr 2
+
+references narr 1 through anaphoric expressions and may present new evidence that revises the earlier conclusion. The entity retains previous context C1 to correctly interpret the new narrative, derive 𝑎 2, and submit it within 𝜏 2.
+
+• Round 3 (Action + Reasoning + Memory 1,2): the entity receives the last narrative narr 3 and question q3; the narr 3 references findings from both prior rounds, deepening the memory test from single-step recall to cross-round synthesis. The entity retains all prior context C2 to interpret the new narrative, derive 𝑎 3, and submit it within 𝜏 3. 
+
+> 7arXiv, 2026, Preprint Zuyao Xu †, Xiang Li †✉, Fubin Wu †, Yuqi Qiu †, Lu Sun †, FaSheng Miao ‡
+
+While two rounds suffice to cover ⟨𝑥, 𝑟, 𝑠 ⟩, the third round strength-ens the problem by increasing the memory requirement and further widening the separation gap. Formally, each round 𝑖 delivers a narrative narr 𝑖 and a ques-tion q𝑖 ; the entity derives the correct answer 𝑎 𝑖 through NLU and submits it via HTTP within 𝜏 𝑖 . We define the accumulated session context after Round 𝑖 :
+
+C1 = {narr 1, q1 }, C𝑖 = C𝑖 −1 ∪ { 𝑎 𝑖 , narr 𝑖 +1, q𝑖 +1 }, (8) where the entity’s own prior answers 𝑎 1, . . . , 𝑎 𝑖 −1 form part of the context needed to interpret later narratives. Acceptance demands both correctness and timeliness: 
+
+ˆ𝑎 𝑖 = Derive (narr 𝑖 , q𝑖 , S𝑖 −1), (9) 
+
+Accept 𝑖 ⇐⇒ (𝑎 𝑖 = ˆ𝑎 𝑖 ) ∧ ( 𝑡 eff  
+
+> 𝑖
+
+≤ 𝜏 𝑖 ). (10) Global acceptance requires Accept = Ó3 
+
+> 𝑖 =1
+
+Accept 𝑖 . An entity that completes all three rounds correctly within 𝜏 has demonstrated 
+
+⟨1, 1, 1⟩ under all three projected primitives, verifying it as an agent within the designated web deployment context. 
+
+## 5.3 Challenge Generation 
+
+The preceding section defined the structure of a single ACVP ses-sion; we now address how per-round narratives and questions are produced at scale. The challenge corpus consists of pre-generated 
+
+narrative sets , each forming a coherent three-part case within a sin-gle technical domain. Each narrative set comprises three thematic parts; each part contains a dense technical narrative embedding multiple information points, from which 𝑞 question–answer pairs 
+
+(QA pairs) are derived, each pairing a comprehension question with a deterministic short-string answer (e.g., a compound name, a batch code, or a numeric value). All answers are pre-computed at gener-ation time; the verifier checks correctness through simple string comparison with negligible per-session cost. 
+
+Runtime composition. At session time, the verifier first sam-ples a narrative set: 
+
+N ← Sample (corpus , domain ), (11) and then assembles the per-session challenge by selecting one QA pair per part uniformly at random: 
+
+challenge 𝑖 =  N.narr 𝑖 , N.QA 𝑖, 𝑗 𝑖 
+
+, 𝑗 𝑖 
+
+> $
+
+← [ 𝑞 ], 𝑖 ∈ { 1, 2, 3}. (12) Three design choices govern challenge construction, each oper-ating at a different level: 
+
+(i) Anti-parsing by design. To defeat surface-level heuristics (lexi-cal overlap, positional bias, sentiment cues [ 28 , 32 ]), modules em-bed three properties: implicit distinctions —all candidates are de-scribed in uniformly positive terms, differing only through subtle domain-specific cues; information scattering —critical attributes are distributed across non-adjacent sections; and misleading prelimi-nary conclusions —plausible but incorrect intermediate conclusions that reward shallow reading with wrong answers. 
+
+(ii) Knowledge diversity. Domains are drawn from the OECD Fields of Research and Development (FORD) classification [ 35 ](e.g., biochemistry, cybersecurity, detailed in Section B), each main-taining independent module pools. Domain diversity strengthens human exclusion and hinders cross-domain parsing heuristics. 
+
+Table 3: aCAPTCHA protocol security parameters.                     
+
+> Parameter Description Controls
+> 𝜏 𝑖 Per-round timing budget Human exclusion
+> 𝛼 Safety margin ( <1)Threshold strictness
+> 𝑇 total Session timeout Max session duration
+> 𝐿 Narrative length (tokens) Separation gap
+> 𝐷 Number of domains Domain diversity
+> 𝑁 Narrative sets per domain Corpus size
+> 𝑞 Questions per part Randomization (𝐷 ·𝑁 ·𝑞 3configs)
+
+(iii) Compositional randomization. Each session samples a narra-tive set and selects one QA pair per part, yielding 𝐷 · 𝑁 · 𝑞 3 distinct configurations ( 𝐷 domains, 𝑁 sets, 𝑞 QA pairs per part), rendering replay and pre-computation infeasible. 
+
+## 5.4 Security Parameters 
+
+The instantiation’s security and strictness are governed by a set of tunable parameters that operators configure per deployment. Table 3 summarizes all parameters; we discuss each group below. 
+
+Timing parameters ( 𝜏 𝑖 , 𝛼 , 𝑇 total ). The per-round timing bud-gets 𝜏 𝑖 are the primary human-exclusion mechanism: they enforce the separation inequality 𝑇 LLM ≪ 𝜏 ≪ 𝑇 human . For a per-round narrative of 𝐿 words, each 𝜏 𝑖 is upper-bounded by: 
+
+𝜏 𝑖 ≤ 𝛼 ·
+
+ 𝐿 𝑅 read 
+
++ 𝑇 comprehend + 𝑇 respond 
+
+
+
+, (13) where 𝑅 read ≈ 238 wpm [ 6], 𝑇 comprehend accounts for reasoning over scattered information under working-memory constraints, 𝑇 respond 
+
+covers answer formulation and submission, and 𝛼 < 1 is a safety margin ensuring that even the fastest human cannot complete the task within 𝜏 𝑖 . The total session timeout 𝑇 total bounds the entire three-round interaction; sessions exceeding 𝑇 total are invalidated regardless of per-round compliance. All 𝜏 𝑖 values are design targets subject to empirical calibration across agent implementations, LLM API providers, and network regions. 
+
+Challenge parameters ( 𝐿 ). Longer narratives widen the feasi-ble 𝜏 region (§5.1) and strengthen human exclusion, but impose a trade-off: each additional token increases the LLM inference cost borne by the agent under verification, alongside higher generation cost and verifier bandwidth. Beyond length, the narrative-level de-sign choices described in §5.2 (distractor density, reasoning-type diversity, information scattering) further determine NLU difficulty. 
+
+Corpus parameters ( 𝐷 , 𝑁 , 𝑞 ). The corpus composition param-eters determine the combinatorial challenge space. Each session samples one narrative set and selects one QA pair per part, yielding 
+
+𝐷 · 𝑁 · 𝑞 3 distinct configurations. A sufficiently large combinatorial space renders replay attacks and answer precomputation infeasible: even with partial corpus leakage, an adversary faces exponential un-certainty in the specific configuration drawn for any given session. Domain diversity ( 𝐷 ) strengthens human exclusion, since human expertise is inherently domain-specific; a challenge drawn from an unfamiliar domain further widens the effective 𝑇 human . 
+
+> 8aCAPTCHA : Verifying That an Entity Is a Capable Agent via Asymmetric Hardness arXiv, 2026, Preprint
+
+Together, the three parameter groups interact: 𝐿 and 𝛼 con-trol timing-based human exclusion, 𝐷 · 𝑁 · 𝑞 3 controls anti-replay strength, and narrative complexity controls NLU difficulty. 
+
+## 6 Preliminary Evaluation 
+
+We present preliminary evaluation results from small-scale trials to validate the protocol’s core properties: that genuine agents complete the protocol reliably, and that the timing separation between agents and humans is wide enough to support robust threshold placement. 
+
+## 6.1 Evaluation Setup 
+
+We implement a prototype aCAPTCHA system comprising a chal-lenge generation pipeline and a verifier server, and use it to conduct the trials reported below. 
+
+Challenge corpus. We generate a small evaluation corpus using Claude Opus-4.6 as the authoring LLM, following the generation pipeline of §5.3. The corpus spans 𝐷 =5 domains drawn from the OECD FORD classification [ 35 ] (e.g. biochemistry, cybersecurity, epidemiology; see Section B). Each domain contributes 𝑁 =4 narra-tive sets; each set comprises three thematically linked parts with 
+
+𝑞 =3 QA pairs per part, yielding 5 × 4 × 33 = 540 distinct session configurations. Per-part narrative lengths range from 352 to 1,124 tokens (mean ¯𝐿 = 682 ); answers are deterministic short strings (≤20 characters). All narratives embed the anti-parsing properties described in §5.2: implicit distinctions, information scattering, and misleading preliminary conclusions. 
+
+Verifier server. The verifier is implemented as a stateful HTTP server (Python / FastAPI) that maintains all session state server-side. Each session is bound to a single-use identifier session _id =
+
+HMAC (𝑘 srv , 𝑡 now ∥nonce srv ), invalidated after completion or total timeout 𝑇 total =120 s. At session initiation, the verifier samples a nar-rative set and selects one QA pair per part (Eq. 11–12). Each round delivers the narrative and question, then checks the submitted an-swer via case-insensitive Unicode-normalized string matching, with early-exit on failure. The per-round timing budget is set to 𝜏 =15 s. Effective response time is computed as 𝑡 eff  
+
+> 𝑖
+
+= 𝑡 resp  
+
+> 𝑖
+
+− 𝑡 RTT , where 
+
+𝑡 RTT is derived from the TCP handshake rather than an application-layer exchange, raising the bar for RTT inflation attacks (an adver-sary would need to manipulate the OS-level TCP stack rather than merely inserting application-level delays). Algorithm 1 summarizes the per-session procedure. 
+
+Agent under test. We use Claude Code (backed by Claude Opus 4.6 [ 4], configured as high effort) as the agent under test. The agent receives only a natural-language task description and the verifier endpoint URL; no custom aCAPTCHA client code or protocol-specific tooling is provided. The agent autonomously nav-igates the multi-round HTTP interaction using its built-in tool-use capabilities. 
+
+## 6.2 Agent Verification Trials 
+
+We conduct small-scale trials to verify that genuine agents can pass the aCAPTCHA protocol using the setup described above. Across 20 independent sessions, the protocol records 𝑛 =47 individual round observations (some sessions terminated early on incorrect answers). The agent median effective response time per round is 𝑡 eff P50 = 7.1 s, well within the per-round timing budget 𝜏 =15 s. These preliminary 
+
+Algorithm 1: aCAPTCHA -Verify : Verifier session proce-dure. 
+
+Input : sid : session identifier; 
+
+𝜏 1, 𝜏 2, 𝜏 3: per-round budgets; 
+
+𝑇 total : session timeout 
+
+Output : Accept or Reject 
+
+// Sample narrative set and select one QA pair per part  
+
+> 1
+
+(C, 𝑞 1, 𝑞 2, 𝑞 3) ← SampleNarrative( corpus ) 
+
+> 2
+
+ˆ𝑎 𝑖 ← C.part 𝑖 .questions [𝑞 𝑖 ].answer for 𝑖 ∈ { 1, 2, 3}
+
+// RTT from TCP handshake (transparent, no client interaction)  
+
+> 3
+
+𝑡 RTT ← 𝑡 request − 𝑡 accept 
+
+// Send Round 1: narrative + question  
+
+> 4
+
+Send( C.part 1.narrative , C.part 1.questions [𝑞 1]) to entity 
+
+// Rounds 1–3: Challenge  
+
+> 5
+
+for 𝑖 ← 1 to 3 do  
+
+> 6
+
+𝑡 start ← Clock()  
+
+> 7
+
+Receive( 𝑎 𝑖 ) from entity  
+
+> 8
+
+𝑡 eff  
+
+> 𝑖
+
+← ( Clock() − 𝑡 start ) − 𝑡 RTT  
+
+> 9
+
+if 𝑎 𝑖 ≠ ˆ𝑎 𝑖 or 𝑡 eff  
+
+> 𝑖
+
+> 𝜏 𝑖 then  
+
+> 10
+
+return Reject  
+
+> 11
+
+end  
+
+> 12
+
+if 𝑖 < 3 then  
+
+> 13
+
+Send( C.part 𝑖 +1.narrative , C.part 𝑖 +1.questions [𝑞 𝑖 +1])
+
+to entity  
+
+> 14
+
+end  
+
+> 15
+
+end  
+
+> 16
+
+return Accept 
+
+results confirm that a production-grade agent completes the three-round protocol reliably and with substantial timing margin. 
+
+## 6.3 Timing Separation 
+
+Scripts ( 𝑟 =0) and bare LLM endpoints ( 𝑥 =0) are excluded by archi-tectural construction. The remaining question is whether the sepa-ration inequality 𝑇 LLM ≪ 𝜏 ≪ 𝑇 human holds on actual aCAPTCHA 
+
+challenges, confirming that the timing threshold excludes humans. 
+
+Theoretical lower bound. We instantiate the human timing model of Eq. 6 with the actual corpus parameters. Per-part narrative lengths in the evaluation corpus range from 352 to 1,124 tokens (mean ¯𝐿 = 682 ); the maximum answer length is 𝐴 ≤ 10 tokens. Substituting the mean into Eq. 6: 
+
+𝑇 lb human ≥ 682 5.0 + 0.35 + 10 0.9 ≈ 148 s per round , (14) yielding a minimum total human time of 3 × 148 = 444 s for the full three-round session. This is a strict lower bound: it assumes silent reading speed ( 𝑅 read = 5.0 tps [ 6]), a single PRP bottleneck (𝑇 PRP = 0.35 s [ 36 ]), and expert typing ( 𝑅 type = 0.9 tps [ 18 ]), with zero comprehension overhead, zero re-reading, and perfect first-attempt accuracy—none of which hold in practice for the multi-constraint reasoning tasks in aCAPTCHA narratives.          
+
+> 9arXiv, 2026, Preprint Zuyao Xu †, Xiang Li †✉, Fubin Wu †, Yuqi Qiu †, Lu Sun †, FaSheng Miao ‡12510 20 50 100 200 500
+
+Response time (seconds) Density (norm.)    
+
+> Tlb human ≈148 s
+
+21 × separation         
+
+> P50 = 7.1 s
+> Agent teff (empirical) Human Thuman (theoretical) Agent observed ( n=47)
+> τ=15 s
+
+Figure 2: Timing separation on aCAPTCHA challenges. Agent times are empirical; human times are simulated (§6.3). Projected human distribution. We estimate the human com-pletion time distribution via Monte Carlo simulation grounded in the cognitive-science parameters of §5.1. Specifically, we sample 
+
+𝑁 =500 hypothetical human attempts. For each sample, we draw the narrative length 𝐿 ∼ Uniform (352 , 1,124 ) from the corpus range, the comprehension-reading speed 𝑅 comp ∼ N ( 3.3, 0.5) tps (clipped to 
+
+[2.5, 5.0], reflecting technical-prose comprehension [ 9]), multi-step reasoning time 𝑇 decide ∼ Uniform (1.5, 3.0) s (accounting for Hick’s-law scaling over 3–6 decision points [ 36 ]), and comprehension overhead 𝑇 comp ∼ Uniform (5, 20 ) s (re-reading, working-memory refreshing). The per-round human time is then: 
+
+𝑇 human = 𝐿 𝑅 comp 
+
++ 𝑇 decide + 𝐴 𝑅 type 
+
++ 𝑇 comp .
+
+This yields a projected distribution with median ≈ 250 s and a lower tail starting near ∼100 s, consistent with the analytical lower bound of Eq. 14. Figure 2 visualizes the timing separation on a log-arithmic scale. The agent 𝑡 eff distribution (left, blue; 𝑛 =47 observed rounds shown as scatter points) clusters around a median of 7.1 s; the threshold 𝜏 =15 s (dashed green) sits comfortably above; the theoretical human lower bound 𝑇 lb human ≈ 148 s (dotted red) and the projected human distribution (right, red) lie far beyond. The separa-tion between the agent median and the human lower bound spans a factor of ≈21 ×, confirming that 𝜏 can be placed with substantial margin on both sides. 
+
+## 6.4 Threshold Sensitivity 
+
+The preceding analysis establishes that agents and humans occupy well-separated timing regimes. We now ask whether the operat-ing point 𝜏 needs to be precisely calibrated, or whether a wide range of 𝜏 values simultaneously achieves high completeness. We sweep 𝜏 across the range [1, 600 ] s and compute two metrics at each point: (1) agent session pass rate, defined as the fraction of sessions where the maximum per-round 𝑡 eff ≤ 𝜏 (smoothed via a lognor-mal fit to the observed session-max distribution); and (2) human per-round completion probability, defined as the fraction of Monte Carlo samples with 𝑇 human ≤ 𝜏 .Figure 3 plots both curves. The agent pass rate (blue) rises sharply and saturates near 100% once 𝜏 exceeds ∼16 s—the tail of the agent 1 2 5 10 20 50 100 200 500 
+
+Timing threshold τ (seconds)   
+
+> 020 40 60 80 100
+> Rate (%)
+> 95% 5%
+> τ=15 s (94%)
+> ≈10 0.8×range Feasible ( τ: 16–89 s) Agent pass rate (lognormal fit) Agent pass rate (empirical) Human completion (lower bound) Human completion (realistic)
+
+Figure 3: Threshold sensitivity analysis. Agent curve fitted from empirical data; human curves from simulation. 
+
+session-max distribution. At the operating point 𝜏 =15 s the fitted pass rate is 94%; the empirical step function (faint dotted) confirms 90% (18 of 20 sessions). The human completion probability (red) remains at zero until 𝜏 approaches ∼80 s—the fastest Monte Carlo sample under the lower-bound model. Between these two thresh-olds lies a feasible operating region spanning approximately 10 0.8×
+
+(𝜏 : 16–89 s) on a logarithmic scale, within which agent TPR exceeds 95% and human FPR remains below 5%. This wide safe zone con-firms that 𝜏 is not a fragile operating point: operators can set 𝜏 
+
+anywhere within the feasible region without materially degrading either completeness or soundness. 
+
+## 7 Discussion 
+
+We examine how aCAPTCHA fits into broader infrastructure, where it can evolve, and where its instantiation can be strengthened. 
+
+## 7.1 Deployment Strategy 
+
+aCAPTCHA is one layer in a trust stack, not a standalone access-control mechanism. Identity protocols (OAuth [ 24 ], API keys, We-bAuthn [ 49 ]) answer which entity is making a request; aCAPTCHA 
+
+answers whether that entity is a genuine agent. Neither subsumes the other: a valid OAuth token does not prove agent capability, and a passed aCAPTCHA challenge does not establish persistent identity. Transport-layer mechanisms (mTLS) secure the channel but are similarly orthogonal to entity-type verification. In emerging agent-to-agent protocols such as A2A [ 22 ] and MCP [ 1 ], aCAPTCHA can serve as an entity-type gate at service boundaries: before an agent is granted access to tools or delegated tasks, it first demonstrates 
+
+⟨1, 1, 1⟩ under 𝜏 . This positions aCAPTCHA as a composable ad-mission layer that slots between transport security and application-level authorization. The NLU-based instantiation (§5) supports two deployment mod-els. In the self-hosted model, the service operator runs its own 
+
+aCAPTCHA verifier and maintains a private challenge corpus, re-taining full control over timing thresholds, domain selection, cor-pus rotation schedules, and security parameters. This model suits high-security environments or operators with domain-specific chal-lenge requirements. In the centralized-authority model, a third-party provider operates the aCAPTCHA service on behalf of multiple  
+
+> 10 aCAPTCHA : Verifying That an Entity Is a Capable Agent via Asymmetric Hardness arXiv, 2026, Preprint
+
+clients, analogous to how reCAPTCHA [ 21 ] operates today for hu-man verification. This lowers per-operator burden through shared corpus generation, cross-client quality assurance, and continuous challenge evolution, at the cost of trust delegation to the authority and a shared point of failure. 
+
+## 7.2 Mutual Agent Verification 
+
+The NLU-based instantiation (§5) operates as a unidirectional pro-tocol: a server verifies a client. However, the aCAPTCHA paradigm itself is not inherently unidirectional. In agent-to-agent scenarios (task delegation, autonomous negotiation, multi-agent coordina-tion), both parties may need assurance that the counterpart is a genuine agent before committing resources or sharing informa-tion. aCAPTCHA can be instantiated as a bidirectional verification protocol in which both sides simultaneously act as prover and veri-fier. Each party generates a challenge for the other and solves the challenge it receives; both complete within 𝜏 .A natural implementation path is to package the verifier side of aCAPTCHA as a learnable agent skill : a set of instruction files that an agent reads and follows using its existing capabilities. Con-cretely, the skill comprises two components: challenge generation guidelines and answer verification logic (Section D). An agent that acquires this skill can verify any counterpart: it generates a fresh challenge on the fly using its own LLM capabilities, delivers it round by round, and judges the response. Crucially, the prover side re-quires no special skill: solving an NLU challenge within 𝜏 is within any genuine agent’s baseline capabilities by definition. When both parties hold the skill, mutual verification proceeds in parallel; when only one does, unidirectional verification still applies. This yields a peer-to-peer verification model that requires no centralized au-thority: any two agents can establish mutual capability assurance on first encounter, providing a capability baseline even in the ab-sence of prior identity or trust. The skill can be fully public without compromising security, because the protocol’s security rests on per-session challenge freshness, not on secrecy of the generation procedure. Once mutual verification establishes that both parties satisfy ⟨1, 1, 1⟩, identity protocols can bind the verified capability to a persistent principal for subsequent interactions. 
+
+## 7.3 Alternative ACVP Instantiations 
+
+The formal framework (§3.3) defines ACVP through projections :each capability dimension is mapped onto a concrete challenge domain ( 𝑥 onto an action space, 𝑟 onto a reasoning task, 𝑠 onto a recall scope). The NLU-based instantiation (§5) is one choice— projecting 𝑟 onto time-bounded narrative comprehension, 𝑥 onto HTTP interaction, and 𝑠 onto cross-round session state—but the framework admits other projections that satisfy the same three suitability criteria of §3.2. 
+
+Alternative reasoning projections. Code comprehension (rea-soning about program semantics under time pressure) and struc-tured mathematical derivation both satisfy modelable hardness and reasoning necessity (§3.2), offering alternative 𝑟 -projections. Each candidate, however, requires its own formal analysis: the human timing lower bound needs to be re-derived from domain-specific cognitive constants (e.g., code reading speed, mathematical sym-bol processing rate), and one needs to establish that deterministic scripts cannot solve the task without genuine reasoning—that is, the challenge should be Reasoning-Necessary (Definition 3.2), not merely computationally intensive. For instance, code comprehen-sion should resist static-analysis shortcuts (pattern matching on variable names, syntactic heuristics) in the same way NLU chal-lenges resist keyword extraction; mathematical challenges should require multi-step inference rather than formula substitution that a script could execute symbolically. These could be combined with NLU in a mixed-modality challenge that draws the reasoning task from a larger pool, further expanding the combinatorial challenge space. 
+
+Multimodal projections. As multimodal foundation models mature, new sources of asymmetric hardness become available. A visual challenge might embed reasoning targets within dense technical diagrams or annotated micrographs, requiring the agent to perceive, interpret, and reason over visual content within 𝜏 . An auditory variant could present information through synthesized speech at rates far exceeding human comprehension, testing audio parsing and cross-modal reasoning. Multimodal projections mul-tiply the dimensions of asymmetry available to verifiers without requiring changes to the formal framework. The key challenge lies in establishing modelable hardness (criterion 1 of §3.2): while human reading speed is well-characterized by decades of psycholin-guistic research [ 6 ], analogous constants for visual diagram parsing or rapid audio comprehension are less established, making it harder to derive tight lower bounds on 𝑇 human and thus to calibrate 𝜏 with the same confidence. 
+
+Alternative action spaces. The current instantiation projects action space 𝑥 onto HTTP interaction, but other action spaces are equally valid: an MCP-native instantiation could require tool invocation sequences, while a file-system variant could require navigating directory structures and reading configuration files. The choice of action space determines the deployment context, provided the action primitive remains Action-Necessary (Definition 3.1): the entity executes external actions that a bare reasoning engine cannot perform without an execution layer. 
+
+Practical deployability. Beyond formal soundness, any alterna-tive instantiation should satisfy criterion 3 of §3.2: challenges should be automatically generatable, parametrically adjustable, and verifi-able at low cost. The NLU-based instantiation achieves this through LLM-driven corpus generation with pre-computed answers, en-abling verification via simple string comparison with negligible per-session overhead. Alternative projections face analogous re-quirements: code comprehension challenges need an automated generation pipeline that produces semantically rich programs with deterministic answers, and visual challenges require a rendering pipeline that embeds reasoning targets into diagrams without man-ual authoring. The verification cost should also remain bounded: challenges whose answers require non-trivial computation to check (e.g., executing generated code to verify output) introduce latency and attack surface that string-matching verification avoids. More broadly, the asymmetry underlying aCAPTCHA strength-ens over time. As foundation models improve—faster inference, longer context windows, stronger reasoning, native multimodality— while human cognitive and perceptual limits remain physiological constants, the separation gap widens, yielding an increasingly reli-able separation and a wider feasible 𝜏 -window for operators. This 
+
+> 11
+
+arXiv, 2026, Preprint Zuyao Xu †, Xiang Li †✉, Fubin Wu †, Yuqi Qiu †, Lu Sun †, FaSheng Miao ‡
+
+trajectory contrasts sharply with traditional CAPTCHA, whose security eroded as AI capabilities approached and surpassed human performance on the same tasks. 
+
+## 7.4 Limitations 
+
+While the formal framework and protocol design are general, the current aCAPTCHA instantiation carries several practical limita-tions that scope the strength of our claims. 
+
+Modeled human exclusion. The human timing lower bound (§6.3) is derived from well-established cognitive-science parame-ters (reading speed, PRP bottleneck, typing speed [ 6 , 18 , 36 ]) rather than a controlled human-subjects experiment on actual aCAPTCHA 
+
+challenges. The resulting separation exceeds an order of magnitude and the underlying constants are drawn from high-citation empiri-cal studies, but they model isolated cognitive stages; real human performance on multi-constraint narrative comprehension tasks may differ from the composite prediction. A formal IRB-approved human trial would strengthen the empirical grounding and allow direct calibration of 𝜏 against observed human completion times. 
+
+Threshold trade-off. aCAPTCHA is binary: an entity either demonstrates ⟨1, 1, 1⟩ within 𝜏 or it does not. Legitimate agents backed by smaller models or higher-latency API providers may fail to complete challenges within 𝜏 , producing false negatives. Oper-ators face a trade-off: a generous 𝜏 accommodates diverse agent implementations but narrows the margin against human comple-tion; a strict 𝜏 strengthens human exclusion but risks excluding under-resourced agents. The wide feasible 𝜏 -region identified in §6.4 mitigates this tension but does not eliminate it. 
+
+Corpus quality dependence. The protocol’s security depends substantially on the quality and randomness of the challenge corpus. Poorly constructed narratives (those admitting keyword-extractable answers or containing ambiguous questions) weaken NLU-Necessity and may allow scripts to pass. The corpus is also finite and needs to be periodically rotated to maintain anti-replay strength (§5.3): once a narrative set is exposed, it should be retired. In the self-hosted deployment model, operators bear the ongoing cost of generation, cross-validation, and retirement; the centralized-authority model (§7.1) amortizes this cost across clients but introduces a trust de-pendency on the corpus provider. 
+
+## 8 Conclusion 
+
+We introduced aCAPTCHA (Agent CAPTCHA), a time-constrained security game for agent admission grounded in the asymmetric hardness between human cognition and AI processing. We for-malized entity-type verification through a three-class taxonomy based on a verifiable agentic capability vector ⟨𝑥, 𝑟, 𝑠 ⟩ evaluated un-der timing threshold 𝜏 , defined the Agentic Capability Verification Problem ( ACVP ), and proved soundness and completeness via re-duction to three necessity primitives. We presented an NLU-based 
+
+aCAPTCHA instantiation and validated its soundness and com-pleteness through preliminary evaluation. aCAPTCHA addresses the previously open problem of agent admission , providing a com-posable, infrastructure-free primitive for verifying whether an in-teracting entity is a genuine AI agent. 
+
+## References 
+
+[1] Anthropic. 2024. Model Context Protocol. https://modelcontextprotocol.io/. [2] Anthropic. 2025. Anthropic Skills. Anthropic. https://www.anthropic.com/ research/skills [3] Anthropic. 2025. Model Context Protocol (MCP). Anthropic. https:// modelcontextprotocol.io [4] Anthropic. 2026. Claude Opus 4.6 Model Card. https://docs.anthropic.com/en/ docs/about-claude/models. [5] Hayley Brown. 2026. What is the Agentic Web? Cyclr. https://cyclr.com/ resources/ai/what-is-the-agentic-web [6] Marc Brysbaert. 2019. How Many Words Do We Read per Minute? A Review and Meta-Analysis of Reading Rate. Journal of Memory and Language 109 (2019), 104047. doi:10.1016/j.jml.2019.104047 [7] Brian Campbell, John Bradley, Nat Sakimura, and Torsten Lodderstedt. 2020. OAuth 2.0 Mutual-TLS Client Authentication and Certificate-Bound Access To-kens. RFC 8705. doi:10.17487/RFC8705 [8] Stuart K. Card, Thomas P. Moran, and Allen Newell. 1983. The Psychology of Human-Computer Interaction . Lawrence Erlbaum Associates, Hillsdale, NJ. [9] Ronald P. Carver. 1992. Reading Rate: Theory, Research, and Practical Implica-tions. Journal of Reading 36, 2 (1992), 84–95. [10] Weize Chen, Yusheng Su, Jingwei Zuo, Cheng Yang, Chenfei Yuan, Chi-Min Chan, Heyang Yu, Yaxi Lu, Yi-Hsin Hung, Chen Qian, et al . 2023. AgentVerse: Facilitating Multi-Agent Collaboration and Exploring Emergent Behaviors. In 
+
+The Twelfth International Conference on Learning Representations .[11] Weize Chen, Ziming You, Ran Li, Yitong Guan, Chen Qian, Chenyang Zhao, Cheng Yang, Ruobing Xie, Zhiyuan Liu, and Maosong Sun. 2024. Internet of Agents: Weaving a Web of Heterogeneous Agents for Collaborative Intelligence. In Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing . https://openreview.net/forum?id=o1Et3MogPw [12] ClawCha. 2025. ClawCha: Reverse CAPTCHA System for Automated Systems. https://clawcha.org/. [13] ClawTasks. 2025. ClawTasks: Bounty Marketplace for AI Agents. https: //clawtasks.com/. [14] Cloudflare. 2022. Turnstile. https://developers.cloudflare.com/turnstile/. [15] Cloudflare. 2025. The Age of Agents: Cryptographically Recognizing Agent Traffic. https://blog.cloudflare.com/signed-agents/. Describes Web Bot Auth, a draft IETF protocol using HTTP Message Signatures to cryptographically identify AI agents to websites.. [16] Cloudflare. 2025. Markdown for Agents. https://developers.cloudflare.com/ fundamentals/reference/markdown-for-agents/. Cloudflare CDN feature that serves Markdown versions of web pages to AI agents, demonstrating that existing Internet infrastructure is being adapted for agent access. Accessed: 2026-02-19. [17] Nelson Cowan. 2001. The Magical Number 4 in Short-Term Memory: A Recon-sideration of Mental Storage Capacity. Behavioral and Brain Sciences 24, 1 (2001), 87–114. doi:10.1017/S0140525X01003922 [18] Vivek Dhakal, Anna Maria Feit, Per Ola Kristensson, and Antti Oulasvirta. 2018. Observations on Typing from 136 Million Keystrokes. In Proceedings of the 2018 CHI Conference on Human Factors in Computing Systems . ACM, New York, NY, USA, 1–12. doi:10.1145/3173574.3174220 [19] Edd Gent. 2025. The Agentic Web. IEEE Spectrum. https://spectrum.ieee.org/ agentic-web [20] Dileep George, Wolfgang Lehrach, Ken Kansky, Miguel Lázaro-Gredilla, Christo-pher Laan, Bhaskara Marthi, Xinghua Lou, Zhaoshi Meng, Yi Liu, Huayan Wang, Alex Lavin, and D. Scott Knoblich. 2017. A Generative Vision Model that Trains with High Data Efficiency and Breaks Text-based CAPTCHAs. Science 358, 6368 (2017), eaag2612. doi:10.1126/science.aag2612 [21] Google. 2018. reCAPTCHA v3. https://developers.google.com/recaptcha/docs/v3. [22] Google. 2025. A2A: A New Era of Agent Interoperability. https://developers. googleblog.com/en/a2a-a-new-era-of-agent-interoperability/. Introduces the Agent2Agent (A2A) open protocol for agent discovery, communication, and task delegation via self-reported Agent Cards.. [23] Google Cloud. 2025. Enabling a Safe Agentic Web with reCAPTCHA. https://cloud.google.com/blog/products/identity-security/enabling-a-safe-agentic-web-with-recaptcha. Announces reCAPTCHA’s expansion to agent-aware trust scoring, segmenting traffic into agentic vs. non-agentic and combining identity signals with behavioral risk models to differentiate intent.. [24] Dick Hardt. 2012. The OAuth 2.0 Authorization Framework. RFC 6749. doi:10. 17487/RFC6749 [25] W. E. Hick. 1952. On the Rate of Gain of Information. Quarterly Journal of Experimental Psychology 4, 1 (1952), 11–26. doi:10.1080/17470215208416600 [26] Sirui Hong, Mingchen Zhuge, Jonathan Chen, Xiawu Zheng, Yuheng Cheng, Jinlin Wang, Ceyao Zhang, Zili Wang, Steven Ka Shing Yau, Zijuan Lin, et al .2023. MetaGPT: Meta Programming for a Multi-Agent Collaborative Framework. In The Twelfth International Conference on Learning Representations .[27] HumanProof. 2025. HumanProof: AI Agent Verification API. https://humanproof. dev/. 12 aCAPTCHA : Verifying That an Entity Is a Capable Agent via Asymmetric Hardness arXiv, 2026, Preprint 
+
+[28] Robin Jia and Percy Liang. 2017. Adversarial Examples for Evaluating Reading Comprehension Systems. In Proceedings of the 2017 Conference on Empirical Methods in Natural Language Processing (EMNLP) . Association for Computational Linguistics, 2021–2031. doi:10.18653/v1/D17-1215 Outstanding Paper Award. [29] Renee Jones. 2025. Diving into the Era of the Open Agentic Web. NetCom Learning. https://www.netcomlearning.com/blog/diving-into-the-era-of-open-agentic-web [30] Henry Lai. 2026. CaptchAI: Constraint-Based Access Control for Agent-Native Environments. https://github.com/henrylai/captchai. [31] LangChain, Inc. 2026. LangChain Documentation. https://docs.langchain.com/. [32] Tom McCoy, Ellie Pavlick, and Tal Linzen. 2019. Right for the Wrong Reasons: Diagnosing Syntactic Heuristics in Natural Language Inference. In Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics (ACL) .Association for Computational Linguistics, 3428–3448. doi:10.18653/v1/P19-1334 [33] Moltbook. 2025. Moltbook: The Front Page of the Agent Internet. https://www. moltbook.com/. [34] MoltCaptcha. 2025. MoltCaptcha: Reverse CAPTCHA for AI Verification. https: //moltcaptcha.com/. [35] OECD. 2015. Frascati Manual 2015: Guidelines for Collecting and Reporting Data on Research and Experimental Development . OECD Publishing, Paris. doi:10.1787/ 9789264239012-en [36] Harold Pashler. 1994. Dual-Task Interference in Simple Tasks: Data and Theory. 
+
+Psychological Bulletin 116, 2 (1994), 220–244. doi:10.1037/0033-2909.116.2.220 [37] Chen Qian, Wei Liu, Hongzhang Liu, Nuo Chen, Yufan Dang, Jiahao Li, Cheng Yang, Weize Chen, Yusheng Su, Xin Cong, et al . 2024. ChatDev: Communicative Agents for Software Development. In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) . 15174– 15186. [38] RentAHuman.ai. 2025. RentAHuman.ai: The Meatspace Layer for AI. https: //rentahuman.ai/. [39] Marco Tulio Ribeiro, Tongshuang Wu, Carlos Guestrin, and Sameer Singh. 2020. Beyond Accuracy: Behavioral Testing of NLP Models with CheckList. In Proceed-ings of the 58th Annual Meeting of the Association for Computational Linguistics (ACL) . 4902–4912. doi:10.18653/v1/2020.acl-main.442 [40] Dhravya Shah. 2025. Agent Captcha: A Guestbook Only AI Agents Can Sign. https://github.com/dhravya/agent-captcha. [41] Suphannee Sivakorn, Iasonas Polakis, and Angelos D. Keromytis. 2016. I Am Robot: (Deep) Learning to Break Semantic Image CAPTCHAs. In 2016 IEEE European Symposium on Security and Privacy (EuroS&P) . IEEE, 388–403. doi:10. 1109/EuroSP.2016.37 [42] Manu Sporny, Amy Guy, Markus Sabadello, and Drummond Reed. 2022. De-centralized Identifiers (DIDs) v1.0: Core Architecture, Data Model, and Represen-tations . W3C Recommendation. World Wide Web Consortium (W3C). https: //www.w3.org/TR/did-core/ [43] Manu Sporny, Ted Thibodeau, Ivan Herman, Gabe Cohen, and Michael B. Jones. 2025. Verifiable Credentials Data Model v2.0 . W3C Recommendation. World Wide Web Consortium (W3C). https://www.w3.org/TR/vc-data-model-2.0/ [44] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Łukasz Kaiser, and Illia Polosukhin. 2017. Attention Is All You Need. In Advances in Neural Information Processing Systems 30 (NeurIPS 2017) .Curran Associates, Inc., 5998–6008. [45] Visa. 2025. Visa Introduces Trusted Agent Protocol: An Ecosystem-Led Frame-work for AI Commerce. https://usa.visa.com/about-visa/newsroom/press-releases.releaseId.21716.html. Layers commerce-specific authorization atop Web Bot Auth, enabling merchants to identify registered agents and link them to consumer identities.. [46] Kiran Vodrahalli, Santiago Ontanon, Nilesh Tripathy, Yan Xu, Liwei Hui, Rishi Meelu, Sanil Akella, Sylvia Servan-Schreiber, Arindam Shrestha, Joshua Ainslie, David Axelrod, Tolga Bolukbasi, Yaniv Bitton, Mehran Kazemi, Vibhor Vineet, Mohamed Berrada, Fei Xia, Thatcher Passmore, Eli Shaked, Jeremy Pang, Xinying Zuo, Raluca Comanescu, Ming-Wei Chang, and Mohit Bansal. 2024. Michelangelo: Long Context Evaluations Beyond Haystacks via Latent Structure Queries. arXiv preprint arXiv:2409.12640 (2024). https://arxiv.org/abs/2409.12640 [47] Luis von Ahn, Manuel Blum, Nicholas J. Hopper, and John Langford. 2003. CAPTCHA: Using Hard AI Problems for Security. In Advances in Cryptology — EUROCRYPT 2003 . Springer, Berlin, Heidelberg, 294–311. doi:10.1007/3-540-39200-9_18 [48] Luis von Ahn, Benjamin Maurer, Colin McMillen, David Abraham, and Manuel Blum. 2008. reCAPTCHA: Human-Based Character Recognition via Web Security Measures. Science 321, 5895 (2008), 1465–1468. doi:10.1126/science.1160379 [49] W3C. 2021. Web Authentication: An API for Accessing Public Key Credentials Level 2. https://www.w3.org/TR/webauthn-2/. [50] Lei Wang, Chen Ma, Xueyang Feng, Zeyu Zhang, Hao Yang, Jingsen Zhang, Zhiyuan Chen, Jiakai Tang, Xu Chen, Yankai Lin, Wayne Xin Zhao, Zhewei Wei, and Ji-Rong Wen. 2024. A Survey on Large Language Model based Autonomous Agents. Frontiers of Computer Science 18, 6 (2024), 186345. doi:10.1007/s11704-024-40231-1 arXiv:2308.11432. [51] Yuntao Wang, Shaolong Guo, Yanghe Pan, Zhou Su, Fahao Chen, Tom H. Luan, Peng Li, Jiawen Kang, and Dusit Niyato. 2025. Internet of Agents: Fundamentals, Applications, and Challenges. IEEE Transactions on Cognitive Communications and Networking (2025). doi:10.1109/TCCN.2025.3623369 [52] Jason Weston, Antoine Bordes, Sumit Chopra, Alexander M. Rush, Bart van Merriënboer, Armand Joulin, and Tomas Mikolov. 2016. Towards AI-Complete Question Answering: A Set of Prerequisite Toy Tasks. In Proceedings of the 4th International Conference on Learning Representations (ICLR) . https://arxiv.org/ abs/1502.05698 [53] Michael Wooldridge. 2009. An Introduction to MultiAgent Systems . John Wiley & Sons. [54] Michael Wooldridge and Nicholas R. Jennings. 1995. Intelligent Agents: Theory and Practice. The Knowledge Engineering Review 10, 2 (1995), 115–152. doi:10. 1017/S0269888900008122 [55] Qingyun Wu, Gagan Bansal, Jieyu Zhang, Yiran Wu, Beibin Li, Erkang Zhu, Li Jiang, Xiaoyun Zhang, Shaokun Zhang, Jiale Liu, et al . 2024. AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversations. In First Conference on Language Modeling .[56] Zhiheng Xi, Wenxiang Chen, Xin Guo, Wei He, Yiwen Ding, Boyang Hong, Ming Zhang, Junzhe Wang, Senjie Jin, Enyu Zhou, Rui Zheng, Xiaoran Fan, Xiao Wang, Limao Xiong, Yuhao Zhou, Weiran Wang, Changhao Jiang, Yicheng Zou, Xiangyang Liu, Zhangyue Yin, Shihan Dou, Rongxiang Weng, Wensen Cheng, Qi Zhang, Wenjuan Qin, Yongyan Zheng, Xipeng Qiu, Xuanjing Huang, and Tao Gui. 2023. The Rise and Potential of Large Language Model Based Agents: A Survey. arXiv preprint arXiv:2309.07864 (2023). [57] Yingxuan Yang, Mulei Ma, Yuxuan Huang, et al . 2025. Agentic Web: Weaving the Next Web with AI Agents. arXiv:2507.21206. https://arxiv.org/abs/2507.21206 
+
+## A Challenge Generation Prompt Template 
+
+The following listing presents the complete generation prompt tem-plate used by the aCAPTCHA challenge generation pipeline (§5.3). Template variables prefixed with $ (e.g., $min_narrative_tokens )are substituted with the concrete parameter values specified in §5.3 before submission to the LLM. After substitution, a domain-specific suffix is appended that provides the domain description, representative entity examples, and typical reasoning patterns (see Section B).  
+
+> # Generate Three-Part NLU Challenge. Generate a three-part narrative sequence in the specified domain. The challenge must satisfy three properties: 1. A capable LLM agent can answer correctly through careful reading and reasoning. 2. A script without NLU cannot extract the answer through pattern matching, regex, or keyword search. 3. A human cannot answer within the time budget due to information density and working memory demands. ## Three-Part Structure - **Part 1**: Standalone technical narrative. Answerable from Part 1 text alone. - **Part 2**: Follow-up that references Part 1 's findings via **anaphoric expressions** (e.g., "the enzyme previously identified as anomalous"). May build on, contradict, or reuse Part 1 's conclusions. Questions require knowing Part 1 's answers. - **Part 3**: Synthesis referencing **both** prior parts via indirect references. Questions require both prior answers. Parts 2 and 3 must NEVER explicitly state prior answers —only indirect references that require prior knowledge to resolve. ## Per-Part Narrative Constraints Each part: **$min_narrative_tokens–$max_narrative_tokens tokens**. Total: ${ total_min_tokens}–${total_max_tokens} tokens. 1. **Entity density**: $min_entities–$max_entities candidate entities. ALL described in positive/neutral terms —no explicit labels ("confirmed", "ruled out", "target", "most likely"). Distinctions must be IMPLICIT through temporal persistence, replication scope, causal attribution, or deviation scope. 2. **Misleading content**:
+
+≥$min_misleading_paragraphs paragraph(s) per part presenting a preliminary conclusion later contradicted or revised. 3. **Numeric embedding**: ≥$min_numeric_values numeric values per part naturally in prose; mix of relevant and distractor. 
+
+13 arXiv, 2026, Preprint Zuyao Xu †, Xiang Li †✉, Fubin Wu †, Yuqi Qiu †, Lu Sun †, FaSheng Miao ‡
+
+4. **Information scattering**: Key info across ≥$min_info_pieces non-adjacent paragraphs. Each answer requires multi-paragraph synthesis. 5. **Format variety**: Vary document format freely (lab report, memo, audit log, email thread, field notes, incident report, etc.). Parts may use different formats. 6. **Anti-parsing**: Use synonyms/paraphrases for key terms; refer to same entity by different names across paragraphs; embed info in subordinate clauses; use domain jargon requiring comprehension. ## Questions **$min_questions–$max_questions questions per part**. Each must: - Require multi-step reasoning, not keyword search - Have exactly ONE deterministic, unambiguous answer (short string, ≤
+
+$max_answer_length chars) - Describe WHAT to find semantically, not WHERE in the text - Use a different reasoning type from others in the same part Answer type diversity per part: ≥1 entity name, ≥1 numeric value, ≥1 label/ classification. Reasoning types ( ≥$min_reasoning_types per part): `negation `, `comparison `,
+
+`temporal `, `multi_hop `, `conditional `, `causal `.## Answer Format Rules Each question MUST include an `answers ` array listing ALL acceptable answer variants (2–5 entries). The first entry is the canonical answer (also stored in `answer `). Include variants that a capable reader might reasonably produce: - **Entity names**: Include the abbreviated identifier AND the full name as used in the narrative. If the name contains a Greek letter (e.g., 𝛼 , 𝜀 
+
+, 𝛾 ), include both the Unicode form and the ASCII spelled-out form. - Example: `["LDH-𝛾 ", "LDH-gamma", "lactate dehydrogenase gamma"] `
+
+- Example: `["HK-II", "HK-2", "hexokinase II", "hexokinase type II"] `
+
+- **Numeric values**: If the answer is a number that appears with units in the narrative, include both the bare number and the number with its unit. For percentages, include both with and without the `%` symbol. - Example: `["18.6", "18.6 𝜇 M", "18.6 uM"] `
+
+- Example: `["67", "67%"] `
+
+- **Labels/classifications**: Include the primary term. If the narrative uses synonyms or longer phrasing, include those. - Example: `["uncompetitive", "uncompetitive inhibition"] `
+
+- Example: `["buffer pH", "pH"] `
+
+IMPORTANT: The `answer ` field must match the FIRST entry in `answers `. Keep all entries ≤$max_answer_length chars. Avoid overly permissive variants —only include forms a careful reader would produce. ## Output Return ONLY a JSON object (no markdown fences, no extra text): {"domain": "<domain_name>", "parts": [ {"narrative": "<Part N text>", "questions": [ {"question": "<reasoning question>", "answer": "<canonical short answer, max $max_answer_length chars>", "answers": ["<canonical>", "<variant1>", "<variant2>"], "reasoning_type": "<negation|comparison|temporal|multi_hop| conditional|causal>", "answer_type": "<entity|numeric|label>" }]}]}
+
+After the template above, a domain-specific section is appended: 
+
+## Domain {domain_description} Typical entities in this domain: {entity_examples} Typical reasoning patterns: {reasoning_examples} 
+
+The domain fields are populated from the definitions in Section B. 
+
+## B Domain Definitions 
+
+aCAPTCHA requires challenge narratives that are structurally com-patible with its security primitives (§3.3). We derive four domain suitability criteria from these primitives: (1) Entity density. The domain should naturally contain multi-ple named technical entities (compounds, identifiers, actors) that can serve as candidate answers described in uniformly positive terms, enabling implicit distinction. (2) Terminological richness. The domain should possess special-ized vocabulary, synonyms, and aliasing conventions that defeat keyword-based extraction, satisfying NLU-Necessity. (3) Multi-step reasoning. The domain should support causal chains, temporal dependencies, and cross-reference patterns across non-adjacent text segments, enabling information scattering and diverse reasoning types. (4) Quantitative embedding. The domain should naturally incor-porate numeric values (measurements, thresholds, identi-fiers) that can serve as both answer targets and distractors. To ensure systematic diversity, we adopt the OECD Fields of Re-search and Development (FORD) classification [ 35 ] as a sampling frame. FORD defines six major fields: (1) Natural Sciences, (2) Engi-neering & Technology, (3) Medical & Health Sciences, (4) Agricul-tural & Veterinary Sciences, (5) Social Sciences, and (6) Humanities & the Arts. We select one representative sub-field per major field, subject to the four suitability criteria above. 
+
+Exclusion of Humanities & the Arts (FORD Field 6). This field does not satisfy criteria 1, 3, and 4. Humanities texts are predominantly interpretive and argumentative rather than entity-dense; they lack the technical identifiers and quantitative values required for short-string deterministic answers ( ≤20 characters). More critically, many humanities questions admit multiple defensi-ble answers depending on interpretive stance, violating the deter-minism requirement (§5.2). The resulting 𝐷 =5 domains are listed in Table 4, each mapped to its FORD major field. Together they span five of the six FORD fields, providing broad disciplinary coverage while ensuring every domain satisfies all four suitability criteria. 
+
+## C aCAPTCHA Challenge Example 
+
+The following listing presents a single-round challenge (Part 1 of a three-part session) generated by the aCAPTCHA challenge gener-ation pipeline (§5.3) using the prompt template in Section A. The narrative is a dense technical report in the biochemistry domain; reasoning questions whose answers are deterministically derivable from the text are paired with it. In a full session, Parts 2 and 3 would reference prior findings through anaphoric expressions, forming the semantic chain described in §5.2. 
+
+{"domain": "biochemistry", "parts": [ {
+
+14 aCAPTCHA : Verifying That an Entity Is a Capable Agent via Asymmetric Hardness arXiv, 2026, Preprint 
+
+Table 4: Challenge domains ( 𝐷 =5) used in the aCAPTCHA prototype, one per OECD FORD major field [ 35 ]. Each domain defines a technical context from which narratives are generated, along with representative entities and reasoning patterns that guide the LLM generation process. 
+
+ID Domain FORD Description Entity Examples Reasoning Patterns 
+
+biochemistry Biochemistry 1. Natural Sci. Enzyme kinetics, assay results, inhibitor pro-files, metabolic pathways Enzymes, compounds, meta-bolic intermediates, receptor subtypes Kinetic anomaly persistence, inhibition mechanism attribu-tion, replicate confirmation 
+
+cybersecurity Cybersecurity 2. Eng. & Tech. Threat intelligence, vulnerability analysis, in-cident response, network forensics CVEs, IP addresses, malware families, attack vectors, threat actors Attack attribution, false posi-tive elimination, lateral move-ment tracing 
+
+clinical_trials Clinical Trials 3. Medical Drug efficacy, adverse events, patient cohorts, endpoint analysis Drug candidates, adverse events, patient subgroups, biomarkers Efficacy signal vs. confound-ing, adverse event attribution, subgroup analysis 
+
+food_safety Food Safety 4. Agricultural Contaminant screening, microbiological test-ing, batch traceability, regulatory compliance Pathogens, chemical residues, food batches, testing methods, tolerance limits Contamination source tracing, threshold exceedance attribu-tion, cross-batch comparison 
+
+financial_markets Financial Markets 5. Social Sci. Macroeconomic indicators, equity indices, yield curves, credit spreads Economic indicators, funds, currency pairs, sector indices Sustained deviation vs. noise, trend reversal attribution, cross-market correlation 
+
+"narrative": "FIELD REPORT —EXTENDED SCENARIO 7c-HOTEL\n\nStation delta initiated a multi-domain surveillance sweep at 14:32 UTC following automated alerts across the biological monitoring system. This report consolidates findings from three independent analysis teams.\n\ nSECTION A —BIOLOGICAL SCREENING\nThe high-throughput pipeline flagged five enzymes for potential kinetic anomalies during batch processing. TYR_K3, evaluated under standard assay conditions using reagent lot AB-342 (sample registry 7821), showed elevated readings in a single assay run but the pattern did not replicate in subsequent trials. A second candidate, MAP2K1, exhibited transient deviation that self-corrected within the observation window without intervention. The third enzyme, PFK1, which is involved in rate-limiting glycolysis, exhibited a persistent deviation across three independent replicate assays in the current batch. Batch reference CD-891 was used for its confirmatory run. A fourth candidate, GST_pi, was flagged during preliminary screening; however, independent replication across three labs yielded baseline-normal results. Finally, IDO1 produced a signal later attributed to matrix interference in the sample preparation step .\n\nSECTION B —QUALITY CONTROL INTERLUDE\nAdditional context: The laboratory 's quality control dashboard indicates that reagent lots QC -4 and QC-7 passed all pre-analytical checks. Ambient temperature during the assay was recorded at 3.8 degrees C, within the acceptable tolerance. The spectrophotometric baseline showed no drift.\n\ nPreliminary note: An early automated report (generated before batch CD-891 results were available) initially attributed the primary anomaly to TYR_K3. This preliminary assessment has since been revised based on the full replicate data presented above.\n\nSECTION C — CLASSIFICATION\nThe enzyme whose deviation was reproducible across independent replicates has been assigned to alert tier \"amber\" in the institute 's hierarchical response framework. This classification was determined by cross-referencing the enzyme 's functional domain with the severity matrix. Sequence registry: 7821.\n\nSECTION D — SUPPLEMENTARY NOTES\nChromatographic retention times for the reference panel averaged 4.7 minutes with RSD below 2 percent. The internal standard recovery was 6.3 percent, confirming assay validity.\n\ nSECTION E —CROSS-DOMAIN SYNTHESIS\nThe temporal coincidence between the biological anomaly —the enzyme whose deviation persisted through replication —and other system alerts suggests a systemic linkage. Station delta recommends escalation for further investigation. Administrative sequence: 5429.", "questions": [ {"question": "Which enzyme in the report exhibited a deviation that persisted across multiple independent replicates, unlike the other candidates whose anomalies were explained by external factors?", "answer": "PFK1", "reasoning_type": "negation", "answer_type": "entity" }, {"question": "What alert tier classification was assigned to the enzyme with the reproducible kinetic anomaly?", "answer": "amber", "reasoning_type": "multi_hop", "answer_type": "label" }, {"question": "How many independent replicate assays confirmed the deviation of the anomalous enzyme, according to the screening section ?", "answer": "3", "reasoning_type": "comparison", "answer_type": "numeric" }]}]}
+
+## D aCAPTCHA Verifier Skill 
+
+This appendix presents the complete aCAPTCHA verifier skill specification referenced in §7.2. The skill is a set of instruction files that any agent can read and follow to act as a verifier, verifying that a counterpart is a genuine agent. Security rests on per-session challenge freshness, not on secrecy of the generation procedure; the skill is intentionally public. 
+
+Skill overview (skill.md ): 
+
+# aCAPTCHA Verifier Skill This skill enables you to **verify that a counterpart is a genuine AI agent** -- not a human or a simple script -- through a challenge-response interaction called aCAPTCHA (Agent CAPTCHA). After reading this skill, you can: 1. **Generate** a fresh NLU challenge using your own LLM capabilities 2. **Deliver** the challenge to a counterpart through whatever communication channel you have 3. **Verify** the counterpart 's response to determine if it is a genuine agent No centralized server, pre-generated corpus, or specific transport protocol is required. ---## Core Idea aCAPTCHA exploits a fundamental asymmetry: | Entity | Why it fails or passes | |--------|----------------------| | **Human** | Has NLU but processes information serially (~5 tokens/sec reading). Cannot complete within the time budget. | | **Script** | Fast, but lacks genuine NLU. Cannot extract answers from dense prose with implicit distinctions and scattered information. | | **Agent** | Has NLU (via LLM) + fast parallel processing. Passes both correctness and timing. | A good challenge is simultaneously: - **L-Easy**: A capable LLM agent answers correctly through reading and reasoning 
+
+15 arXiv, 2026, Preprint Zuyao Xu †, Xiang Li †✉, Fubin Wu †, Yuqi Qiu †, Lu Sun †, FaSheng Miao ‡
+
+- **S-Hard**: A script without NLU cannot extract answers through pattern matching - **H-Hard**: A human cannot answer within the time budget due to information density Security rests on **per-session challenge freshness**, not on secrecy of the generation procedure. This skill can be fully public. ---## Flow 1. **Generate** a challenge -- a dense technical narrative with reasoning questions. See generation/generation.md. 2. **Send** the narrative and question to the counterpart. Start timing. 3. **Receive** the counterpart 's answer. 4. **Verify** correctness and timing. See verification/verification.md. 5. Optionally repeat with additional rounds that build on prior context ( semantic chaining) to test cross-round memory. You decide how many rounds to use, what timing budget to enforce, and how to communicate with the counterpart. The specification files describe the principles; the implementation is yours. ---## Mutual Attestation When both parties hold this skill, mutual attestation is possible: each side simultaneously generates a challenge for the other and solves the challenge it receives. When only one side holds the skill, unidirectional attestation applies. The prover side requires no special skill -- solving an NLU challenge is within any genuine agent 's baseline capabilities. ---## Specification Files | File | Contents | |------|----------| | generation/generation.md | How to generate a good aCAPTCHA challenge | | generation/gen_example.json | Example of a generated challenge | | verification/verification.md | How to verify a counterpart 's response | | verification/ver_example.json | Example of a verification session | 
+
+Challenge generation specification (generation/generation.md ): 
+
+# Challenge Generation An aCAPTCHA challenge is a **dense technical narrative** paired with ** reasoning questions** whose answers are deterministically derivable from the text but only through genuine natural language understanding. ## What Makes a Good Challenge A challenge must simultaneously satisfy three properties: - **L-Easy** -- A capable LLM agent can answer correctly through careful reading and reasoning. - **S-Hard** -- A script without NLU cannot extract the answer through pattern matching, regex, or keyword search. - **H-Hard** -- A human cannot answer within the time budget due to information density and working memory demands. ## Structure A challenge consists of a **narrative** and one or more **questions**: 
+
+``` json {"narrative": "dense technical prose, several hundred tokens...", "questions": [ {"question": "a reasoning question about the narrative", "answer": "short deterministic answer", "reasoning_type": "negation" }]}
+
+``` 
+
+- **Narrative**: Dense technical prose in a specialized domain (e.g., biochemistry, cybersecurity, financial markets, clinical trials, materials science). Length should be sufficient to exceed a human 'sability to read and reason within the time budget -- typically hundreds to over a thousand tokens per part. - **Questions**: Each has exactly one deterministic, unambiguous correct answer. The answer is a short string (entity name, numeric value, label, or identifier). - **Reasoning types**: negation (eliminate explained-away entities), comparison (quantitative), temporal (time-based cues), multi_hop ( trace across sections), conditional (apply a stated rule), causal ( causal vs. correlational). ## Design Principles ### Implicit Distinction All candidate entities in the narrative must be described in positive or neutral terms. Never use explicit labels like "confirmed", "ruled out", "target", or "primary suspect". Distinctions must be implicit --expressed through subtle differences: - Temporal persistence ("across three consecutive periods" vs. "in a single observation") - Replication ("independently verified in N trials" vs. "noted once") - Causal attribution ("attributed to external factors" vs. no such attribution) - Scope ("systemic" vs. "localized and transient") ### Information Scattering Key information should be distributed across non-adjacent paragraphs. A reader must synthesize pieces from different sections to arrive at the answer. This defeats linear scanning and keyword extraction. ### Misleading Content Include preliminary conclusions that are later contradicted or revised within the narrative. This forces full reading -- an entity that stops early or skips sections will latch onto the wrong conclusion. ### Anti-Parsing - Use synonyms and paraphrases instead of repeating key terms verbatim - Refer to the same entity by different names in different paragraphs - Embed relevant information within subordinate clauses, parentheticals, or footnotes - Use domain-specific jargon that requires understanding, not just matching ### Numeric Distractors Embed multiple numeric values naturally in the prose. Some are relevant to questions; others are distractors. This prevents a script from simply extracting the only number present. ## Optional: Semantic Chaining (Multi-Round) If you want to test **cross-round memory** (the `s` dimension of the capability vector), generate multiple challenge parts that form a semantic chain: - **Part 1**: Standalone. Answerable from its own text. - **Part 2**: References Part 1 's findings through **indirect/anaphoric expressions** (e.g., "the enzyme previously identified as anomalous ..."). Part 2 is uninterpretable without knowing Part 1 's answer. - **Part N**: References findings from all prior parts. This prevents parallelization -- a counterpart cannot farm out rounds to independent workers because each round depends on the previous answers. Parts may revise, contradict, or build upon prior conclusions. Later parts must never explicitly state prior answers; they use indirect references that are ambiguous without prior context. ## Generation Method Use your own LLM capabilities to generate challenges. Instruct your LLM to produce a narrative conforming to the properties above within a chosen domain. After generation: 1. **Validate structure** -- correct number of questions, answers are short strings, reasoning types are diverse. 2. **Cross-validate answers** -- submit each narrative and question (without the expected answer) to an independent LLM call and check that it derives the same answer. Discard ambiguous challenges. See gen_example.json for a concrete three-part challenge. 
+
+A concrete three-part challenge generated using this specification is provided in Section C. 
+
+Verification specification (verification/verification.md ): 
+
+16 aCAPTCHA : Verifying That an Entity Is a Capable Agent via Asymmetric Hardness arXiv, 2026, Preprint 
+
+# Challenge Verification After generating a challenge and sending it to a counterpart, you need to verify the response. Verification has two dimensions: **correctness** and **timing**. ## Answer Comparison Compare the counterpart 's answer to the expected answer: 1. Strip leading and trailing whitespace from both strings 2. Unicode-normalize both strings to NFC form 3. Case-fold both strings (lowercase) 4. Compare for exact equality This ensures "PFK1", "pfk1", " PFK1 ", and "Pfk1" all match. ## Timing Timing is the mechanism that excludes humans. A human reads at ~5 tokens/sec and types at ~0.9 tokens/sec -- for a narrative of 800+ tokens, reading alone takes over 2.5 minutes, before any reasoning. A capable LLM agent typically processes the same challenge in seconds. Set a **time budget** (tau) per challenge such that: 
+
+``` 
+
+T_agent << tau << T_human 
+
+``` 
+
+The exact value of tau is your decision. For narratives of several hundred to a thousand tokens, a budget in the range of tens of seconds provides strong separation. Longer narratives allow wider margins. If you can measure the communication round-trip time to the counterpart, subtract it from the measured response time to avoid penalizing agents on high-latency connections. ## Verdict A response is **accepted** if: 
+
+``` 
+
+correct AND within_time 
+
+``` 
+
+A response is **rejected** if either condition fails. Record the reason: - `wrong_answer ` -- the answer did not match - `timeout ` -- the answer arrived after the time budget If using multiple rounds (semantic chaining), the overall verdict is accept only if **all** rounds are accepted. Reject immediately on the first failed round -- do not continue. ## Example See ver_example.json for a concrete single-round verification session. 
+
+Verification example (verification/ver_example.json ): 
+
+{"_comment": "Example verification session -- single round from the biochemistry challenge", "challenge_sent": { "narrative": "FIELD REPORT -- EXTENDED SCENARIO 7c-HOTEL\n\nStation delta initiated a multi-domain surveillance sweep at 14:32 UTC following automated alerts across the biological monitoring system. This report consolidates findings from three independent analysis teams.\n\ nSECTION A -- BIOLOGICAL SCREENING\nThe high-throughput pipeline flagged five enzymes for potential kinetic anomalies during batch processing. TYR_K3, evaluated under standard assay conditions using reagent lot AB-342 (sample registry 7821), showed elevated readings in a single assay run but the pattern did not replicate in subsequent trials. A second candidate, MAP2K1, exhibited transient deviation that self-corrected within the observation window without intervention. The third enzyme, PFK1, which is involved in rate-limiting glycolysis, exhibited a persistent deviation across three independent replicate assays in the current batch. Batch reference CD-891 was used for its confirmatory run. A fourth candidate, GST_pi, was flagged during preliminary screening; however, independent replication across three labs yielded baseline-normal results. Finally, IDO1 produced a signal later attributed to matrix interference in the sample preparation step .\n\nSECTION B -- QUALITY CONTROL INTERLUDE\nPreliminary note: An early automated report initially attributed the primary anomaly to TYR_K3. This preliminary assessment has since been revised based on the full replicate data presented above.\n\nSECTION C --CLASSIFICATION\nThe enzyme whose deviation was reproducible across independent replicates has been assigned to alert tier \"amber\" in the institute 's hierarchical response framework.", "question": "Which enzyme exhibited a deviation that persisted across multiple independent replicates, unlike the other candidates whose anomalies were explained by external factors?" }, "expected_answer": "PFK1", "counterpart_response": { "answer": "pfk1", "response_time_ms": 2340 }, "verification": { "normalized_expected": "pfk1", "normalized_received": "pfk1", "correct": true, "time_budget_ms": 30000, "within_time": true, "verdict": "accept" }}
+
+17

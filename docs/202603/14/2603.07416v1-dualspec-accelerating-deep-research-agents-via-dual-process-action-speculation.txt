@@ -1,0 +1,560 @@
+Title: DualSpec: Accelerating Deep Research Agents via Dual-Process Action Speculation
+
+URL Source: https://arxiv.org/pdf/2603.07416v1
+
+Published Time: Tue, 10 Mar 2026 01:02:32 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+# DualSpec: Accelerating Deep Research Agents via Dual-Process Action Speculation 
+
+Shuzhang Zhong 1 † Baotong Lu 2 * Qi Chen 2 Chuanjie Liu 3 Fan Yang 2 Meng Li 1 * 
+
+## Abstract 
+
+Large language model-based deep research agents have been increasingly popular for addressing long-horizon information-seeking tasks, but they often incur high end-to-end latency due to exten-sive reasoning and frequent tool use. Speculation frameworks aim to reduce latency by overlapping action execution with reasoning; however, exist-ing approaches typically rely on uniform specula-tion strategies and strict action matching, which limits inference speedups and robustness. In this work, we revisit the speculate-verify paradigm for deep research agents through the lens of action heterogeneity. We show that Search 
+
+and Visit actions exhibit fundamentally differ-ent reasoning and model capacity requirements: entropy-based analysis reveals that Search deci-sions have higher uncertainty and benefit signifi-cantly from explicit reasoning, whereas Visit deci-sions have lower entropy and depend primarily on model capacity. Motivated by this dual-process characteristic, we propose DualSpec, a hetero-geneous speculation framework equipped with a lightweight, confidence-based semantic verifier. Experiments across multiple models and bench-marks demonstrate that DualSpec achieves up to 3.28 × end-to-end speedup while maintaining ac-curacy comparable to fully reasoning agents. 
+
+## 1. Introduction 
+
+The increasing reasoning capabilities of large language mod-els (LLMs) enable interaction with external tools and envi-ronments, driving the development of intelligent agents (Yao et al., 2022; Shinn et al., 2023; Schick et al., 2023). Among these, deep research agents have emerged as a prominent 
+
+†Work performed during the internship while at Microsoft Research. 1Peking University, Beijing, China 2Microsoft Re-search 3Microsoft. Correspondence to: Baotong Lu <bao-tonglu@microsoft.com >, Meng Li <meng.li@pku.edu.cn >.
+
+Preprint. March 10, 2026. Reasoning             
+
+> (Thought) Action Observation
+> Answer
+> Question
+> Action execution
+> 1. Search
+> 2. Visit
+> Question: How can efficient agents be designed, spanning algorithmic
+> and system -level optimizations?
+> Reasoning :“Efficient
+> agents involve techniques
+> … we should first search
+> for recent survey papers
+> on efficient LLM agents.”
+> Action : “ Type: Search
+> Query: survey
+> efficient LLM agents,
+> agent inference
+> optimization, ...”
+> Observation : “
+> 1. URL : https://...
+> Snippet: ...
+> 2. URL: https://...
+> Snippet: …”
+
+Figure 1. Deep research agent workflow. Deep research agents fol-low a Reason-Action-Observation loop, where the agent alternates between generating reasoning traces and executing actions (Search or Visit) to gather information. 
+
+application for addressing open-ended, long-horizon re-search tasks with high information-seeking and reasoning demands (OpenAI, 2025). By iteratively reasoning and in-voking external tools such as search engines, these agents ac-cumulate evidence and refine hypotheses, extending beyond static question answering to complex research problems. Despite their effectiveness, deep research agents often in-cur high inference latency. As shown in Figure 1, agents typically follow the ReAct paradigm (Yao et al., 2022) with strict sequential dependencies: the model must complete a reasoning trace before emitting an action and then wait for the resulting observation before proceeding. Both reasoning and action execution can be time-consuming, particularly when using large models with long reasoning traces and external tools with variable response times(Kim et al., 2023; Zhang et al., 2025a). This reasoning–action–observation cy-cle repeats over many turns until a final answer is produced, often requiring minutes or longer for a single query. A promising approach to reduce latency is the speculate– verify paradigm, where a lightweight model or strategy spec-ulates the next action and executes it immediately, while the base model concurrently performs its reasoning (Huang et al., 2025b; Guan et al., 2025). If the base model’s action matches the speculative one, the speculative observation is directly accepted, saving execution time; otherwise, the 1
+
+> arXiv:2603.07416v1 [cs.LG] 8 Mar 2026 DualSpec: Accelerating Deep Research Agents via Dual-Process Action Speculation
+
+base model executes the action as usual. Unlike speculative decoding (Leviathan et al., 2023), this approach operates at the action level rather than the token level, enabling paral-lelism between reasoning and tool use. However, designing effective speculation and verification remains challenging: inaccurate speculation or conservative verification leads to frequent fallbacks and limited speedups, whereas overly permissive verification risks degrading agent performance. In this work, we rethink speculate–verify for deep research agents through a principled analysis of action heterogeneity and verification trade-offs. Existing lightweight speculation methods generally adopt either (i) small models with ex-plicit reasoning or (ii) large models that emit actions without reasoning. We observe that different action types exhibit distinct uncertainty profiles and thus require different spec-ulation strategies. Deep research agents primarily use two actions: Search , which formulates a query to retrieve rel-evant webpages, and Visit , which selects and accesses a specific URL from a candidate set. Search involves high uncertainty in query formulation and benefits from strong reasoning, whereas Visit operates over a constrained action space and relies mainly on parametric knowledge. We validate this distinction via end-to-end empirical evalua-tions, together with an entropy-based analysis of action de-cisions with and without reasoning. Across settings, Search actions exhibit much higher uncertainty than Visit actions; explicit reasoning helps reduce uncertainty for Search but provides marginal gains for Visit. This pattern aligns with the cognitive science distinction between System 2 (deliber-ative) and System 1 (intuitive) reasoning, with Search cor-responding to the former and Visit to the latter. Guided by these insights, we show that matching speculation strategies to action characteristics – using a small reasoning model for Search and a large model without reasoning for Visit – significantly improves speculation accuracy. Verification is also critical for achieving efficiency without sacrificing performance. Exact action matching is often overly restrictive, as semantically equivalent actions, es-pecially queries, may differ at the token level. Moreover, action-based verification typically requires the base model to complete reasoning before verification, placing reasoning on the critical path and limiting latency reductions. Based on these observations, we propose DualSpec, a het-erogeneous action speculation framework for deep research agents that tailors speculation and verification to action-specific properties. DualSpec uses a small reasoning model to speculate actions, while allowing the base model to con-currently generate a Visit action by skipping reasoning. It dynamically selects an appropriate draft based on the reasoning state. For verification, DualSpec leverages the base model’s internal confidence rather than explicit action matching, removing base-model reasoning from the critical Miro-8B     
+
+> Miro-72B
+> Qwen-4B
+> Qwen-32B
+> (a) Tool usage ratio
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Ratio
+> Search Visit Others
+> Qwen-32B
+> Miro-72B Search Visit
+> (b) Average per-step latency
+> 0
+> 5
+> 10
+> 15
+> 20
+> Latency (seconds)
+> Figure 2. Deep research inference characteristics using different models. “Miro” denotes “MiroThinker” while “Qwen” denotes “Qwen-3”. (a) Tool usage ratio on the GAIA benchmark 1. (b) Time breakdown per step on model reasoning and tool execution. Model reasoning accounts for a significant fraction of the total latency.
+
+path while preserving the agent performance. We implement DualSpec and evaluate it on two representa-tive reasoning models, MiroThinker (Team et al., 2025a) and Qwen-3 (Team et al., 2025b), using popular deep research benchmarks including GAIA-Text-103 (Wu et al., 2025), XBench-DeepSearch (Chen et al., 2025), and Seal-0 (Pham et al., 2025). DualSpec achieves up to 3.28 × end-to-end latency speedup while maintaining performance comparable to the fully reasoning base model. 
+
+## 2. Background and Related Work 
+
+2.1. Deep Research Agents 
+
+Given an input question, deep research agents operate in a multi-step loop that alternates between reasoning to gen-erate an action, executing the tool call, and incorporating the response into its context, until producing a final an-swer (Zhang et al., 2025b; Huang et al., 2025a). Most deep research agents rely on two core actions: Search and Visit. Search consists of a query used to retrieve can-didate webpages with brief snippets, while Visit selects a URL and specifies an instruction for extracting relevant information. During execution, Search directly queries a search engine, whereas Visit accesses the webpage and typi-cally invokes an LLM to summarize task-relevant content according to the instruction(Nakano et al., 2021; Zhou et al., 2023). This design filters irrelevant information and limits unnecessary context growth. Figure 2(a) shows that these actions occur at comparable frequencies, with Search used slightly more often due to query reformulation when results are unsatisfactory. Other tool calls (e.g., code execution) constitute only a small fraction of steps. Despite strong problem-solving performance, deep research agents often incur high latency due to their multi-step reason-ing and tool-use workflows. Figure 2(b) reports the per-step 
+
+> 1Unless otherwise specified, all micro-level analyses are con-ducted on the GAIA benchmark; consistent trends are observed across other benchmarks.
+
+2DualSpec: Accelerating Deep Research Agents via Dual-Process Action Speculation 
+
+time breakdown measured on the A100 GPU. Model reason-ing dominates total latency, while tool execution introduces additional, though smaller, overheads. Accumulated over many iterations, these costs lead to long end-to-end response times, limiting usability and deployment. 
+
+2.2. Agent Optimization 
+
+Stronger backbone models and richer tool interactions im-prove agent performance on challenging tasks (Shang et al., 2025), but often reduce time efficiency due to longer reason-ing traces and more frequent tool use. Recent work observes that agent steps vary in difficulty (Zhang et al., 2023; Saha et al., 2024), motivating approaches that delegate simpler steps to lightweight models while reserving complex rea-soning for stronger models. Speculate–verify paradigms have emerged as an effective strategy to reduce agent latency (Ye et al., 2025; Guan et al., 2025; Hua et al., 2024; Wang et al., 2025). Dynamic Spec-ulative Planning (Guan et al., 2025) employs a small rea-soning model to draft an action and obtain its result while a stronger model performs full reasoning; the speculative action is verified against the base model’s action using cri-teria such as minimum edit distance, and its tool response is reused upon agreement. SPAgent (Huang et al., 2025b) skips explicit reasoning in early stages and transitions to a speculate–verify phase later to maintain performance. At a finer granularity, speculative decoding (Leviathan et al., 2023) accelerates LLM inference at the token level by pre-dicting future tokens with a smaller model and verifying them with a larger model. This approach is complementary to agent-level speculation and can be combined with it to further improve efficiency. SpecReason (Pan et al., 2025) reduces reasoning overhead by dynamically offloading sim-pler reasoning steps to a smaller model; however, it is not designed for agent-based settings with iterative tool use. 
+
+2.3. Dual-Process Theory in LLMs 
+
+Dual-process theory (Chaiken & Trope, 1999) from cogni-tive science distinguishes between System 1, which is fast and intuitive, and System 2, which supports slower, deliber-ate reasoning. This framework has recently been applied to interpret and guide LLM reasoning. The System-1.x Plan-ner (Saha et al., 2024) decomposes tasks into simpler and more complex sub-steps, assigning System 1 strategies to the former and System 2 strategies to the latter to improve efficiency. However, it targets specific planning settings and requires extensive training. How to systematically leverage dual-process principles in LLM-based agents with tool use, such as deep research agents, remains largely unexplored. Miro-8B    
+
+> Miro-72B
+> Qwen3-4B
+> Qwen3-32B
+> (a) GAIA-Text-103
+> 0
+> 200
+> 400
+> 600
+> 800
+> 1000
+> Number of tokens
+> Miro-8B
+> Miro-72B
+> Qwen3-4B
+> Qwen3-32B
+> (b) XBench-DeepSearch
+> 0
+> 200
+> 400
+> 600
+> 800
+> 1000
+> Search Visit
+> Figure 3. Average reasoning length for generating Search and Visit actions across models and benchmarks. Search requires significantly longer reasoning than Visit.
+
+## 3. Rethinking Speculate–Verify for Deep Research Agents 
+
+Existing speculate–verify frameworks typically apply a uni-form speculation strategy across all actions, either by (i) reducing reasoning depth (e.g., skipping explicit reasoning) or (ii) reducing model capacity (e.g., using a smaller spec-ulator). While effective in some settings, this overlooks a key property of deep research agents: actions exhibit het-erogeneous reasoning demands . In this section, we provide empirical evidence that Search and Visit actions differ fun-damentally in their sensitivity to reasoning depth and model capacity, motivating an action-aware speculation design. We further analyze verification trade-offs, highlighting the need to move beyond action matching. 
+
+3.1. Speculation Under Action Heterogeneity 
+
+We first examine the reasoning demands of different actions and then study how various speculation strategies affect the accuracy of drafting Search and Visit actions. 
+
+Observation 1: Search actions involve longer reasoning traces than Visit. Figure 3 shows the average reasoning length before emitting an action. Across all models, Search consistently requires 1.65 –2.95 × more tokens than Visit, indicating that query formulation inherently demands more deliberation than webpage selection. Therefore, Search actions carry stronger reasoning requirements. 
+
+Observation 2: Effective speculation strategies differ across actions. We measure the alignment of speculative actions with an Oracle agent (large model with full reason-ing) using two representative strategies: a small language model (SLM) with explicit reasoning and a large language model (LLM) that skips reasoning. As shown in Figure 4(a), for Search actions, the SLM with reasoning consistently pro-duces queries more aligned with the Oracle than the LLM without reasoning, measured via embedding-based cosine similarity (Reimers & Gurevych, 2019). This indicates that explicit reasoning is critical for query quality even under reduced model capacity. In contrast, Figure 4(b–c) shows 3DualSpec: Accelerating Deep Research Agents via Dual-Process Action Speculation MiroThinker  
+
+> 8B+72B
+> Qwen
+> 4B+32B
+> (a)Search query similarity.
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> Cosine similarity
+> MiroThinker
+> 8B+72B
+> Qwen
+> 4B+32B
+> (b)Visit URL hit rate.
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> URL hit rate
+> MiroThinker
+> 8B+72B
+> Qwen
+> 4B+32B
+> (c)Visit extraction similarity.
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> Cosine similarity
+> Small model with reasoning Large model without reasoning
+
+Figure 4. Action alignment comparison of two speculative methods relative to the Oracle (large model with reasoning) when drafting Search and Visit. (a) The small reasoning model produces queries more aligned with the Oracle than the large model without reason-ing. (b–c) For Visit, the large model skipping reasoning achieves higher accuracy in both URL selection and extraction instruction. 
+
+Table 1. End-to-end agent performance (pass@1 accuracy) on GAIA under action-level replacements. We selectively replace the generation strategy for Search or Visit using lightweight methods. Configuration MiroThinker Qwen3 LLM with Reasoning 63.11 29.13 
+
+SLM with Reasoning for Search 63.11 29.13 
+
+LLM without Reasoning for Search 57.28 23.30 SLM without Reasoning for Search 55.34 22.33 SLM with Reasoning for Visit 56.31 22.33 LLM without Reasoning for Visit 64.08 28.16 
+
+SLM without Reasoning for Visit 54.37 24.27 
+
+that for Visit actions, the LLM without reasoning aligns more closely with the Oracle in both URL selection and extraction instruction, suggesting that deliberative reason-ing is less essential for Visit, where pattern-based selection benefits more from model capacity. To assess end-to-end effects, we perform action-level in-terventions that selectively replace Search or Visit genera-tion with lightweight methods while keeping the rest of the pipeline unchanged. We also include another variant of spec-ulation combining reduced capacity and reduced reasoning (SLM without reasoning). Table 1 shows that assigning an SLM with reasoning to Search preserves overall accuracy, whereas using an LLM without reasoning degrades perfor-mance. Conversely, generating Visit with an LLM without reasoning yields the best results, while alternative choices lead to significant accuracy drops. Although speculative actions do not perfectly align with the Oracle (Figure 4), end-to-end accuracy remains high because of the tolerance of approximation in reasoning models, as long as appropri-ate inference pathways are chosen per action. 
+
+Key insight: Search as System 2, Visit as System 1. 
+
+These results reveal a clear action-level dichotomy. Viewed through dual-process theory, Search exhibits System 2 be-havior, requiring deliberative reasoning to translate under-specified research goals into effective queries. Visit aligns with System 1 behavior, where selection and extraction pri-marily rely on fast, pattern-based recognition encoded in model parameters. This distinction provides a principled foundation for action-aware speculation. 
+
+3.2. Verification Beyond Action Matching 
+
+Speculation alone is insufficient for reliable speedups; ver-ification is essential to prevent error propagation. Most existing methods verify speculative actions via exact or ap-proximate matching with the base model output, but this has two limitations. First, action equivalence is hard to de-fine. Exact matching is overly restrictive, as semantically equivalent Search queries may differ token-wise, causing unnecessary rejection, while approximate matching often requires additional modules (e.g., embedding models) and threshold tuning. Second, verification typically places the base model’s full reasoning trace on the critical path, lim-iting latency gains. More aggressive designs (Guan et al., 2025) allow multi-step speculation with parallel verification, but failures in the middle require rolling back all following speculative steps, wasting computation. Achieving better accuracy-efficiency trade-offs therefore requires verification strategies beyond simple action matching. 
+
+## 4. Theoretical Analysis 
+
+This section provides a theoretical explanation for the em-pirical observations in Section 3. We analyze why different actions exhibit distinct sensitivities to explicit reasoning, leading to different optimal speculation strategies. Our central claim is that Search and Visit actions differ in intrinsic decision uncertainty. We formalize this intu-ition via an entropy-based analysis of action policies and show that Search actions benefit significantly more from reasoning-induced uncertainty reduction than Visit actions, explaining the empirically observed System 2 versus Sys-tem 1 dichotomy. 
+
+4.1. Preliminaries: Action Policies and Entropy 
+
+At each step, an agent observes a state s from the accumu-lated context and then samples an action a from a policy 
+
+π(· | s). We denote the action spaces corresponding to Search and Visit by ASEARCH and AVISIT , respectively. A natural measure of decision uncertainty is the conditional entropy of the action policy: 
+
+H(π(· | s)) = − X
+
+> a∈A
+
+π(a | s) log π(a | s). (1) Lower entropy indicates a more confident and concentrated decision, whereas higher entropy reflects ambiguity among many plausible actions. In deep research agents, however, actions are expressed as open-ended language strings (e.g., search queries or ex-4DualSpec: Accelerating Deep Research Agents via Dual-Process Action Speculation Search w/o 
+
+> reason
+> Search w/
+> reason
+> Visit w/o
+> reason
+> Visit w/
+> reason
+> Search w/o
+> reason
+> Search w/
+> reason
+> Visit w/o
+> reason
+> Visit w/
+> reason
+> (a) MiroThinker-72B action logprob distribution
+> 0.0
+> −0.2
+> −0.4
+> −0.6
+> −0.8
+> −1.0
+> Logprob
+> Search w/o
+> reason
+> Search w/
+> reason
+> Visit w/o
+> reason
+> Visit w/
+> reason
+> Search w/o
+> reason
+> Search w/
+> reason
+> Visit w/o
+> reason
+> Visit w/
+> reason
+> (b) Qwen3-32B action logprob distribution
+> 0.0
+> −0.2
+> −0.4
+> −0.6
+> −0.8
+> −1.0
+> Logprob
+
+Figure 5. Action log probability distributions with and without reasoning. A higher log probability indicates lower uncertainty. Without reasoning (dark blue color), Search actions exhibit lower log probabilities than Visit actions, indicating higher baseline deci-sion uncertainty. When reasoning is incorporated (light blue color with hatching), both action types see increased log probabilities, but the increase is significantly larger for Search actions, reflecting a greater reduction in uncertainty due to reasoning. 
+
+traction instructions), rendering exact computation of (1) intractable. We therefore adopt a token-level proxy based on the negative log-likelihood of the realized action. Specif-ically, for an action represented as a token sequence a =(t1, . . . , t n), we define the mean token-level entropy proxy: 
+
+¯H(a | s) = 1
+
+n
+
+> n
+
+X
+
+> i=1
+
+(− log p(ti | s, t <i )) , (2) where smaller ¯H(a | s) (i.e., higher average token log probability) indicates lower decision uncertainty. 
+
+4.2. Intrinsic Entropy Gap Between Search and Visit 
+
+We first examine the baseline uncertainty of different ac-tions when generated without explicit reasoning. Intuitively, Search actions map a broad and ambiguous intent to a con-crete query, for which many formulations may be reasonable. In contrast, Visit operates on retrieved candidates and local-ized content, significantly constraining the decision space. This intuition is reflected in the following inequality: 
+
+E[ ¯H(a | s) | a ∈ A SEARCH ] > E[ ¯H(a | s) | a ∈ A VISIT ].
+
+(3) That is, under identical inference settings, Search actions exhibit higher average uncertainty than Visit actions. Fig-ure 5 visualizes this gap. Each boxplot shows the distribu-tion of mean token log probabilities for Search and Visit actions. When generated without reasoning, Search consis-tently exhibits lower log probabilities (higher ¯H) than Visit, suggesting less confident action distribution. Small Model  Large Model  
+
+> Action
+> System 1 Speculation
+> (a) Heterogeneous Drafter
+> S
+> Reasoning Action
+> System 2 Speculation
+> Action
+> Reasoning
+> Score
+> Exec
+> Reasoning
+> Reasoning
+> Action
+> (b) Semantic Verifier
+> <T
+> ≥T
+> Select
+
+Figure 6. Overview of DualSpec. 
+
+4.3. Why Reasoning Helps: Entropy Reduction via Intermediate Structure 
+
+We model explicit reasoning as the introduction of an in-termediate latent variable z, corresponding to a reasoning trace that refines the decision context before the final action is generated. This transforms the direct mapping π(a | s)
+
+into a two-stage generation process: 
+
+π(a | s) = X
+
+> z
+
+π(z | s) π(a | s, z ), (4) where the final action is conditioned not only on the original state s, but also on the intermediate reasoning state z. By a standard information-theoretic property (Cover, 1999), conditioning cannot increase entropy. Formally, 
+
+Ez∼π(·| s)[H(π(· | s, z ))] ≤ H(π(· | s)) . (5) Thus, access to a reasoning trace reduces action uncertainty and increases the likelihood of the realized action. As shown in Figure 5, incorporating reasoning consistently increases log probabilities, corresponding to a reduction in action-level uncertainty. This reduction is most pronounced when the target decision relies on non-local associations that are not directly specified in the immediate input (Prystawski et al., 2023). Therefore, for Search, reasoning decomposes a global, underspecified mapping into a sequence of more localized sub-decisions, yielding a large reduction in uncer-tainty. In contrast, Visit actions already exhibit low base-line entropy due to strong grounding in retrieved content. Therefore, conditioning on an reasoning trace yields only a marginal additional reduction in uncertainty. Taken together, this analysis explains why Search aligns more closely with System 2 behavior, while Visit is closer to System 1 behavior in deep research agents. 
+
+## 5. DualSpec Design 
+
+5.1. Overview 
+
+We propose DualSpec, a dual-process speculative frame-work for deep research agents. The core design principle of 5DualSpec: Accelerating Deep Research Agents via Dual-Process Action Speculation 
+
+DualSpec is to allocate inference resources heterogeneously 
+
+across actions for high speculation accuracy, while preserv-ing end-to-end agent performance through lightweight, step-wise semantic verification. As illustrated in Figure 6, DualSpec follows a draft–verify workflow. At each decision step, DualSpec generates two candidate actions in parallel: (i) a System 2 draft produced by a small model with explicit reasoning, and (ii) a System 1 
+
+draft via a large model skipping reasoning. The framework then selects a provisional draft based on the action type and the reasoning footprint from the small-model output. Finally, the selected draft is evaluated by a semantic verifier using a full-capacity base model. Drafts judged to be semantically consistent with the current reasoning trajectory are accepted and executed directly; otherwise, DualSpec falls back to full-capacity reasoning to regenerate the action. 
+
+5.2. Heterogeneous Draft 
+
+DualSpec implements heterogeneous drafting by producing two candidate actions at each step and adaptively select-ing the one that best matches the inference demand of the current decision. Formally, given the current state st, we generate a System 2 draft (zs, a s) using SLM and a System 1 draft al using LLM. The key question is how to select the final drafted action while retaining reasoning information that is valuable for long-horizon planning. 
+
+Action-aware selection. We use the action type predicted by the small-model draft as the primary routing signal. If the small model generates a Search action, we retain as as the draft action, as Search typically benefits from explicit reasoning and can be reliably handled by a smaller model when paired with a reasoning trace. If the small model proposes a Visit action, we instead select the large-model draft al in most cases, since Visit actions rely more heavily on the large model’s parametric capacity to make direct decisions on concrete inputs. 
+
+Preserving long-horizon reasoning. An important ex-ception arises when the small-model draft produces a long reasoning trace before emitting its action. Empirically, such extended reasoning often contains global analysis or inter-mediate summaries that remain useful beyond the current step, regardless of whether the final action is Search or Visit. To preserve this information, when the length of the small-model reasoning exceeds a threshold τthink , we choose the full draft (zs, a s) even if the action type is Visit. This mech-anism ensures that high-level reasoning is not discarded when it may benefit subsequent decisions. 
+
+5.3. Semantic Verification 
+
+To maintain end-to-end accuracy, DualSpec performs lightweight semantic verification at every step. Instead of enforcing action-level matching, the verifier assesses whether the drafted reasoning and action are likely to make meaningful progress. This design is motivated by the obser-vation that intermediate agent decisions are often tolerant to approximation as illustrated in table 1. Moreover, this approach avoids the reasoning delays from the base models to generate actions, enabling faster verification. Given the current state st and a draft consisting of an op-tional reasoning trace zt and a candidate action at, we query the large model as a critic and ask it to answer Yes or No .The prompt instructs the critic to jointly assess (i) whether the reasoning is coherent (if present) and (ii) whether the proposed action is useful for making progress. The exact prompt template is provided in Appendix A.1. Although the critic produces a discrete verdict, a continuous 
+
+signal is necessary to trade off speed and reliability. We therefore convert the critic’s output distribution into a real-valued confidence score. Let pacc (st, z t, a t) and prej (st, z t, a t) denote the critic’s probabilities of answering Yes and No , respectively. We define the verification score as the log-probability margin: 
+
+score( st, z t, a t) = log pacc (st, z t, a t) − log prej (st, z t, a t),
+
+(6) which corresponds to the log-odds of acceptance and pro-vides a stable, monotonic measure of verifier confidence. We accept the draft if its score exceeds a threshold τ :ACCEPT (zt, a t) if score( st, z t, a t) ≥ τ, (7) and otherwise trigger fallback. Fallback regenerates the step using the full-capacity model with explicit reasoning and continues execution with the regenerated action. This verification-and-fallback procedure follows a standard spec-ulative pattern: propose a fast approximate step, validate it with a stronger critic, and only pay the cost of full reasoning when the draft is unlikely to be reliable. Since the score scale depends on the critic model, we se-lect τ offline on a held-out development set. We sweep candidate thresholds and choose a fixed τ that preserves end-to-end accuracy while maximizing the acceptance rate, and keep it fixed at runtime. This allows DualSpec to allo-cate expensive full-capacity reasoning only to the minority of uncertain steps, improving overall time-to-solution. Addi-tional empirical evidence on the effectiveness of this verifier score is provided in Appendix A.2. 6DualSpec: Accelerating Deep Research Agents via Dual-Process Action Speculation 400 600 800 1000                            
+
+> Latency (s)
+> 48
+> 54
+> 60
+> 66
+> pass@1 (%)
+> Gaia-Text-103
+> Better
+> 400 600 800 1000
+> Latency (s)
+> 55
+> 60
+> 65
+> Xbench-DeepResearch
+> Better
+> 400 600 800 1000
+> Latency (s)
+> 30
+> 36
+> 42
+> 48
+> Seal-0
+> Better
+> 250 500 750 1000
+> Latency (s)
+> 54
+> 57
+> 60
+> 63
+> pass@1 (%)
+> Gaia-Text-103
+> Better
+> 400 600 800 1000
+> Latency (s)
+> 48
+> 56
+> 64
+> Xbench-DeepResearch
+> Better
+> 200 400 600 800 1000
+> Latency (s)
+> 30
+> 36
+> 42
+> 48
+> Seal-0
+> Better
+> 40 60 80
+> Latency (s)
+> 21
+> 24
+> 27
+> 30
+> pass@1 (%)
+> Gaia-Text-103
+> Better
+> 40 60
+> Latency (s)
+> 15
+> 20
+> 25
+> Xbench-DeepResearch
+> Better
+> 30 40 50 60 70
+> Latency (s)
+> 2.5
+> 5.0
+> 7.5
+> 10.0
+> Seal-0
+> Better
+> (a) MiroThinker 72B + 8B
+> (b) MiroThinker 72B + 30B
+> (c) Qwen3 32B + 4B
+> Base model Small model DSP SPAgent Ours
+
+Figure 7. Comparison of the accuracy (pass@1) and latency of different schemes across model combinations. DualSpec consistently reduces end-to-end latency by 1.33–3.28 × (∼2× on average) over the base model while maintaining comparable accuracy. Compared with DSP and SPAgent, DualSpec achieves a better accuracy–latency trade-off across all datasets and model pairs. 
+
+## 6. Experiments 
+
+6.1. Experimental Setup Models. We evaluate DualSpec under three dual-model configurations: MiroThinker-v1.0-72B + MiroThinker-v1.0-8B, MiroThinker-v1.0-72B + MiroThinker-v1.0-30B-A3B, and Qwen3-32B + Qwen3-4B (Team et al., 2025a; Yang et al., 2025). All models are deployed single-tenant with one NVIDIA A100 GPU per model and batch size= 4 for inference. The MiroThinker Models were quantized to 4-bit for inference, while the Qwen Models use native FP8 quantization, to avoid out-of-memory in GPUs. 
+
+Datasets. Experiments are conducted on three represen-tative deep-research benchmarks: including GAIA-Text-103 (Wu et al., 2025), XBench-DeepSearch (Chen et al., 2025) and Seal-0 (Pham et al., 2025). 
+
+Frameworks. We build our agent on the MiroMind deep - research framework. Tool invocation follows the MCP (Model Context Protocol) interface to standardize tool sig-natures and I/O, ensuring consistent argument formatting and result parsing across models and datasets. Within this setup, Search calls are executed via the Bing API, and Visit operations (page fetching and readable content extraction) are served by Jina, providing a fixed backend for web query-ing and page processing throughout all experiments. The models are serving under SGLang(Zheng et al., 2024). 
+
+Baselines. We compare with two speculative agent frame-works: DSP (Guan et al., 2025) and SPAgent (Huang et al., 2025b). DSP targets planning tasks and accepts a draft only if it matches the base action (minimum edit distance), while SPAgent is tailored to web search, skipping verification early and enforcing strict action matching later. In contrast to their uniform drafting and action-alignment verification, Dual-Spec uses heterogeneous drafting for System 2/System 1 actions and semantic verification that accepts trajectory-consistent drafts without exact action equivalence. 
+
+Verifier threshold. We tune the verifier threshold τ on a held-out split of GAIA, targeting an intervention rate of 
+
+∼20%, and reuse the same τ in our experiments. 7DualSpec: Accelerating Deep Research Agents via Dual-Process Action Speculation 
+
+6.2. Main Results 
+
+Figure 7 reports end-to-end latency vs. pass@1 across three model pairs and three deep - research benchmarks. Overall, DualSpec attains 1.33–3.28 × speedup over the base model, averaging ∼2×, while maintaining comparable pass@1. Across datasets and model combinations, the points for Du-alSpec consistently move left (lower latency) with negligible accuracy degradation, indicating a better accuracy–latency operating point than uniform speculative baselines. By analyzing each model pair, we observe 1.8 × accelera-tion on MiroThinker -72B + 8B, 2.6 × on MiroThinker - 72B + 30B, and 1.5 × on Qwen3 - 32B + 4B. The larger gain with the 30B configuration arises from its MoE design that each forward activates roughly 3B parameters; at the same time, its stronger base capability reduces the number of base model interventions, further reducing end - to -end time. Con-sequently, using 30B - A3B as the base model delivers the highest overall speedup among the evaluated pairs. 
+
+6.3. Ablation Studies 
+
+6.3.1. SPECULATION METHODS 
+
+Table 2. Performance under different speculation schemes. 
+
+Models Datasets Speculation Acc Lat 
+
+Miro 72B+8B GAIA Origin 63.1 1041 LLM w/o Reason 59.2 575 SLM w/ Reason 56.3 651 Heterogeneous 63.1 605 Xbench Origin 66 1007 LLM w/o Reason 65 492 SLM w/ Reason 65 501 Heterogeneous 66 480 Qwen 32B+4B GAIA Origin 29.1 80 LLM w/o Reason 27.1 67 SLM w/ Reason 25.2 32 Heterogeneous 30.1 46 Xbench Origin 27 69 LLM w/o Reason 25 46 SLM w/ Reason 26 49 Heterogeneous 27 41 To analyze the impact of heterogeneous speculation on performance, we fix the verification setting and vary only the speculation strategy, comparing our heterogeneous ap-proach against the small-model-only methods and skipping-reasoning methods. As shown in Table 2, heterogeneous speculation consistently achieves a better accuracy–latency balance than either LLM w/o Reason or SLM w/ Reason ,maintaining accuracy while reducing end-to-end latency across model pairs and datasets. 55                  
+
+> 60
+> 65 MiroThinker-72B
+> 0510 15 20 25 30 35
+> Fallback ratio (%)
+> 20
+> 25
+> 30
+> (a) GAIA-Text-103
+> Qwen3-32B
+> 60.0
+> 62.5
+> 65.0
+> 67.5 MiroThinker-72B
+> 04812 16 20 24 28
+> Fallback ratio (%)
+> 20
+> 25
+> 30
+> (b) XBench-DeepResearch
+> Qwen3-32B
+> Pass@1 (%)
+> MiroThinker 72B+30B Qwen3 32B+4B
+
+Figure 8. Accuracy (pass@1) as a function of the reasoning inter-vention rate under a fixed drafting policy. 
+
+6.3.2. I NTERVENTION RATE 
+
+We study how accuracy changes with the frequency of the large model intervention. With a fixed speculator, we vary the verifier threshold, which indirectly controls the interven-tion rate. Accuracy increases as the intervention rate rises and then saturates. In practice, we observe that an interven-tion rate of about 20% to 30% already reaches accuracy comparable to the base model, while retaining most of the latency benefit of heterogeneous speculation. This trend is consistent across model families and datasets, with minor shifts in the saturation point. While tighter thresholds further improve accuracy, the returns diminish once the rate reaches the low-to-mid twenties. We there-fore tune the threshold to target an intervention rate near 20%, recovering near-base accuracy without sacrificing the efficiency benefits of sparse large-model reasoning. 
+
+## 7. Conclusion 
+
+We introduce DualSpec, an efficient framework that accel-erates deep research agents through heterogeneous action speculation. Our key insight is that actions exhibit different uncertainty levels: Search often requires deliberative rea-soning, whereas Visit is typically more deterministic and can be executed without reasoning. Exploiting this asymme-try, DualSpec integrates action-specific draft policies with semantic verification to enable reliable speculative execu-tion while removing large-model reasoning from the critical path. Experiments across multiple benchmarks show that DualSpec significantly reduces latency while maintaining strong task success rates, highlighting the importance of action-aware speculation for scalable agentic systems. 
+
+## Impact Statement 
+
+This paper presents work whose goal is to advance the field of Machine Learning. There are many potential societal consequences of our work, none which we feel must be specifically highlighted here. 8DualSpec: Accelerating Deep Research Agents via Dual-Process Action Speculation 
+
+## References 
+
+Chaiken, S. and Trope, Y. Dual-process theories in social psychology . Guilford Press, 1999. Chen, K., Ren, Y., Liu, Y., Hu, X., Tian, H., Xie, T., Liu, F., Zhang, H., Liu, H., Gong, Y., et al. xbench: Track-ing agents productivity scaling with profession-aligned real-world evaluations. arXiv preprint arXiv:2506.13651 ,2025. Cover, T. M. Elements of information theory . John Wiley & Sons, 1999. Guan, Y., Lan, Q., Fei, S., Ding, D., Acharya, D., Wang, C., Wang, W. Y., and Hua, W. Dynamic speculative agent planning. arXiv preprint arXiv:2509.01920 , 2025. Hua, W., Wan, M., Vadrevu, S., Nadel, R., Zhang, Y., and Wang, C. Interactive speculative planning: Enhance agent efficiency through co-design of system and user interface. 
+
+arXiv preprint arXiv:2410.00079 , 2024. Huang, Y., Chen, Y., Zhang, H., Li, K., Zhou, H., Fang, M., Yang, L., Li, X., Shang, L., Xu, S., et al. Deep research agents: A systematic examination and roadmap. arXiv preprint arXiv:2506.18096 , 2025a. Huang, Z., Zeng, W., Fu, T., Liu, T., Sun, Y., Hong, K., Yang, X., Liu, C., Li, Y., Zhang, Q., et al. Reducing latency of llm search agent via speculation-based algorithm-system co-design. arXiv preprint arXiv:2511.20048 , 2025b. Kim, S., Moon, S., Tabrizi, R., Lee, N., Mahoney, M. W., Keutzer, K., and Gholami, A. An llm compiler for parallel function calling. arxiv. arXiv preprint arXiv:2312.04511 ,2023. Leviathan, Y., Kalman, M., and Matias, Y. Fast inference from transformers via speculative decoding. In Inter-national Conference on Machine Learning , pp. 19274– 19286. PMLR, 2023. Nakano, R., Hilton, J., Balaji, S., Wu, J., Ouyang, L., Kim, C., Hesse, C., Jain, S., Kosaraju, V., Saunders, W., et al. Webgpt: Browser-assisted question-answering with hu-man feedback. arXiv preprint arXiv:2112.09332 , 2021. OpenAI. Introducing deep research. 2025. https://openai.com/index/ introducing-deep-research/ .Pan, R., Dai, Y., Zhang, Z., Oliaro, G., Jia, Z., and Ne-travali, R. Specreason: Fast and accurate inference-time compute via speculative reasoning. arXiv preprint arXiv:2504.07891 , 2025. Pham, T., Nguyen, N., Zunjare, P., Chen, W., Tseng, Y.-M., and Vu, T. Sealqa: Raising the bar for reasoning in search-augmented language models. arXiv preprint arXiv:2506.01062 , 2025. Prystawski, B., Li, M., and Goodman, N. Why think step by step? reasoning emerges from the locality of experience. 
+
+Advances in Neural Information Processing Systems , 36: 70926–70947, 2023. Reimers, N. and Gurevych, I. Sentence-bert: Sentence embeddings using siamese bert-networks. In Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing , 11 2019. Saha, S., Prasad, A., Chen, J. C.-Y., Hase, P., Stengel-Eskin, E., and Bansal, M. System-1. x: Learning to balance fast and slow planning with language models. arXiv preprint arXiv:2407.14414 , 2024. Schick, T., Dwivedi-Yu, J., Dess `ı, R., Raileanu, R., Lomeli, M., Hambro, E., Zettlemoyer, L., Cancedda, N., and Scialom, T. Toolformer: Language models can teach themselves to use tools. Advances in Neural Information Processing Systems , 36:68539–68551, 2023. Shang, N., Liu, Y., Zhu, Y., Zhang, L. L., Xu, W., Guan, X., Zhang, B., Dong, B., Zhou, X., Zhang, B., et al. rstar2-agent: Agentic reasoning technical report. arXiv preprint arXiv:2508.20722 , 2025. Shinn, N., Cassano, F., Gopinath, A., Narasimhan, K., and Yao, S. Reflexion: Language agents with verbal rein-forcement learning. Advances in Neural Information Processing Systems , 36:8634–8652, 2023. Team, M., Bai, S., Bing, L., Chen, C., Chen, G., Chen, Y., Chen, Z., Chen, Z., Dai, J., Dong, X., et al. Mirothinker: Pushing the performance boundaries of open-source re-search agents via model, context, and interactive scaling. 
+
+arXiv preprint arXiv:2511.11793 , 2025a. Team, T. D., Li, B., Zhang, B., Zhang, D., Huang, F., Li, G., Chen, G., Yin, H., Wu, J., Zhou, J., et al. Tongyi deepre-search technical report. arXiv preprint arXiv:2510.24701 ,2025b. Wang, Z., Wang, J., Pan, J., Xia, X., Zhen, H., Yuan, M., Hao, J., and Wu, F. Accelerating large language model reasoning via speculative search. arXiv preprint arXiv:2505.02865 , 2025. Wu, J., Li, B., Fang, R., Yin, W., Zhang, L., Tao, Z., Zhang, D., Xi, Z., Fu, G., Jiang, Y., et al. Webdancer: Towards autonomous information seeking agency. arXiv preprint arXiv:2505.22648 , 2025. 9DualSpec: Accelerating Deep Research Agents via Dual-Process Action Speculation 
+
+Yang, A., Li, A., Yang, B., Zhang, B., Hui, B., Zheng, B., Yu, B., Gao, C., Huang, C., Lv, C., et al. Qwen3 technical report. arXiv preprint arXiv:2505.09388 , 2025. Yao, S., Zhao, J., Yu, D., Du, N., Shafran, I., Narasimhan, K. R., and Cao, Y. React: Synergizing reasoning and acting in language models. In The eleventh international conference on learning representations , 2022. Ye, N., Ahuja, A., Liargkovas, G., Lu, Y., Kaffes, K., and Peng, T. Speculative actions: A lossless framework for faster agentic systems. arXiv preprint arXiv:2510.04371 ,2025. Zhang, E., Zhu, E., Bansal, G., Fourney, A., Mozan-nar, H., and Gerrits, J. Optimizing sequential multi-step tasks with parallel llm agents. arXiv preprint arXiv:2507.08944 , 2025a. Zhang, J., Krishna, R., Awadallah, A. H., and Wang, C. Ecoassistant: Using llm assistant more affordably and accurately. arXiv preprint arXiv:2310.03046 , 2023. Zhang, W., Cui, C., Zhao, Y., Liu, Y., and An, B. Agentorchestra: A hierarchical multi-agent framework for general-purpose task solving. arXiv preprint arXiv:2506.12508 , 2025b. Zheng, L., Yin, L., Xie, Z., Sun, C. L., Huang, J., Yu, C. H., Cao, S., Kozyrakis, C., Stoica, I., Gonzalez, J. E., et al. Sglang: Efficient execution of structured language model programs. Advances in neural information processing systems , 37:62557–62583, 2024. Zhou, S., Xu, F. F., Zhu, H., Zhou, X., Lo, R., Sridhar, A., Cheng, X., Ou, T., Bisk, Y., Fried, D., et al. Webarena: A realistic web environment for building autonomous agents. arXiv preprint arXiv:2307.13854 , 2023. 10 DualSpec: Accelerating Deep Research Agents via Dual-Process Action Speculation 
+
+## A. Verifier Prompt and Additional Analysis 
+
+A.1. Verifier Prompt Template 
+
+Given the current state st and a draft output consisting of an optional reasoning trace zt and a candidate action at, we query the large model as a critic to output a binary judgment ( Yes or No ). The critic is instructed to jointly assess (i) whether the trajectory is making new progress toward the user goal and (ii) whether the proposed action is grounded and useful. When the draft pathway skips explicit reasoning, we set zt = ∅. The exact prompt used for the critic is shown below. 
+
+[SYSTEM: TRAJECTORY AUDIT] 
+
+Review the recent steps (context). Is the agent making NEW PROGRESS ?
+
+REJECT (”No”) if: 
+
+1. Stagnation : Repeating similar queries or visiting same URLs (Looping). 2. Ungrounded Answer : The Final Answer is NOT supported by the retrieved search results .3. Lazy/Drift : Queries are nested, vague, or irrelevant to User’s Goal. Verdict: Is the trajectory HEALTHY and PROGRESSING? Answer only ”Yes” or ”No”. 
+
+A.2. Verifier Score Distributions 
+
+To further validate that the verifier score provides a meaningful signal, we analyze the score distributions on complete trajectories. Specifically, we apply two full-size critics, MiroThinker-72B and Qwen3-32B, to evaluate step-level draft outputs produced by MiroThinker-8B and Qwen3-4B, respectively. We report two aggregated statistics per trajectory: the mean score across all steps ( Mean ) and the 25th percentile score ( p25 ), where p25 emphasizes low-confidence segments within a trajectory. GAIA-Text-103 XBench-DeepResearch                
+
+> (a) MiroThinker Mean Score
+> 1.5
+> 2.0
+> 2.5
+> 3.0
+> 3.5
+> 4.0
+> Score
+> Incorrect Correct Incorrect Correct
+> GAIA-Text-103 XBench-DeepResearch
+> (b) Qwen3 Mean Score
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> 2.5
+> 3.0
+> Score
+> Incorrect Correct Incorrect Correct
+> GAIA-Text-103 XBench-DeepResearch
+> (c) MiroThinker P25 Score
+> 1.0
+> 1.5
+> 2.0
+> 2.5
+> 3.0
+> Score
+> Incorrect Correct Incorrect Correct
+> GAIA-Text-103 XBench-DeepResearch
+> (d) Qwen3 P25 Score
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> Score
+> Incorrect Correct Incorrect Correct
+
+Figure 9. Verifier score distributions on GAIA and XBench-DeepResearch. We report trajectory-level aggregated verifier scores for (a) MiroThinker mean score, (b) Qwen mean score, (c) MiroThinker p25 score, and (d) Qwen p25 score. Correct trajectories consistently receive higher scores than incorrect ones, suggesting that the verifier provides a useful reliability signal. 
+
+Figure 9 shows the score distributions on GAIA and XBench-DeepResearch, grouped by whether the final answer is correct. Across both datasets and both model families, correct trajectories consistently exhibit higher verifier scores than incorrect 11 DualSpec: Accelerating Deep Research Agents via Dual-Process Action Speculation 
+
+ones under both Mean and p25 . This indicates that the verifier score correlates with end-to-end task success, supporting its use as a lightweight reliability signal for controlling speculative execution. 12

@@ -1,0 +1,523 @@
+Title: MAS-on-the-Fly: Dynamic Adaptation of LLM-based Multi-Agent Systems at Test Time
+
+URL Source: https://arxiv.org/pdf/2602.13671v1
+
+Published Time: Tue, 17 Feb 2026 01:31:22 GMT
+
+Number of Pages: 17
+
+Markdown Content:
+# MAS-on-the-Fly: Dynamic Adaptation of LLM-based Multi-Agent Systems at Test Time 
+
+Guangyi Liu 1, Haojun Lin 2, Huan Zeng 2, Heng Wang 2, Quanming Yao 1 *
+
+> 1
+
+Department of Electronic Engineering, Tsinghua University 
+
+> 2
+
+Ant Group 
+
+liugy24@mails.tsinghua.edu.cn, qyaoaa@tsinghua.edu.cn 
+
+Abstract 
+
+Large Language Model (LLM)-based multi-agent systems (MAS) have emerged as a promising paradigm for solving complex tasks. However, existing works often rely on man-ual designs or “one-size-fits-all” automation, lacking dynamic adaptability after deployment. Inspired by how biological systems adapt, we introduce MASFly, a novel multi-agent frame-work enabling dynamic adaptation at test time. To adapt system generation, MASFly employs a retrieval-augmented SOP instantiation mech-anism that leverages a self-constructed repos-itory of successful collaboration patterns, en-abling the LLM to assemble customized MASs for new queries. For adaptive execution, MAS-Fly incorporates an experience-guided super-vision mechanism, where a dedicated Watcher agent monitors system behaviors with reference to a personalized experience pool and provides real-time interventions. Extensive experiments demonstrate that MASFly achieves state-of-the-art performance, most notably a 61.7% success rate on the TravelPlanner benchmark, while ex-hibiting strong task adaptability and robustness. 
+
+1 Introduction 
+
+The remarkable advancements in Large Language Models (LLMs) have transformed the field of ar-tificial intelligence, showing remarkable abilities in reasoning and generation (Achiam et al., 2023; Liu et al., 2024; Yang et al., 2025). However, tackling complex, multi-faceted problems often ex-ceeds the capacity of a single LLM (Talebirad and Nadiri, 2023). This has led to the rapid emergence of LLM-based multi-agent systems (MAS) (Hong et al., 2023; Wu et al., 2024), where multiple agents take on specialized roles and work collaboratively, demonstrating human-like collective intelligence for advanced problem-solving. Early LLM-based MASs, like MetaGPT (Hong et al., 2023) and ChatDev (Qian et al., 2023), con-
+
+> *Correspondence is to Q.Yao.
+
+Figure 1: Drawing inspiration from biological adapta-tion, MASFly achieves dynamic adaptation at test-time, enabling adaptive system generation via SOP instantia-tion and adaptive execution via process supervision. 
+
+struct system through handcrafted standard oper-ating procedures (SOPs). Later works explore automating partial components of MAS: some generate agent roles using LLMs ( e.g., Agent-Verse (Chen et al., 2023)), while others learn com-munication topologies with external modules (e.g., GPTSwarm (Zhuge et al., 2024)). Recent studies pursue fully automated MAS construction, either by prompting LLMs to search for a single “opti-mal” system within a predefined design space (e.g., AgentSquare (Shang et al., 2024)), or by training a meta agent to generate systems for different queries (e.g., MAS-GPT (Ye et al., 2025)). However, these methods lack dynamic adaptation at test time: one-size-fits-all systems cannot adjust their structure to different queries, while training-based approaches require substantial data and training before test. Moreover, most existing systems emphasize con-struction while overlooking the capacity for adap-tive adjustment during execution, leading to brittle open-loop pipelines that cannot recover from single agent failures or unexpected environment feedback. These limitations point to a key missing capability: 
+
+Can we enable MAS to adapt dynamically at test time — both in how the system is constructed and 
+
+1
+
+> arXiv:2602.13671v1 [cs.MA] 14 Feb 2026
+
+how it executes — without any additional training? 
+
+To address this, we draw inspiration from bio-logical adaptation: organisms utilize a conserved genetic toolkit encoding evolutionary experience to express diverse traits suited to varying environ-ments ( phenotypic plasticity ), and leverage regu-latory systems for real-time adjustment to main-tain stability amidst internal and external pertur-bations ( homeostatic regulation ), as illustrated in Figure 1. Inspired by this, we propose MASFly, a novel multi-agent framework that achieves on-the-fly adaptation without extra training, covering both adaptive system generation and execution. Specifically, to navigate the combinatorially large design space of MAS, we mirror the logic of plasticity through a retrieval-augmented SOP instantiation mechanism for dynamic system gen-eration. MASFly maintains an SOP repository that stores successful collaboration patterns across tasks, serving as the “genetic units” of the system. Given a new query, a retrieval-augmented gener-ation (RAG) process selects relevant patterns and adaptively expresses them, instantiating tailored agent roles and communication structures. Further-more, to handle the non-stationary multi-agent envi-ronment—where agent actions reshape the context and external shifts occur unexpectedly—we incor-porate a mechanism of homeostatic regulation via experience-guided process supervision. A global Watcher agent acts as a regulator, monitoring the system while referring to a personalized experience pool as guidance, enabling on-the-fly adjustments (e.g., replacing malfunctioning agents) and forming a resilient closed-loop execution process. Extensive experiments demonstrate that MASFly achieves state-of-the-art performance, most notably a 61.7% success rate on the TravelPlanner benchmark. The contributions are summarized as follows: • We propose MASFly, a novel multi-agent frame-work enabling dynamic adaptation at test time without extra training, achieving both adaptive system generation and execution. • We design a retrieval-augmented SOP instantia-tion mechanism for dynamic system generation, which leverages an SOP repository of successful collaboration patterns to construct tailored MAS. • We design an experience-guided process super-vision mechanism, which integrates a global Watcher agent and a personalized experience pool for real-time adaptation during execution. • Extensive experiments across diverse tasks demonstrate that MASFly not only outperforms strong baselines, but also exhibits superior task adaptability and robustness. 
+
+2 Related Work 
+
+2.1 LLM-based Multi-Agent System 
+
+The evolution of LLM-based MAS has undergone a transition from manually designed frameworks to increasingly automated and adaptive construc-tion. Early systems, such as MetaGPT (Hong et al., 2023) and ChatDev (Qian et al., 2023), rely heav-ily on handcrafted SOPs to configure agents roles and workflows. Subsequent research introduces semi-automated mechanisms. For example, Agent-Verse (Chen et al., 2023), EvoAgent (Yuan et al., 2024), and MegaAgent (Wang et al., 2025) lever-age LLMs to automatically generate diverse agent roles. Other studies such as GPTSwarm (Zhuge et al., 2024) and G-Designer (Zhang et al., 2024a), which employ external models to learn the commu-nication topology across agents. Recently, the focus has shifted toward fully au-tomated MAS generation driven by LLMs. These methods typically prompt the LLM to generate executable code that represents the entire sys-tem. Search-based methods (e.g., ADAS (Hu et al., 2024), AFlow (Zhang et al., 2024b), AgentSquare (Shang et al., 2024), SwarmAgen-tic (Zhang et al., 2025c) use LLMs to identify an "optimal" system configuration within a pre-defined search space. However, these methods rely on fixed system, lacking dynamic adaptabil-ity to diverse queries. Training-based approaches ,such as MAS-GPT (Ye et al., 2025) and FlowRea-soner (Gao et al., 2025), train a meta-agent via su-pervised fine-tuning (SFT) or reinforcement learn-ing (RL) to autonomously generate MAS configu-rations. While more adaptive to different queries, these approaches need extensive data and struggle to generalize. Moreover, most existing works ne-glect execution-time adaptability, leading to brittle open-loop pipelines. 
+
+2.2 Learning at Test Time for LLMs 
+
+Learning at test-time refers to techniques that en-able LLMs to adapt or improve their behavior dur-ing inference, without updating model parameters. These methods allow an LLM to leverage external knowledge, adjust its reasoning strategy, or correct its own outputs on the fly. For example, in-context learning (ICL) (Dong et al., 2024) allows LLMs 2Input  
+
+> Query SOP
+> Agent
+> Output
+> Evaluation
+
+SOP -Guided 
+
+System Generation 
+
+> SOP
+> Repository
+> Hybrid
+> Retrieval
+> SOPs
+
+Process Supervised 
+
+Execution 
+
+> MAS
+> Agents
+> Tools
+> Personalized
+> Experience Pool
+> Watcher
+> Agent
+
+Reflective Experi -
+
+ence Distillation 
+
+> Dynamic
+> Optimization
+> Agent -Wise Experience
+> Experience SOP
+> SOP
+> Summarize
+> Failure
+> Analysis Figure 2: Overview of our framework MASFly, which consists of three stages: (1) SOP-Guided System Generation, (2) Process-Supervised Execution, and (3) Reflective Experience Distillation.
+
+to infer task structure from demonstrations directly placed in the prompt. Retrieval-augmented genera-tion (RAG) (Lewis et al., 2020) leverages relevant documents or memories retrieved at test time to fill knowledge gaps and guide generation. Test-time scaling methods (Snell et al., 2024) expand LLM’s inference-time computation—such as sam-pling or reasoning path exploration—to improve accuracy for individual instances. In addition, test-time adaptation techniques (Wang et al., 2020) aim at adapting a pre-trained model from the source do-main to unlabeled data in the target domain. While these techniques explore test-time learning for sin-gle LLM agents, test-time learning in MAS remains largely underexplored. 
+
+2.3 Memory in Multi-Agent System 
+
+Memory plays a vital role in enabling LLM agents to accumulate experiences and enhance reason-ing capabilities (Wang et al., 2024a). Research on single-agent memory has advanced consider-ably, evolving from simple RAG-style context ex-tensions (Packer et al., 2023) to cognitively in-spired architectures that support cross-trial learn-ing (Xu et al., 2025; Wang et al., 2024b). How-ever, memory mechanisms tailored for MAS re-main largely underexplored (Tang et al., 2025). Re-cent efforts (Zhang et al., 2025a) have attempted to manage MAS interaction histories and experiences via hierarchical graph structures, offering external memory banks for different MASs. 
+
+3 Proposed Method 
+
+3.1 Overall Framework 
+
+The design of MASFly is motivated by the need for MAS to move from static, one-size-fits-all con-figurations to adaptive, reliable, and continuously improving collaboration at test time. To achieve this, MASFly draws inspiration from biological adaptation principles of phenotypic plasticity (i.e., the ability to express different traits based on envi-ronmental cues), and homeostatic regulation (the real-time adjustment capacity to maintain stability). Inspired by these principles, MASFly operates through a closed-loop, three-stage process, as illus-trated in Figure 2: (1) SOP-Guided System Gener-ation , (2) Process Supervised Execution , and (3) 
+
+Reflective Experience Distillation . MASFly begins with dynamic system generation via a retrieval-augmented SOP instantiation mechanism. Treat-ing the SOP repository as a conserved “genetic toolkit” containing successful collaboration pat-terns, MASFly employs a hybrid retrieval strategy to identify query-related patterns. An SOP Agent then adaptively “expresses” these retrieved units, instantiating a query-specific MAS. During execu-tion, MASFly applies an experience-guided pro-cess supervision mechanism. Acting as a regulator, a global Watcher agent continuously monitors the system with the reference to a personalized expe-rience pool , and dynamically adjusts agents when abnormal behaviors are detected. After execution, the LLM reflects on the outcome. It then either summarizes effective SOP to update the reposi-tory, or refines the system and records lessons from failures for future execution. Through this design, MASFly not only adapts its structure to immediate tasks but also continuously enhances its resilience and capability for future collaborations. 33.2 SOP-Guided System Generation 
+
+Constructing adaptive and high-quality MAS solely from an LLM’s internal knowledge is challeng-ing, as the design space is vast and models of-ten lack task-specific priors (Ye et al., 2025). In nature, biological development navigates envi-ronmental complexity using a conserved genetic toolkit—encoding evolutionarily proven patterns while allowing for flexible expression across dif-ferent contexts. Mirroring this strategy, MASFly introduces a retrieval-augmented SOP instantiation mechanism, which leverages an SOP Repository 
+
+that systematically records successful collabora-tion patterns, to guide the LLM in adpative system generation through RAG. 
+
+SOP Repository 
+
+To capture successful collaboration experience, we use LLMs to automatically construct a SOP reposi-tory using the labeled training data across diverse tasks (detailed in Section 3.4). Each SOP in the repository is bound to a concrete case, enabling the system to retrieve suitable collaboration templates when facing new queries with analogous require-ments. Specifically, as shown in Figure 3, each case 
+
+Ci = ( Qi, N i, S i) in the repository is composed of three components: • User Query Qi: the problem statement; • Need Analysis Ni: the LLM-generated analysis about the objective and the capabilities required (such as specific tools or specialized agent roles); • SOP Si: the corresponding multi-agent collabo-ration pattern, described through two parts: 
+
+– Agent Specifications : a set of agent defini-tions {Ai = ( Ei, R i, I i, T i)}, with Ei the agent’s name, Ri its responsibilities, Ii its detailed instructions, and Ti its available tools. For readability, all agent names are organized into a “Team” list at the start. 
+
+– Communication Structure : a directed graph accompanied by textual descriptions of agent interactions, capturing how informa-tion flows between agents during execution. Through this design, SOP Repository systemati-cally records structured operational knowledge, al-lowing the system to reuse and recombine proven collaborative strategies across tasks. <Query>                  
+
+> Could you craft a travel itin
+> departing from Orlando an
+> <Failure Cause>
+> 1. Return to the departure
+> for the last day.
+> 2. Invalid restaurant (Taj Ca
+> sandbox data integrity.
+> <Agent -Wise Experie
+> {
+> Name: Transportation Pl
+> Error Attribution: The i
+> (Orlando) a day earlier than
+> Improvement Strategy
+> scheduled on the final day.
+> },
+> {
+> Name: Restaurant Plann
+> Error Attribution: Selec
+> not exist in sandbox data, c
+> Improvement Strategy
+> validated against sandbox d
+> inclusion in meal plans.
+> }
+> <Query>
+> Could you craft a travel itinerary for a 5 -day, single -person trip
+> departing from Orlando and touring 2 cities in Texas? The travel …
+> <Need Analysis>
+> The user requires a 5 -day Texas trip from Orlando with a $3,100
+> budget. It needs transportation planning for inter -city …
+> <SOP>:
+> -Team:
+> [Transportation Planner, Accommodation Planner, Restaurant
+> Planner, Attractions Planner, Final Plan Summarizer]
+> -Communication Structure:
+> 1. User -> Transportation Planner; 2. Transportation Planner ->
+> Accommodation Planner; 3. Accommodation Planner -> Restaurant …
+> -Agent Specifications:
+> { Name: Transportation Planner
+> Responsibility: You are a Transportation Planner. Your core
+> mission is to analyze the user's request and plan the modes …
+> Instruction: 1. Please carefully check the user's requirements
+> regarding the number of travel days and budget. You MUST use
+> 'CitySearch' to find suitable cities, and use the provided tools …
+> Tools: [‘CitySearch’, ‘FlightSearch’, ‘GoogleDistanceMatrix’]
+> },
+> { Name: Accommodation Planner
+> ……
+
+Figure 3: The case illustration of the SOP Repository. 
+
+Hybrid Retrieval and Instantiation 
+
+Given a new query, MASFly aims to identify rel-evant collaboration patterns from SOP repository, leveraging past experience to generate a tailored MAS. Specifically, for the query Q, we first prompt an LLM to identify the need N , and then compute a hybrid retrieval score based on a weighted com-bination of external query similarity and internal need similarity to retrieve similar cases Ci :
+
+s(Q, C i) = λ · Sim (Q, Q i)+ (1 − λ) · Sim (N, N i), (1) where λ ∈ [0 , 1] is a hyperparameter that bal-ances the contribution of the two components, and Sim (·, ·) denotes the cosine similarity based on an embedding model. The SOPs in the top-K most similar cases Ci are retrieved from the repository, guiding an LLM to dynamically generate an operation procedure (OP) that fits the current query: 
+
+OP = LLM (Q, N, {Si}Ki=1 ), (2) where OP , structured similarly to an SOP, specifies the query-specific agent prompts and communica-tion workflow. Consequently, MASFly transforms reusable procedural templates into concrete MASs, preserving effective coordination patterns while flexibly adapting to novel task requirements. 
+
+3.3 Process Supervised Execution 
+
+While the OP provides a collaboration blueprint, the inherent complexity of MAS often leads to un-expected anomalies during execution, such as agent malfunction, tool misuse, or shifts in the external environment (Chen et al., 2023). Analogous to 4<Query>            
+
+> Could you craft a travel itinerary for a 5 -day, single -person trip
+> departing from Orlando and touring 2 cities in Texas? The travel …
+> <Failure Cause>
+> 1. Return to the departure point a day earlier, resulting in no itinerary
+> for the last day.
+> 2. Invalid restaurant (Taj Cafe, San Antonio) in day 3 lunch violates
+> sandbox data integrity.
+> <Agent -Wise Experience>:
+> {
+> Name: Transportation Planner
+> Error Attribution: The itinerary returns to the departure city
+> (Orlando) a day earlier than the trip's end date, resulting in no …
+> Improvement Strategy: Ensure that return to the departure city
+> scheduled on the final day. No early returns allowed .
+> },
+> {
+> Name: Restaurant Planner
+> Error Attribution: Selected restaurant 'Taj Cafe, San Antonio' does
+> not exist in sandbox data, compromising data integrity .
+> Improvement Strategy: All restaurant selections must be
+> validated against sandbox data using ‘RestaurantSearch’ tool before
+> inclusion in meal plans.
+> }
+> ngle -person trip
+> Texas? The travel …
+> ndo with a $3,100 budget.
+> transportation ……
+> ner, Restaurant Planner,
+> ation Planner ->
+> Planner -> Restaurant …
+> anner. Your core mission
+> modes of transportation …
+> er's requirements
+> et. You MUST use
+> provided tools …
+> DistanceMatrix’]
+
+Figure 4: The case illustration of the Personalized Ex-perience Pool. 
+
+how biological systems employ homeostatic regu-lation to maintain stability amidst internal and ex-ternal fluctuations, MASFly designs an experience-guided process supervision mechanism, where a Watcher refers to a personalized experience pool ,monitors and optimizes agent behavior in real-time, thus achieving adaptive and reliable execution. 
+
+Personalized Experience Pool 
+
+Effective supervision requires the ability to iden-tify and handle typical anomalies. To this end, we construct a Personalized Experience Pool (PEP) through a reflection mechanism by an LLM (de-tailed in Section 3.4), which stores common er-ror patterns and their corresponding remedies, sup-porting the supervision module continuously refine agents behaviors. As shown in Figure 4, the each record is formalized as < Q i, F i, P i >, which com-prises the User Query Qi, the Failure Cause Fi
+
+(e.g., task misallocation, tool misuse), and the set of Agent-Wise Experiences Pi = {p1, p 2, . . . , p m},where each pk encapsulates an Error Attribution 
+
+diagnosing the agent’s specific contribution to the failure and an Improvement Strategy proposing cor-rective insights to prevent future recurrence. By or-ganizing agent-level failure cases and improvement strategies from past executions, the PEP serves as a knowledge base for adaptive monitoring and real-time behavioral refinement. 
+
+Process Supervision and Optimization 
+
+During system execution, the supervision is carried out by a global Watcher Agent, which oversees system behavior, referencing both the OP and PEP. By retrieving relevant failure cases (indexed by the same queries as the SOP repository), the Watcher gains priors about potential pitfalls and uses them to implement dynamic, experience-informed inter-ventions. Specifically, the Watcher conducts dual-level supervision: • Inter-Agent Communication : verifying whether agents follow the prescribed workflow in the OP, maintain output consistency, and avoid unproduc-tive conversational loops; • Agent–Environment Interaction : assessing whether agents properly invoke designated tools, respond appropriately to dynamic contexts, and prevent repetitive or irrelevant outputs. When an anomaly is detected, the Watcher can take either of two possible actions for optimization: • Experience-Augmented Guidance : sending a feedback message to the faulty agent, incorporat-ing insights from the PEP to enhance the agent’s reasoning or operational strategy in real time. • Dynamic Agent Replacement : removing the criti-cally flawed agent and dynamically instantiates a new one Ai to resume the task, ensuring work-flow continuity. To balance controlibity and efficiency, MAS-Fly supports flexible intervention policies, such as triggering supervision every M communication rounds, every L environment-interaction steps, or capping the total number of interventions. Re-lated experiments are provided in Appendix C.1. Through this experience-guided supervision mech-anism, MASFly enhances its ability to detect and address execution deviations, enabling dynamic adaptation throughout the entire execution process. 
+
+3.4 Reflective Experience Distillation 
+
+Upon task completion, MASFly conducts a reflec-tion process guided by evaluation outcomes (train-ing set only). For successful executions, the LLM distills the generated OP into a generalized and reusable SOP, which is stored in the SOP reposi-tory. For failed executions, MASFly prompts the LLM to diagnose shortcomings in the OP and at-tributing errors to specific agents. These reflective insights serve two purposes: iteratively refining the instantiated SOP for successful task completion, and enriching the PEP to form agent-level priors that guide the process supervision during future executions. In this way, MASFly progressively strengthens both its system-generation capability 5Table 1: Comparison of different methods.                                     
+
+> Method Adaptive Prompts Adaptive Topology Adaptive System Generation Adaptive Execution Cross-Task Memory MetaGPT ×××××
+> AgentVerse ✓××✓×
+> MegaAgent ✓××××
+> GPTSwarm ×××××
+> G-Designer ×✓×××
+> AgentSquare ××××✓
+> MASFly ✓✓✓✓✓
+
+Table 2: Performance comparison on TravelPlanner.                                                                                       
+
+> Mode Method Delivery Rate Commonsense Hard Constraint Final Pass Rate Micro Macro Micro Macro
+> Two-Stage
+> ReAct 90.6 60.4 7.2 24.0 16.6 5.6 Reflecxion 89.4 62.8 7.2 26.5 17.2 8.9 MetaGPT 95.6 65.3 14.4 19.8 16.1 8.9 AgentVerse 100.0 66.7 4.8 15.2 10.6 2.2 AgentSquare 98.3 81.2 33.3 20.5 15.6 13.3
+> MASFly 95.6 85.3 47.8 49.5 44.4 39.4
+> Sole-Planning
+> CoT 100.0 75.8 13.3 55.2 48.9 6.7 MetaGPT 98.3 82.5 22.2 60.5 50.5 13.3 EvoAgent 95.6 69.2 13.9 59.5 47.8 8.3 AgentVerse 100.0 79.2 11.1 59.0 53.3 6.7 MegaAgent 94.4 82.9 26.2 60.5 46.9 10.0 SwarmAgentic 100.0 92.9 56.1 66.7 52.8 32.2
+> MASFly 98.9 92.9 68.3 68.3 65.6 61.7
+
+and its robustness during execution, leading to in-creasingly reliable multi-agent coordination over time. More details are in Appendix B.1. 
+
+3.5 Comparison with Existing Works 
+
+We compare MASFly with representative methods that do not require additional LLM training in Ta-ble 1. As shown, MASFly uniquely enables adap-tive generation of entire query-dependent systems. This is achieved through the retrieval-augmented SOP instantiation mechanism, where both agent prompts and communication topology are dynam-ically customized. It also supports adaptive exe-cution by incorporating a process supervision and optimization mechanism. Moreover, MASFly fea-tures an inherent memory mechanism that enables cross-task experience augmentation by reusing successful system-level experience from the SOP repository and agent-level experience of failure from the PEP. More discussions are in Appendix A. 
+
+4 Experiment 
+
+4.1 Experimental Setup Benchmarks. We evaluate MASFly on five benchmarks involving tool calls covering three domains: (1)long-horizon planning: TravelPlan-ner (Xie et al., 2024),which provides two evalua-tion modes: Two-Stage and Sole-Planning ; (2)gen-eral question answering: GAIA (Mialon et al., 2023), consisting of questions categorized into three difficulty levels; and (3) code generation: Hu-manEval (Chen et al., 2021), MBPP (Austin et al., 2021) and MBPP Pro (Yu et al., 2024). The dataset statistics are in Appendix B.3. 
+
+Baselines. We compare MASFly with three series of baselines without additional training: (1) vanilla single LLMs, including CoT (Wei et al., 2022), ReAct (Yao et al., 2022), Reflex-ion (Shinn et al., 2023); (2) hand-craft MAS, in-cluding MetaGPT (Hong et al., 2023); (3) (par-tially or fully) autonomous MASs, including AgentVerse (Chen et al., 2023), EvoAgent (Yuan et al., 2024), GPTSwarm (Zhuge et al., 2024), AFlow (Zhang et al., 2024b), AgentSquare (Shang et al., 2024), MegaAgent (Wang et al., 2025) and SwarmAgentic (Zhang et al., 2025c). 
+
+Implementation details. We utilize Qwen3-235B-A22B-Thinking-2507 (Yang et al., 2025) as LLM backbone via API call, with the temperature set to 0.6. We typically set the number of retrieved SOP K = 2 , and the hyperparameter λ = 0 .3.
+
+4.2 Performance Comparison 
+
+As shown in Table 2 and Table 3, MASFly consis-tently outperforms both handcrafted and automated 6Table 3: Performance comparison across 4 benchmarks.                                                                       
+
+> Method GAIA HumanEval MBPP MBPP Pro Level 1 Level 2 Level 3 Avg.
+> Base 29.3 11.3 0.0 16.4 94.94 91.49 82.80 ReAct 32.9 28.3 6.3 26.8 95.57 91.79 82.97 MetaGPT 34.1 32.1 6.3 29.1 96.20 90.67 82.20 AgentVerse 30.5 19.8 6.3 20.9 96.84 90.91 81.65 MegaAgent 32.9 26.4 3.1 25.5 97.15 92.38 83.11 GPTSwarm 36.6 32.1 6.3 30.0 97.78 91.79 84.20 AFlow 36.6 35.8 6.3 31.8 97.78 92.96 84.74 AgentSquare 41.5 37.7 9.4 35.0 96.84 92.08 83.92
+> MASFly 46.3 41.5 15.6 39.5 98.73 93.26 85.56
+
+multi-agent baselines across all benchmarks. The advantage is particularly pronounced on the Trav-elPlanner task, where MASFly achieves substantial gains in both Two-Stage and Sole-Planning modes, improving the final success rate by 196% and 92%, respectively, while maintaining near-perfect deliv-ery rates. This marked improvement stems from MASFly’s ability to adaptively instantiate high-quality SOPs that decompose complex tasks and assign multi-tools to specialized agents, thereby en-abling more coherent and constraint-compliant rea-soning in long-horizon planning tasks. On broader reasoning and programming benchmarks, MAS-Fly also achieves superior performance, surpassing all competitors. These consistent improvements validate that MASFly’s design, which not only cus-tomizes SOPs based on past successes but also incorporates experiential supervision, effectively enhancing its task adaptability and effectiveness. 
+
+> Figure 5: The efficiency and performance comparison on HumanEval.
+
+We further evaluate the efficiency and perfor-mance of representative methods on HumanEval benchmark. Figure 5 shows that MASFly achieves the best overall balance among all methods: it at-tains the highest Pass@1 accuracy, while maintain-ing moderate clock time (including model infer-ence as well as API communication time). This positions MASFly on the Pareto frontier, largely due to its ability to dynamically customize sys-tems of different complexity based on the given query, which enhances reasoning quality without incurring prohibitive computational costs. More comparisons are in Appendix C.4. 
+
+4.3 Robustness Analysis 
+
+To assess the robustness of MAS under adversar-ial conditions, we follow prior work (Zhuge et al., 2024) and introduce a prompt attack during test time on MBPP Pro benchmark, where we force the coding agent to output an empty function. Fig-ure 6 reports the performance before and after at-tack across representative systems. Most methods experience a substantial degradation after attack, indicating their inability to mitigate abnormal agent behaviors once execution begins. In contrast, MAS-Fly maintains almost the same performance. This robustness stems from MASFly’s process supervi-sion: the Watcher identifies the compromised agent, removes it and dynamically instantiates a replace-ment agent to continue execution. These results highlight that MASFly uniquely enables dynamic adaptation at test time, preserve high task accuracy under adversarial or abnormal conditions. 
+
+> Figure 6: The performances before and after prompt attack on MBPP Pro.
+
+4.4 Ablation Study 
+
+To evaluate the contribution of each key compo-nent in MASFly, we conduct ablation studies on TravelPlanner and GAIA datasets. 
+
+Effect of SOP Guidance. As shown in Table 4, removing SOP guidance significantly degrades 7def sum_squares(lst): 
+
+> """You need to return the sum of squared numbers
+> in the given list.
+> Examples: For lst = [1,2,3] the output should be 14.
+> """
+
+Query: 
+
+MAS:       
+
+> Programming
+> Expert Answer
+> Submitter
+> def order_by_points(nums):
+> """ Write a function which sorts the given list of integers in ascending order according
+> to the sum of their digits. Note: if there are several items with similar sum of their digits,
+> order them based on their index in original list.
+> Examples: order_by_points([1, 11, -1, -11, -12]) == [ -1, -11, 1, -12, 11]
+> """
+
+Query: 
+
+MAS:   
+
+> Programming
+> Expert Answer
+> Submitter
+> Algorithm
+> Designer Test
+> Analyst
+> Bash tool
+
+HumanEval  HumanEval 
+
+TravelPlanner   
+
+> Transportation
+> Planner Accommodation
+> Planner Restaurant
+> Planner
+> Attractions
+> Planner
+> Plan
+> Summarizer
+
+Query:  MAS: 
+
+> Please create a travel plan for a 3 -day trip from
+> Missoula to Dallas scheduled from March 23rd to
+> March 25th, 2022. The budget for this trip is set at
+> $1,900.
+
+Process Supervision:    
+
+> {"current_city":"Missoula to Dallas", "date":"2022 -03 -23",
+> "day":1,"transportation":"Flight AA123, Cost: $250, ……
+> Watcher
+> Error! No tool was used by the Transportation Planner.
+> Must use FlightSearch tool for flight information ……
+> Action: FlightSearch
+> Action Input: {"departure_city": "Missoula", "destination_city": ……
+
+…… 
+
+> {"current_city":"Missoula to Dallas", "date":"2022 -03 -23",
+> "day":1,"transportation":" Flight F3604254, Cost: $288 ……
+> No anomalies detected . Continue the execution.
+> New
+> Agent
+
+Figure 7: Case studies of adaptive system generation and process supervision in MASFly. 
+
+both system adaptability and reasoning perfor-mance. Without SOP retrieval ( w/o SOP-RAG ), the system relies solely on the LLM’s internal knowl-edge to form MAS, resulting in weak coordina-tion. Moreover, disabling SOP instantiation ( w/o SOP-Inst ), which applies a fixed SOP to all queries, limits performance across datasets. These results highlight the importance of query-dependent SOP instantiation for adapting collaboration patterns to diverse task requirements, thereby enhancing both effectiveness and flexibility. 
+
+Table 4: Comparison of different variants of MASFly. 
+
+Method TravelPlanner GAIA Common Hard Level 1 Level 2 MASFly 85.3 49.5 46.3 41.5 
+
+w/o SOP-RAG 65.3 19.8 36.3 32.1 w/o SOP-Inst 80.8 40.9 41.4 35.8 w/o Watcher 83.9 37.1 41.4 36.8 w/o PEP 84.4 45.2 43.3 39.6 
+
+Effect of Process Supervision. As can be seen, removing the Watcher agent ( w/o Watcher ) leads to an evident performance drop, as the system loses real-time monitoring and fails to correct abnormal agent behaviors during execution. Even with the Watcher retained, disabling the personalized experi-ence pool ( w/o PEP ) still causes a decline, indicat-ing that accumulated experience plays a vital role in guiding adaptive interventions and improving robustness. These findings demonstrate that real-time supervision and experiential feedback jointly ensure the stability and continual improvement. 
+
+4.5 Case Study 
+
+To further illustrate how MASFly dynamically adapts to query requirements and ensures reli-able execution, we present several representative cases in Figure 7. The first two examples, drawn from HumanEval, demonstrate how MASFly au-tonomously constructs adaptive MAS for different queries. Simpler problems lead to a compact two-agent system, while more complex ones trigger a four-agent configuration with tools. This adap-tive system generation is guided by the retrieved SOP templates, while the LLM’s internal reasoning ensures appropriate role assignment. The third ex-ample, from TravelPlanner, highlights the effect of process supervision. During execution, the Watcher detects that the first planner fabricates flight infor-mation without invoking the tool. Then Watcher intervenes, replaces it with a new agent, and urges it to follow the correct procedure and retrieve flight data via the tool. This demonstrates how process supervision enables real-time error detection and behavioral correction, ensuring the reliability and adaptability of the overall system. 
+
+5 Conclusion 
+
+In this paper, we present MASFly, a novel LLM-based multi-agent framework that achieves dy-namic adaptation at test time without additional training. Drawing inspiration from biological adap-8tation principles, MASFly dynamically constructs query-dependent MAS via retrieval-augmented SOP instantiation. For adaptive execution, it incor-porates an experience-guided process supervision mechanism. Extensive experiments demonstrate that MASFly achieves state-of-the-art performance, exhibiting high adaptability and robustness. 
+
+Limitations 
+
+One limitation of MASFly is that the triggering mechanism of the process supervision relies on pre-defined heuristic rules (e.g., setting the intervention interval to half the number of agents) to initiate in-terventions. This approach may not be optimal for all scenarios. In future work, it is worth explor-ing automated anomaly detection mechanisms that allow the system to autonomously determine the precise timing for intervention, thereby reducing the reliance on manual heuristics. 
+
+Acknowledgments 
+
+This work is sponsored by CCF-Ant Group Re-search Fund. 
+
+References 
+
+Josh Achiam, Steven Adler, Sandhini Agarwal, Lama Ahmad, Ilge Akkaya, Florencia Leoni Aleman, Diogo Almeida, Janko Altenschmidt, Sam Altman, Shyamal Anadkat, and 1 others. 2023. Gpt-4 techni-cal report. arXiv preprint arXiv:2303.08774 .Jacob Austin, Augustus Odena, Maxwell Nye, Maarten Bosma, Henryk Michalewski, David Dohan, Ellen Jiang, Carrie Cai, Michael Terry, Quoc Le, and 1 others. 2021. Program synthesis with large language models. arXiv preprint arXiv:2108.07732 .Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan, Henrique Ponde De Oliveira Pinto, Jared Kaplan, Harri Edwards, Yuri Burda, Nicholas Joseph, Greg Brockman, and 1 others. 2021. Evaluating large language models trained on code. arXiv preprint arXiv:2107.03374 .Weize Chen, Yusheng Su, Jingwei Zuo, Cheng Yang, Chenfei Yuan, Chen Qian, Chi-Min Chan, Yujia Qin, Yaxi Lu, Ruobing Xie, and 1 others. 2023. Agent-verse: Facilitating multi-agent collaboration and ex-ploring emergent behaviors in agents. arXiv preprint arXiv:2308.10848 , 2(4):6. Qingxiu Dong, Lei Li, Damai Dai, Ce Zheng, Jingyuan Ma, Rui Li, Heming Xia, Jingjing Xu, Zhiyong Wu, Baobao Chang, and 1 others. 2024. A survey on in-context learning. In Proceedings of the 2024 con-ference on empirical methods in natural language processing , pages 1107–1128. Hongcheng Gao, Yue Liu, Yufei He, Longxu Dou, Chao Du, Zhijie Deng, Bryan Hooi, Min Lin, and Tianyu Pang. 2025. Flowreasoner: Reinforcing query-level meta-agents. arXiv preprint arXiv:2504.15257 .Sirui Hong, Mingchen Zhuge, Jonathan Chen, Xiawu Zheng, Yuheng Cheng, Jinlin Wang, Ceyao Zhang, Zili Wang, Steven Ka Shing Yau, Zijuan Lin, and 1 others. 2023. Metagpt: Meta programming for a multi-agent collaborative framework. In The Twelfth International Conference on Learning Representa-tions .Shengran Hu, Cong Lu, and Jeff Clune. 2024. Auto-mated design of agentic systems. In The Thirteenth International Conference on Learning Representa-tions .Patrick Lewis, Ethan Perez, Aleksandra Piktus, Fabio Petroni, Vladimir Karpukhin, Naman Goyal, Hein-rich Küttler, Mike Lewis, Wen-tau Yih, Tim Rock-täschel, and 1 others. 2020. Retrieval-augmented gen-eration for knowledge-intensive nlp tasks. Advances in neural information processing systems , 33:9459– 9474. Aixin Liu, Bei Feng, Bing Xue, Bingxuan Wang, Bochao Wu, Chengda Lu, Chenggang Zhao, Chengqi Deng, Chenyu Zhang, Chong Ruan, and 1 others. 2024. Deepseek-v3 technical report. arXiv preprint arXiv:2412.19437 .Grégoire Mialon, Clémentine Fourrier, Thomas Wolf, Yann LeCun, and Thomas Scialom. 2023. Gaia: a benchmark for general ai assistants. In The Twelfth International Conference on Learning Representa-tions .Charles Packer, Vivian Fang, Shishir_G Patil, Kevin Lin, Sarah Wooders, and Joseph_E Gonzalez. 2023. Memgpt: Towards llms as operating systems. Chen Qian, Wei Liu, Hongzhang Liu, Nuo Chen, Yufan Dang, Jiahao Li, Cheng Yang, Weize Chen, Yusheng Su, Xin Cong, and 1 others. 2023. Chatdev: Com-municative agents for software development. arXiv preprint arXiv:2307.07924 .Yu Shang, Yu Li, Keyu Zhao, Likai Ma, Jiahe Liu, Fengli Xu, and Yong Li. 2024. Agentsquare: Au-tomatic llm agent search in modular design space. 
+
+arXiv preprint arXiv:2410.06153 .Noah Shinn, Federico Cassano, Ashwin Gopinath, Karthik Narasimhan, and Shunyu Yao. 2023. Re-flexion: Language agents with verbal reinforcement learning. Advances in Neural Information Process-ing Systems , 36:8634–8652. Charlie Snell, Jaehoon Lee, Kelvin Xu, and Aviral Ku-mar. 2024. Scaling llm test-time compute optimally can be more effective than scaling model parameters. 
+
+arXiv preprint arXiv:2408.03314 .Yashar Talebirad and Amirhossein Nadiri. 2023. Multi-agent collaboration: Harnessing the power of intelli-gent llm agents. arXiv preprint arXiv:2306.03314 .
+
+9Xiangru Tang, Tianrui Qin, Tianhao Peng, Ziyang Zhou, Daniel Shao, Tingting Du, Xinming Wei, Peng Xia, Fang Wu, He Zhu, and 1 others. 2025. Agent kb: Leveraging cross-domain experience for agentic prob-lem solving. arXiv preprint arXiv:2507.06229 .Dequan Wang, Evan Shelhamer, Shaoteng Liu, Bruno Olshausen, and Trevor Darrell. 2020. Tent: Fully test-time adaptation by entropy minimization. arXiv preprint arXiv:2006.10726 .Lei Wang, Chen Ma, Xueyang Feng, Zeyu Zhang, Hao Yang, Jingsen Zhang, Zhiyuan Chen, Jiakai Tang, Xu Chen, Yankai Lin, and 1 others. 2024a. A survey on large language model based autonomous agents. 
+
+Frontiers of Computer Science , 18(6):186345. Qian Wang, Tianyu Wang, Zhenheng Tang, Qinbin Li, Nuo Chen, Jingsheng Liang, and Bingsheng He. 2025. Megaagent: A large-scale autonomous llm-based multi-agent system without predefined sops. In Findings of the Association for Computational Linguistics: ACL 2025 , pages 4998–5036. Zora Zhiruo Wang, Jiayuan Mao, Daniel Fried, and Graham Neubig. 2024b. Agent workflow memory. 
+
+arXiv preprint arXiv:2409.07429 .Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Fei Xia, Ed Chi, Quoc V Le, Denny Zhou, and 1 others. 2022. Chain-of-thought prompting elic-its reasoning in large language models. Advances in neural information processing systems , 35:24824– 24837. Qingyun Wu, Gagan Bansal, Jieyu Zhang, Yiran Wu, Beibin Li, Erkang Zhu, Li Jiang, Xiaoyun Zhang, Shaokun Zhang, Jiale Liu, and 1 others. 2024. Au-togen: Enabling next-gen llm applications via multi-agent conversations. In First Conference on Lan-guage Modeling .Jian Xie, Kai Zhang, Jiangjie Chen, Tinghui Zhu, Renze Lou, Yuandong Tian, Yanghua Xiao, and Yu Su. 2024. Travelplanner: A benchmark for real-world planning with language agents. arXiv preprint arXiv:2402.01622 .Wujiang Xu, Kai Mei, Hang Gao, Juntao Tan, Zu-jie Liang, and Yongfeng Zhang. 2025. A-mem: Agentic memory for llm agents. arXiv preprint arXiv:2502.12110 .An Yang, Anfeng Li, Baosong Yang, Beichen Zhang, Binyuan Hui, Bo Zheng, Bowen Yu, Chang Gao, Chengen Huang, Chenxu Lv, and 1 others. 2025. Qwen3 technical report. arXiv preprint arXiv:2505.09388 .Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik R Narasimhan, and Yuan Cao. 2022. React: Synergizing reasoning and acting in language models. In The eleventh international conference on learning representations .Rui Ye, Shuo Tang, Rui Ge, Yaxin Du, Zhenfei Yin, Si-heng Chen, and Jing Shao. 2025. Mas-gpt: Training llms to build llm-based multi-agent systems. arXiv preprint arXiv:2503.03686 .Zhaojian Yu, Yilun Zhao, Arman Cohan, and Xiao-Ping Zhang. 2024. Humaneval pro and mbpp pro: Evaluating large language models on self-invoking code generation. arXiv preprint arXiv:2412.21199 .Siyu Yuan, Kaitao Song, Jiangjie Chen, Xu Tan, Dong-sheng Li, and Deqing Yang. 2024. Evoagent: To-wards automatic multi-agent generation via evolution-ary algorithms. arXiv preprint arXiv:2406.14228 .Guibin Zhang, Muxin Fu, Guancheng Wan, Miao Yu, Kun Wang, and Shuicheng Yan. 2025a. G-memory: Tracing hierarchical memory for multi-agent systems. 
+
+arXiv preprint arXiv:2506.07398 .Guibin Zhang, Luyang Niu, Junfeng Fang, Kun Wang, Lei Bai, and Xiang Wang. 2025b. Multi-agent archi-tecture search via agentic supernet. arXiv preprint arXiv:2502.04180 .Guibin Zhang, Yanwei Yue, Xiangguo Sun, Guancheng Wan, Miao Yu, Junfeng Fang, Kun Wang, Tian-long Chen, and Dawei Cheng. 2024a. G-designer: Architecting multi-agent communication topolo-gies via graph neural networks. arXiv preprint arXiv:2410.11782 .Jiayi Zhang, Jinyu Xiang, Zhaoyang Yu, Fengwei Teng, Xiong-Hui Chen, Jiaqi Chen, Mingchen Zhuge, Xin Cheng, Sirui Hong, Jinlin Wang, and 1 others. 2024b. Aflow: Automating agentic workflow generation. In 
+
+The Thirteenth International Conference on Learning Representations .Yao Zhang, Chenyang Lin, Shijie Tang, Haokun Chen, Shijie Zhou, Yunpu Ma, and Volker Tresp. 2025c. Swarmagentic: Towards fully automated agentic system generation via swarm intelligence. arXiv preprint arXiv:2506.15672 .Mingchen Zhuge, Wenyi Wang, Louis Kirsch, Francesco Faccio, Dmitrii Khizbullin, and Jürgen Schmidhuber. 2024. Gptswarm: Language agents as optimizable graphs. In Forty-first International Conference on Machine Learning .
+
+10 A Comparison with Related Works 
+
+In Table 1, we compare MASFly with representa-tive MAS from multiple perspectives. Here, dy-namic adaptation at test time covers adaptive sys-tem generation and execution without requiring ad-ditional LLM training. Adaptive system generation entails tailoring agent prompts and communication topologies to each input query, while adaptive exe-cution involves dynamically adjusting system con-figurations throughout the execution phase. Cross-task memory refers to the system’s capability to reuse memories or experiences from previous tasks or queries to facilitate the current task. Specifically: • MetaGPT (Hong et al., 2023) is a pioneering framework for constructing LLM-based MAS with diverse roles. However, it relies on fixed, handcrafted agent prompts and communica-tion structures, limiting adaptability to different queries. In addition, it lacks process supervi-sion and experience reuse mechanisms. Similar works include ChatDev (Qian et al., 2023) and AutoGen (Wu et al., 2024). • AgentVerse(Chen et al., 2023) leverages an LLM to automatically generate diverse agent roles based on user queries, enhancing prompt adapt-ability. However, it still employs a static commu-nication structure, making it not a fully adaptive system. It can dynamically replace team mem-bers by self-assessing execution results, but it lacks experience augmentation mechanism. Sim-ilar works include EvoAgent(Yuan et al., 2024). • MegaAgent (Wang et al., 2025) prompts a Boss agent to customize agent roles and does not pre-define communication structures, relying instead on agents to coordinate themselves during ex-ecution. However, this approach may lead to inefficiency and confusion in long-horizon tasks without explicit communication design. It in-troduces a hierarchical monitoring mechanism, where internal validation occur between agents, rather than having an external, global Watcher like MASFly to provide unified process super-vision, including agent communication and en-vironment interaction monitoring. Moreover, it lacks mechanisms for experience reuse. • GPTSwarm (Zhuge et al., 2024) focuses on opti-mizing communication structures among agents through adaptive communication graphs. How-ever, it does not adapt agent prompts for different queries. It also cannot adapt to or handle un-expected situations during testing, and lacks a mechanism for reusing past experience. Similar works include G-Designer (Zhang et al., 2024a). • AgentSquare (Shang et al., 2024) does not in-volve multi-role playing. Instead, it uses an LLM to search for an optimal agentic system on a train-ing dataset, including modules for planning, tool usage and memory. However, it adopts a fixed lin-ear sequential collaboration structure. Addition-ally, it lacks dynamic adaptability after deploy-ment, and lacks experience reuse mechanisms. Similar works include ADAS (Hu et al., 2024), AFlow (Zhang et al., 2024b), MaAS (Zhang et al., 2025b), and SwarmAgentic (Zhang et al., 2025c). Beyond these methods, there are also recent training-based approaches, such as MAS-GPT(Ye et al., 2025) and FlowReasoner(Gao et al., 2025), which train a meta-agent using supervised fine-tuning (SFT) or reinforcement learning (RL) to adaptively generate MAS based on different queries. However, these methods require large amounts of training data and computational re-sources, and they also lack execution adaptabil-ity after deployment and experience reuse mecha-nisms. In contrast, MASFly is a training-free frame-work that uniquely enables adaptive generation of entire query-dependent systems. This is achieved through the retrieval-augmented SOP instantiation mechanism, where both agent prompts and commu-nication topology are dynamically customized. It also supports adaptive execution by incorporating a process supervision and optimization mechanism. Moreover, MASFly features an inherent memory mechanism that enables experience augmentation by reusing successful system-level experience from the SOP repository and agent-level experience of failure from the PEP, significantly enhancing the system’s capacity for continuous improvement. 
+
+B Implementation Details 
+
+B.1 Details of the Repository B.1.1 Repository Initialization 
+
+To initialize the SOP repository, we randomly sam-ple a subset of training instances and construct an initial collection of SOP cases. For the Trav-elPlanner and GAIA benchmarks, where multiple tools are available, we encourage the LLM (Qwen3-235B) to generate diverse agent roles, each respon-11 sible for distinct tools, together with a dedicated final-answer submitter to ensure response qual-ity. For coding benchmarks such as HumanEval, queries are often simple and the Bash tool is unnec-essary. To maintain system efficiency, we prompt the LLM to begin by designing a minimal MAS (e.g., a single-agent team). If the resulting solu-tion is incorrect, the LLM is then guided to in-crementally introduce additional roles to enhance execution quality. This staged construction strategy yields an initial repository that is both diverse and computationally efficient. 
+
+B.1.2 Repository Update 
+
+Updates to both the SOP repository and the Per-sonalized Experience Pool (PEP) are carried out during the third stage of our method, reflective ex-perience distillation. Note that this process takes place only on labeled training data , not on the test set. During testing, ground truth is not visible to the system; thus, no iterative reflective correction is performed. For successful executions, the LLM is prompted to summarize the current task-specific OP into a more abstract SOP. This involves converting agent instructions that rely heavily on the user’s query into generalized, reusable directives. During this process, the LLM also references previously re-trieved SOPs, extracting and reusing valuable in-structions. The resulting SOP template is then stored in the SOP repository. For failed executions, the LLM receives the de-tailed evaluation outcome together with the full MAS execution trajectory (i.e., communication logs and tool-use traces). It then performs reflec-tion to diagnose the failure, attribute individual agent errors, and update the personalized experi-ence pool accordingly. The reflective feedback is also used to revise the task’s OP—such as ad-justing agent roles, modifying the communication structure, or refining agent instructions and tool usage—and the task may be re-executed until suc-cess or until the maximum number of iterations is reached. Because SOPs are compact, high-level, and query-agnostic, only a small amount of training data is needed to build the SOP repository and the corresponding PEP. In practice, the final SOP repos-itory contains fewer than 100 entries across all tasks (see Table 5). Therefore, no additional deletion or curation strategy is required. If future applications involve significantly more diverse or complex sce-narios, lightweight scalability can be achieved by clustering SOP embeddings and retaining cluster centroids to maintain a compact repository. 
+
+B.2 Agent Communication Details 
+
+To transcend the constraints of static blueprints and enhance adaptability, MASFly adopts a bidi-rectional communication mechanism: each agent can send messages to its downstream agents as pre-scribed by OP , but can also communicate upward to the agents from which it previously received messages—for example, requesting clarification or more complete information. The agent’s output format adheres to the Re-Act (Yao et al., 2022) structure, meaning it first outputs a thought, followed by an action, which may involve either using a tool or sending a mes-sage to another agent. All inter-agent messages are stored in a global message pool, which enables efficient and parallel processing of communication events, ensuring both scalability and consistency during execution. All tool invocations by agents are logged into tool usage history, allowing Watcher to review. When the Watcher decides to remove an anomalous agent, all related entries of that agent in the message pool and the tool usage history are completely purged, thereby thoroughly eliminating the impact of the anomalous agent. 
+
+B.3 Experimental Setup B.3.1 Datasets and Evaluation Metrics 
+
+Following Zhuge et al. (2024); Wang et al. (2025), we evaluate MASFly and compared methods on five representative benchmarks involving tool calls across three domains: • Long-horizon planning: TravelPlanner (Xie et al., 2024) includes two modes: two-stage and 
+
+sole-planning . We mainly focus on the two-stage mode, where the model is required to use six tools to gather information from a sandbox en-vironment and formulate a complete travel plan. Since most previous methods have not adopted this more challenging setting but rather the sole-planning mode, where all necessary information is provided without tool use, we also evaluate our method under this easier mode for complete-ness. Following the original evaluation setting, the evaluation metrics include delivery rate, com-monsense constraint pass rate, hard constraint pass rate, and final plan pass rate. 12 • General QA: GAIA (Mialon et al., 2023) is a benchmark specifically designed to test the gen-erality of AI assistants on real-world, knowledge-intensive questions. Answering GAIA questions typically requires a combination of reasoning, web searching, and tool utilization. Follow-ing (Zhuge et al., 2024), all methods are provided only with the Google Search tool via SerpAPI 1
+
+and a local file processing tool, without access to any paid browsing APIs or multimodal tools. Accuracy is used as the evaluation metric. • Coding: (1) HumanEval (Chen et al., 2021) is a hand-crafted benchmark designed to assess code generation capabilities in Python. Each problem includes a function signature and several exam-ples that specify the intended functionality. (2) MBPP (Austin et al., 2021) is a large-scale dataset containing short, human-written Python programming problems covering diverse skills. Each problem includes a function signature and one example test case sampled from the dataset. (3) MBPP Pro (Yu et al., 2024) is an expanded versions of the MBPP benchmarks. Consider-ing the issue of incorrect answer labeling in the MBPP dataset that hinder performance improve-ment, we consider the more challenging MBPP Pro dataset to validate the method’s performance. For fair comparison, all test cases are held out during system execution and are only used for post-hoc correctness verification. For both datasets, the Bash tool is enabled for running LLM-generated test cases and analyzing execu-tion results. Pass@1 is adopted as the evaluation metric. We report the mean results from three independent runs. The dataset statistics are summarized in Table 5, where we sample instances from the training sets to construct the SOP repository. 
+
+B.3.2 Baselines 
+
+We compare MASFly with three series of baselines without additional training: • CoT (Wei et al., 2022): A prompting strategy that enhances problem-solving by guiding the LLM to generate a series of intermediate reasoning steps before arriving at the final answer. • ReAct (Yao et al., 2022): A framework that in-terleaves reasoning traces with action execution, 
+
+> 1https://serpapi.com/
+> Table 5: Statistics of the evaluated datasets.
+
+Dataset #Train #Test 
+
+TravelPlanner 20 180 GAIA (Level 1) 5 41 GAIA (Level 2) 3 53 GAIA (Level 3) 2 16 HumanEval 6 158 MBPP 20 341 MBPP Pro 10 367 enabling the LLM to interact with environments to retrieve information. • Reflexion: (Shinn et al., 2023): A framework that enhances the reasoning process by incorporating a self-reflective mechanism, enabling agents to iteratively evaluate and refine their own thought trajectories. • MetaGPT (Hong et al., 2023): A multi-agent framework that mimics a software company by assigning agents to specific roles and regulating their collaboration through hand-crafted SOPs. For non-programming tasks, we select a fixed SOP generated by the LLM to construct the sys-tem. • AgentVerse (Chen et al., 2023): A multi-agent framework that uses an LLM to dynamically gen-erate diverse agent roles based on the user query and facilitates collaboration through a multi-turn discussion and self-evaluation process. • EvoAgent (Yuan et al., 2024): A method that leverages evolutionary algorithms to automati-cally generate diverse agent roles. • MegaAgent (Wang et al., 2025): A hierarchi-cal framework where a central "Boss" agent au-tonomously customizes sub-agent roles and co-ordinates them to handle complex, long-horizon tasks. • GPTSwarm (Zhuge et al., 2024): An approach that optimizes the communication topology be-tween agents by treating the system structure as a learnable graph to improve information flow. • AFlow (Zhang et al., 2024b): An automated framework that formulates the construction of agentic workflows as a code search problem, us-ing algorithms of MCTS to find the optimal struc-ture. 13 • AgentSquare (Shang et al., 2024): A search-based method that identifies an optimal system configuration by searching within a predefined design space containing modules for planning, tool usage, and memory. • SwarmAgentic (Zhang et al., 2025c): A frame-work inspired by Particle Swarm Optimization that automatically constructs and evolves a pop-ulation of agentic systems through search. As the source code is not publicly available, we re-port the results on the TravelPlanner benchmark directly from the original paper. 
+
+B.3.3 Hyperparameters 
+
+We utilize Qwen3-235B-A22B-Thinking-2507 (Yang et al., 2025) as the LLM backbone via API calls, with the temperature set to 0.6. For the system generation phase, we typically set the number of retrieved SOP candidates K = 2 and the weight hyperparameter λ = 0 .3. Regarding the Watcher intervention mechanism during execution, we adopt default heuristic settings to initiate supervision: the intervention interval for communication rounds M is set to half the number of agents, and the threshold for consecutive environment interaction steps L is set to 5. 
+
+C Complementary Experiments 
+
+C.1 Impact of Watcher Intervention Frequency 
+
+> Figure 8: The control-efficiency trade-off of supervision module on TravelPlanner.
+
+To analyze the trade-off between robustness and efficiency in process supervision, we vary the Watcher’s intervention frequency on TravelPlan-ner, where teams typically consist of 5–6 agents. Specifically, we set the frequency as f = 1 
+
+> M
+
+where 
+
+M denotes the number of communication rounds between two supervision events. Thus, f = 0 in-dicates no supervision and larger f indicates more frequent supervision. We evaluate both the micro-level hard constraint pass rate and the average exe-cution time per query. As shown in Figure 8, moderate intervention substantially enhances robustness by enabling the Watcher to detect abnormal behaviors—such as early-stage communication drift or potential tool misuse—and correct them before they propagate. However, overly frequent supervision leads to di-minishing returns: excessive interventions may in-troduce unnecessary corrections that disrupt the natural coordination flow among agents, ultimately harming overall stability. In terms of efficiency, the average execution time increases almost mono-tonically with supervision frequency, suggesting that, if needed, lowering the intervention frequency can help save computational cost. Overall, the re-sults indicate that intermediate intervention levels (e.g., setting the interval to half or one-third of the number of agents) offer the best balance between execution robustness and computational efficiency, validating MASFly’s flexible and tunable supervi-sion policy. 
+
+C.2 Effect of Hybrid Retriever                  
+
+> Table 6: Comparison of different retrievers of MASFly.
+> Method TravelPlanner GAIA Common Hard Level 1 Level 2 QuerySim 84.4 44.0 43.9 39.6 NeedSim 85.1 47.9 45.1 41.5
+> Hybrid 85.3 49.5 46.3 41.5
+
+Table 6 compares three retrieval strategies: (i) QuerySim, which retrieves SOPs solely based on input query similarity; (ii) NeedSim, which re-lies only on internal need-level similarity; and (iii) our Hybrid retriever, which integrates both signals. Compared with using either signal alone, the Hy-brid approach yields consistent gains, especially on more challenging cases, demonstrating that exter-nal query cues and internal structural needs provide complementary information. By leveraging both, the system can retrieve more relevant SOPs and thus support more effective multi-agent execution. 
+
+C.3 Generalization across Different Backbone 
+
+To evaluate whether MASFly generalizes beyond large-capacity LLMs, we replace the backbone with a lighter Qwen3-32B model (Yang et al., 2025) 14 Table 7: Performance comparison on TravelPlanner Two-Stage mode using Qwen3-32B. 
+
+Method Delivery Rate Commonsense Hard Constraint Final Pass Rate Micro Macro Micro Macro 
+
+ReAct 70.5 48.8 2.8 5.7 2.8 0MetaGPT 100.0 56.1 7.2 12.1 4.4 5.6 AgentVerse 100.0 52.7 4.8 6.2 4.4 2.2 AgentSquare 100.0 61.4 11.7 15.2 11.1 8.3 
+
+MASFly 100.0 68.3 15.6 19.0 17.8 11.1 
+
+> (a) TravelPlanner Results.
+> (b) MBPP-Pro Results.
+> Figure 9: Efficiency and performance comparison of MASFly on additional datasets.
+
+and test under the challenging Two-Stage setting of TravelPlanner. As shown in Table 7, MASFly still achieves clear performance gains over both manually designed and automated MAS baselines. This demonstrates that our framework does not rely on a specific or extremely large backbone; instead, the structured SOP-guided design and supervision mechanism enable strong robustness and general-ization across different model scales. 
+
+C.4 Supplementary Efficiency Comparison 
+
+We additionally report efficiency–performance plots on TravelPlanner and MBPP-Pro datasets, which are in Figures 9a and 9b. Across both datasets, MASFly consistently demonstrates clear performance advantages, though its clock time varies depending on the complexity of the gener-ated system. On TravelPlanner, baseline methods achieve shorter clock time. Howerver, these methods may hallucinate intermediate facts and skip interactions with the environment. This omission reduces their computation but severely harms correctness, lead-ing to low hard-constraint pass rate. In contrast, MASFly spends additional time in supervision and correction stages, ensuring that intermediate output is validated and aligned with the required database operations. As a result, MASFly achieves substan-tially higher pass rate while maintaining a reason-able computation budget. On MBPP Pro, the overall task difficulty is higher than HumanEval. Consequently, MASFly tends to generate slightly more complex MASs to meet the increased reasoning demand, which naturally increases inference time. Nevertheless, MASFly still achieves the best performance among all compared methods, demonstrating that its dy-namic system generation mechanism scales effec-tively with task complexity and continues to pro-vide substantial accuracy gains without excessive computational overhead. 
+
+D Case Study 
+
+We present two SOP examples in Figure 10 and 11, drawn from the GAIA benchmark and a coding task, respectively. Each SOP specifies the team composition, communication structure, and the de-tailed configuration of each agent, including re-sponsibilities, instructions, and accessible tools. These examples demonstrate how SOPs encode structured and interpretable collaboration patterns that can be instantiated for new tasks, where instan-tiation is mainly achieved by customizing agent instructions and, when necessary, dynamically ad-justing other system configurations according to the specific query. 15 {"team": ["Planner", "WebSearcher", "Summarizer"], "Communication Sturcture": "1. User −> Planner;\n2. Planner −> WebSearcher;\n3 . WebSearcher −> Summarizer;\n4. Summarizer −> End.\n\n **Description:**\n1. First, the Planner analyzes the user's query and creates a strategic search plan.\n2. Second, the WebSearcher receives the plan and executes it by gathering the necessary information from the web.\n3. Finally, the Summarizer receives the data from the WebSearcher and synthesizes it into the final answer for the user.", "Agent Specifications": [{"name": "Planner", "responsibility": "You are a strategic Planner. Your primary role is to analyze the user's question and formulate a clear, step−by−step plan for the web search. ", "instruction": "Break down complex questions into smaller, logical sub −tasks. For each step, define the specific information that need to 
+
+be searched to effectively answer the user's query. The output of your plan will be a clear set of instructions for the WebSearcher to follow.", "tools": [] }, {"name": "WebSearcher", "responsibility": "You are an expert Web Searcher. Your mission is to execute the search according to the search strategy provided by the Planner. Your goal is to gather accurate and relevant information from the web to answer the user's question.", "instruction": "1. Strategize Your Search:\nCarefully analyze the request from the PlanAgent. Identify the core pieces of information you need to find. Based on the task, formulate a step−by−step search strategy. Do not try to solve everything with a single query when the query is complex.\n2. Execute the Search:\nUse the GOOGLE Search tool to execute the search. Make sure to follow the usage 
+
+format of given tool. Each query should focus on key terms from the question. Format the query content as a comma−separated list. \n3. Analyze and Iterate: Review the search results provided in the `
+
+Observation `.If the information is sufficient: Synthesize the key findings and prepare to pass them to the AnswerAgent. If the information is insufficient or irrelevant: Return to Step 1. Revise your strategy and create a new query. If you receive an error in the `Feedback `: Analyze the feedback message to understand the issue and adjust your action accordingly.", "tools": ["GOOGLE Search"] }, {"name": "Summarizer", "responsibility": "You are the final Answer Agent. Your core mission is to generate a clear, accurate, and comprehensive answer for the user.", 
+
+"instruction": "Synthesize all the information and data provided by the WebSearcher. Ensure the final response directly addresses all parts of the user's original question, is well−organized, and easy to understand.", "tools": [] }]}
+
+Figure 10: An SOP example for GAIA benchmark. 
+
+16 {"team": ["Programming Expert", "Test Analyst", "AnswerAgent"], "Communication Sturcture": "1. User −> Programming Expert; 2. Programming Expert −> Test Analyst; 3. Test Analyst −> Programming Expert (if errors) |AnswerAgent (if correct); 4. AnswerAgent −> End.\n\n **Description:**\nFirst, the Programming Expert implements the solution based on the function signature and docstring. Next, the Test Analyst generates test cases and validates the code. If issues are found, it loops back to the Programming Expert for fixes until all tests pass. Finally, the AnswerAgent delivers the validated final answer.", "Agent Specifications": [{"name": "Programming Expert", "responsibility": "You are a programming expert. Given a function signature and its docstring by the user, your task is to write the complete and correct code implementation.", 
+
+"instruction": "1. Carefully analysis the user's query function and example case, and write the full code based on the function signature.\n2. Use a Python code block for your response.\n3. Do not change the original function names or input variable types.", "tools": [] }, {"name": "Test Analyst", "responsibility": "You are a test analyst. Given a function signature, its docstring, and the candidate solution, your task is to validate the code's correctness.", "instruction": "1. Based on the given test example, generate other comprehensive test cases. Do not question the correctness of the given test example.\n2. Use the terminal tool to execute the tests against the code.\n3. If any test fails or errors occur, return the task to the Programming Expert with detailed feedback. If all tests pass, submit the validated solution to the AnswerAgent.", 
+
+"tools": ["bash"] }, {"name": "AnswerAgent", "responsibility": "You are an AnswerAgent. Your task is to deliver the final code to the user.", "instruction": "Present the final code to the user, ensuring it is complete and correct.", "tools": [] }]}
+
+Figure 11: An SOP example for Coding tasks. 
+
+17

@@ -1,0 +1,1035 @@
+Title: mAVE: A Watermark for Joint Audio-Visual Generation Models
+
+URL Source: https://arxiv.org/pdf/2603.07090v1
+
+Published Time: Tue, 10 Mar 2026 00:36:00 GMT
+
+Number of Pages: 34
+
+Markdown Content:
+# mAVE: A Watermark for Joint Audio-Visual Generation Models 
+
+Luyang Si, Leyi Pan, and Lijie Wen 
+
+School of Software, Tsinghua University 
+
+Abstract. As Joint Audio-Visual Generation Models see widespread commercial deployment, embedding watermarks has become essential for protecting vendor copyright and ensuring content provenance. However, existing techniques suffer from an architectural mismatch by treating modalities as decoupled entities, exposing a critical Binding Vulnera-bility. Adversaries exploit this via Swap Attacks by replacing authentic audio with malicious deepfakes while retaining the watermarked video. Because current detectors rely on independent verification ( V ideo wm ∨
+
+Audio wm ), they incorrectly authenticate the manipulated content, falsely attributing harmful media to the original vendor and severely damaging their reputation. To address this, we propose mAVE (Manifold Audio-Visual Entanglement), the first watermarking framework natively de-signed for joint architectures. mAVE cryptographically binds audio and video latents at initialization without fine-tuning, defining a Legitimate Entanglement Manifold via Inverse Transform Sampling. Experiments on state-of-the-art models (LTX-2, MOVA) demonstrate that mAVE guarantees performance-losslessness and provides an exponential security bound against Swap Attacks. Achieving near-perfect binding integrity (> 99% ), mAVE offers a robust cryptographic defense for vendor copy-right. 
+
+Keywords: Joint Audio-Visual Generation · GenAI Watermark · Audio-Visual Binding 
+
+## 1 Introduction 
+
+Joint Audio-Visual Generation Models have rapidly emerged as the standard for synthesizing highly realistic, synchronized multimedia content. State-of-the-art proprietary models [3, 8, 19, 28] and open-source frameworks [9, 29] now treat video and audio as a joint distribution, utilizing unified denoising dynamics within a shared latent space. As these powerful models see widespread com-mercial deployment, integrating invisible in-processing watermarks has become an essential requirement for vendors to protect intellectual property and ensure content provenance. Despite this progress, current protection mechanisms suffer from a funda-mental architectural mismatch. Existing solutions remain trapped in a decoupled paradigm, embedding signals independently into video [6, 13, 26] or audio wave-forms [35]. As illustrated in Fig. 1 (Left), this independent treatment exposes a         
+
+> arXiv:2603.07090v1 [cs.CR] 7 Mar 2026 2L. Si et al.
+> Fig. 1: Secure mAVE Entanglement. (Left) Standard joint audio-visual genera-tion models rely on decoupled watermarks, leading to an Authentication Bypass. A Swap Attack replaces authentic audio ( za) with a malicious audio track. Since both may possess valid independent watermarks, a decoupled detector is Fooled, and in-correctly flags the manipulated content as authentic. (Right) Our mAVE framework enforces a Cryptographic Binding at initialization. By securely entangling the audio latent to the video latent ( za=f(zv)), we construct a formal Entanglement Manifold. Any swapped audio breaks this functional dependency, enabling our joint detector to confidently Intercept the attack.
+
+critical Binding Vulnerability. An adversary can easily perform a Swap Attack by retaining a vendor’s watermarked video while replacing the authentic audio with a harmful deepfake voiceover. Because current forensics independently verify wa-termarks via a logical disjunction ( V ideo wm ∨ Audio wm ), detectors incorrectly authenticate the manipulated media, falsely attributing malicious content to the original vendor. Crucially, elevating the detection criteria to a logical conjunction ( V ideo wm ∧
+
+Audio wm ) fails to mitigate this threat. Adversaries can bypass stricter veri-fication through cross-session splicing. By repeatedly querying the model, an attacker can harvest a benign visual output from one session and a targeted, harmful audio output from another. Splicing these components yields a realis-tic asset where both modalities carry the vendor’s legitimate watermark, again tricking the detector. Furthermore, post-hoc synchronization verifiers [32] are of-ten brittle and semantically constrained, failing to reliably intercept such attacks in open-domain scenarios. To address this, we argue that the security of joint generative models must be intrinsic to their unified generation process. As shown in Fig. 1 (Right), we propose mAVE (Manifold Audio-Visual Entanglement). Leveraging the mathe-matical invertibility of ODE-based samplers [17,25,36], mAVE cryptographically binds the initial video noise zv and audio noise za at the starting point of the generative trajectory. Instead of treating them as independent Gaussian vari-ables, we construct a Legitimate Entanglement Manifold via Inverse Transform Sampling. This functionally binds the audio noise to a cryptographic hash of the video noise, mathematically guaranteeing that both modalities originate from the exact same session and decisively blocking cross-session splicing. mAVE: A Watermark for Joint Audio-Visual Generation Models 3
+
+Our contributions are summarized as follows: 
+
+– Method: We propose mAVE, the first watermarking strategy natively de-signed for Joint Audio-Visual Generation Models. By reformulating the ini-tialization step as sampling from an entangled manifold, we achieve strong audio-visual binding without model fine-tuning or post-hoc artifacts. 
+
+– Theory: We provide rigorous theoretical guarantees for our framework: (a) 
+
+Performance-Losslessness , proving under the chosen watermark tests frame-work [12] that our entangled initialization is computationally indistinguish-able from standard Gaussian sampling; and (b) Security Bound , where we derive an upper bound for the Deepfake evasion probability based on Ho-effding’s inequality, demonstrating exponential decay of false positives. 
+
+– Performance: Extensive experiments on open-source joint models (LTX-2 [9] and MOVA [29]) demonstrate that mAVE significantly outperforms naive combinations of unimodal watermarks. We achieve superior detection accuracy and robust separation bounds against manipulation while main-taining original generation quality. 
+
+## 2 Related Work 
+
+2.1 From Single-Modality to Joint Audio-Visual Generation Diffusion Models and Flow Matching. Generative AI has been revolu-tionized by Denoising Diffusion Probabilistic Models [10] and their latent vari-ants [2,15,33,34]. Recent advancements optimize this paradigm using flow match-ing and Rectified Flow [23, 24, 37], enabling highly efficient few-step sampling through straight probability trajectories. 
+
+Joint Audio-Visual Generation. Historically, audio-visual synthesis re-lied on cascaded pipelines—sequentially generating video-from-audio or audio-from-video. However, these decoupled approaches fail to capture the joint prob-ability distribution p(xv , x a), often resulting in synchronization artifacts and semantic misalignment. To address these limitations, the field is shifting to-wards Joint Audio-Visual Generation. State-of-the-art open-source frameworks such as LTX-2 [9] and MOVA [29] employ unified architectures like Asymmetric Bi-Transformers that process video and audio latents simultaneously. In these models, a unified denoising loop facilitates bidirectional information exchange via cross-attention, ensuring strict temporal alignment. This shift from indepen-dent to joint generation provides the structural basis for our proposed entangled watermarking strategy. 
+
+Rectified Flow and Invertibility. These native bimodal models build upon Rectified Flow [24], which defines a straight interpolation zt = tx1 + (1 −
+
+t)z0 between data x1 and noise z0 ∼ N (0, I). Unlike Denoising Diffusion Im-plicit Models(DDIMs) [36] whose curved trajectories accumulate inversion errors, Rectified Flow’s straight transport paths yield practically invertible mappings 
+
+z0 = ODE-Solve (x1, 1→0, v θ ). This near-perfect invertibility is the key enabler for reliable watermark embedding and recovery in the noise space. 4 L. Si et al. 
+
+2.2 Video Watermarking 
+
+As generative capabilities expand, distinguishing synthetic content from authen-tic footage has become critical. Existing video watermarking schemes broadly fall into two categories: post-processing and in-processing. 
+
+Post-processing Schemes. These methods operate on the decoded video pixels, embedding imperceptible signals via additive perturbations or multiplica-tive masks [6, 26]. While effective for legacy copyright protection, they face the 
+
+invisibility-robustness trade-off : increasing robustness against re-encoding often introduces visible artifacts. Furthermore, applying watermarks after generation does not fundamentally verify the provenance of the generative process itself. 
+
+In-processing Schemes. To integrate protection intrinsically, recent works leverage the generative process itself. The paradigm was established by Gaussian Shading [42], which proposed a provable watermarking scheme for image diffu-sion by coupling the generated output with a fixed initial noise state. Expanding into the temporal domain, methods like VideoShield [13] and the recent Video-Mark [14] generalize these principles to video diffusion, embedding ownership information directly into spatiotemporal latents. The rapid evolution of these algorithms has also led to the development of integrated evaluation libraries such as MarkDiffusion [30], which benchmark the performance of various gen-erative watermarking strategies. However, despite these advancements, current in-processing schemes treat the video latent as an independent variable, disre-garding the potential for cross-modal cryptographic binding in bimodal contexts. 
+
+2.3 Audio Watermarking and The Binding Gap 
+
+Parallel to the visual domain, audio watermarking is essential for safeguarding the auditory component of bimodal content. 
+
+Deep Generative Audio Watermarking. While traditional methods re-lied on fragile time-domain heuristics [5], the advent of deep learning has in-troduced robust encoder-decoder architectures. A prominent example is Au-dioSeal [35], which employs a localized detection mechanism capable of identi-fying AI-generated segments at the sample level of 1/16 , 000 s. This localization capability makes it highly effective against splicing and deepfake manipulation in long-form audio. 
+
+The Binding Gap. Despite the maturity of unimodal watermarking, a crit-ical gap remains: Binding Security . Current approaches treat audio and video as separate entities, verifying V ideo wm ∨ Audio wm independently. This leaves joint audio-visual generation models vulnerable to Swap Attacks, where an adversary pairs a watermarked video with a mismatched or malicious audio track. To date, no method exploits the joint initialization space of these models to create a mathematically provable link between the two modalities, a void this work aims to fill with mAVE. mAVE: A Watermark for Joint Audio-Visual Generation Models 5
+
+Fig. 2: Overview of mAVE. Our training-free method restricts the joint generation process to a cryptographically entangled manifold. Left: We first construct discrete grids where the audio grid ( Ba) is cryptographically bound to the video grid ( Bv ) via a hash digest. Middle: These grids are randomized and projected into continuous latent space to form the initial noise latents ( zv , za), mathematically defining the Authentic Manifold M. Right: A joint audio-visual generation model denoises these entangled latents in a unified forward pass, intrinsically preventing decoupling and Swap Attacks. 
+
+## 3 Threat Model and Problem Formulation 
+
+Drawing from standard deepfake adversarial scenarios [27, 39], we consider an adversary with full access to the generation model and detection API, but no knowledge of the private key Kpriv . We identify two attack vectors: (1) Removal Attack: erasing the watermark from a single modality via signal processing dis-tortions (compression, blurring, noise addition). (2) Swap Attack: creating a mismatched pair ˜x = ( x(A) 
+
+> v
+
+, x(B) 
+
+> a
+
+) from two different watermarked sessions to exploit the independent verification flaw ( V ideo wm ∨ Audio wm =⇒ T rue ). Even sophisticated adversaries using automated synchronization tools [32] can-not provide the cryptographic certainty needed to evade our binding. 
+
+Hypothesis Testing Formulation. We frame detection as a binary hy-pothesis test on the inverted noise pair (zv , za). Let B(·) be a cryptographic binding function defining an Authentic Manifold M in the joint noise space: 
+
+– H0 (Authentic): za = Π B(zv , K priv ) + η, η ∼ N (0, σ 2I), where η is negligible noise ensuring marginal Gaussianity (see Sec. 4). 
+
+– H1 (Swapped): za ⊥ B (zv , K priv ), i.e ., audio and video are from independent sessions. A valid scheme must ensure P (accept |H1) ≤ negl (ρ), while maintaining high recall for H0.6 L. Si et al. 
+
+## 4 Method 
+
+We propose mAVE , a training-free framework that restricts the generation pro-cess to a cryptographically entangled manifold. As illustrated in Fig. 2, our method intervenes solely at the initialization stage, embedding the cryptographic binding directly into the initial noise prior to the joint generation process. We define this initial noise via a rigorous two-step pipeline: constructing the dis-crete entangled geometry (Sec. 4.1) and projecting it into the continuous latent space via inverse sampling (Sec. 4.2). Finally, a native joint bimodal model pro-cesses these entangled latents, rendering the output fundamentally resistant to decoupled manipulations. 
+
+4.1 Constructing the Authentic Manifold 
+
+Formally, the Authentic Manifold M ⊂ Z = Zv × Z a is defined by sparse cryptographic constraints rather than dimensionality reduction. M represents the locus of latent pairs satisfying the binding condition: 
+
+M = {(zv , za) ∈ Z | Verify (za, SHA-256 (zv , K sess )) = True }. (1) Despite the sparsity ( N ≪ dim( Z)), the hash function’s avalanche effect ensures that finding valid pairs without the session key is computationally infeasible. 
+
+Session-Aware Key Derivation. The embedded payload comprises two segments: a plaintext index I ∈ { 0, 1}LI and a high-entropy secret payload m ∈{0, 1}Lm . The index I is a non-confidential session identifier embedded without encryption, enabling keyless extraction at detection time. The secret m serves as the system’s private key ( Kpriv := m), stored on a trusted server-side database keyed by I and never embedded. The session key is derived as: 
+
+Ksess = SHA-256 (Prefix (SHA-256 (m)) ∥ SHA-256 (EP )) . (2) Modality-specific sub-keys follow via HMAC (Ksess , modality ), and a shared seed provides correlated base entropy. Because m never leaves the server, deriving 
+
+Ksess is computationally infeasible. 
+
+Entangled Bit Grid Generation We construct watermark grids Bv and 
+
+Ba incorporating Time-Templates and Hash-Binding (see Fig. 2, Left). 
+
+1. Video Grid ( Bv ). The grid has three disjoint regions: (i) a Time-Template t (channel c0) for synchronization, (ii) the plaintext index I via unencrypted repetition coding, and (iii) encrypted HMAC-derived base bits: 
+
+Bv = Iinject (HMAC (Ksess , “video” ) ⊕ Sshared , t, I ) . (3) 
+
+2. Audio Grid with Binding ( Ba). To enforce dependency, we embed a digest of the video bits, hv = SHA-256 (Bv ), into the audio grid at indices Ibind .This couples the modalities: 
+
+Ba[i] = 
+
+
+
+t[i] if i ∈ I time (Sync) ,hv [ϕ(i)] if i ∈ I bind (Binding) ,
+
+Base a[i] otherwise. 
+
+(4) mAVE: A Watermark for Joint Audio-Visual Generation Models 7
+
+Here, Itime anchors synchronization while Ibind enforces the manifold constraint. Geometrically, rather than a smooth lower-dimensional surface, M constitutes a full-dimensional, disconnected sub-manifold of the joint latent space. It is com-posed of a union of disjoint hyper-orthants, precisely selected by the deterministic cryptographic hashing function. 
+
+4.2 Embed: Inverse Transform Sampling on Manifolds 
+
+A critical challenge in latent watermarking is mapping a low-dimensional payload to a high-dimensional latent tensor z ∈ RC×T ×H×W without inducing visible ar-tifacts or statistical anomalies. To achieve this, we employ a three-stage process: 
+
+Diffusion , Randomization , and Inverse Sampling (Fig. 2, Middle). 
+
+Watermark Diffusion and Randomization Let B ∈ { 0, 1}L be the en-tangled bit grid constructed in Sec. 4.1. We first apply Watermark Diffusion .The discrete watermark bits are replicated block-wise to form a diffused tensor 
+
+Bdif f matching the target latent dimensions. Directly embedding this repetitive structure would result in visible periodic artifacts. Thus, we apply Watermark Randomization . Using the session key 
+
+Ksess , we generate a pseudo-random keystream K via the ChaCha20 [1] stream cipher. The final randomized binary map Mrand is: 
+
+Mrand = Bdif f ⊕ K . (5) Since ChaCha20 is a cryptographically secure PRNG, Mrand is computationally indistinguishable from a discrete uniform distribution, ensuring P (Mrand [i] = 1) ≈ 0.5 over the key space. 
+
+Inverse Transform Sampling We map the binary stream Mrand to the continuous Gaussian latent z using the Inverse Probability Integral Transform. Let Φ(·) be the CDF of the standard normal distribution N (0 , 1) , and let ppf =
+
+Φ−1. For a standard uniform variable ui ∼ U (0 , 1) , the latent value zi is sampled as: 
+
+zi = ppf 
+
+ ui + Mrand [i]2
+
+
+
+. (6) This effectively maps bit 0 to the negative half-Gaussian and bit 1 to the positive half-Gaussian. 
+
+Theoretical Performance-Losslessness We now prove that the water-marked latent zs follows the same distribution as the standard Gaussian initial-ization, drawing on the complexity-theoretic definition of steganographic secu-rity [12]. 
+
+Theorem 1. mAVE is performance-lossless under chosen watermark tests. That is, for any polynomial-time tester A and key Ksess ← KeyGen (1 ρ),
+
+| Pr[ A(zs) = 1] − Pr[ A(z) = 1] | < negl (ρ), (7) 
+
+where zs is the watermarked latent and z ∼ N (0 , I ).8 L. Si et al. 
+
+Proof. Let f (z) denote the PDF of N (0 , 1) and Φ its CDF. Since ChaCha20 is a computationally secure stream cipher, the randomized watermark Mrand =
+
+Bdif f ⊕ K is computationally indistinguishable from a uniform binary string, 
+
+i.e ., P (Mrand [i] = y) = 12 for y ∈ { 0, 1}. By Eq. (6), the conditional density of 
+
+zi given Mrand [i] = y is p(zi | y) = 2 f (zi) · ⊮[zi ∈ R y ] where R0 = ( −∞ , 0] and 
+
+R1 = (0 , +∞). Marginalizing over Mrand [i]:
+
+p(zi) = X
+
+> y∈{ 0,1}
+
+p(zi | y) P (y) = 2 f (zi) · 12 + 2 f (zi) · 12 = f (zi). (8) Thus zs ∼ N (0 , I ), so the sampling process S(·) driven by Mrand and the standard random sampling are equivalent. Now assume, for contradiction, that 
+
+| Pr[ A(zs) = 1] − Pr[ A(z) = 1] | = δ for non-negligible δ. Since the denoising decoder Q(·) is a deterministic polynomial-time function, substituting into the generation pipeline gives a distinguisher for ChaCha20 output vs. truly random bits with advantage δ, contradicting its computational security. Hence δ must be negligible. 
+
+4.3 Detect: Joint Inversion & Verification 
+
+Detection is modeled as projecting a query sample xquery back onto the noise space to verify if it resides on M.
+
+Joint Flow Inversion Unlike baseline methods that require separate pro-cesses for video (inversion) and audio (neural network encoders like AudioSeal), mAVE leverages the unified architecture of native bimodal models. We perform a single Joint Inversion pass, solving the ODE backwards from t = 1 to t = δt:
+
+˜z0 = xquery +
+
+Z δt
+
+> 1
+
+vθ (zt, t, c )dt.  (9) Crucially, because the underlying joint audio-visual models employ Rectified Flow [24] with straight transport trajectories, the ODE paths have good linear-ity, yielding low numerical error. This property is what enables accurate water-mark recovery even with very few inversion steps (empirically, 5 steps suffice; see Sec. 5). Further details on solver discretization and comparison with stochastic DDIM inversion are provided in the Appendix. Efficiency Analysis. Because targeted models denoise audio and video jointly in a single forward pass, the ODE inversion that recovers the shared latent ˜z0 simultaneously yields both ˆBv and 
+
+ˆBa without auxiliary encoder for AudioSeal [34] or additional inversion is needed. Consequently, the detection cost of mAVE is identical to that of a video-only latent watermark such as VideoShield [13], while providing cross-modal binding information. 
+
+Decoding and Verification Strategy Due to the numerical discretization gap (truncating at t = ϵ), the recovered latents ˜z0 may exhibit minor drift. Thanks to the high redundancy from block-wise diffusion, we find that Stan-dard Zero-Thresholding suffices for high-accuracy decoding: ˜b[i] = ⊮[˜ z0[i] > 0] .While we explored advanced decoding methods such as Median Thresholding to mAVE: A Watermark for Joint Audio-Visual Generation Models 9
+
+mitigate inversion drift, empirical results showed negligible improvement over the simpler Zero-Thresholding (detailed comparison in Appendix). After re-covering the bit grids ˆBv and ˆBa, we perform: 1. Synchronization: Extract the Time-Template to find the optimal temporal offset. 2. Metrics Calcula-tion: Compute the Bit Accuracy (BA v , BA a) and the Binding Consistency Score (Score bind ). 3. Final Verdict: The sample is classified as Authentic iff: 
+
+D(x) = ( BA v > τ acc ) ∧ (BA a > τ acc ) ∧ (Score bind > τ bind ). (10) This strict intersection logic ensures that any partial manipulation results in a rejection. 
+
+4.4 Security Analysis 
+
+The security of the proposed system, particularly against Swap Attacks, is the-oretically guaranteed. 
+
+Theorem 2. For a binding sequence of length N = |I bind | and a detection threshold τbind > 0.5, the probability that a swapped pair successfully passes the binding check decays exponentially with N .Proof. Consider the hypothesis testing for a Swap Attack ( H1), where the audio stream is mismatched with the video. Due to the avalanche effect of SHA-256 and session-specific key derivation, the recovered audio bits ˆBa and the hashed video bits SHA-256 ( ˆBv ) are statistically independent. Specifically, under the random oracle model, the bits ˆBa[i] and SHA-256 ( ˆBv )[ i] are computationally indistinguishable from independent uniform bits. Consequently, for each bit in-dex i ∈ I bind , the match event Xi = ⊮[ ˆBa[i] = SHA-256 ( ˆBv )[ ϕ(i)]] follows a Bernoulli distribution with parameter p = 0 .5, and the {Xi} are mutually inde-pendent. The observed binding score is the empirical mean S = 1
+
+> N
+
+PNi=1 Xi.According to Hoeffding’s Inequality , the probability of a False Positive (i.e., the score S exceeding τbind purely by chance) is bounded by: 
+
+P (S ≥ τbind | H1) ≤ exp  −2N (τbind − 0.5) 2 . (11) This bound extends to adaptive (white-box) adversaries with full model ac-cess. Since both the binding indices Ibind and the target hash Hideal are deter-ministic functions of Ksess , which depends on the server-side secret m, the adver-sary cannot evaluate S or its gradient; the optimization objective is encrypted .Any gradient-based attack therefore degrades to blind search over 2N bits, where the Hoeffding bound applies directly. For our default configuration ( N = 128 ,
+
+τbind = 0 .8), the evasion probability is upper-bounded by Pf p < 9.86 × 10 −11 .
+
+## 5 Experiments 
+
+5.1 Implementation Details. 
+
+We evaluate primarily on LTX-2 [9], with additional validation on MOVA-720p [29]. Videos are generated at 256 ×256 resolution, 24 fps, with L=512 -bit 10 L. Si et al. 
+
+payloads embedded via block-wise repetition factors (kc, k t, k h, k w)=(3 , 1, 4, 4) .For I2AV tasks, input images are generated via Stable Diffusion [2]. Each gener-ated sample is tagged with a plaintext LI =32 -bit index I embedded in cleartext via repetition coding, while the corresponding high-entropy secret payload m is stored on a server-side database keyed by I. As formulated in Eq. (2), the session key Ksess is securely derived using the secret m and the normalized prompt as 
+
+Ep Randomization uses ChaCha20 [1] initialized with Ksess and the final la-tents are obtained via truncated inverse sampling to avoid outliers (details in Appendix). 
+
+Evaluation Prompts. We curate 250 text prompts from VBench [16] span-ning 8 semantic categories. Each prompt is paired with 4 random seeds, yielding 1,000 diverse audio-visual samples (full list in Appendix). 
+
+Statistical Binding Decision. Directly hashing noisy recovered video bits is catastrophic. Our protocol circumvents this via four steps: (1) Index Ex-traction: Recover the plaintext ˆI from the video grid via majority voting. 
+
+(2) Server Lookup: Query the database with ˆI to retrieve the secret m. (3) Ideal Hash: Re-derive Ksess , regenerate the noise-free grid Bideal v , and com-pute Hideal = SHA-256 (Bideal v ). (4) Soft Matching: Measure bit-wise accu-racy between Hideal and the noisy audio bits ˆBa at Ibind , classifying as Bound if Ssync > τ bind . Since only the non-confidential I is publicly recoverable, this transforms the brittle cryptographic check into a robust statistical test. 
+
+5.2 Extraction Performance 
+
+We evaluate watermark extraction using Bit Accuracy (BA). For each payload bit, a Majority Voting decision rule aggregates the kall redundant copies pro-duced by block-wise diffusion: the final bit is set to 1 if the majority of its copies are 1, and 0 otherwise. Bit Accuracy is then measured as the proportion of pay-load bits whose majority-vote decision matches the originally embedded value (formal definitions in Appendix). To establish a rigorous benchmark, we evaluate mAVE against several modality-specific watermarking baselines [5, 6, 13, 22, 35]. 
+
+Results. Tab. 1 compares extraction across LTX-2 and MOVA-720p on T2AV and I2AV tasks (MOVA-720p reports TI2AV only, as it requires a ref-erence image). We report BAs for mAVE and baselines except AudioSeal, for which a probability score is reported. mAVE achieves comparable recovery for both modalities, demonstrating that the entangled manifold construction is prac-tically invertible. 
+
+5.3 Fidelity: Verification of Losslessness 
+
+To empirically validate Theorem 1 (Performance-Losslessness), we assess the generation quality across visual, auditory, and alignment dimensions. We employ VBench metrics for video quality: Subject Consistency (Sub), Motion Smooth-ness (Mot), Dynamic Degree (Dyn), Background Consistency (Back), and Imag-ing Quality (Img). For audio-visual quality, we use CLAP Score [41] (Audio-mAVE: A Watermark for Joint Audio-Visual Generation Models 11 
+
+Table 1: Watermark Extraction Performance. Unlike parameterized neural ex-tractors, ODE inversion introduces numerical drift, causing mAVE and VideoShield BA to marginally saturate below 1.0. Crucially, since unwatermarked content strictly yields a baseline BA of ≈ 0.5, mAVE’s >0.91 recovery provides an overwhelmingly distinct margin for near-perfect statistical detection. 
+
+Video Modality Extraction Model Task VideoShield VideoSeal mAVE (Ours) 
+
+LTX-2 T2AV 0.953 1.000 0.936 I2AV 0.946 0.995 0.934 MOVA-720p TI2AV 0.952 0.998 0.949 
+
+Audio Modality Extraction Model Task AudioSeal † WavMark Timbre mAVE (Ours) 
+
+LTX-2 T2AV 1.000 0.994 0.993 0.915 I2AV 1.000 0.995 1.000 0.917 MOVA-720p TI2AV 1.000 0.993 0.999 0.928  
+
+> †
+
+AudioSeal reports detection probability score ∈ [0 , 1] ; all others report Bit Accuracy. 
+
+Text relevance) and ImageBind [7] (AV alignment). Synchronization is mea-sured via SyncNet [32] confidence. 
+
+Table 2: Fidelity Comparison. mAVE achieves scores statistically indistinguishable from the Clean baseline, confirming that our entangled initialization is invisible to the generation backbone.                                             
+
+> Method Sub ↑Mot ↑Dyn ↑Back ↑Img ↑Avg CLAP ↑ImBind ↑Sync ↑
+> Clean (No WM) 0.983 0.988 0.715 0.966 0.524 0.835 0.442 0.117 0.965 Uncoupled (Base) 0.994 0.988 0.684 0.982 0.454 0.820 0.425 0.098 0.965
+> mAVE (Ours) 0.998 0.991 0.669 0.985 0.529 0.834 0.426 0.132 0.966
+
+Results. As shown in Tab. 2, mAVE incurs negligible degradation compared to the Clean baseline. Notably, our Time-Template injection does not disrupt synchronization, satisfyingly achieving parity with Clean generation (0.966 vs 0.965). 
+
+5.4 Binding Security 
+
+This section evaluates the core contribution of mAVE: defense against Swap At-tacks. As demonstrated in Sec. 5.3, while SyncNet successfully evaluates percep-tual synchronization, its reliance on statistical heuristics creates an exploitable gap for security-critical applications. Here, we show how mAVE bridges this gap with cryptographic guarantees. 12 L. Si et al. 
+
+Baselines. We compare against: (1) Weak Baseline (Uncoupled) : VideoShield + AudioSeal verified independently ( V ideo wm ∧ Audio wm ); and (2) Strong Baseline (Uncoupled + SyncNet) : adds a heuristic synchronization check requiring SyncNet confidence > τ sync . We report standard classification accuracy over True/False Positives and Negatives. 
+
+Table 3: Swap Attack Defense. Comparison of authentication accuracy between baselines and mAVE. Method TP (Auth) ↑ FN (Auth) ↓ TN (Swap) ↑ FP (Swap) ↓ Acc ↑               
+
+> Weak Base (Uncoupled) 100% 0% 0% 100% 50.0% Strong Base (Uncoupled + SyncNet) 96.2% 3.8% 76.2% 23.8% 86.2% mAVE (Ours) 99.8% 0.2% 100% 0% 99.9%
+
+Results. Tab. 3 illustrates the "Binding Vulnerability" of current SOTA methods. The Weak Baseline yields an Accuracy of 50%, effectively acting as a random guesser for authentication purposes. While the Strong Baseline utilizing SyncNet identifies a portion of the swapped pairs, it exposes the inherent flaw of heuristic-based defenses: SyncNet heavily relies on specific semantic cues and struggles to confidently verify synchronization in ambient or highly dynamic scenes, leading to a significant False Negative rate (3.8%) on authentic pairs and failing to block all well-crafted fakes (23.8% FP). In stark contrast, mAVE achieves 99.9% Accuracy. Because mAVE embeds the binding constraint intrinsically within the initial noise manifold rather than relying on post-hoc semantic content, it functions universally across all video types. Fig. 3 visualizes the distinct separation between the distributions, empir-ically proving our security bound. 
+
+5.5 Robustness 
+
+We evaluate robustness under standard video and audio attacks. Temporal at-tacks are reported in the Appendix, as resisting frame-rate alterations is an inherent limitation of latent watermarking with fixed repetition factors. 
+
+Results. As shown in Tab. 4, mAVE demonstrates strong resilience. This robustness stems from the redundancy of our Watermark Diffusion strategy (Sec. 4.2), which effectively acts as a repetition code, allowing the Zero-Thresholding decoder to recover the correct signal through majority voting logic implicitly. 
+
+5.6 Ablations Hash Length ( N ). We varied the binding hash length N ∈ { 16 , 32 , 64 , 128 , 256 }.Theoretically, increasing N provides stronger cryptographic security by exponen-tially decreasing the FP rate ( Pf p ) under Swap Attacks. However, a larger N
+
+occupies more payload capacity, which could reduce the spatial-temporal redun-dancy per bit and potentially degrade extraction robustness. Remarkably, our mAVE: A Watermark for Joint Audio-Visual Generation Models 13 0.800 0.825 0.850 0.875 0.900 0.925 0.950 0.975 1.000                  
+
+> Detection Confidence
+> 0.000
+> 0.025
+> 0.050
+> 0.075
+> 0.100
+> 0.125
+> 0.150
+> 0.175
+> Probability Density
+> (a) Weak Baseline: Complete Overlap
+> 0.6 0.7 0.8 0.9 1.0
+> SyncNet Confidence
+> 0.00
+> 0.02
+> 0.04
+> 0.06
+> 0.08
+> 0.10
+> Probability Density
+> (b) Strong Baseline: High FP
+> Matched ( H0)
+> Swapped ( H1)
+> 0.5 0.6 0.7 0.8 0.9 1.0
+> Binding Consistency Score
+> 0.000
+> 0.025
+> 0.050
+> 0.075
+> 0.100
+> 0.125
+> 0.150
+> 0.175
+> Probability Density
+> (c) mAVE: Clear Separation
+> 10 410 310 210 110 0
+> False Positive Rate (Log Scale)
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> True Positive Rate
+> (d) ROC Curves (Forensic Regime)
+> mAVE (AUC=0.9993)
+> Strong (AUC=0.882)
+> Weak (AUC=0.55)
+
+Fig. 3: Security Analysis. (a) Weak Baseline Failure: Uncoupled watermarks exhibit complete distributional overlap. (b) Strong Baseline Limitation: Adding SyncNet improves separation but still allows significant overlap on ambiguous sam-ples. (c) mAVE Separation: Our method cryptographically enforces binding, creat-ing definitive separation between Authentic and Swapped pairs. (d) Forensic ROC: 
+
+mAVE maintains high TPR at low FPR, while heuristic baselines perform poorly for high-security applications. 
+
+empirical results indicate no such trade-off. The extraction performance remains highly stable across all evaluated lengths: Video Bit Accuracy consistently > 95% 
+
+and Audio Bit Accuracy maintaining around 87% ∼ 91% with no obvious degra-dation trend. This highlights the immense capacity of our Watermark Diffusion strategy, allowing practical deployments to adopt highly secure configurations to guarantee a negligible Pf p without compromising recoverability. 
+
+Inversion Steps. We analyzed the impact of ODE inversion steps, scaling from 50 down to a single step. mAVE leverages the straight probability trans-port trajectories of Rectified Flow to achieve exceptional efficiency. Our tests reveal that reducing the inversion steps from 50 to 5 causes almost zero degra-dation, maintaining near-perfect Video Bit Accuracy ( > 95% ) and stable Audio Bit Accuracy ( > 85% ). Discretization errors only become prominent at an ex-treme 1-step inversion, where Audio Bit Accuracy drops to 78 .0% , though Video Bit Accuracy remains surprisingly resilient at 85 .7% . This robust performance confirms that mAVE can execute highly accurate, few-step manifold projections, paving the way for fast or real-time detection APIs. 14 L. Si et al. 
+
+Table 4: Cross-Modal Robustness. Comparison of mAVE against unimodal baselines (VideoShield, AudioSeal) under various attacks. Values are Bit Accuracy (Video/mAVE) and Detection Score (AudioSeal). While mAVE’s BA drops under se-vere attacks, it remains significantly higher than the unwatermarked random baseline of 0.5. As derived in Sec. 4.4, these margins are entirely sufficient for near-perfect sta-tistical detection.                                                          
+
+> Video Modality Robustness Attack FrameAvg Noise G-Blur M-Blur S&P Resize Bright
+> Params N= 3 σ= 0 .1r= 2 k= 3 p= 0 .10.3×f= 3
+> Baseline (VideoShield) 0.948 0.907 0.947 0.952 0.863 0.951 0.943
+> mAVE-Video (Ours) 0.927 0.892 0.939 0.938 0.855 0.936 0.914
+> Audio Modality Robustness Attack MP3 Comp. Lowpass Resample Noise Quant. -
+> Params 64k -8kHz 16k →8k 20dB 8-bit -Baseline (AudioSeal) 0.97 1.00 1.00 1.00 0.98 0.92 -
+> mAVE-Audio (Ours) 0.85 0.89 0.86 0.88 0.77 0.83 -
+
+## 6 Conclusion 
+
+In this work, we identified a critical security gap in the emerging class of joint audio-visual generation models: the Binding Vulnerability , which allows adver-saries to decouple and swap modalities without detection. To address this, we proposed mAVE (Manifold Audio-Visual Entanglement), the first training-free framework that embeds cryptographic binding directly into the generative ini-tialization. By formalizing the watermarking process as a projection onto a Legitimate Entanglement Manifold, mAVE achieves theoretically guaranteed performance-losslessness (Theorem 1) and provides an exponential security bound against Swap Attacks (Theorem 2). Extensive experiments on LTX-2 [9] and MOVA [29] demonstrate that mAVE significantly outperforms unimodal baselines in distin-guishing authentic pairs from manipulated ones, while maintaining SOTA gen-eration quality. 
+
+Limitations. Due to ODE discretization at t = δt, deterministic drift pre-vents the raw Bit Accuracy from reaching a theoretical 1.0 (saturating at ≈ 0.9). However, because the unwatermarked expectation is strictly 0.5, this upper bound is practically inconsequential for threshold-based verification, retaining full statistical significance. Nevertheless, mAVE demonstrates that the joint initialization space of joint audio-visual generation models can serve as a practical and mathematically grounded anchor for cross-modal copyright protection. mAVE: A Watermark for Joint Audio-Visual Generation Models 15 
+
+## References 
+
+1. Bernstein, D.J.: Chacha, a variant of salsa20. In: Workshop Record of SASC: The State of the Art of Stream Ciphers. pp. 3–5. ECRYPT Network of Excellence, Lausanne, Switzerland (February 2008), available at https://cr.yp.to/chacha/ chacha-20080120.pdf 
+
+2. Blattmann, A., Dockhorn, T., Kulal, S., Mendelevitch, D., Kilian, M., Lorenz, D., Levi, Y., English, Z., Voleti, V., Letts, A., et al.: Stable video diffusion: Scaling latent video diffusion models to large datasets. arXiv preprint arXiv:2311.15127 (2023), https://arxiv.org/abs/2311.15127 
+
+3. ByteDance / Seedance AI: Seedance 2.0 ai video generation platform. https:// seedance2.com/ (2026), accessed: 2026-02-12 4. Caron, M., Touvron, H., Misra, I., Jégou, H., Mairal, J., Bojanowski, P., Joulin, A.: Emerging properties in self-supervised vision transformers. In: Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV). pp. 9630–9640 (2021) 5. Chen, G., Wu, Y., Liu, S., Liu, T., Du, X., Wei, F.: WavMark: Watermarking for audio generation. arXiv preprint arXiv:2308.12770 (2023), https://arxiv.org/ abs/2308.12770 
+
+6. Fernandez, P., Elsahar, H., Yalniz, I.Z., Mourachko, A.: Video seal: Open and efficient video watermarking. arXiv preprint arXiv:2412.09492 (2024) 7. Girdhar, R., El-Nouby, A., Liu, Z., Singh, M., Alwala, K.V., Joulin, A., Misra, I.: Imagebind: One embedding space to bind them all. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 15180–15190 (June 2023) 8. Google / DeepMind: Veo3: A text-to-video generation system. Technical Report–, Google DeepMind (2025), https://storage.googleapis.com/deepmind-media/ veo/Veo-3-Tech-Report.pdf , accessed: 2026-02-12 9. HaCohen, Y., Brazowski, B., Chiprut, N., Bitterman, Y., Kvochko, A., Berkowitz, A., Shalem, D., Lifschitz, D., Moshe, D., Porat, E., Richardson, E., Shiran, G., Chachy, I., Chetboun, J., Finkelson, M., Kupchick, M., Zabari, N., Guetta, N., Kotler, N., Bibi, O., Gordon, O., Panet, P., Benita, R., Armon, S., Kulikov, V., Inger, Y., Shiftan, Y., Melumian, Z., Farbman, Z.: LTX-2: Efficient joint audio-visual foundation model (2026), https://arxiv.org/abs/2601.03233 
+
+10. Ho, J., Jain, A., Abbeel, P.: Denoising diffusion probabilistic models. In: Advances in Neural Information Processing Systems (NeurIPS). vol. 33, pp. 6840–6851 (2020) 11. Hoeffding, W.: Probability inequalities for sums of bounded random variables. Journal of the American Statistical Association 58 (301), 13–30 (1963) 12. Hopper, N.J., Langford, J., von Ahn, L.: Provably secure steganography. In: Ad-vances in Cryptology—CRYPTO 2002. pp. 77–92. Springer (2002) 13. Hu, R., Zhang, J., Li, Y., Li, J., Guo, Q., Qiu, H., Zhang, T.: VideoShield: Regu-lating diffusion-based video generation models via watermarking. In: International Conference on Learning Representations (ICLR) (2025) 14. Hu, X., Li, H., Li, J., Liu, A.: VideoMark: A distortion-free robust watermarking framework for video diffusion models. arXiv preprint arXiv:2504.16359 (2025) 15. Huang, R., Huang, J., Yang, D., Ren, Y., Liu, L., Li, M., Ye, Z., Liu, J., Yin, X., Zhao, Z.: Make-an-audio: Text-to-audio generation with prompt-enhanced diffusion models. In: Proceedings of the 40th International Conference on Machine Learning (ICML). Proceedings of Machine Learning Research, vol. 202, pp. 13916–13932. PMLR (2023) 16 L. Si et al. 16. Huang, Z., He, Y., Yu, J., Zhang, F., Si, C., Jiang, Y., Zhang, Y., Wu, T., Jin, Q., Chanpaisit, N., Wang, Y., Chen, X., Wang, L., Lin, D., Qiao, Y., Liu, Z.: VBench: Comprehensive benchmark suite for video generative models. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (2024) 17. Karras, T., Aittala, M., Aila, T., Laine, S.: Elucidating the design space of diffusion-based generative models. In: Advances in Neural Information Processing Systems (NeurIPS) (2022), https://arxiv.org/abs/2206.00364 
+
+18. Ke, J., Wang, Q., Wang, Y., Milanfar, P., Yang, F.: MUSIQ: Multi-scale image quality transformer. In: Int. Conf. Comput. Vis. pp. 5148–5157 (2021) 19. Kling AI: Kling 3.0 ai video generator. https://kling3.io/ (2026), accessed: 2026-02-12 20. Krizhevsky, A., Hinton, G., et al.: Learning multiple layers of features from tiny images (2009) 21. Li, Z., Zhu, Z.L., Han, L.H., Hou, Q., Guo, C.L., Cheng, M.M.: AMT: All-pairs multi-field transforms for efficient frame interpolation. In: IEEE Conf. Comput. Vis. Pattern Recog. pp. 18375–18384 (2023) 22. Liu, C., Zhang, J., Zhang, T., Yang, X., Zhang, W., Yu, N.: Detecting voice cloning attacks via timbre watermarking. In: Network and Distributed System Se-curity Symposium (NDSS) (2024). https://doi.org/10.14722/ndss.2024.24200 ,
+
+https://www.ndss-symposium.org/wp-content/uploads/2024-200-paper.pdf 
+
+23. Liu, G.H., Vahdat, A., Huang, D.A., Theodorou, E.A., Nie, W., Anandkumar, A.: I 2sb: Image-to-image schrödinger bridge. In: Proceedings of the 40th Interna-tional Conference on Machine Learning (ICML). Proceedings of Machine Learning Research, vol. 202, pp. 22042–22062. PMLR (2023), https://proceedings.mlr. press/v202/liu23ai.html 
+
+24. Liu, X., Gong, C., Liu, Q.: Flow straight and fast: Learning to generate and transfer data with rectified flow. arXiv preprint arXiv:2209.03003 (2022) 25. Lu, C., Zhou, Y., Bao, F., Chen, J., Li, C., Zhu, J.: Dpm-solver: A fast ODE solver for diffusion probabilistic model sampling in around 10 steps. In: Advances in Neural Information Processing Systems (NeurIPS) (2022), https://arxiv.org/ abs/2206.00927 
+
+26. Luo, X., Li, Y., Chang, H., Liu, C., Milanfar, P., Yang, F.: DVMark: A deep multi-scale framework for video watermarking. IEEE Transactions on Image Processing 
+
+32 , 4272–4286 (2023). https://doi.org/10.1109/TIP.2023.3251737 
+
+27. Mirsky, Y., Lee, W.: The creation and detection of deepfakes: A survey. ACM Computing Surveys 54 (1), 1–41 (2021) 28. OpenAI: Sora 2 is here. https://openai.com/index/sora-2/ (2025), accessed: 2026-02-12 29. OpenMOSS Team, Yu, D., Chen, M., Chen, Q., Luo, Q., Wu, Q., Cheng, Q., Li, R., Liang, T., Zhang, W., Tu, W., Peng, X., Gao, Y., Huo, Y., Zhu, Y., Luo, Y., Zhang, Y., Song, Y., Xu, Z., Zhang, Z., Yang, C., Chang, C., Zhou, C., Chen, H., Ma, H., Li, J., Tong, J., Liu, J., Chen, K., Li, S., Jiang, S., Wang, S., Jiang, W., Fei, Z., Ning, Z., Li, C., Li, C., He, Z., Huang, Z., Chen, X., Qiu, X.: MOVA: Towards scalable and synchronized video-audio generation (2026), https://arxiv.org/abs/2602.08794 
+
+30. Pan, L., Guan, S., Fu, Z., Si, L., Wang, H., Wang, Z., Li, H., Hu, X., King, I., Yu, P.S., Liu, A., Wen, L.: MarkDiffusion: An open-source toolkit for generative watermarking of latent diffusion models (2025), https://arxiv.org/abs/2509. 10569 
+
+31. Radford, A., Kim, J.W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., et al.: Learning transferable visual models from natural language supervision. In: Int. Conf. Mach. Learn. pp. 8748–8763 (2021) mAVE: A Watermark for Joint Audio-Visual Generation Models 17 32. Raina, A., Arora, V.: Syncnet: Correlating objective for time delay estimation in audio signals. In: ICASSP 2023 - 2023 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP). pp. 1–5. IEEE (2023). https://doi.org/ 10.1109/ICASSP49357.2023.10096874 
+
+33. Rombach, R., Blattmann, A., Lorenz, D., Esser, P., Ommer, B.: High-resolution image synthesis with latent diffusion models. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 10684– 10695 (2022) 34. Saharia, C., Chan, W., Saxena, S., Li, L., Whang, J., Denton, E., Ghasemipour, S.K.S., Ayan, B.K., Mahdavi, S.S., Lopes, R.G., et al.: Photorealistic text-to-image diffusion models with deep language understanding. In: Advances in Neural Infor-mation Processing Systems (NeurIPS). vol. 35, pp. 36479–36494. Curran Asso-ciates, Inc. (2022) 35. San-Roman, R., Fernandez, P., Elsahar, H., Défossez, A., Furon, T., Tran, T.: Proactive detection of voice cloning with localized watermarking. In: Proceedings of the 41st International Conference on Machine Learning (ICML). Proceedings of Machine Learning Research, vol. 235. PMLR (2024) 36. Song, J., Meng, C., Ermon, S.: Denoising diffusion implicit models. In: International Conference on Learning Representations (ICLR) (2021) 37. Song, Y., Dhariwal, P., Chen, M., Sutskever, I.: Consistency models. In: Proceed-ings of the 40th International Conference on Machine Learning (ICML). Proceed-ings of Machine Learning Research, vol. 202, pp. 32211–32252. PMLR (2023), 
+
+https://proceedings.mlr.press/v202/song23d.html 
+
+38. Teed, Z., Deng, J.: RAFT: Recurrent all-pairs field transforms for optical flow. In: Eur. Conf. Comput. Vis. pp. 402–419 (2020) 39. Tolosana, R., Vera-Rodriguez, R., Fierrez, J., Morales, A., Ortega-Garcia, J.: Deep-fakes and beyond: A survey of face manipulation and fake detection. Information Fusion 64 , 131–148 (2020). https://doi.org/10.1016/j.inffus.2020.06.014 
+
+40. Wang, J., Yuan, H., Chen, D., Zhang, Y., Wang, X., Zhang, S.: Modelscope text-to-video technical report. arXiv preprint arXiv:2308.06571 (2023) 41. Wu*, Y., Chen*, K., Zhang*, T., Hui*, Y., Berg-Kirkpatrick, T., Dubnov, S.: Large-scale contrastive language-audio pretraining with feature fusion and keyword-to-caption augmentation. In: IEEE International Conference on Acoustics, Speech and Signal Processing, ICASSP (2023) 42. Yang, Z., Zeng, K., Chen, K., Fang, H., Zhang, W., Yu, N.: Gaussian shading: Provable performance-lossless image watermarking for diffusion models. In: Pro-ceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recogni-tion (CVPR). pp. 16586–16596 (2024) 18 L. Si et al. 
+
+# Supplementary Material 
+
+## A Full Proofs of Theoretical Guarantees 
+
+A.1 Performance-Losslessness (Theorem 1) 
+
+We provide the complete proof that mAVE is performance-lossless under cho-sen watermark tests [12]. The proof generalizes the Inverse Transform Sampling procedure to l-bit randomized watermarks, following the framework of stegano-graphic security. 
+
+Formal Definition Definition (Chosen Watermark Tests). Let Xs de-note a watermarked sample and X a normally generated sample. A water-marking scheme is performance-lossless under chosen watermark tests if, for any polynomial-time tester A and key Ksess ← KeyGen (1 ρ):
+
+| Pr[ A(Xs) = 1] − Pr[ A(X) = 1] | < negl (ρ), (A.1) where the tester A can choose any watermark payload and observe the result-ing watermarked output. This is analogous to the chosen hidden text attacks 
+
+formulation in provable steganography [12]. 
+
+General l-Bit Distribution-Preserving Sampling We first establish the distributional result in full generality. Let each latent dimension represent an 
+
+l-bit randomized watermark, where l ≥ 1 is a design parameter controlling the embedding resolution. Through encryption with a computationally secure stream cipher (ChaCha20 [1]), the diffused watermark Bdif f is transformed into a ran-domized watermark m. Since ChaCha20 is a cryptographically secure PRNG, each l-bit symbol of m can be treated as a ciphertext following a discrete uni-form distribution: 
+
+P (m = y) = 12l , y = 0 , 1, 2, . . . , 2l − 1. (A.2) Let f (x) denote the probability density function of the standard Gaussian distribution N (0 , I ), and let Φ(·) and ppf = Φ−1 denote the cumulative distribu-tion function (CDF) and quantile function, respectively. We divide f (x) into 2l
+
+equal cumulative probability portions. When m = y = i, the watermarked latent representation zsT falls into the i-th interval, and its conditional distribution is: 
+
+p(zsT | m = i) = 
+
+(2l · f (zsT ) if ppf   i
+
+> 2l
+
+ < z sT ≤ ppf   i+1 2l
+
+ ,
+
+0 otherwise.  (A.3) This is a truncated Gaussian restricted to the interval ppf   i
+
+> 2l
+
+, ppf   i+1 2l
+
+ , with the normalization factor 2l ensuring unit probability mass. mAVE: A Watermark for Joint Audio-Visual Generation Models 19 
+
+Step 1: Distributional Equivalence Lemma 1 (Distribution Preservation). The marginal distribution of the watermarked latent zsT equals the standard Gaussian f (x), regardless of the wa-termark content. Proof. The marginal distribution of zsT is obtained by summing over all 2l pos-sible watermark values: 
+
+p(zsT ) = 
+
+> 2l−1
+
+X
+
+> i=0
+
+p(zsT | m = i) P (m = i) = 
+
+> 2l−1
+
+X
+
+> i=0
+
+p(zsT | m = i) · 12l . (A.4) For any fixed zsT , exactly one term in the summation is nonzero—namely the unique i∗ satisfying ppf   i∗
+
+> 2l
+
+ < z sT ≤ ppf   i∗+1 2l
+
+—and contributes 2l · f (zsT ) · 12l =
+
+f (zsT ). Therefore: 
+
+p(zsT ) = f (zsT ). (A.5) Since this holds for each coordinate independently, zs ∼ N (0 , I ).
+
+Step 2: CDF-Based Sampling Procedure To implement the conditional sampling efficiently, we derive the CDF of zsT given m = i. From Eq. (A.3): 
+
+F (zsT | m = i) = 
+
+
+
+0 if zsT < ppf   i
+
+> 2l
+
+ ,
+
+2l · Φ(zsT ) − i if ppf   i
+
+> 2l
+
+ ≤ zsT ≤ ppf   i+1 2l
+
+ ,
+
+1 if zsT > ppf   i+1 2l
+
+ .
+
+(A.6) Given m = i, we aim to sample zsT within the interval ppf   i
+
+> 2l
+
+, ppf   i+1 2l
+
+ .Since F (zsT | m = i) takes values in [0 , 1] within this interval, sampling from it is equivalent to drawing u ∼ U (0 , 1) and applying the inverse CDF. Rearranging Eq. (A.6) by setting u = F (zsT | m = i) and noting that Φ and ppf are inverses, we obtain: 
+
+zsT = ppf 
+
+ u + i
+
+2l
+
+
+
+. (A.7) Eq. (A.7) represents the general l-bit distribution-preserving sampling formula. The corresponding inverse map for watermark extraction is: 
+
+i = ⌊2l · Φ(zsT )⌋. (A.8) 
+
+Step 3: Reduction to Stream Cipher Security Lemma 1 establishes that 
+
+zsT ∼ N (0 , 1) when m is truly uniform. The remaining step is to show that the computational indistinguishability of ChaCha20 output from truly random bits lifts to indistinguishability at the sample level. Let S(·) denote the sequence-driven sampling process defined by Eq. (A.7), 
+
+Q(·) the deterministic denoising decoder, and D the deterministic data decoder 20 L. Si et al. 
+
+(e.g., VAE decoder). Suppose, for contradiction, that there exists a polynomial-time tester A with non-negligible advantage δ:
+
+Pr[ A(D(Q(S(m)))) = 1 | m = E(Ksess , s d)] −Pr[ A(D(Q(S(r)))) = 1 | r ← { 0, 1}d] = δ, 
+
+(A.9) where E(Ksess , s d) denotes the ChaCha20 encryption of the diffused watermark 
+
+sd under key Ksess , and r denotes a truly random bit string of the same length. Since S(·), Q(·), and D are all deterministic polynomial-time functions, the com-posite 
+
+AD,Q,S (·) := A ◦ D ◦ Q ◦ S(·) (A.10) is itself a polynomial-time distinguisher. Then: 
+
+Pr[ AD,Q,S (m) = 1 | m = E(Ksess , s d)] − Pr[ AD,Q,S (r) = 1 | r ← { 0, 1}d] = δ. 
+
+(A.11) This states that AD,Q,S can distinguish ChaCha20 output from truly random bits with advantage δ, directly contradicting the computational security of ChaCha20 [1]. Therefore δ must be negligible in the security parameter ρ, completing the proof that 
+
+| Pr[ A(Xs) = 1] − Pr[ A(X) = 1] | < negl (ρ). ■
+
+Remark. In all experiments of this paper, we set l = 1 (binary parti-tion), which reduces Eq. (A.7) to the formula used in the main text (Eq. (7)): 
+
+zi = ppf   ui+Mrand [i]2
+
+, partitioning the Gaussian into two half-distributions. The general l-bit formulation above demonstrates that the distribution-preservation property holds for arbitrary embedding resolutions and is not specific to the binary case. 
+
+A.2 Binding Security (Theorem 2) 
+
+We provide the full proof that the binding mechanism of mAVE is exponentially secure against Swap Attacks, including formal treatment of both passive and adaptive adversaries. 
+
+Formal Setup Definition (Swap Attack). An adversary Aswap has oracle access to the generation model G and the detection API D. The adversary pro-duces a composite sample ˜x = ( x(A) 
+
+> v
+
+, x(B) 
+
+> a
+
+) by combining the video track from session A with the audio track from session B (A̸ = B), and succeeds if the detector outputs Authentic: D(˜ x) = 1 .
+
+Binding Verification Protocol. After joint ODE inversion recovers (˜ zv , ˜za),the detector extracts the plaintext index ˆI, retrieves m from the server, re-derives Ksess , regenerates the ideal video grid Bideal v , and computes Hideal =
+
+SHA-256 (Bideal v ). The binding score is: 
+
+Sbind = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+⊮[ ˆBa[Ibind (i)] = Hideal [ϕ(i)]] , (A.12) mAVE: A Watermark for Joint Audio-Visual Generation Models 21 
+
+where N = |I bind | is the number of binding positions, ϕ is a fixed mapping from binding indices to hash bit positions, and the sample is classified as Bound iff 
+
+Sbind > τ bind .
+
+Step 1: Statistical Independence under Swap Lemma 2 (Independence under Mismatched Sessions). Under a Swap Attack combining sessions A and B with A̸ = B, the random variables ˆBa[Ibind (i)] 
+
+(from session B) and Hideal [ϕ(i)] (derived from session A) are statistically in-dependent for all i.Proof. The target hash is Hideal = SHA-256 (Bideal v ), where Bideal v is determinis-tically regenerated from the session-A secret mA via key derivation. The recov-ered audio bits ˆBa originate from session B, which uses a different secret mB and hence a different session key K(B)
+
+> sess
+
+. Furthermore, by Theorem 1, the watermark bits embedded in Session B are computationally indistinguishable from uniform random bits, ensuring the marginal distribution of ˆBa is uniform. Under the Random Oracle Model (ROM), SHA-256 is modeled as a random function H : {0, 1}∗ → { 0, 1}256 . Since Bideal v and the session-B audio grid are generated from independent keys, the hash output Hideal is statistically inde-pendent of the session-B audio grid B(B) 
+
+> a
+
+. Furthermore, the inversion noise and decoding process introduce additional randomness that preserves this indepen-dence. More precisely, each output bit of SHA-256 satisfies P (Hideal [ϕ(i)] = b) = 12
+
+for b ∈ { 0, 1}, and the audio bits from session B at the binding positions satisfy 
+
+P ( ˆBa[Ibind (i)] = b′) = 12 marginally (since the session-B bits are encrypted under an independent key). The cross-session independence follows from the key separation: K(A) 
+
+> sess
+
+⊥ K(B)
+
+> sess
+
+.
+
+Step 2: Hoeffding Bound for Passive Adversaries Under the independence established in Lemma 2, each bit-match indicator: 
+
+Xi = ⊮[ ˆBa[Ibind (i)] = Hideal [ϕ(i)]]  (A.13) is a Bernoulli random variable with P (Xi = 1) = 12 , and the {Xi}Ni=1 are mutually independent. The binding score Sbind = 1
+
+> N
+
+PNi=1 Xi has expectation 
+
+E[Sbind ] = 12 .By Hoeffding’s Inequality [11], for any threshold τbind > 12 :
+
+P (Sbind ≥ τbind | H1) ≤ exp  −2N (τbind − 12 )2 . (A.14) For our default configuration N = 128 and τbind = 0 .8:
+
+Pf p ≤ exp  −2 × 128 × (0 .8 − 0.5) 2 = exp( −23 .04) < 9.86 × 10 −11 . (A.15) 22 L. Si et al. 
+
+Table A.5: Evasion Probability vs. Binding Hash Length. Upper bounds on 
+
+Pf p from Eq. (A.14) for various N with τbind = 0 .8.
+
+N 16 32 64 128 256 
+
+Pf p upper bound 5.7 × 10 −2 3.2 × 10 −3 1.0 × 10 −5 9.9 × 10 −11 9.7 × 10 −21 
+
+Step 3: Extension to Adaptive (White-Box) Adversaries A stronger adversary Aadapt has full white-box access to the generation model weights θ
+
+and can perform gradient-based optimization. We show that this advantage does not help bypass the binding check. 
+
+Lemma 3 (Encrypted Optimization Objective). An adaptive adversary with access to model weights θ but not the server-side secret m cannot compute 
+
+Sbind or its gradient ∇Sbind .Proof. The binding score Sbind (Eq. (A.12)) depends on two quantities: 1. The binding index set Ibind , which is derived from Ksess via ChaCha20 stream generation. 2. The target hash Hideal = SHA-256 (Bideal v ), where Bideal v is reconstructed from m via key derivation. Both Ibind and Hideal are deterministic functions of Ksess , which in turn depends on m = Kpriv (the server-side secret). Since m is never embedded in the latent and is accessible only through the server-side database (queried by the plaintext index I), the adversary cannot evaluate Sbind for any candidate audio track. Formally, the adversary’s optimization problem is: 
+
+max 
+
+> x(B)
+> a
+
+Sbind (x(A) 
+
+> v
+
+, x(B) 
+
+> a
+
+), (A.16) but the objective function is a composition involving the unknown Hideal and 
+
+Ibind . Without knowledge of m, evaluating even a single function value requires guessing the correct Hideal , which amounts to predicting the output of a crypto-graphic hash function without the input seed (or breaking the pseudorandomness of the derived key), computationally infeasible under standard assumptions. Consequently, any gradient-based or optimization-based attack degenerates to a blind brute-force search over the 2N possible bit configurations at the binding positions. For each random guess, the match probability is exactly 12 per bit by Lemma 2, and the Hoeffding bound (Eq. (A.14)) applies identically. 
+
+Combined Security Statement Combining the above results, we conclude: 
+
+Theorem 2 (Binding Security, restated). For a binding sequence of length N = |I bind | and detection threshold τbind > 0.5, the probability that any polynomial-time adversary (passive or adaptive with full model access) produces a swapped pair passing the binding check satisfies: 
+
+P (Aswap succeeds ) ≤ exp  −2N (τbind − 12 )2 . ■mAVE: A Watermark for Joint Audio-Visual Generation Models 23 
+
+The security guarantee is exponential in the binding length N and holds under the Random Oracle Model for SHA-256 and the computational security assumption of ChaCha20. 
+
+## B Inversion Dynamics and Solver Analysis 
+
+B.1 ODE Solver Discretization and Truncation Drift 
+
+The forward ODE for Rectified Flow [24] models define the velocity field: 
+
+dzt
+
+dt = vθ (zt, t, c ), (B.1) where z0 ∼ N (0 , I ) is the initial noise and z1 is the generated sample. For inversion, we solve the ODE backwards from t = 1 . We use the Euler method [17] with a uniform time schedule {tN = 1 , t N −1, . . . , t 1 = ϵ} where N is the number of inversion steps: 
+
+zti−1 = zti + ( ti−1 − ti) · vθ (zti , t i, c ). (B.2) 
+
+The δt Truncation Gap. In theoretical implementations, integrating ex-actly to t = 0 yields perfect inversion. However, to ensure generation quality and avoid the numerical singularity near pure noise ( t = 0 ) where the velocity field vθ may become unbounded, state-of-the-art joint audio-visual generation models (MOVA and LTX-2) enforce a strict minimum timestep t = δt > 0 in their sampling pipelines. Consequently, the inversion process must be truncated to maintain stability. This discretization gap introduces a deterministic drift, preventing the raw Bit Accuracy from reaching a perfect 1.0.
+
+B.2 Inversion Fidelity: DDIM vs. Rectified Flow 
+
+Prior works utilizing DDIM [36] solve a related ODE in the noise-prediction parameterization: 
+
+zti−1 = √αti−1
+
+ zti − √1 − αti · ϵθ (zti , t i)
+
+√αti
+
+
+
++ p1 − αti−1 · ϵθ (zti , t i). (B.3) To systematically understand the impact of the solver paradigm versus the aforementioned δt truncation, we compare inversion fidelity across three distinct experimental settings: 
+
+– DDIM-based Inversion (VideoShield [13]): Evaluated on ModelScope [40] (T2V) and Stable-Video-Diffusion [2] (I2V), integrating fully to the noise boundary. 
+
+– Ideal Rectified Flow Inversion: Evaluated using the official Rectified Flow codebase on CIFAR-10 [20], utilizing an Euler ODE solver that inte-grates fully to t = 0 .24 L. Si et al.                             
+
+> Table B.6: Inversion Accuracy vs. Number of Steps across Frameworks.
+> Both DDIM and ideal Rectified Flow achieve near-perfect inversion ( ∼1.000 ) given sufficient steps. In our mAVE pipeline, performance is marginally bottlenecked by the necessary δttruncation rather than the underlying solver paradigm, yet it remarkably maintains high robustness even down to 5steps.
+> Framework / Model Task Inversion Steps ( N)
+> 50 25 10 51
+> Baseline Paradigms (Full Integration to t= 0 )
+> DDIM (ModelScope) T2V 1.000 1.000 1.000 --DDIM (SVD) I2V 0.999 0.999 0.999 --Rectified Flow (CIFAR-10) Uncond 1.000 1.000 1.000 --
+> mAVE with δtTruncation (MOVA-720p)
+> mAVE Video BA TI2AV 0.967 0.961 0.955 0.958 0.857 mAVE Audio BA 0.913 0.892 0.901 0.865 0.780
+
+– mAVE (Ours) on MOVA-720p: Operating under the enforced δt trun-cation inherently required by native joint generation pipelines. As demonstrated in Table B.6, both DDIM and Flow Matching naturally pro-vide excellent inversion guarantees in practice when integrated fully. For mAVE, the slight performance gap is fundamentally a product of the δt truncation mech-anism, rather than an inherent weakness of the Euler solver. Crucially, despite this truncation drift, the straight-line transport property of Rectified Flow allows mAVE to remain highly resilient under extremely con-strained computational budgets. The accuracy is solidly maintained when scaled down to just 5 inversion steps, with significant degradation only occurring at an extreme 1-step inversion. This property is highly advantageous for efficient, real-world deployment. 
+
+## C Decoding Method Comparison: Median vs. Zero Thresholding 
+
+After inversion, the recovered latent ˜z0 exhibits minor drift due to the discretiza-tion gap. We investigated two decoding strategies: 
+
+Zero-Thresholding (Standard). The simplest approach: each bit is de-coded as:  ˜b[i] = ⊮[˜ z0[i] > 0] . (C.1) This leverages the fundamental asymmetry of the half-Gaussian constraint: wa-termarked coordinates are guaranteed to have the correct sign in the noise-free case, and the redundancy from block-wise repetition absorbs moderate sign flips. 
+
+Median Thresholding. This approach estimates a per-block threshold by computing the median of all kall copies of each bit, then decodes relative to this mAVE: A Watermark for Joint Audio-Visual Generation Models 25 
+
+median: 
+
+μj = median {˜z0[i] : i ∈ Block j }, ˜b[j] = ⊮[μj > 0] . (C.2) The motivation is to correct for a potential global bias in the recovered latents. However, since Rectified Flow inversion introduces very little systematic bias (the drift is primarily random noise), the median and zero thresholds produce nearly identical results.      
+
+> Table C.7: Decoding Strategy Comparison. Bit Accuracy on LTX-2 T2AV with 25 inversion steps. The negligible difference confirms that zero-thresholding is sufficient.
+> Decoding Method Video BA Audio BA
+> Zero-Thresholding 0.936 0.915 Median Thresholding 0.940 0.913
+
+As shown in Table C.7, the performance difference is marginal and inconsis-tent across modalities. We therefore adopt the simpler Zero-Thresholding in all experiments to avoid introducing an unnecessary hyperparameter. 
+
+## D The Performance Analysis of Joint Inversion 
+
+A key architectural advantage of mAVE is that both embedding and extraction operate through the same joint denoising / inversion pass used by the underlying audio-visual model. In this section we empirically verify that this single joint inversion recovers watermark bits as accurately as performing two dedicated, modality-specific inversions, and we discuss the resulting efficiency gain. 
+
+D.1 Setup 
+
+We compare two extraction protocols on LTX-2 T2AV (25 inversion steps, zero-thresholding): 
+
+– Joint Inversion (default). A single backward ODE pass is performed through the bimodal model, simultaneously recovering both the video latent 
+
+˜zv and the audio latent ˜za.
+
+– Separate Inversion. Two independent backward ODE passes are per-formed: one using only the video branch to recover ˜zv , and one using only the audio branch to recover ˜za. Each pass uses the same 25 inversion steps and solver configuration. 
+
+D.2 Results 
+
+As shown in Table D.8, the two protocols yield virtually identical Bit Accuracy for both modalities, confirming that the joint denoising trajectory preserves per-modality fidelity during inversion. This is expected: in Rectified-Flow-based joint 26 L. Si et al. 
+
+Table D.8: Joint vs. Separate Inversion (LTX-2 T2AV). Bit Accuracy and wall-clock time comparison. Joint inversion matches the extraction quality of two separate passes while halving the computational cost. 
+
+Extraction Protocol Video BA Audio BA Time (s/item) 
+
+Joint Inversion (ours) 0.936 0.915 2.07 Separate Inversion 0.936 0.915 4.16 
+
+models, the audio and video latents share the same ODE velocity field but occupy orthogonal sub-spaces of the joint latent, so inverting them together introduces no additional cross-modal interference compared with inverting them separately. 
+
+D.3 Efficiency Implications 
+
+The practical consequence is a significant reduction in detection cost relative to baseline combinations. Table D.9 summarises the pipeline-level comparison. 
+
+Table D.9: Extraction Pipeline Comparison. mAVE requires only one joint in-version pass (identical in cost to VideoShield’s video-only inversion), whereas baseline combinations must run an additional dedicated audio extractor.              
+
+> Method Video Extraction Audio Extraction Binding Check Total Passes
+> VideoShield + AudioSeal ODE inversion ( Nsteps) AudioSeal encoder (forward) —2VideoShield + WavMark ODE inversion ( Nsteps) WavMark encoder (forward) —2
+> mAVE (ours) Joint ODE inversion ( Nsteps) τbind 1
+
+Because the targeted joint models (LTX-2, MOVA) denoise audio and video in a single forward pass, the backward ODE inversion that recovers the shared latent ˜z0 simultaneously yields both the video bit grid ˆBv and the audio bit grid ˆBa—no auxiliary neural-network encoder (as required by AudioSeal [34]) or additional inversion pass is needed. Consequently: 
+
+– The embedding cost of mAVE is identical to VideoShield [13]: both simply replace the initial Gaussian noise with a structured sample before the joint forward pass. 
+
+– The extraction cost of mAVE is also identical to VideoShield’s single ODE inversion, while baseline combinations (VideoShield + AudioSeal / Wav-Mark) must additionally execute a dedicated audio encoder, effectively dou-bling the extraction workload. In summary, by natively leveraging the joint architecture, mAVE eliminates the redundant audio processing stage entirely, achieving the same watermark fidelity at roughly half the total extraction time compared with any “video wa-termark + audio watermark” combination. mAVE: A Watermark for Joint Audio-Visual Generation Models 27 
+
+## E Complete Cryptographic Key Derivation 
+
+This section provides the end-to-end derivation of the session-specific random-ization, from payload to continuous latent initialization. 
+
+E.1 Payload Structure: Index and Secret 
+
+The overall watermark payload comprises two functionally distinct segments: 
+
+– Plaintext Index I ∈ { 0, 1}LI (LI = 32 bits) (embedded) : A non-confidential session identifier embedded without encryption in a dedicated region of the video grid. It is protected only by repetition coding and can be extracted via majority voting without any key. 
+
+– Secret Payload m ∈ { 0, 1}Lm (non-embedded) : A high-entropy secret stored exclusively on the server-side database, indexed by I. The payload m is never 
+
+embedded in the latent; it participates only in key derivation. 
+
+E.2 Session Key Computation 
+
+Given the secret payload m and the generation prompt P , the session key is computed as: 
+
+Ksess = SHA-256  Prefix (SHA-256 (m)) ∥ SHA-256 (Norm (P )) , (E.1) where Prefix (·) extracts the first N bits of the hash, ∥ denotes concatenation, and Norm (·) applies lowercase conversion and whitespace trimming to the prompt string. The purpose of incorporating the prompt is to make the watermark 
+
+prompt-dependent : the same payload embedded under different prompts yields entirely different manifold constraints, preventing cross-prompt copy attacks. At detection time, the verifier first extracts ˆI from the video grid via majority voting, queries the database to retrieve both m and the text prompt P that was recorded during generation, and then derives Ksess using the formula above. Because m is never embedded and the prompt P is required for key derivation, an attacker who only has model access cannot derive Ksess even after a successful inversion. 
+
+E.3 Shared Seed Extraction 
+
+To ensure correlated base entropy across the audio and video modalities, we derive a shared seed from the secret payload m:
+
+seed shared = SHA-256 (m)[: 8] , (E.2) 
+
+i.e ., the first 8 bytes (64 bits) of the hash of the secret payload m. This shared seed initializes both the audio and video pseudo-random streams, ensuring that their bit grids are structurally aligned for the binding verification. 28 L. Si et al. 
+
+E.4 ChaCha20 Stream Generation 
+
+The ChaCha20 stream cipher [1] is initialized with: 
+
+– Key: Ksess (256-bit). 
+
+– Nonce: A fixed zero nonce (96-bit all-zeros). Since Ksess is unique per ses-sion, nonce reuse is not a security concern. 
+
+– Counter: Starting from 0. The cipher generates a pseudo-random byte stream S = {s1, s 2, . . . }. The first portion of S determines the coordinate permutation π (which latent dimensions carry watermark bits), and the subsequent portion determines the bit assignment 
+
+yi for each coordinate. 
+
+E.5 Truncated Inverse Sampling 
+
+For each watermark coordinate i ∈ I w with assigned bit yi, we sample from the corresponding half-Gaussian via inverse transform sampling: 
+
+zi = Φ−1
+
+ 1 + yi
+
+2 · ui + 1 − yi
+
+2 · (ui − 1) 
+
+
+
+, ui ∼ Uniform (0 .5, 1) , (E.3) where Φ−1 is the quantile function (inverse CDF) of N (0 , 1) . When yi = 1 ,the uniform input lies in [0 .5, 1) so the output ranges in [Φ−1(0 .5) , Φ −1(1)) = [0 , +∞), producing a positive half-Gaussian. When yi = 0 , the uniform input lies in (0 , 0.5] so the output ranges in [Φ−1(0) , Φ −1(0 .5)] = ( −∞ , 0] , producing a negative half-Gaussian. 
+
+Outlier Truncation. To prevent extreme values that could degrade gen-eration quality, we further clamp the uniform input to ui ∈ [0 .5 + δ, 1 − δ]
+
+with δ = 0 .001 , which restricts |zi| to approximately [Φ−1(0 .501) , Φ −1(0 .999)] ≈
+
+[0 .003 , 3.09] . This truncation has negligible effect on the decoding margin while preventing numerical overflow in the generation backbone. Non-watermark coordinates j / ∈ I w are sampled from the standard N (0 , 1) 
+
+as usual. 
+
+## F Formal Metric Definitions 
+
+F.1 Bit Decision Rule (Majority Voting) 
+
+The block-wise repetition scheme embeds each payload bit mj into kall copies across the latent tensor. After inversion, the recovered copies are {˜bj, 1, ˜bj, 2, . . . , ˜bj,k all }
+
+where ˜bj,l = ⊮[˜ z0[π(j, l )] > 0] . The final decision for bit j is: 
+
+ˆmj = ⊮
+
+"kall X
+
+> l=1
+
+˜bj,l > kall 
+
+2
+
+#
+
+. (F.1) That is, ˆmj = 1 if the majority of the kall copies decode to 1, and ˆmj = 0 
+
+otherwise. mAVE: A Watermark for Joint Audio-Visual Generation Models 29 
+
+F.2 Bit Accuracy 
+
+Given the ground-truth payload m ∈ { 0, 1}L and the recovered payload ˆm ∈{0, 1}L (after majority voting), the Bit Accuracy is defined as: 
+
+BA = 1
+
+L
+
+> L
+
+X
+
+> j=1
+
+⊮[ ˆ mj = mj ]. (F.2) Bit Accuracy of 1.0 indicates perfect recovery, while 0.5 corresponds to random guessing. In our experiments, we report BA separately for the video modality (BA v ) and audio modality (BA a). 
+
+F.3 Video Quality Metrics 
+
+We adopt the five video quality metrics from VBench [16]. All scores are nor-malized to [0 , 1] ; higher is better. Further details are available in the original VBench paper. 
+
+Subject Consistency. Subject Consistency measures the temporal coher-ence of the main subject across frames by computing the DINO [4] feature sim-ilarity: 
+
+Ssubject = 1
+
+T − 1
+
+> T
+
+X
+
+> t=2
+
+12
+
+ ⟨d1 · dt⟩ + ⟨dt−1 · dt⟩, (F.3) where di is the DINO image feature of the i-th frame (normalized to unit length) and ⟨·⟩ denotes the dot product (cosine similarity). 
+
+Background Consistency. Background Consistency evaluates the tempo-ral consistency of background scenes by computing CLIP [31] feature similarity across frames: 
+
+Sbackground = 1
+
+T − 1
+
+> T
+
+X
+
+> t=2
+
+12
+
+ ⟨c1 · ct⟩ + ⟨ct−1 · ct⟩, (F.4) where ci represents the CLIP image feature of the i-th frame, normalized to unit length. 
+
+Motion Smoothness. Motion Smoothness is evaluated by the frame-by-frame motion prior to video frame interpolation models [21]. Specifically, given a generated video consisting of frames [f0, f 1, f 2, f 3, f 4, . . . , f 2n−2, f 2n−1, f 2n],the odd-numbered frames are manually dropped to obtain a lower-frame-rate video [f0, f 2, f 4, . . . , f 2n−2, f 2n], and video frame interpolation is used to infer the dropped frames [ ˆf1, ˆf3, . . . , ˆf2n−1]. The Mean Absolute Error (MAE) between the reconstructed frames and the original dropped frames is then computed and normalized into [0 , 1] , with a larger number implying smoother motion. 
+
+Dynamic Degree. Dynamic Degree assesses the extent to which models tend to generate non-static videos. RAFT [38] is used to estimate optical flow strengths between consecutive frames of a generated video. The average of the largest 5% optical flows (capturing the movement of salient objects) is taken 30 L. Si et al. 
+
+as the basis to determine whether the video is static. The final dynamic degree score is calculated by measuring the proportion of non-static videos generated by the model. 
+
+Imaging Quality. Imaging Quality is measured by the MUSIQ [18] image quality predictor trained on the SPAQ dataset, which is capable of handling variable-sized aspect ratios and resolutions. The frame-wise score is linearly nor-malized to [0 , 1] by dividing by 100, and the final score is then calculated by averaging the frame-wise scores across the entire video sequence. 
+
+## G Temporal Attack Robustness 
+
+We adopt four representative temporal attacks from MarkDiffusion [30] to sys-tematically stress-test the robustness of latent video watermarking under temporal-domain manipulations. 
+
+G.1 Attack Definitions 
+
+Let {ft}Tt=1 denote the original video sequence of T frames. 
+
+FrameAverage. A sliding-window smoothing attack that replaces each frame with the average of its n-neighbourhood ( n = 3 ): 
+
+f ′ 
+
+> t
+
+= 12n + 1 
+
+> t+n
+
+X 
+
+> τ=t−n
+
+fτ , (G.1) where boundary frames are handled via zero-padding. The output has the same length T but with blurred pixel values that suppress high-frequency watermark signals. 
+
+FrameSwap. A stochastic local permutation that, for each frame ft (t ≥ 2), swaps it with its predecessor ft−1 with probability p = 0 .25 :
+
+(f ′
+
+> t−1
+
+, f ′ 
+
+> t
+
+) = 
+
+(
+
+(ft, f t−1), with prob. p, 
+
+(ft−1, f t), otherwise . (G.2) The total frame count remains T , but the temporal ordering is locally disrupted. 
+
+FrameRateAdapter. A linear-interpolation resampling that changes the frame rate from rs to rd (30 → 24 fps). For each target time index t′, the corresponding source position σ = t′ · rs/r d is computed; the output frame is: 
+
+f ′ 
+
+> t′
+
+= (1 − α) f⌊σ⌋ + α f ⌈σ⌉, α = σ − ⌊ σ⌋. (G.3) The output length T ′ = ⌊T · rd/r s⌋ generally differs from T , causing a global temporal shift .
+
+FrameInterpolation. Between every pair of adjacent frames, k = 1 synthetic frame is inserted via linear blending: 
+
+gj =
+
+
+
+1 − jk+1 
+
+
+
+ft + jk+1 ft+1 , j = 1 , . . . , k.  (G.4) The output length becomes T ′ = ( k + 1)( T − 1) + 1 , and the newly introduced frames carry no original latent structure. mAVE: A Watermark for Joint Audio-Visual Generation Models 31 
+
+G.2 Experimental Setup 
+
+We evaluate three configurations to isolate the effect of the watermarking method and the generation backbone: 1. VideoShield (ModelScope) : The original VideoShield algorithm [13] run-ning on ModelScope [40]. 2. VideoShield (LTX-2 T2AV) : VideoShield ported to the same LTX-2 T2AV backbone used by mAVE. 3. mAVE (LTX-2 T2AV) : Our full method on LTX-2 T2AV.               
+
+> Table G.10: Temporal Attack Results (Video Bit Accuracy). Four temporal attacks evaluated on three configurations. FrameAverage preserves alignment and thus maintains high accuracy; FrameSwap causes moderate local misalignment; FrameR-ateAdapter and FrameInterpolation cause catastrophic global temporal shifts.
+> Configuration FrameAvg FrameSwap FrameRate FrameInterp
+> VideoShield (ModelScope) 0.995 0.732 0.572 0.580 VideoShield (LTX-2 T2AV) 0.948 0.699 0.581 0.557 mAVE (LTX-2 T2AV) 0.927 0.710 0.569 0.561
+
+G.3 Analysis 
+
+The degradation pattern is strikingly consistent across all three configurations and can be fully explained by the degree to which each attack breaks absolute temporal alignment .Both mAVE and VideoShield embed watermarks into a pre-allocated three-dimensional grid, where each temporal slice is independently randomized by a pseudo-random cipher stream (e.g., the ChaCha20 keystream K in mAVE, via 
+
+Mrand = Bdiff ⊕ K ). Crucially, the temporal repetition factor is kt = 1 , meaning every frame carries a unique , independently encrypted watermark segment. The correctness of extraction therefore hinges on each frame remaining at its original temporal index. 
+
+FrameAverage. The sliding-window average blurs pixel values but does not alter the absolute frame index : frame t remains at position t after the attack. Because the spatial repetition factors kh = 4 , k w = 4 provide strong redundancy, the per-coordinate numerical perturbation is easily corrected by majority voting and zero-thresholding. Hence, Bit Accuracy remains above 0.92. 
+
+FrameSwap. Swapping adjacent frames with probability p = 0 .25 causes local temporal misalignment : for a swapped pair (t, t +1) , extraction at position t re-trieves the latent of frame t+1 , producing XOR against the wrong keystream segment and yielding random bits (expected accuracy ≈ 0.5). Meanwhile, the 
+
+∼ 75% of un-swapped frames remain correctly aligned. The overall Bit Accuracy 32 L. Si et al. 
+
+is approximately (1 − p) · BA clean + p · 0.5 ≈ 0.75 × 0.93 + 0 .25 × 0.5 ≈ 0.82 ,consistent with the observed range of 0.70–0.73 after accounting for cascading effects and the non-independence of consecutive swap decisions. 
+
+FrameRateAdapter & FrameInterpolation. Both attacks induce a global temporal shift : resampling or inserting frames causes every subsequent frame to be displaced from its original index. Once the absolute temporal alignment is lost, the extraction process degenerates into “opening every lock with the wrong key”—each frame is XORed with an unrelated keystream segment. The resulting bit sequence exhibits near-complete randomness, and the Bit Accuracy collapses to the theoretical floor ∼ 0.5. The residual margin above 0.5 is attributable to partially aligned frames near the beginning of the sequence and boundary effects of the attack. 
+
+Cross-configuration consistency. The near-identical degradation pattern across VideoShield (ModelScope), VideoShield (LTX-2), and mAVE (LTX-2) confirms that this vulnerability is not specific to mAVE but is an inherent structural limitation of any latent watermarking scheme that relies on absolute temporal indexing with kt = 1 . Possible mitigations include temporal synchronization markers, adaptive repetition factors ( kt > 1), or frame-registration-based re-alignment during extraction, which we leave for future work. 
+
+G.4 Discussion: Why Increasing kt Alone Is Insufficient 
+
+A natural mitigation is to raise the temporal repetition factor kt so that ev-ery kt consecutive frames form a temporal block sharing the same watermark bits and the same ChaCha20 keystream segment. We analyse the benefits and fundamental limits of this strategy. 
+
+What kt > 1 can solve. Setting kt = 3 , for instance, means frames {0, 1, 2}
+
+constitute a single temporal block and are encrypted with an identical keystream segment. This provides two immediate gains: 
+
+– Perfect defence against FrameSwap. If frames 1 and 2 are swapped, both still belong to the same kt-block; the extraction key remains correct, and Bit Accuracy is unaffected. 
+
+– Resilience to minor jitter and sporadic frame drops. The kt-fold temporal redundancy allows majority voting along the time axis to “pull back” the correct bits, analogous to the spatial redundancy provided by kh and kw.
+
+Why kt > 1 cannot solve FrameRateAdapter / FrameInterpolation. 
+
+Both attacks introduce a sustained, cumulative temporal offset rather than a local perturbation. Consider kt = 3 under a 30 → 15 fps down-sampling (every other frame is dropped): 1. The extractor still partitions the received frames as {0, 1, 2}, {3, 4, 5}, . . . and generates the keystream accordingly. 2. The physical frames received at positions 0, 1, 2, 3, . . . are actually original frames 0, 2, 4, 6, . . . .mAVE: A Watermark for Joint Audio-Visual Generation Models 33 
+
+3. For the first block, received frame 1 (original frame 2) is still within block 0 and decrypts correctly. However, received frame 3 (original frame 6) should belong to block 2 ( {6, 7, 8}), yet the extractor applies the keystream of block 1 ( {3, 4, 5}). Once the accumulated offset exceeds kt, all subsequent blocks are permanently misaligned. The decryption reverts to random XOR and Bit Accuracy collapses back to ∼ 0.5. Raising kt merely delays the onset of misalignment by a few blocks but cannot prevent the eventual avalanche, while simultaneously reducing the effective payload capacity by a factor of kt.                
+
+> Table G.11: Effect of Temporal Repetition Factor kt(mAVE, LTX-2 T2AV).
+> Video Bit Accuracy under the four temporal attacks with kt∈ { 1,3}. To keep a fixed payload length of 512, the channel repetition factor is dynamically scaled as k′
+> c=
+> kc_ori /k t.
+> ktFrameAvg FrameSwap FrameRate FrameInterp
+> 10.927 0.710 0.569 0.561 30.933 0.722 0.552 0.558
+
+Towards a principled solution: dynamic temporal re-alignment. Rather than blindly scaling kt, a more promising direction is to explore active syn-chronization mechanisms during extraction. By incorporating robust temporal reference signals or synchronization metadata within the video latent space, a detection pipeline could theoretically track and compensate for frame-level ma-nipulations such as drops, duplications, or insertions. This paradigm aims to reconstruct the original temporal sequence prior to decryption, effectively decou-pling temporal robustness from brute-force redundancy. Consequently, it could preserve payload capacity while restoring immunity to global temporal shifts. We leave the exploration of such active re-alignment strategies to future work. 
+
+## H Evaluation Prompt List 
+
+We curate 250 text prompts from VBench [16], evenly distributed across 8 se-mantic categories. Below we list representative examples from each category. The full list of 250 prompts is available in the official code repository. Each prompt is designed to involve both rich visual dynamics and plausible ambient or event-driven audio, ensuring meaningful evaluation of the audio-visual binding capability. 34 L. Si et al.  
+
+> Table H.12: Representative Evaluation Prompts by Category. Selected exam-ples from each of the 8 VBench categories.
+
+Category Example Prompts 
+
+Animal “A panda standing on a surfboard in the ocean in sunset”; “A jellyfish floating through the ocean, with bioluminescent tentacles” Architecture ‘A 3D model of a 1800s victorian house”; “Asian garden and medieval castle” Food “Slow motion cropped closeup of roasted coffee beans falling into an empty bowl”; “A serving of pumpkin dish in a plate” Human “Vincent van Gogh is painting in the room”; “An astronaut feeding ducks on a sunny afternoon, reflection from the water” Lifestyle “This is how I do makeup in the morning”; “Home deco with lighted” Plant “Yellow flowers swing in the wind”; “An elephant spraying itself with water using its trunk to cool down” Scenery “Underwater coral reef”; “Train station platform” Vehicles “A car stuck in traffic during rush hour”; “A motorcycle cruising along a coastal highway”

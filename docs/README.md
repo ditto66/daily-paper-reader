@@ -6,79 +6,77 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-03-13
-- 运行时间：2026-03-13 19:38:25 UTC
+- 最新运行日期：2026-03-14
+- 运行时间：2026-03-14 19:15:07 UTC
 - 运行状态：成功
 - 本次总论文数：19
 - 精读区：7
 - 速读区：12
 
 ### 今日简报（AI）
-今日深挖 19 篇前沿成果，重点聚焦 NPU 内核合成的价值驱动优化与视觉语言模型的取证效率突破。
-核心结论指出，通过冷启动草拟与持续精炼可显著提升硬件合成性能，而 ForensicZip 证明了取证分析中 Token 并非越多越好。
-建议优先研读 NPU 自动编程与多模态安全取证相关论文，掌握软硬结合与高效推理的最新趋势。
-- 详情：[/202603/13/README](/202603/13/README)
+今日聚焦视觉导航与信息治理，深度解析 19 篇论文，重点突破多模态记忆检索与算法审计技术。
+- 详情：[/202603/14/README](/202603/14/README)
 
 ### 精读区论文标签
-1. [Towards Cold-Start Drafting and Continual Refining: A Value-Driven Memory Approach with Application to NPU Kernel Synthesis](/202603/13/2603.10846v1-towards-cold-start-drafting-and-continual-refining-a-value-driven-memory-approach-with-application-to-npu-kernel-synthesis)  
+1. [CMMR-VLN: Vision-and-Language Navigation via Continual Multimodal Memory Retrieval](/202603/14/2603.07997v1-cmmr-vln-vision-and-language-navigation-via-continual-multimodal-memory-retrieval)  
    标签：评分：9.0/10、query:semma
-   evidence：用于持续优化的自进化智能体框架
-2. [ForensicZip: More Tokens are Better but Not Necessary in Forensic Vision-Language Models](/202603/13/2603.12208v1-forensiczip-more-tokens-are-better-but-not-necessary-in-forensic-vision-language-models)  
+   evidence：赋予大语言模型智能体结构化记忆和反思能力的视觉语言导航框架
+2. [From Verification to Amplification: Auditing Reverse Image Search as Algorithmic Gatekeeping in Visual Misinformation Fact-checking](/202603/14/2603.09130v1-from-verification-to-amplification-auditing-reverse-image-search-as-algorithmic-gatekeeping-in-visual-misinformation-fact-checking)  
    标签：评分：9.0/10、query:ai-mmd
-   evidence：用于伪造检测的取证视觉语言模型
-3. [Helpful to a Fault: Measuring Illicit Assistance in Multi-Turn, Multilingual LLM Agents](/202603/13/2602.16346v2-helpful-to-a-fault-measuring-illicit-assistance-in-multi-turn-multilingual-llm-agents)  
+   evidence：审计用于视觉虚假信息事实核查的反向图像搜索
+3. [AgentSentry: Mitigating Indirect Prompt Injection in LLM Agents via Temporal Causal Diagnostics and Context Purification](/202603/14/2602.22724v1-agentsentry-mitigating-indirect-prompt-injection-in-llm-agents-via-temporal-causal-diagnostics-and-context-purification)  
    标签：评分：8.0/10、query:ai-mmd
-   evidence：用于衡量智能体在有害任务中被滥用的自动化红队框架
-4. [Multi-Agent Causal Reasoning for Suicide Ideation Detection Through Online Conversations](/202603/13/2602.23577v1-multi-agent-causal-reasoning-for-suicide-ideation-detection-through-online-conversations)  
+   evidence：缓解自主 LLM 智能体中的间接提示注入攻击
+4. [HateMirage: An Explainable Multi-Dimensional Dataset for Decoding Faux Hate and Subtle Online Abuse](/202603/14/2603.02684v1-hatemirage-an-explainable-multi-dimensional-dataset-for-decoding-faux-hate-and-subtle-online-abuse)  
    标签：评分：8.0/10、query:ai-mmd
-   evidence：用于检测在线对话中有害意图的多智能体框架
-5. [Bootstrapping Exploration with Group-Level Natural Language Feedback in Reinforcement Learning](/202603/13/2603.04597v1-bootstrapping-exploration-with-group-level-natural-language-feedback-in-reinforcement-learning)  
+   evidence：源自虚假或扭曲叙事的仇恨言论
+5. [VirtueBench: Evaluating Trustworthiness under Uncertainty in Long Video Understanding](/202603/14/2603.07071v1-virtuebench-evaluating-trustworthiness-under-uncertainty-in-long-video-understanding)  
    标签：评分：8.0/10、query:semma
-   evidence：利用语言反馈进行智能体优化的强化学习
-6. [When Agents Persuade: Propaganda Generation and Mitigation in LLMs](/202603/13/2603.04636v1-when-agents-persuade-propaganda-generation-and-mitigation-in-llms)  
+   evidence：评估视觉语言模型在不确定性下可信度与诚实性的基准
+6. [Models as Lego Builders: Assembling Malice from Benign Blocks via Semantic Blueprints](/202603/14/2603.07590v1-models-as-lego-builders-assembling-malice-from-benign-blocks-via-semantic-blueprints)  
    标签：评分：8.0/10、query:ai-mmd
-   evidence：LLM智能体中的宣传生成与缓解
-7. [Leveraging LLM Parametric Knowledge for Fact Checking without Retrieval](/202603/13/2603.05471v1-leveraging-llm-parametric-knowledge-for-fact-checking-without-retrieval)  
+   evidence：检测并利用大视觉语言模型的安全漏洞
+7. [ProvAgent: Threat Detection Based on Identity-Behavior Binding and Multi-Agent Collaborative Attack Investigation](/202603/14/2603.09358v1-provagent-threat-detection-based-on-identity-behavior-binding-and-multi-agent-collaborative-attack-investigation)  
    标签：评分：8.0/10、query:ai-mmd
-   evidence：利用LLM参数化知识为智能体AI系统进行事实核查
+   evidence：多智能体协作攻击调查与威胁检测
 
 ### 速读区论文标签
-1. [PISHYAR: A Socially Intelligent Smart Cane for Indoor Social Navigation and Multimodal Human-Robot Interaction for Visually Impaired People](/202603/13/2602.12597v1-pishyar-a-socially-intelligent-smart-cane-for-indoor-social-navigation-and-multimodal-human-robot-interaction-for-visually-impaired-people)  
+1. [WebClipper: Efficient Evolution of Web Agents with Graph-based Trajectory Pruning](/202603/14/2602.12852v1-webclipper-efficient-evolution-of-web-agents-with-graph-based-trajectory-pruning)  
    标签：评分：8.0/10、query:semma
-   evidence：用于导航的智能体多模态LLM-VLM交互
-2. [Self-EvolveRec: Self-Evolving Recommender Systems with LLM-based Directional Feedback](/202603/13/2602.12612v1-self-evolverec-self-evolving-recommender-systems-with-llm-based-directional-feedback)  
+   evidence：通过轨迹剪枝实现 Web 智能体的高效进化
+2. [BrowseComp-$V^3$: A Visual, Vertical, and Verifiable Benchmark for Multimodal Browsing Agents](/202603/14/2602.12876v2-browsecomp-v3-a-visual-vertical-and-verifiable-benchmark-for-multimodal-browsing-agents)  
    标签：评分：8.0/10、query:semma
-   evidence：具有定向反馈循环的自进化框架
-3. [SkillsBench: Benchmarking How Well Agent Skills Work Across Diverse Tasks](/202603/13/2602.12670v1-skillsbench-benchmarking-how-well-agent-skills-work-across-diverse-tasks)  
+   evidence：多模态浏览智能体多跳推理基准测试
+3. [MAS-on-the-Fly: Dynamic Adaptation of LLM-based Multi-Agent Systems at Test Time](/202603/14/2602.13671v1-mas-on-the-fly-dynamic-adaptation-of-llm-based-multi-agent-systems-at-test-time)  
    标签：评分：8.0/10、query:semma
-   evidence：评估智能体技能及自生成能力的基准
-4. [VimRAG: Navigating Massive Visual Context in Retrieval-Augmented Generation via Multimodal Memory Graph](/202603/13/2602.12735v1-vimrag-navigating-massive-visual-context-in-retrieval-augmented-generation-via-multimodal-memory-graph)  
+   evidence：多智能体系统在测试时的动态自适应
+4. [Experiential Reinforcement Learning](/202603/14/2602.13949v1-experiential-reinforcement-learning)  
    标签：评分：8.0/10、query:semma
-   evidence：智能体系统的多模态检索增强推理
-5. [iAgentBench: Benchmarking Sensemaking Capabilities of Information-Seeking Agents on High-Traffic Topics](/202603/13/2603.04656v1-iagentbench-benchmarking-sensemaking-capabilities-of-information-seeking-agents-on-high-traffic-topics)  
+   evidence：用于自我提升的经验-反思-巩固循环
+5. [Hit-RAG: Learning to Reason with Long Contexts via Preference Alignment](/202603/14/2603.07023v1-hit-rag-learning-to-reason-with-long-contexts-via-preference-alignment)  
    标签：评分：7.0/10、query:semma
-   evidence：基准测试信息寻求智能体的感知与证据协调能力
-6. [Are Multimodal LLMs Ready for Surveillance? A Reality Check on Zero-Shot Anomaly Detection in the Wild](/202603/13/2603.04727v1-are-multimodal-llms-ready-for-surveillance-a-reality-check-on-zero-shot-anomaly-detection-in-the-wild)  
-   标签：评分：7.0/10、query:ai-mmd
-   evidence：多模态大模型用于视频监控中的异常检测
-7. [Design Behaviour Codes (DBCs): A Taxonomy-Driven Layered Governance Benchmark for Large Language Models](/202603/13/2603.04837v1-design-behaviour-codes-dbcs-a-taxonomy-driven-layered-governance-benchmark-for-large-language-models)  
-   标签：评分：7.0/10、query:ai-mmd
-   evidence：针对大模型恶意使用和对齐失控的治理基准
-8. [Differentially Private Multimodal In-Context Learning](/202603/13/2603.04894v1-differentially-private-multimodal-in-context-learning)  
+   evidence：利用外部知识增强多模态大语言模型
+6. [Enhancing Web Agents with a Hierarchical Memory Tree](/202603/14/2603.07024v1-enhancing-web-agents-with-a-hierarchical-memory-tree)  
    标签：评分：7.0/10、query:semma
-   evidence：视觉语言模型的多模态上下文学习
-9. [TSEmbed: Unlocking Task Scaling in Universal Multimodal Embeddings](/202603/13/2603.04772v1-tsembed-unlocking-task-scaling-in-universal-multimodal-embeddings)  
+   evidence：用于Web智能体处理复杂任务的结构化框架
+7. [VirtueBench: Evaluating Trustworthiness under Uncertainty in Long Video Understanding](/202603/14/2603.07071v2-virtuebench-evaluating-trustworthiness-under-uncertainty-in-long-video-understanding)  
+   标签：评分：7.0/10、query:semma
+   evidence：基准测试多模态理解中的可信度与不确定性
+8. [mAVE: A Watermark for Joint Audio-Visual Generation Models](/202603/14/2603.07090v1-mave-a-watermark-for-joint-audio-visual-generation-models)  
+   标签：评分：7.0/10、query:ai-mmd
+   evidence：针对篡改内容和恶意深度伪造的检测器
+9. [AutoChecklist: Composable Pipelines for Checklist Generation and Scoring with LLM-as-a-Judge](/202603/14/2603.07019v1-autochecklist-composable-pipelines-for-checklist-generation-and-scoring-with-llm-as-a-judge)  
    标签：评分：6.0/10、query:semma
-   evidence：多模态大语言模型的通用嵌入框架
-10. [VISA: Value Injection via Shielded Adaptation for Personalized LLM Alignment](/202603/13/2603.04822v1-visa-value-injection-via-shielded-adaptation-for-personalized-llm-alignment)  
-   标签：评分：6.0/10、query:semma
-   evidence：用于大模型价值对齐和自我修正的闭环框架
-11. [Towards Highly Transferable Vision-Language Attack via Semantic-Augmented Dynamic Contrastive Interaction](/202603/13/2603.04839v1-towards-highly-transferable-vision-language-attack-via-semantic-augmented-dynamic-contrastive-interaction)  
+   evidence：清单信号用于自我修正
+10. [Two Frames Matter: A Temporal Attack for Text-to-Video Model Jailbreaking](/202603/14/2603.07028v1-two-frames-matter-a-temporal-attack-for-text-to-video-model-jailbreaking)  
    标签：评分：6.0/10、query:ai-mmd
-   evidence：视觉语言对抗攻击和跨模态破坏技术
-12. [Characterizing Faults in Agentic AI: A Taxonomy of Types, Symptoms, and Root Causes](/202603/13/2603.06847v1-characterizing-faults-in-agentic-ai-a-taxonomy-of-types-symptoms-and-root-causes)  
+   evidence：检测恶意多模态内容与越狱攻击
+11. [aCAPTCHA: Verifying That an Entity Is a Capable Agent via Asymmetric Hardness](/202603/14/2603.07116v1-acaptcha-verifying-that-an-entity-is-a-capable-agent-via-asymmetric-hardness)  
    标签：评分：6.0/10、query:semma
-   evidence：对智能体AI系统故障的实证研究和分类
+   evidence：通过行动、推理和记忆验证智能体能力
+12. [DualSpec: Accelerating Deep Research Agents via Dual-Process Action Speculation](/202603/14/2603.07416v1-dualspec-accelerating-deep-research-agents-via-dual-process-action-speculation)  
+   标签：评分：6.0/10、query:semma
+   evidence：通过双过程动作推测和验证加速深度研究智能体
 
 
 <div class="dpr-home-promo-card">
